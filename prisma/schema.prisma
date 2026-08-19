@@ -1,0 +1,244 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ข้อมูลประจำตัวผู้ฝึกสอน
+model Coach {
+  id             Int       @id @default(autoincrement())
+  afcId          String?   @unique @map("afc_id")
+  nameTh         String    @map("name_th")
+  surnameTh      String    @map("surname_th")
+  nameEn         String?   @map("name_en")
+  familyNameEn   String?   @map("family_name_en")
+  gender         String?
+  dob            DateTime?
+  idNumber       String?   @map("id_number")
+  passportNumber String?   @map("passport_number")
+  email          String?
+  telNo          String?   @map("tel_no")
+  nationality    String?
+  residence      String?
+  photoUrl       String?   @map("photo_url")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  licenseRecords      LicenseRecord[]
+  employments         Employment[]
+  systemUser          SystemUser?
+  profileEditRequests ProfileEditRequest[]
+  applications        Application[]
+
+  @@map("coaches")
+}
+
+// ประวัติการถือครองใบอนุญาต
+// licenseType: PRO, A, B, C, G, ELITE_YOUTH, GK, VDO
+// recordType: TRAINING, EQUALIZATION
+model LicenseRecord {
+  id            Int       @id @default(autoincrement()) @map("record_id")
+  coachId       Int       @map("coach_id")
+  coach         Coach     @relation(fields: [coachId], references: [id], onDelete: Cascade)
+  licenseType   String    @map("license_type")
+  recordType    String    @map("record_type")
+  isLevelUp     Boolean   @default(false) @map("is_level_up")
+  certificateNo String?   @map("certificate_no")
+  issueDate     DateTime? @map("issue_date")
+  expireDate    DateTime? @map("expire_date")
+  confirmedBy   String?   @map("confirmed_by")
+  instructorId  Int?      @map("instructor_id")
+  instructor    Instructor? @relation(fields: [instructorId], references: [id], onDelete: SetNull)
+  createdAt     DateTime  @default(now()) @map("created_at")
+
+  @@map("license_records")
+}
+
+// ข้อมูลวิทยากรผู้สอนหลักสูตรอบรมผู้ฝึกสอน
+// maxLevel: ระดับสูงสุดที่สอนได้ (PRO, A, B, C, G, ELITE_YOUTH, GK, VDO)
+model Instructor {
+  id              Int      @id @default(autoincrement())
+  name            String
+  email           String?
+  telNo           String?  @map("tel_no")
+  photoUrl        String?  @map("photo_url")
+  affiliation     String?
+  afcInstructorId String?  @map("afc_instructor_id")
+  maxLevel        String?  @map("max_level")
+  teachesCore       Boolean @default(false) @map("teaches_core")
+  teachesGoalkeeper Boolean @default(false) @map("teaches_goalkeeper")
+  teachesFitness    Boolean @default(false) @map("teaches_fitness")
+  note            String?
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  licenseRecords LicenseRecord[]
+
+  @@map("instructors")
+}
+
+// ประวัติการทำงานปัจจุบัน
+model Employment {
+  id         Int      @id @default(autoincrement()) @map("employment_id")
+  coachId    Int      @map("coach_id")
+  coach      Coach    @relation(fields: [coachId], references: [id], onDelete: Cascade)
+  clubName   String   @map("club_name")
+  division   String?
+  position   String?
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@map("employments")
+}
+
+// ระบบจัดการสิทธิ์ผู้ใช้งาน
+// role: ADMIN, STAFF, COACH
+model SystemUser {
+  id           Int      @id @default(autoincrement()) @map("user_id")
+  coachId      Int?     @unique @map("coach_id")
+  coach        Coach?   @relation(fields: [coachId], references: [id])
+  email        String   @unique
+  role         String   @default("STAFF")
+  passwordHash String   @map("password_hash")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  sessions         Session[]
+  announcements    Announcement[]
+  trainingArticles TrainingArticle[]
+
+  @@map("system_users")
+}
+
+// ข่าวประกาศที่แสดงบนหน้าหลักสาธารณะ
+model Announcement {
+  id        Int        @id @default(autoincrement())
+  title     String
+  excerpt   String
+  content   String     @default("")
+  imageUrl  String?    @map("image_url")
+  tag       String?
+  authorId  Int?       @map("author_id")
+  author    SystemUser? @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  createdAt DateTime   @default(now()) @map("created_at")
+
+  @@map("announcements")
+}
+
+// บทความวิเคราะห์เทคนิคของหมวด Training Centre
+// area: THE_GAME, PRACTICE, ENVIRONMENT
+model TrainingArticle {
+  id            Int        @id @default(autoincrement())
+  title         String
+  area          String
+  theme         String?
+  ageGroup      String?    @map("age_group")
+  excerpt       String
+  content       String     @default("")
+  coverImageUrl String?    @map("cover_image_url")
+  authorId      Int?       @map("author_id")
+  author        SystemUser? @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  createdAt     DateTime   @default(now()) @map("created_at")
+
+  @@map("training_articles")
+}
+
+model Session {
+  id           Int        @id @default(autoincrement())
+  sessionToken String     @unique @map("session_token")
+  userId       Int        @map("user_id")
+  user         SystemUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt    DateTime   @map("expires_at")
+  createdAt    DateTime   @default(now()) @map("created_at")
+
+  @@map("sessions")
+}
+
+// คำขอแก้ไขข้อมูลจากโค้ช ที่รออนุมัติจากแอดมิน
+// status: PENDING, APPROVED, REJECTED
+model ProfileEditRequest {
+  id          Int       @id @default(autoincrement())
+  coachId     Int       @map("coach_id")
+  coach       Coach     @relation(fields: [coachId], references: [id], onDelete: Cascade)
+  payload     String
+  message     String?
+  status      String    @default("PENDING")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  resolvedAt  DateTime? @map("resolved_at")
+
+  @@map("profile_edit_requests")
+}
+
+// หลักสูตร (ผูกกับระดับใบอนุญาตหลัก 1 ระดับ — G, C, B, A, PRO)
+model Course {
+  id          Int      @id @default(autoincrement())
+  licenseType String   @unique @map("license_type")
+  title       String
+  description String?
+  requirement String?
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  sessions CourseSession[]
+
+  @@map("courses")
+}
+
+// รุ่นอบรมของหลักสูตร
+// status: OPEN, CLOSED, COMPLETED
+model CourseSession {
+  id                  Int       @id @default(autoincrement())
+  courseId            Int       @map("course_id")
+  course              Course    @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  name                String
+  venue               String?
+  startDate           DateTime? @map("start_date")
+  endDate             DateTime? @map("end_date")
+  applicationOpenDate DateTime? @map("application_open_date")
+  applicationDeadline DateTime? @map("application_deadline")
+  capacity            Int?
+  status              String    @default("OPEN")
+  createdAt           DateTime  @default(now()) @map("created_at")
+
+  applications Application[]
+
+  @@map("course_sessions")
+}
+
+// ใบสมัครเข้าอบรมของโค้ช
+// status: PENDING, APPROVED, REJECTED, CANCELLED
+model Application {
+  id              Int           @id @default(autoincrement())
+  coachId         Int           @map("coach_id")
+  coach           Coach         @relation(fields: [coachId], references: [id], onDelete: Cascade)
+  courseSessionId Int           @map("course_session_id")
+  courseSession   CourseSession @relation(fields: [courseSessionId], references: [id], onDelete: Cascade)
+  status          String        @default("PENDING")
+  appliedAt       DateTime      @default(now()) @map("applied_at")
+  reviewedAt      DateTime?     @map("reviewed_at")
+  reviewedBy      String?       @map("reviewed_by")
+  note            String?
+
+  @@unique([coachId, courseSessionId])
+  @@map("applications")
+}
+
+// กิจกรรม/ปฏิทินกิจกรรมของสมาคม (นำเข้าจาก FA Thailand Technical Calendar)
+// teamScope: Men, Women, Both, Coach Education
+model Event {
+  id        Int      @id @default(autoincrement())
+  title     String
+  category  String
+  color     String
+  teamScope String   @map("team_scope")
+  startDate DateTime @map("start_date")
+  endDate   DateTime @map("end_date")
+  sourceUrl String?  @map("source_url")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("events")
+}
