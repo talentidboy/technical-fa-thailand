@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Sidebar } from "@/components/Sidebar";
-import { AdminTabs } from "@/components/AdminTabs";
+import { AdminTopBar } from "@/components/AdminTopBar";
 
 export default async function AdminLayout({
   children,
@@ -13,10 +13,40 @@ export default async function AdminLayout({
   if (!user) redirect("/login");
   if (user.role === "COACH") redirect("/me");
 
-  const pendingRequestCount =
+  const now = new Date();
+  const ninetyDaysFromNow = new Date(now.getTime() + 1000 * 60 * 60 * 24 * 90);
+
+  const [
+    pendingRequestCount,
+    pendingRequests,
+    coachCount,
+    instructorCount,
+    expiringSoon,
+    expiringSoonCount,
+  ] = await Promise.all([
     user.role === "ADMIN"
-      ? await prisma.profileEditRequest.count({ where: { status: "PENDING" } })
-      : 0;
+      ? prisma.profileEditRequest.count({ where: { status: "PENDING" } })
+      : Promise.resolve(0),
+    user.role === "ADMIN"
+      ? prisma.profileEditRequest.findMany({
+          where: { status: "PENDING" },
+          orderBy: { createdAt: "desc" },
+          take: 5,
+          include: { coach: true },
+        })
+      : Promise.resolve([]),
+    prisma.coach.count(),
+    prisma.instructor.count(),
+    prisma.licenseRecord.findMany({
+      where: { expireDate: { gte: now, lte: ninetyDaysFromNow } },
+      orderBy: { expireDate: "asc" },
+      take: 5,
+      include: { coach: true },
+    }),
+    prisma.licenseRecord.count({
+      where: { expireDate: { gte: now, lte: ninetyDaysFromNow } },
+    }),
+  ]);
 
   return (
     <div className="flex h-full">
@@ -27,7 +57,25 @@ export default async function AdminLayout({
       />
       <main className="flex-1 overflow-y-auto">
         <div className="mx-auto max-w-6xl px-8 py-10">
-          <AdminTabs role={user.role} pendingRequestCount={pendingRequestCount} />
+          <AdminTopBar
+            role={user.role}
+            coachCount={coachCount}
+            instructorCount={instructorCount}
+            expiringSoonCount={expiringSoonCount}
+            expiringSoon={expiringSoon.map((r) => ({
+              id: r.id,
+              coachId: r.coachId,
+              coachName: `${r.coach.nameTh} ${r.coach.surnameTh}`,
+              licenseType: r.licenseType,
+              expireDate: r.expireDate,
+            }))}
+            pendingRequestCount={pendingRequestCount}
+            pendingRequests={pendingRequests.map((r) => ({
+              id: r.id,
+              coachName: `${r.coach.nameTh} ${r.coach.surnameTh}`,
+              createdAt: r.createdAt,
+            }))}
+          />
           {children}
         </div>
       </main>
