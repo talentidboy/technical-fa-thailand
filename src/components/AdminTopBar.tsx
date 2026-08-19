@@ -9,6 +9,7 @@ import {
   AlertTriangle,
   Inbox,
   Clock,
+  BookOpen,
 } from "lucide-react";
 import { AdminTabs } from "@/components/AdminTabs";
 import { LICENSE_TYPES, labelFor } from "@/lib/constants";
@@ -35,6 +36,7 @@ export function AdminTopBar({
   role,
   coachCount,
   instructorCount,
+  courseSessionCount,
   expiringSoonCount,
   expiringSoon,
   pendingRequestCount,
@@ -43,6 +45,7 @@ export function AdminTopBar({
   role: string;
   coachCount: number;
   instructorCount: number;
+  courseSessionCount: number;
   expiringSoonCount: number;
   expiringSoon: ExpiringLicense[];
   pendingRequestCount: number;
@@ -184,18 +187,27 @@ export function AdminTopBar({
           accent="text-amber-600"
         />
         {role === "ADMIN" && (
-          <StatChip
-            icon={Inbox}
-            label="คำขอรอตรวจสอบ"
-            value={pendingRequestCount}
-            href="/requests"
-            accent="text-red-600"
-          />
+          <>
+            <StatChip
+              icon={BookOpen}
+              label="รอบอบรมทั้งหมด"
+              value={courseSessionCount}
+              href="/course-sessions"
+              accent="text-violet-600"
+            />
+            <StatChip
+              icon={Inbox}
+              label="คำขอรอตรวจสอบ"
+              value={pendingRequestCount}
+              href="/requests"
+              accent="text-red-600"
+            />
+          </>
         )}
       </div>
 
-      {/* แถวแท็บหมวดหมู่ */}
-      <AdminTabs role={role} pendingRequestCount={pendingRequestCount} />
+      {/* แถวแท็บมุมมองแดชบอร์ด */}
+      <AdminTabs />
     </div>
   );
 }

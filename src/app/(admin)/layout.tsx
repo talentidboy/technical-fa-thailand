@@ -21,6 +21,7 @@ export default async function AdminLayout({
     pendingRequests,
     coachCount,
     instructorCount,
+    courseSessionCount,
     expiringSoon,
     expiringSoonCount,
   ] = await Promise.all([
@@ -37,6 +38,7 @@ export default async function AdminLayout({
       : Promise.resolve([]),
     prisma.coach.count(),
     prisma.instructor.count(),
+    user.role === "ADMIN" ? prisma.courseSession.count() : Promise.resolve(0),
     prisma.licenseRecord.findMany({
       where: { expireDate: { gte: now, lte: ninetyDaysFromNow } },
       orderBy: { expireDate: "asc" },
@@ -61,6 +63,7 @@ export default async function AdminLayout({
             role={user.role}
             coachCount={coachCount}
             instructorCount={instructorCount}
+            courseSessionCount={courseSessionCount}
             expiringSoonCount={expiringSoonCount}
             expiringSoon={expiringSoon.map((r) => ({
               id: r.id,
