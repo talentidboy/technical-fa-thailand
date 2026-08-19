@@ -24,6 +24,8 @@ import {
   Clock,
   Target,
   Calendar,
+  Sprout,
+  Trophy,
 } from "lucide-react";
 
 const menuLinks = [
@@ -63,6 +65,24 @@ const categories = [
     href: "/talent-id" as string | null,
     image: null as string | null,
     icon: Target,
+    features: [] as { icon: typeof FileBadge; label: string }[],
+    comingSoon: false,
+  },
+  {
+    title: "Grassroots Football",
+    subtitle: "โครงการฟุตบอลรากหญ้า ปลูกฝังและพัฒนาเยาวชนตั้งแต่ระดับพื้นฐาน",
+    href: "/grassroots-football" as string | null,
+    image: null as string | null,
+    icon: Sprout,
+    features: [] as { icon: typeof FileBadge; label: string }[],
+    comingSoon: false,
+  },
+  {
+    title: "G15 Women's Football Series 2026",
+    subtitle: "เวทีการแข่งขันฟุตบอลหญิงรุ่นอายุไม่เกิน 15 ปี",
+    href: "/g15-womens-series" as string | null,
+    image: null as string | null,
+    icon: Trophy,
     features: [] as { icon: typeof FileBadge; label: string }[],
     comingSoon: false,
   },
