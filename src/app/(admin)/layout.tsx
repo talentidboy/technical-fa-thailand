@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Sidebar } from "@/components/Sidebar";
+import { AdminTabs } from "@/components/AdminTabs";
 
 export default async function AdminLayout({
   children,
@@ -25,7 +26,10 @@ export default async function AdminLayout({
         pendingRequestCount={pendingRequestCount}
       />
       <main className="flex-1 overflow-y-auto">
-        <div className="mx-auto max-w-6xl px-8 py-10">{children}</div>
+        <div className="mx-auto max-w-6xl px-8 py-10">
+          <AdminTabs role={user.role} pendingRequestCount={pendingRequestCount} />
+          {children}
+        </div>
       </main>
     </div>
   );
