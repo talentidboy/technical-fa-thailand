@@ -5,64 +5,24 @@ import {
   FileBadge,
   AlertTriangle,
   ArrowUpRight,
+  ArrowRight,
   Plus,
   Bell,
+  BarChart3,
 } from "lucide-react";
-import { CoachReportDashboard } from "@/components/CoachReportDashboard";
 import { DashboardHero } from "@/components/DashboardHero";
 import { LICENSE_TYPES, labelFor, CORE_LICENSE_PROGRESSION } from "@/lib/constants";
 import { getLicenseStatus, LICENSE_STATUS_STYLES } from "@/lib/license-status";
-import {
-  getHeroSummary,
-  getCoachPage,
-  getCoachAggregates,
-  getFilterOptions,
-  EMPTY_FILTERS,
-  type CoachFilters,
-  type SortKey,
-} from "@/lib/coach-query";
+import { getHeroSummary } from "@/lib/coach-query";
 
 type DashboardSearchParams = {
   window?: string;
-  gender?: string;
-  nationality?: string;
-  residence?: string;
-  division?: string;
-  position?: string;
-  license?: string;
-  afc?: string;
-  exp?: string;
-  age?: string;
-  year?: string;
-  held?: string;
-  q?: string;
-  sort?: string;
-  dir?: string;
-  page?: string;
 };
 
 const CORE_TIERS_TOP_DOWN = [...CORE_LICENSE_PROGRESSION].reverse();
 const SIDE_LICENSE_TYPES = LICENSE_TYPES.map((t) => t.value).filter(
   (v) => !CORE_LICENSE_PROGRESSION.includes(v),
 );
-
-function parseFilters(params: DashboardSearchParams): CoachFilters {
-  return {
-    ...EMPTY_FILTERS,
-    gender: params.gender ?? "",
-    nationality: params.nationality ?? "",
-    residence: params.residence ?? "",
-    division: params.division ?? "",
-    position: params.position ?? "",
-    currentLicense: params.license ?? "",
-    afcId: (params.afc as CoachFilters["afcId"]) ?? "",
-    expStatus: (params.exp as CoachFilters["expStatus"]) ?? "",
-    ageBucket: params.age ?? "",
-    year: params.year ?? "",
-    licenseHeld: params.held ? params.held.split(",").filter(Boolean) : [],
-    search: params.q ?? "",
-  };
-}
 
 export default async function Home({
   searchParams,
@@ -77,11 +37,6 @@ export default async function Home({
   const alertWindowDate = new Date(now);
   alertWindowDate.setMonth(alertWindowDate.getMonth() + alertWindowMonths);
 
-  const filters = parseFilters(params);
-  const sortKey = (params.sort as SortKey) ?? "name";
-  const sortAsc = params.dir !== "desc";
-  const page = Math.max(0, Number(params.page ?? 0) || 0);
-
   const [
     coachCount,
     licenseCount,
@@ -89,9 +44,6 @@ export default async function Home({
     recentCoaches,
     expiringLicenses,
     heroSummary,
-    coachPage,
-    aggregates,
-    filterOptions,
   ] = await Promise.all([
     prisma.coach.count(),
     prisma.licenseRecord.count(),
@@ -110,9 +62,6 @@ export default async function Home({
       take: 20,
     }),
     getHeroSummary(CORE_TIERS_TOP_DOWN, SIDE_LICENSE_TYPES),
-    getCoachPage(filters, sortKey, sortAsc, page),
-    getCoachAggregates(filters),
-    getFilterOptions(),
   ]);
 
   const stats = [
@@ -249,15 +198,23 @@ export default async function Home({
         )}
       </div>
 
-      <CoachReportDashboard
-        filters={filters}
-        sortKey={sortKey}
-        sortAsc={sortAsc}
-        page={page}
-        coachPage={coachPage}
-        aggregates={aggregates}
-        filterOptions={filterOptions}
-      />
+      <Link
+        href="/dashboard/report"
+        className="group flex items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-linear-to-r from-indigo-600 to-indigo-700 p-6 shadow-sm shadow-indigo-200 transition-all hover:-translate-y-0.5 hover:shadow-md"
+      >
+        <div className="flex items-center gap-4">
+          <div className="flex h-11 w-11 flex-none items-center justify-center rounded-xl bg-white/15 text-white">
+            <BarChart3 className="h-5 w-5" />
+          </div>
+          <div>
+            <h2 className="font-semibold text-white">รายงานเชิงลึกผู้ฝึกสอน</h2>
+            <p className="mt-0.5 text-sm text-indigo-200">
+              กรอง ค้นหา และดูกราฟวิเคราะห์ข้อมูลผู้ฝึกสอนทั้งระบบแบบละเอียด
+            </p>
+          </div>
+        </div>
+        <ArrowRight className="h-5 w-5 flex-none text-indigo-200 transition-transform group-hover:translate-x-1" />
+      </Link>
 
       <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
         <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">

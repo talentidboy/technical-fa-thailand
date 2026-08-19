@@ -92,7 +92,7 @@ function buildQuery(
   if (!sortAsc) p.set("dir", "desc");
   if (page > 0) p.set("page", String(page));
   const qs = p.toString();
-  return qs ? `/dashboard?${qs}` : "/dashboard";
+  return qs ? `/dashboard/report?${qs}` : "/dashboard/report";
 }
 
 export function CoachReportDashboard({
