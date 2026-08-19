@@ -137,7 +137,9 @@ export function CoachReportDashboard({
     nextPage: number = 0,
   ) {
     startTransition(() => {
-      router.push(buildQuery(nextFilters, nextSort, nextAsc, nextPage));
+      router.push(buildQuery(nextFilters, nextSort, nextAsc, nextPage), {
+        scroll: false,
+      });
     });
   }
 
