@@ -287,6 +287,16 @@ export default async function HomePage() {
           />
           <div className="absolute inset-0 bg-linear-to-b from-indigo-950/90 via-indigo-950/80 to-indigo-950/95" />
         </div>
+        <div className="absolute -left-24 -top-24 h-80 w-80 rounded-full bg-indigo-400/20 blur-3xl" />
+        <div className="absolute -right-16 top-1/4 h-96 w-96 rounded-full bg-amber-500/10 blur-3xl" />
+        <div
+          className="absolute inset-0 opacity-[0.04]"
+          style={{
+            backgroundImage:
+              "linear-gradient(white 1px, transparent 1px), linear-gradient(90deg, white 1px, transparent 1px)",
+            backgroundSize: "32px 32px",
+          }}
+        />
         <div className="absolute inset-x-0 top-0 h-1 bg-linear-to-r from-amber-600 via-amber-400 to-amber-600" />
 
         <div className="relative mx-auto max-w-4xl px-6 py-24 text-center">
@@ -297,13 +307,24 @@ export default async function HomePage() {
             height={72}
             className="mx-auto h-18 w-18 rounded-2xl shadow-lg shadow-black/30 ring-2 ring-white/20"
           />
-          <h1 className="mt-6 text-4xl font-bold tracking-tight text-white sm:text-5xl">
+          <span className="mx-auto mt-6 inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-3.5 py-1.5 text-xs font-medium text-indigo-200 backdrop-blur-sm">
+            สมาคมกีฬาฟุตบอลแห่งประเทศไทย ในพระบรมราชูปถัมภ์
+          </span>
+          <h1 className="mt-5 text-4xl font-bold tracking-tight text-white sm:text-5xl">
             FA Thailand Technical
           </h1>
           <p className="mx-auto mt-4 max-w-xl text-indigo-200">
             ศูนย์รวมระบบงานด้านเทคนิคของสมาคมกีฬาฟุตบอลแห่งประเทศไทย
             เลือกหมวดที่ต้องการเข้าใช้งานด้านล่าง
           </p>
+          <Link
+            href="#categories"
+            className="mt-8 inline-flex items-center gap-1.5 text-xs font-medium text-indigo-300 transition-colors hover:text-white"
+          >
+            <LayoutGrid className="h-3.5 w-3.5" />
+            ดูหมวดงานทั้งหมด
+            <ChevronDown className="h-3.5 w-3.5" />
+          </Link>
         </div>
 
         <svg
@@ -317,9 +338,14 @@ export default async function HomePage() {
 
       {/* Categories */}
       <section id="categories" className="mx-auto -mt-6 max-w-6xl px-6 pb-4">
-        <div className="mb-4 flex items-center gap-2 text-sm font-medium text-slate-500">
-          <LayoutGrid className="h-4 w-4" />
-          หมวดงานเทคนิคทั้งหมด
+        <div className="mb-4 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 text-sm font-medium text-slate-500">
+            <LayoutGrid className="h-4 w-4" />
+            หมวดงานเทคนิคทั้งหมด
+          </div>
+          <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-500">
+            {categories.length} หมวด
+          </span>
         </div>
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {categories.map((category) => {
@@ -327,7 +353,7 @@ export default async function HomePage() {
 
             const cardContent = (
               <>
-                <div className="relative flex h-32 items-center justify-center overflow-hidden">
+                <div className="relative flex h-36 items-center justify-center overflow-hidden">
                   {category.image ? (
                     <Image
                       src={category.image}
@@ -344,7 +370,7 @@ export default async function HomePage() {
                     <div className="absolute inset-0 bg-linear-to-br from-indigo-700 via-indigo-800 to-indigo-950" />
                   )}
                   <div className="absolute inset-0 bg-linear-to-br from-indigo-950/85 via-indigo-900/55 to-indigo-950/30" />
-                  <div className="relative flex h-16 w-16 items-center justify-center rounded-2xl bg-white/10 ring-1 ring-white/30 backdrop-blur-sm">
+                  <div className="relative flex h-16 w-16 items-center justify-center rounded-2xl bg-white/10 ring-1 ring-white/30 backdrop-blur-sm transition-transform duration-300 group-hover:scale-110">
                     <CategoryIcon className="h-8 w-8 text-amber-300" />
                   </div>
                   {category.comingSoon && (
@@ -407,7 +433,7 @@ export default async function HomePage() {
               <Link
                 key={category.title}
                 href={user ? category.href : "/login"}
-                className="group relative flex flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl shadow-indigo-900/10 transition-all hover:-translate-y-1 hover:shadow-2xl hover:shadow-indigo-900/15"
+                className="group relative flex flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl shadow-indigo-900/10 transition-all duration-300 hover:-translate-y-1 hover:border-indigo-200 hover:shadow-2xl hover:shadow-indigo-900/15"
               >
                 {cardContent}
               </Link>
@@ -415,9 +441,13 @@ export default async function HomePage() {
           })}
 
           {/* placeholder for future categories */}
-          <div className="flex flex-col items-center justify-center gap-2 rounded-3xl border border-dashed border-slate-300 p-6 text-center text-sm text-slate-400">
-            <LayoutGrid className="h-6 w-6" />
-            หมวดงานเทคนิคอื่นๆ เร็วๆ นี้
+          <div className="flex flex-col items-center justify-center gap-3 rounded-3xl border border-dashed border-slate-300 bg-white/60 p-6 text-center">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 text-slate-400">
+              <LayoutGrid className="h-6 w-6" />
+            </div>
+            <p className="text-sm font-medium text-slate-400">
+              หมวดงานเทคนิคอื่นๆ เร็วๆ นี้
+            </p>
           </div>
         </div>
       </section>
@@ -425,31 +455,47 @@ export default async function HomePage() {
       <NewsSection items={newsItems} />
 
       {/* Footer */}
-      <footer id="contact" className="bg-indigo-950 text-indigo-200">
-        <div className="mx-auto max-w-6xl px-6 py-10">
-          <div className="flex flex-wrap items-start justify-between gap-8">
-            <div>
-              <p className="font-bold text-white">FA Thailand Technical</p>
-              <p className="mt-1 text-sm">
-                สมาคมกีฬาฟุตบอลแห่งประเทศไทย ในพระบรมราชูปถัมภ์
-              </p>
+      <footer id="contact" className="relative bg-indigo-950 text-indigo-200">
+        <div className="absolute inset-x-0 top-0 h-1 bg-linear-to-r from-amber-600 via-amber-400 to-amber-600" />
+        <div className="mx-auto max-w-6xl px-6 py-12">
+          <div className="flex flex-wrap items-start justify-between gap-10">
+            <div className="flex items-center gap-3">
+              <Image
+                src={LOGO_URL}
+                alt="FA Thailand"
+                width={40}
+                height={40}
+                className="h-10 w-10 rounded-lg object-cover"
+              />
+              <div>
+                <p className="font-bold text-white">FA Thailand Technical</p>
+                <p className="mt-0.5 text-sm text-indigo-300">
+                  สมาคมกีฬาฟุตบอลแห่งประเทศไทย ในพระบรมราชูปถัมภ์
+                </p>
+              </div>
             </div>
-            <div className="space-y-2 text-sm">
-              <p className="flex items-center gap-2">
-                <MapPin className="h-4 w-4" />
+            <div className="grid grid-cols-1 gap-2.5 text-sm sm:grid-cols-1">
+              <p className="flex items-center gap-2.5">
+                <span className="flex h-8 w-8 flex-none items-center justify-center rounded-lg border border-white/10 bg-white/5">
+                  <MapPin className="h-4 w-4" />
+                </span>
                 กรุงเทพมหานคร ประเทศไทย
               </p>
-              <p className="flex items-center gap-2">
-                <Mail className="h-4 w-4" />
+              <p className="flex items-center gap-2.5">
+                <span className="flex h-8 w-8 flex-none items-center justify-center rounded-lg border border-white/10 bg-white/5">
+                  <Mail className="h-4 w-4" />
+                </span>
                 technical@fathailand.org
               </p>
-              <p className="flex items-center gap-2">
-                <Phone className="h-4 w-4" />
+              <p className="flex items-center gap-2.5">
+                <span className="flex h-8 w-8 flex-none items-center justify-center rounded-lg border border-white/10 bg-white/5">
+                  <Phone className="h-4 w-4" />
+                </span>
                 02-000-0000
               </p>
             </div>
           </div>
-          <p className="mt-8 border-t border-white/10 pt-6 text-xs text-indigo-400">
+          <p className="mt-10 border-t border-white/10 pt-6 text-xs text-indigo-400">
             © {new Date().getFullYear()} FA Thailand Technical
           </p>
         </div>
