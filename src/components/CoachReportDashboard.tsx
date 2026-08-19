@@ -2,7 +2,20 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Search, RotateCcw, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
+import {
+  Search,
+  RotateCcw,
+  ChevronLeft,
+  ChevronRight,
+  Loader2,
+  Users,
+  IdCard,
+  Globe2,
+  UsersRound,
+  CalendarClock,
+  AlertTriangle,
+} from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { AGE_BUCKETS } from "@/lib/coach-report";
 import { LICENSE_TYPES, GENDER_OPTIONS } from "@/lib/constants";
 import { LICENSE_STATUS_STYLES, type LicenseStatus } from "@/lib/license-status";
@@ -411,28 +424,43 @@ export function CoachReportDashboard({
       >
       {/* KPI */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <KpiCard label="จำนวนที่แสดง" value={total.toLocaleString()} />
+        <KpiCard
+          label="จำนวนที่แสดง"
+          value={total.toLocaleString()}
+          icon={Users}
+          accent="bg-indigo-50 text-indigo-600"
+        />
         <KpiCard
           label="มี ID AFC"
           value={`${withAfc.toLocaleString()} / ${(total - withAfc).toLocaleString()}`}
           sub={total ? `${((withAfc / total) * 100).toFixed(1)}% มี ID แล้ว` : ""}
+          icon={IdCard}
+          accent="bg-sky-50 text-sky-600"
         />
         <KpiCard
           label="สัญชาติไทย / ต่างชาติ"
           value={`${thaiCount.toLocaleString()} / ${(total - thaiCount).toLocaleString()}`}
+          icon={Globe2}
+          accent="bg-emerald-50 text-emerald-600"
         />
         <KpiCard
           label="เพศชาย / หญิง"
           value={`${male.toLocaleString()} / ${female.toLocaleString()}`}
+          icon={UsersRound}
+          accent="bg-pink-50 text-pink-600"
         />
         <KpiCard
           label="อายุเฉลี่ย"
           value={aggregates.avgAge != null ? `${aggregates.avgAge.toFixed(1)} ปี` : "-"}
+          icon={CalendarClock}
+          accent="bg-amber-50 text-amber-600"
         />
         <KpiCard
           label="ยังไม่มีใบอนุญาต"
           value={aggregates.noLicenseCount.toLocaleString()}
           sub={total ? `${((aggregates.noLicenseCount / total) * 100).toFixed(1)}% ของทั้งหมด` : ""}
+          icon={AlertTriangle}
+          accent="bg-red-50 text-red-600"
         />
       </div>
 
@@ -756,12 +784,33 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
   );
 }
 
-function KpiCard({ label, value, sub }: { label: string; value: string; sub?: string }) {
+function KpiCard({
+  label,
+  value,
+  sub,
+  icon: Icon,
+  accent = "bg-indigo-50 text-indigo-600",
+}: {
+  label: string;
+  value: string;
+  sub?: string;
+  icon?: LucideIcon;
+  accent?: string;
+}) {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-      <p className="text-sm text-slate-500">{label}</p>
-      <p className="mt-1 text-2xl font-bold text-slate-900">{value}</p>
-      {sub && <p className="mt-1 text-xs text-slate-400">{sub}</p>}
+    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md">
+      <div className="flex items-center gap-3">
+        {Icon && (
+          <div className={`flex h-10 w-10 flex-none items-center justify-center rounded-xl ${accent}`}>
+            <Icon className="h-5 w-5" />
+          </div>
+        )}
+        <div className="min-w-0">
+          <p className="truncate text-sm text-slate-500">{label}</p>
+          <p className="mt-0.5 text-2xl font-bold text-slate-900">{value}</p>
+        </div>
+      </div>
+      {sub && <p className="mt-2 text-xs text-slate-400">{sub}</p>}
     </div>
   );
 }
@@ -777,7 +826,7 @@ function ChartCard({
 }) {
   return (
     <div
-      className={`rounded-2xl border border-slate-200 bg-white p-6 shadow-sm ${wide ? "lg:col-span-2" : ""}`}
+      className={`rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-shadow hover:shadow-md ${wide ? "lg:col-span-2" : ""}`}
     >
       <h3 className="font-semibold text-slate-900">{title}</h3>
       <div className="mt-4">{children}</div>
