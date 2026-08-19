@@ -1,5 +1,3 @@
-import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
 import { CoachReportDashboard } from "@/components/CoachReportDashboard";
 import {
   getCoachPage,
@@ -65,14 +63,6 @@ export default async function DashboardReportPage({
 
   return (
     <div className="space-y-6">
-      <Link
-        href="/dashboard"
-        className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-slate-900"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        กลับไปแดชบอร์ดภาพรวม
-      </Link>
-
       <CoachReportDashboard
         filters={filters}
         sortKey={sortKey}

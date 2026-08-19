@@ -5,10 +5,8 @@ import {
   FileBadge,
   AlertTriangle,
   ArrowUpRight,
-  ArrowRight,
   Plus,
   Bell,
-  BarChart3,
 } from "lucide-react";
 import { DashboardHero } from "@/components/DashboardHero";
 import { LICENSE_TYPES, labelFor, CORE_LICENSE_PROGRESSION } from "@/lib/constants";
@@ -197,24 +195,6 @@ export default async function Home({
           </ul>
         )}
       </div>
-
-      <Link
-        href="/dashboard/report"
-        className="group flex items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-linear-to-r from-indigo-600 to-indigo-700 p-6 shadow-sm shadow-indigo-200 transition-all hover:-translate-y-0.5 hover:shadow-md"
-      >
-        <div className="flex items-center gap-4">
-          <div className="flex h-11 w-11 flex-none items-center justify-center rounded-xl bg-white/15 text-white">
-            <BarChart3 className="h-5 w-5" />
-          </div>
-          <div>
-            <h2 className="font-semibold text-white">รายงานเชิงลึกผู้ฝึกสอน</h2>
-            <p className="mt-0.5 text-sm text-indigo-200">
-              กรอง ค้นหา และดูกราฟวิเคราะห์ข้อมูลผู้ฝึกสอนทั้งระบบแบบละเอียด
-            </p>
-          </div>
-        </div>
-        <ArrowRight className="h-5 w-5 flex-none text-indigo-200 transition-transform group-hover:translate-x-1" />
-      </Link>
 
       <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
         <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">

@@ -274,6 +274,8 @@ export type CoachAggregates = {
   thaiCount: number;
   male: number;
   female: number;
+  avgAge: number | null;
+  noLicenseCount: number;
   genderChart: KeyedBucket;
   afcChart: KeyedBucket;
   expiryChart: KeyedBucket;
@@ -286,6 +288,12 @@ export type CoachAggregates = {
   licenseDistChart: KeyedBucket;
   levelUpChart: Bucket;
   trend: { data: Record<string, number | string>[]; licenseTypes: string[] };
+  expiryForecast: Bucket;
+  genderByLicense: {
+    data: Record<string, number | string>[];
+    genders: { key: string; label: string }[];
+  };
+  registrationTrend: Bucket;
 };
 
 async function groupCount(
@@ -339,9 +347,20 @@ export async function getCoachAggregates(
     ageRaw,
     levelUpRaw,
     trendRaw,
+    expiryForecastRaw,
+    genderLicenseRaw,
+    registrationRaw,
   ] = await Promise.all([
     prisma.$queryRaw<
-      { total: bigint; with_afc: bigint; thai: bigint; male: bigint; female: bigint }[]
+      {
+        total: bigint;
+        with_afc: bigint;
+        thai: bigint;
+        male: bigint;
+        female: bigint;
+        avg_age: number | null;
+        no_license: bigint;
+      }[]
     >(Prisma.sql`
       ${BASE_CTE}
       SELECT
@@ -349,7 +368,11 @@ export async function getCoachAggregates(
         COUNT(*) FILTER (WHERE f.afc_id IS NOT NULL)::bigint AS with_afc,
         COUNT(*) FILTER (WHERE f.nationality = 'ไทย')::bigint AS thai,
         COUNT(*) FILTER (WHERE f.gender = 'MALE')::bigint AS male,
-        COUNT(*) FILTER (WHERE f.gender = 'FEMALE')::bigint AS female
+        COUNT(*) FILTER (WHERE f.gender = 'FEMALE')::bigint AS female,
+        AVG(f.age)::numeric(10,1) AS avg_age,
+        COUNT(*) FILTER (
+          WHERE NOT EXISTS (SELECT 1 FROM license_records lr3 WHERE lr3.coach_id = f.id)
+        )::bigint AS no_license
       ${FROM_FILTERED} ${where}
     `),
     groupCount(filters, Prisma.sql`f.gender`),
@@ -389,6 +412,32 @@ export async function getCoachAggregates(
       JOIN coaches c2 ON c2.id = f.id
       ${trendWhere}
       GROUP BY 1, 2
+      ORDER BY 1
+    `),
+    // ใบอนุญาตปัจจุบันที่จะหมดอายุใน 12 เดือนข้างหน้า แยกตามเดือน (สำหรับวางแผนต่ออายุ)
+    prisma.$queryRaw<{ ym: string; value: bigint }[]>(Prisma.sql`
+      ${BASE_CTE}
+      SELECT to_char(date_trunc('month', f.current_expire_date), 'YYYY-MM') AS ym,
+             COUNT(*)::bigint AS value
+      ${FROM_FILTERED}
+      ${buildWhereWith(filters, Prisma.sql`f.current_expire_date BETWEEN now() AND now() + interval '12 months'`)}
+      GROUP BY 1
+      ORDER BY 1
+    `),
+    // สัดส่วนระดับใบอนุญาตปัจจุบัน แยกตามเพศ
+    prisma.$queryRaw<{ type: string; gender: string; value: bigint }[]>(Prisma.sql`
+      ${BASE_CTE}
+      SELECT f.current_license_type AS type, f.gender AS gender, COUNT(*)::bigint AS value
+      ${FROM_FILTERED}
+      ${buildWhereWith(filters, Prisma.sql`f.current_license_type IS NOT NULL AND f.gender IS NOT NULL`)}
+      GROUP BY 1, 2
+    `),
+    // จำนวนผู้ฝึกสอนใหม่ที่ถูกเพิ่มเข้าระบบต่อปี
+    prisma.$queryRaw<{ year: number; value: bigint }[]>(Prisma.sql`
+      ${BASE_CTE}
+      SELECT EXTRACT(YEAR FROM c2.created_at)::int AS year, COUNT(*)::bigint AS value
+      ${FROM_FILTERED} ${where}
+      GROUP BY 1
       ORDER BY 1
     `),
   ]);
@@ -462,12 +511,45 @@ export async function getCoachAggregates(
     return row;
   });
 
+  // แปลง "YYYY-MM" เป็นป้ายเดือนภาษาไทยแบบย่อ เช่น "ม.ค. 69"
+  const expiryForecast = expiryForecastRaw.map((r) => {
+    const [y, m] = r.ym.split("-").map(Number);
+    const label = new Date(y, m - 1, 1).toLocaleDateString("th-TH", {
+      month: "short",
+      year: "2-digit",
+    });
+    return { name: label, value: Number(r.value) };
+  });
+
+  const GENDER_LABELS2: Record<string, string> = { MALE: "ชาย", FEMALE: "หญิง", OTHER: "อื่นๆ" };
+  const gendersPresent = Array.from(new Set(genderLicenseRaw.map((r) => r.gender)));
+  const gendersOrdered = ["MALE", "FEMALE", "OTHER"].filter((g) =>
+    gendersPresent.includes(g),
+  );
+  const genderByLicenseData = LICENSE_TYPE_ORDER.filter((t) =>
+    genderLicenseRaw.some((r) => r.type === t),
+  ).map((t) => {
+    const row: Record<string, number | string> = { name: t };
+    gendersOrdered.forEach((g) => {
+      row[g] = Number(
+        genderLicenseRaw.find((r) => r.type === t && r.gender === g)?.value ?? 0,
+      );
+    });
+    return row;
+  });
+
+  const registrationTrend = registrationRaw
+    .map((r) => ({ name: String(r.year), value: Number(r.value) }))
+    .sort((a, b) => Number(a.name) - Number(b.name));
+
   return {
     total,
     withAfc,
     thaiCount: Number(kpi?.thai ?? 0),
     male: Number(kpi?.male ?? 0),
     female: Number(kpi?.female ?? 0),
+    avgAge: kpi?.avg_age != null ? Number(kpi.avg_age) : null,
+    noLicenseCount: Number(kpi?.no_license ?? 0),
     genderChart,
     afcChart: [
       { key: "yes", name: "มี ID AFC", value: withAfc },
@@ -483,6 +565,12 @@ export async function getCoachAggregates(
     licenseDistChart,
     levelUpChart,
     trend: { data: trendData, licenseTypes: typesToShow },
+    expiryForecast,
+    genderByLicense: {
+      data: genderByLicenseData,
+      genders: gendersOrdered.map((g) => ({ key: g, label: GENDER_LABELS2[g] ?? g })),
+    },
+    registrationTrend,
   };
 }
 

@@ -11,7 +11,6 @@ import {
   GraduationCap,
   BookOpen,
   ArrowLeft,
-  BarChart3,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { logout } from "@/app/login/actions";
@@ -26,7 +25,6 @@ type NavItem = {
 
 const navItems: NavItem[] = [
   { href: "/dashboard", label: "แดชบอร์ด", icon: LayoutDashboard },
-  { href: "/dashboard/report", label: "รายงานเชิงลึก", icon: BarChart3 },
   { href: "/coaches", label: "รายชื่อผู้ฝึกสอน", icon: Users },
   { href: "/instructors", label: "วิทยากร", icon: GraduationCap },
 ];
@@ -89,7 +87,9 @@ export function Sidebar({
 
       <nav className="flex-1 space-y-1 px-3 py-2">
         {items.map(({ href, label, icon: Icon, badge }) => {
-          const active = pathname === href;
+          const active =
+            pathname === href ||
+            (href === "/dashboard" && pathname.startsWith("/dashboard/"));
           return (
             <Link
               key={href}

@@ -17,6 +17,7 @@ import {
   DonutChart,
   CategoryBarChart,
   LicenseTrendChart,
+  MultiSeriesBarChart,
   CATEGORICAL_PALETTE,
   STATUS_COLORS,
 } from "@/components/DashboardCharts";
@@ -409,7 +410,7 @@ export function CoachReportDashboard({
         }`}
       >
       {/* KPI */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <KpiCard label="จำนวนที่แสดง" value={total.toLocaleString()} />
         <KpiCard
           label="มี ID AFC"
@@ -423,6 +424,15 @@ export function CoachReportDashboard({
         <KpiCard
           label="เพศชาย / หญิง"
           value={`${male.toLocaleString()} / ${female.toLocaleString()}`}
+        />
+        <KpiCard
+          label="อายุเฉลี่ย"
+          value={aggregates.avgAge != null ? `${aggregates.avgAge.toFixed(1)} ปี` : "-"}
+        />
+        <KpiCard
+          label="ยังไม่มีใบอนุญาต"
+          value={aggregates.noLicenseCount.toLocaleString()}
+          sub={total ? `${((aggregates.noLicenseCount / total) * 100).toFixed(1)}% ของทั้งหมด` : ""}
         />
       </div>
 
@@ -479,6 +489,38 @@ export function CoachReportDashboard({
           <LicenseTrendChart
             data={aggregates.trend.data}
             licenseTypes={aggregates.trend.licenseTypes}
+          />
+        </ChartCard>
+      </div>
+
+      {/* กราฟ — เชิงลึกเพิ่มเติม */}
+      <SectionLabel>วางแผนต่ออายุและแนวโน้มระบบ</SectionLabel>
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <ChartCard title="ใบอนุญาตที่จะหมดอายุใน 12 เดือนข้างหน้า (แยกตามเดือน)" wide>
+          <CategoryBarChart
+            data={aggregates.expiryForecast}
+            color={STATUS_COLORS.expiring}
+            emptyMessage="ไม่มีใบอนุญาตที่จะหมดอายุใน 12 เดือนข้างหน้า"
+          />
+        </ChartCard>
+        <ChartCard title="สัดส่วนระดับใบอนุญาตปัจจุบัน แยกตามเพศ">
+          <MultiSeriesBarChart
+            data={aggregates.genderByLicense.data}
+            xKey="name"
+            stacked
+            series={aggregates.genderByLicense.genders.map((g) => ({
+              key: g.key,
+              name: g.label,
+              color: GENDER_COLORS[g.key] ?? CATEGORICAL_PALETTE[0],
+            }))}
+            emptyMessage="ยังไม่มีข้อมูลสำหรับแสดงกราฟ"
+          />
+        </ChartCard>
+        <ChartCard title="ผู้ฝึกสอนใหม่ที่เพิ่มเข้าระบบต่อปี">
+          <CategoryBarChart
+            data={aggregates.registrationTrend}
+            color={CATEGORICAL_PALETTE[2]}
+            emptyMessage="ยังไม่มีข้อมูลสำหรับแสดงกราฟ"
           />
         </ChartCard>
       </div>

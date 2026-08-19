@@ -203,6 +203,66 @@ export function DonutChart({
   );
 }
 
+export function MultiSeriesBarChart({
+  data,
+  xKey,
+  series,
+  emptyMessage,
+  stacked = false,
+}: {
+  data: Record<string, number | string>[];
+  xKey: string;
+  series: { key: string; name: string; color: string }[];
+  emptyMessage: string;
+  stacked?: boolean;
+}) {
+  if (data.length === 0) {
+    return (
+      <div className="flex h-64 items-center justify-center text-sm text-slate-400">
+        {emptyMessage}
+      </div>
+    );
+  }
+
+  return (
+    <ResponsiveContainer width="100%" height={280}>
+      <BarChart data={data}>
+        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+        <XAxis
+          dataKey={xKey}
+          tick={{ fontSize: 12, fill: "#64748b" }}
+          axisLine={{ stroke: "#e2e8f0" }}
+          tickLine={false}
+        />
+        <YAxis
+          allowDecimals={false}
+          tick={{ fontSize: 12, fill: "#64748b" }}
+          axisLine={false}
+          tickLine={false}
+        />
+        <Tooltip
+          contentStyle={{
+            borderRadius: 12,
+            border: "1px solid #e2e8f0",
+            fontSize: 12,
+          }}
+        />
+        <Legend wrapperStyle={{ fontSize: 12 }} />
+        {series.map((s) => (
+          <Bar
+            key={s.key}
+            dataKey={s.key}
+            name={s.name}
+            fill={s.color}
+            stackId={stacked ? "1" : undefined}
+            radius={stacked ? undefined : [6, 6, 0, 0]}
+          />
+        ))}
+      </BarChart>
+    </ResponsiveContainer>
+  );
+}
+
 export function CategoryBarChart({
   data,
   color = "#1a3a6b",
