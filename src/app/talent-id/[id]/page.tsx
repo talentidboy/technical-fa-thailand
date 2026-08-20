@@ -4,6 +4,8 @@ import { notFound, redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { getTalentPlayerById } from "@/lib/talent-id";
 import { LOGO_URL } from "@/lib/brand";
+import { PositionPitch } from "@/components/PositionPitch";
+import { PlayerTabs } from "@/components/talent-id/PlayerTabs";
 import {
   ArrowLeft,
   Ruler,
@@ -21,6 +23,8 @@ import {
   StickyNote,
   Tag,
   TrendingUp,
+  Users2,
+  Compass,
 } from "lucide-react";
 
 function RatingSparkline({
@@ -33,9 +37,7 @@ function RatingSparkline({
   );
 
   if (valid.length === 0) {
-    return (
-      <p className="text-sm text-indigo-300">ยังไม่มีข้อมูลคะแนนประเมิน</p>
-    );
+    return <p className="text-sm text-indigo-300">ยังไม่มีข้อมูลคะแนนประเมิน</p>;
   }
 
   if (valid.length === 1) {
@@ -103,6 +105,50 @@ function RatingSparkline({
   );
 }
 
+function ScoutScoresBars({ scores }: { scores: { label: string; value: number }[] }) {
+  if (scores.length === 0) {
+    return <p className="text-sm text-indigo-300">ยังไม่มีคะแนนจากสแกาต์</p>;
+  }
+  const max = Math.max(...scores.map((s) => s.value), 10);
+
+  return (
+    <div className="space-y-2.5">
+      {scores.map((s) => (
+        <div key={s.label} className="flex items-center gap-3">
+          <span className="w-20 flex-none text-xs text-indigo-300">{s.label}</span>
+          <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-white/10">
+            <div
+              className="h-full rounded-full bg-linear-to-r from-amber-500 to-amber-300"
+              style={{ width: `${Math.min(100, (s.value / max) * 100)}%` }}
+            />
+          </div>
+          <span className="w-8 flex-none text-right text-xs font-bold text-white">
+            {s.value}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function StatCard({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: typeof Ruler;
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="flex flex-col items-center gap-1.5 rounded-2xl border border-white/10 bg-white/5 p-4 text-center">
+      <Icon className="h-5 w-5 text-amber-400" />
+      <p className="text-lg font-bold text-white">{value}</p>
+      <p className="text-xs text-indigo-300">{label}</p>
+    </div>
+  );
+}
+
 export default async function TalentIdDetailPage({
   params,
 }: {
@@ -134,6 +180,187 @@ export default async function TalentIdDetailPage({
     { label: "Leg 2", value: player.avgRatingLeg2 },
     { label: "Camp 2026", value: player.avgRatingCamp2026 },
   ];
+
+  const overviewTab = (
+    <>
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <div className="rounded-2xl border border-white/10 bg-white/5 p-6 lg:col-span-2">
+          <div className="mb-4 flex items-center gap-2">
+            <Compass className="h-4 w-4 text-amber-400" />
+            <h2 className="font-semibold text-white">ข้อมูลทั่วไป</h2>
+          </div>
+          <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="flex items-center gap-2 text-sm">
+              <School className="h-4 w-4 flex-none text-indigo-400" />
+              <span className="text-indigo-100">{player.school || "-"}</span>
+            </div>
+            <div className="flex items-center gap-2 text-sm">
+              <Shield className="h-4 w-4 flex-none text-indigo-400" />
+              <span className="text-indigo-100">{player.club || "-"}</span>
+            </div>
+            <div className="flex items-center gap-2 text-sm">
+              <MapPin className="h-4 w-4 flex-none text-indigo-400" />
+              <span className="text-indigo-100">
+                {[player.province, player.region].filter(Boolean).join(" · ") || "-"}
+              </span>
+            </div>
+            <div className="flex items-center gap-2 text-sm">
+              <span className="text-indigo-400">ปีเกิด</span>
+              <span className="text-indigo-100">
+                {player.yearOfBirth ?? "-"}
+                {player.age ? ` (อายุ ${player.age})` : ""}
+              </span>
+            </div>
+          </dl>
+
+          {stats.length > 0 && (
+            <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+              {stats.map((s) => (
+                <StatCard key={s.label} {...s} />
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
+          <div className="mb-4 flex items-center gap-2">
+            <Users2 className="h-4 w-4 text-amber-400" />
+            <h2 className="font-semibold text-white">ตำแหน่งในสนาม</h2>
+          </div>
+          <div className="flex justify-center">
+            <PositionPitch primary={player.position1} secondary={player.position2} />
+          </div>
+          <div className="mt-3 flex flex-wrap justify-center gap-1.5">
+            {player.position1 && (
+              <span className="rounded-full bg-amber-400/15 px-2.5 py-1 text-xs font-semibold text-amber-300 ring-1 ring-amber-400/30">
+                {player.position1}
+              </span>
+            )}
+            {player.position2.map((p) => (
+              <span
+                key={p}
+                className="rounded-full bg-white/10 px-2.5 py-1 text-xs font-medium text-indigo-200"
+              >
+                {p}
+              </span>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {(player.talent.length > 0 || player.tags.length > 0) && (
+        <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
+          <div className="mb-3 flex items-center gap-2">
+            <Tag className="h-4 w-4 text-amber-400" />
+            <h2 className="font-semibold text-white">
+              ความสามารถโดดเด่น / สถานะการคัดเลือก
+            </h2>
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {player.talent.map((t) => (
+              <span
+                key={t}
+                className="rounded-full bg-rose-400/15 px-2.5 py-1 text-xs font-medium text-rose-300 ring-1 ring-rose-400/20"
+              >
+                {t}
+              </span>
+            ))}
+            {player.tags.map((t) => (
+              <span
+                key={t}
+                className="rounded-full bg-emerald-400/15 px-2.5 py-1 text-xs font-medium text-emerald-300 ring-1 ring-emerald-400/20"
+              >
+                {t}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+    </>
+  );
+
+  const ratingsTab = (
+    <>
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <div className="rounded-2xl border border-white/10 bg-white/5 p-6 lg:col-span-2">
+          <div className="mb-4 flex items-center gap-2">
+            <TrendingUp className="h-4 w-4 text-amber-400" />
+            <h2 className="font-semibold text-white">แนวโน้มคะแนนประเมิน</h2>
+          </div>
+          <RatingSparkline points={ratingPoints} />
+        </div>
+        <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
+          <div className="mb-4 flex items-center gap-2">
+            <Star className="h-4 w-4 text-amber-400" />
+            <h2 className="font-semibold text-white">เกรดล่าสุด</h2>
+          </div>
+          {gradeBadges.length === 0 ? (
+            <p className="text-sm text-indigo-300">ยังไม่มีข้อมูลเกรด</p>
+          ) : (
+            <div className="space-y-2.5">
+              {gradeBadges.map((g) => (
+                <div key={g.label} className="flex items-center justify-between text-sm">
+                  <span className="text-indigo-300">{g.label}</span>
+                  <span className="rounded-lg bg-amber-400/15 px-2.5 py-1 font-bold text-amber-300 ring-1 ring-amber-400/30">
+                    {g.value}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
+        <div className="mb-4 flex items-center gap-2">
+          <Users2 className="h-4 w-4 text-amber-400" />
+          <h2 className="font-semibold text-white">คะแนนจากสแกาต์รายบุคคล</h2>
+        </div>
+        <ScoutScoresBars scores={player.scoutScores} />
+      </div>
+    </>
+  );
+
+  const mediaTab = (
+    <>
+      {player.hudlVideoLeg1 || player.hudlVideoLeg2 ? (
+        <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
+          <div className="mb-3 flex items-center gap-2">
+            <Video className="h-4 w-4 text-amber-400" />
+            <h2 className="font-semibold text-white">วิดีโอ HUDL</h2>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            {player.hudlVideoLeg1 && (
+              <a
+                href={player.hudlVideoLeg1}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-white/15 px-3.5 py-2 text-sm font-medium text-amber-300 transition-colors hover:bg-white/10"
+              >
+                <Video className="h-4 w-4" />
+                วิดีโอ Leg 1
+              </a>
+            )}
+            {player.hudlVideoLeg2 && (
+              <a
+                href={player.hudlVideoLeg2}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-white/15 px-3.5 py-2 text-sm font-medium text-amber-300 transition-colors hover:bg-white/10"
+              >
+                <Video className="h-4 w-4" />
+                วิดีโอ Leg 2
+              </a>
+            )}
+          </div>
+        </div>
+      ) : (
+        <p className="rounded-2xl border border-dashed border-white/15 bg-white/5 px-6 py-10 text-center text-sm text-indigo-300">
+          ยังไม่มีวิดีโอสำหรับผู้เล่นคนนี้
+        </p>
+      )}
+    </>
+  );
 
   return (
     <div className="min-h-screen bg-indigo-950 text-white">
@@ -196,14 +423,6 @@ export default async function TalentIdDetailPage({
                     {player.position1}
                   </span>
                 )}
-                {player.position2.map((p) => (
-                  <span
-                    key={p}
-                    className="rounded-full bg-white/10 px-2.5 py-1 text-xs font-medium text-indigo-200"
-                  >
-                    {p}
-                  </span>
-                ))}
                 {player.styleOfPlay && (
                   <span className="rounded-full bg-white/10 px-2.5 py-1 text-xs font-medium text-indigo-200">
                     {player.styleOfPlay}
@@ -212,144 +431,11 @@ export default async function TalentIdDetailPage({
               </div>
             </div>
           </div>
-
-          <dl className="grid grid-cols-2 gap-3 border-t border-white/10 bg-black/20 px-8 py-5 sm:grid-cols-4">
-            <div className="flex items-center gap-2 text-sm">
-              <School className="h-4 w-4 flex-none text-indigo-400" />
-              <span className="truncate text-indigo-100">{player.school || "-"}</span>
-            </div>
-            <div className="flex items-center gap-2 text-sm">
-              <Shield className="h-4 w-4 flex-none text-indigo-400" />
-              <span className="truncate text-indigo-100">{player.club || "-"}</span>
-            </div>
-            <div className="flex items-center gap-2 text-sm">
-              <MapPin className="h-4 w-4 flex-none text-indigo-400" />
-              <span className="truncate text-indigo-100">
-                {[player.province, player.region].filter(Boolean).join(" · ") || "-"}
-              </span>
-            </div>
-            <div className="flex items-center gap-2 text-sm">
-              <span className="text-indigo-400">ปีเกิด</span>
-              <span className="text-indigo-100">
-                {player.yearOfBirth ?? "-"}
-                {player.age ? ` (อายุ ${player.age})` : ""}
-              </span>
-            </div>
-          </dl>
         </div>
 
-        {/* Key stats */}
-        {stats.length > 0 && (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            {stats.map(({ icon: Icon, label, value }) => (
-              <div
-                key={label}
-                className="flex flex-col items-center gap-1.5 rounded-2xl border border-white/10 bg-white/5 p-4 text-center"
-              >
-                <Icon className="h-5 w-5 text-amber-400" />
-                <p className="text-lg font-bold text-white">{value}</p>
-                <p className="text-xs text-indigo-300">{label}</p>
-              </div>
-            ))}
-          </div>
-        )}
+        <PlayerTabs overview={overviewTab} ratings={ratingsTab} media={mediaTab} />
 
-        {/* Rating trend + grades */}
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-6 lg:col-span-2">
-            <div className="mb-4 flex items-center gap-2">
-              <TrendingUp className="h-4 w-4 text-amber-400" />
-              <h2 className="font-semibold text-white">แนวโน้มคะแนนประเมิน</h2>
-            </div>
-            <RatingSparkline points={ratingPoints} />
-          </div>
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
-            <div className="mb-4 flex items-center gap-2">
-              <Star className="h-4 w-4 text-amber-400" />
-              <h2 className="font-semibold text-white">เกรดล่าสุด</h2>
-            </div>
-            {gradeBadges.length === 0 ? (
-              <p className="text-sm text-indigo-300">ยังไม่มีข้อมูลเกรด</p>
-            ) : (
-              <div className="space-y-2.5">
-                {gradeBadges.map((g) => (
-                  <div key={g.label} className="flex items-center justify-between text-sm">
-                    <span className="text-indigo-300">{g.label}</span>
-                    <span className="rounded-lg bg-amber-400/15 px-2.5 py-1 font-bold text-amber-300 ring-1 ring-amber-400/30">
-                      {g.value}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Talent + tags */}
-        {(player.talent.length > 0 || player.tags.length > 0) && (
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
-            <div className="mb-3 flex items-center gap-2">
-              <Tag className="h-4 w-4 text-amber-400" />
-              <h2 className="font-semibold text-white">
-                ความสามารถโดดเด่น / สถานะการคัดเลือก
-              </h2>
-            </div>
-            <div className="flex flex-wrap gap-1.5">
-              {player.talent.map((t) => (
-                <span
-                  key={t}
-                  className="rounded-full bg-rose-400/15 px-2.5 py-1 text-xs font-medium text-rose-300 ring-1 ring-rose-400/20"
-                >
-                  {t}
-                </span>
-              ))}
-              {player.tags.map((t) => (
-                <span
-                  key={t}
-                  className="rounded-full bg-emerald-400/15 px-2.5 py-1 text-xs font-medium text-emerald-300 ring-1 ring-emerald-400/20"
-                >
-                  {t}
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Videos */}
-        {(player.hudlVideoLeg1 || player.hudlVideoLeg2) && (
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
-            <div className="mb-3 flex items-center gap-2">
-              <Video className="h-4 w-4 text-amber-400" />
-              <h2 className="font-semibold text-white">วิดีโอ HUDL</h2>
-            </div>
-            <div className="flex flex-wrap gap-3">
-              {player.hudlVideoLeg1 && (
-                <a
-                  href={player.hudlVideoLeg1}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-white/15 px-3.5 py-2 text-sm font-medium text-amber-300 transition-colors hover:bg-white/10"
-                >
-                  <Video className="h-4 w-4" />
-                  วิดีโอ Leg 1
-                </a>
-              )}
-              {player.hudlVideoLeg2 && (
-                <a
-                  href={player.hudlVideoLeg2}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-white/15 px-3.5 py-2 text-sm font-medium text-amber-300 transition-colors hover:bg-white/10"
-                >
-                  <Video className="h-4 w-4" />
-                  วิดีโอ Leg 2
-                </a>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Contact — ADMIN/STAFF only */}
+        {/* Contact — ADMIN/STAFF only, always visible regardless of tab */}
         {canSeeContact && (
           <div className="rounded-2xl border border-amber-400/20 bg-amber-400/5">
             <div className="flex items-center gap-2 border-b border-amber-400/10 px-6 py-4">

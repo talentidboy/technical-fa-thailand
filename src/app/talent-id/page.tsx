@@ -2,9 +2,9 @@ import Link from "next/link";
 import Image from "next/image";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
-import { getTalentPlayers } from "@/lib/talent-id";
+import { getTalentPlayers, type TalentPlayer } from "@/lib/talent-id";
 import { LOGO_URL } from "@/lib/brand";
-import { ArrowLeft, Search, Target, Users, MapPin } from "lucide-react";
+import { ArrowLeft, Search, Target, Users } from "lucide-react";
 
 type SearchParams = {
   q?: string;
@@ -12,7 +12,48 @@ type SearchParams = {
   region?: string;
   position?: string;
   year?: string;
+  sort?: string;
+  dir?: string;
 };
+
+type SortKey = "name" | "position" | "club" | "age" | "height" | "weight" | "rating";
+
+const SORT_LABELS: Record<SortKey, string> = {
+  name: "ชื่อ",
+  position: "ตำแหน่ง",
+  club: "สโมสร/โรงเรียน",
+  age: "อายุ",
+  height: "ส่วนสูง",
+  weight: "น้ำหนัก",
+  rating: "คะแนน",
+};
+
+function bestRating(p: TalentPlayer): number | null {
+  return p.avgRatingCamp2026 ?? p.avgRatingLeg2 ?? p.avgRatingLeg1 ?? null;
+}
+
+function bestGrade(p: TalentPlayer): string | null {
+  return p.gradeCamp2026 ?? p.gradeLeg2 ?? p.gradeLeg1 ?? null;
+}
+
+function sortValue(p: TalentPlayer, key: SortKey): string | number {
+  switch (key) {
+    case "name":
+      return p.fullNameTh;
+    case "position":
+      return p.position1 ?? "";
+    case "club":
+      return p.club ?? p.school ?? "";
+    case "age":
+      return p.age ?? -1;
+    case "height":
+      return p.height ?? -1;
+    case "weight":
+      return p.weight ?? -1;
+    case "rating":
+      return bestRating(p) ?? -1;
+  }
+}
 
 function distinctSorted(values: (string | null)[]) {
   return Array.from(new Set(values.filter((v): v is string => Boolean(v)))).sort((a, b) =>
@@ -30,7 +71,7 @@ export default async function TalentIdPage({
 
   const params = await searchParams;
 
-  let players: Awaited<ReturnType<typeof getTalentPlayers>> = [];
+  let players: TalentPlayer[] = [];
   let loadError: string | null = null;
   try {
     players = await getTalentPlayers();
@@ -56,9 +97,33 @@ export default async function TalentIdPage({
     return true;
   });
 
+  const sortKey: SortKey = (params.sort as SortKey) in SORT_LABELS ? (params.sort as SortKey) : "name";
+  const sortAsc = params.dir !== "desc";
+  const sorted = [...filtered].sort((a, b) => {
+    const va = sortValue(a, sortKey);
+    const vb = sortValue(b, sortKey);
+    const cmp =
+      typeof va === "number" && typeof vb === "number"
+        ? va - vb
+        : String(va).localeCompare(String(vb), "th");
+    return sortAsc ? cmp : -cmp;
+  });
+
   const hasFilters = Boolean(
     params.q || params.province || params.region || params.position || params.year,
   );
+
+  function sortHref(key: SortKey) {
+    const q2 = new URLSearchParams();
+    if (params.q) q2.set("q", params.q);
+    if (params.province) q2.set("province", params.province);
+    if (params.region) q2.set("region", params.region);
+    if (params.position) q2.set("position", params.position);
+    if (params.year) q2.set("year", params.year);
+    q2.set("sort", key);
+    if (sortKey === key && sortAsc) q2.set("dir", "desc");
+    return `/talent-id?${q2.toString()}`;
+  }
 
   return (
     <div className="min-h-screen bg-indigo-950 text-white">
@@ -143,12 +208,12 @@ export default async function TalentIdPage({
                   </Link>
                 )}
                 <span className="ml-auto text-xs text-indigo-400">
-                  พบ {filtered.length.toLocaleString()} จาก {players.length.toLocaleString()} คน
+                  พบ {sorted.length.toLocaleString()} จาก {players.length.toLocaleString()} คน
                 </span>
               </div>
             </form>
 
-            {filtered.length === 0 ? (
+            {sorted.length === 0 ? (
               <div className="relative flex flex-col items-center gap-3 rounded-2xl border border-dashed border-white/15 bg-white/5 px-6 py-16 text-center">
                 <Users className="h-8 w-8 text-indigo-400" />
                 <p className="text-sm text-indigo-300">
@@ -158,56 +223,135 @@ export default async function TalentIdPage({
                 </p>
               </div>
             ) : (
-              <div className="relative grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-                {filtered.map((player) => (
-                  <Link
-                    key={player.id}
-                    href={`/talent-id/${player.id}`}
-                    className="group flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-white/5 transition-all hover:-translate-y-1 hover:border-amber-400/30 hover:bg-white/10"
-                  >
-                    <div className="relative h-32 w-full overflow-hidden bg-indigo-900">
-                      {player.photoUrl ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={player.photoUrl}
-                          alt=""
-                          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                        />
-                      ) : (
-                        <div className="flex h-full w-full items-center justify-center text-2xl font-semibold text-indigo-400">
-                          {player.fullNameTh.charAt(0)}
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex flex-1 flex-col gap-1 p-3.5">
-                      <p className="truncate text-sm font-semibold text-white">
-                        {player.fullNameTh}
-                      </p>
-                      {player.nickname && (
-                        <p className="truncate text-xs text-indigo-400">
-                          &quot;{player.nickname}&quot;
-                        </p>
-                      )}
-                      <div className="mt-1 flex flex-wrap gap-1">
-                        {player.position1 && (
-                          <span className="rounded-full bg-amber-400/15 px-2 py-0.5 text-[11px] font-medium text-amber-300">
-                            {player.position1}
-                          </span>
-                        )}
-                      </div>
-                      <p className="mt-auto flex items-center gap-1 truncate pt-2 text-xs text-indigo-400">
-                        <MapPin className="h-3 w-3 flex-none" />
-                        {player.club || player.school || "-"}
-                      </p>
-                    </div>
-                  </Link>
-                ))}
+              <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/5">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-sm">
+                    <thead className="bg-black/20 text-[11px] font-medium uppercase tracking-wide text-indigo-300">
+                      <tr>
+                        <th className="px-4 py-3">
+                          <SortHeader href={sortHref("name")} active={sortKey === "name"} asc={sortAsc}>
+                            {SORT_LABELS.name}
+                          </SortHeader>
+                        </th>
+                        <th className="px-4 py-3">
+                          <SortHeader href={sortHref("position")} active={sortKey === "position"} asc={sortAsc}>
+                            {SORT_LABELS.position}
+                          </SortHeader>
+                        </th>
+                        <th className="px-4 py-3">
+                          <SortHeader href={sortHref("club")} active={sortKey === "club"} asc={sortAsc}>
+                            {SORT_LABELS.club}
+                          </SortHeader>
+                        </th>
+                        <th className="px-4 py-3 text-center">
+                          <SortHeader href={sortHref("age")} active={sortKey === "age"} asc={sortAsc}>
+                            {SORT_LABELS.age}
+                          </SortHeader>
+                        </th>
+                        <th className="px-4 py-3 text-center">
+                          <SortHeader href={sortHref("height")} active={sortKey === "height"} asc={sortAsc}>
+                            {SORT_LABELS.height}
+                          </SortHeader>
+                        </th>
+                        <th className="px-4 py-3 text-center">
+                          <SortHeader href={sortHref("weight")} active={sortKey === "weight"} asc={sortAsc}>
+                            {SORT_LABELS.weight}
+                          </SortHeader>
+                        </th>
+                        <th className="px-4 py-3 text-center">
+                          <SortHeader href={sortHref("rating")} active={sortKey === "rating"} asc={sortAsc}>
+                            {SORT_LABELS.rating}
+                          </SortHeader>
+                        </th>
+                        <th className="px-4 py-3 text-center">เกรด</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/10">
+                      {sorted.map((player) => {
+                        const rating = bestRating(player);
+                        const grade = bestGrade(player);
+                        return (
+                          <tr key={player.id} className="transition-colors hover:bg-white/5">
+                            <td className="px-4 py-3">
+                              <Link href={`/talent-id/${player.id}`} className="flex items-center gap-3">
+                                {player.photoUrl ? (
+                                  // eslint-disable-next-line @next/next/no-img-element
+                                  <img
+                                    src={player.photoUrl}
+                                    alt=""
+                                    className="h-8 w-8 flex-none rounded-full object-cover"
+                                  />
+                                ) : (
+                                  <div className="flex h-8 w-8 flex-none items-center justify-center rounded-full bg-indigo-800 text-xs font-semibold text-indigo-200">
+                                    {player.fullNameTh.charAt(0)}
+                                  </div>
+                                )}
+                                <span className="font-medium text-white hover:text-amber-300">
+                                  {player.fullNameTh}
+                                </span>
+                              </Link>
+                            </td>
+                            <td className="whitespace-nowrap px-4 py-3 text-indigo-200">
+                              {player.position1 ?? "-"}
+                            </td>
+                            <td className="whitespace-nowrap px-4 py-3 text-indigo-200">
+                              {player.club || player.school || "-"}
+                            </td>
+                            <td className="px-4 py-3 text-center text-indigo-200">
+                              {player.age ?? "-"}
+                            </td>
+                            <td className="px-4 py-3 text-center text-indigo-200">
+                              {player.height ?? "-"}
+                            </td>
+                            <td className="px-4 py-3 text-center text-indigo-200">
+                              {player.weight ?? "-"}
+                            </td>
+                            <td className="px-4 py-3 text-center">
+                              {rating != null ? (
+                                <span className="rounded-md bg-amber-400/15 px-2 py-0.5 text-xs font-bold text-amber-300">
+                                  {rating.toFixed(2)}
+                                </span>
+                              ) : (
+                                <span className="text-indigo-400">-</span>
+                              )}
+                            </td>
+                            <td className="px-4 py-3 text-center text-indigo-200">
+                              {grade ?? "-"}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             )}
           </>
         )}
       </div>
     </div>
+  );
+}
+
+function SortHeader({
+  href,
+  active,
+  asc,
+  children,
+}: {
+  href: string;
+  active: boolean;
+  asc: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <Link
+      href={href}
+      className={`inline-flex items-center gap-1 hover:text-white ${active ? "text-amber-300" : ""}`}
+    >
+      {children}
+      {active && <span>{asc ? "▲" : "▼"}</span>}
+    </Link>
   );
 }
 

@@ -31,6 +31,7 @@ export type TalentPlayer = {
   avgRatingLeg1: number | null;
   avgRatingLeg2: number | null;
   avgRatingCamp2026: number | null;
+  scoutScores: { label: string; value: number }[];
   tags: string[];
   notes: string | null;
   // ข้อมูลอ่อนไหว — แสดงเฉพาะ ADMIN/STAFF เท่านั้น (คัดกรองตอน render ในหน้าเว็บ)
@@ -71,6 +72,12 @@ const FIELD = {
   avgRatingLeg1: "Average Rating LEG 1",
   avgRatingLeg2: "Average Rating Leg 2",
   avgRatingCamp2026: "Average Rating Camp 2026",
+  scout1: "Scout 1",
+  scout2: "Scout 2",
+  scout3: "Scout 3",
+  scout4: "Scout 4",
+  scout5: "Scout 5",
+  scout6: "Scout 6",
   notes: "Notes / หมายเหตุ",
   idCardNumber: "ID Card Number / รหัสประจำตัวประชาชน",
   phone: "Phone Number / เบอร์โทรศัพท์",
@@ -139,6 +146,18 @@ function mapPlayer(record: AirtableRecord<RawFields>): TalentPlayer {
     avgRatingLeg1: num(f[FIELD.avgRatingLeg1]),
     avgRatingLeg2: num(f[FIELD.avgRatingLeg2]),
     avgRatingCamp2026: num(f[FIELD.avgRatingCamp2026]),
+    scoutScores: (
+      [
+        ["สแกาต์ 1", num(f[FIELD.scout1])],
+        ["สแกาต์ 2", num(f[FIELD.scout2])],
+        ["สแกาต์ 3", num(f[FIELD.scout3])],
+        ["สแกาต์ 4", num(f[FIELD.scout4])],
+        ["สแกาต์ 5", num(f[FIELD.scout5])],
+        ["สแกาต์ 6", num(f[FIELD.scout6])],
+      ] as [string, number | null][]
+    )
+      .filter((s): s is [string, number] => s[1] != null)
+      .map(([label, value]) => ({ label, value })),
     tags,
     notes: str(f[FIELD.notes]),
     idCardNumber: str(f[FIELD.idCardNumber]),
