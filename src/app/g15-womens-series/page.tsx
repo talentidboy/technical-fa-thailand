@@ -1,9 +1,21 @@
 import Link from "next/link";
 import Image from "next/image";
 import { redirect } from "next/navigation";
+import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
+import { getStandings } from "@/lib/g15";
 import { LOGO_URL } from "@/lib/brand";
-import { ArrowLeft, Trophy, Venus, Calendar, Users } from "lucide-react";
+import {
+  ArrowLeft,
+  Trophy,
+  Venus,
+  Calendar,
+  Users,
+  MapPin,
+  Settings,
+  ListOrdered,
+  CalendarClock,
+} from "lucide-react";
 
 const highlights = [
   {
@@ -23,9 +35,39 @@ const highlights = [
   },
 ];
 
+function formatDateTime(date: Date | null) {
+  if (!date) return "ยังไม่กำหนดวันแข่ง";
+  return date.toLocaleString("th-TH", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 export default async function G15WomensSeriesPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
+  const canManage = user.role === "ADMIN" || user.role === "STAFF";
+
+  const [teams, matches] = await Promise.all([
+    prisma.g15Team.findMany({ orderBy: [{ groupName: "asc" }, { name: "asc" }] }),
+    prisma.g15Match.findMany({
+      orderBy: [{ matchDate: "asc" }, { createdAt: "asc" }],
+      include: { homeTeam: true, awayTeam: true },
+    }),
+  ]);
+
+  const standingGroups = getStandings(teams, matches);
+
+  const matchesByRound = matches.reduce<Record<string, typeof matches>>(
+    (acc, match) => {
+      (acc[match.round] ??= []).push(match);
+      return acc;
+    },
+    {},
+  );
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -48,13 +90,24 @@ export default async function G15WomensSeriesPage() {
               </p>
             </div>
           </Link>
-          <Link
-            href="/"
-            className="inline-flex items-center gap-1.5 rounded-lg border border-white/15 px-3 py-2 text-sm font-medium text-indigo-200 transition-colors hover:bg-white/10 hover:text-white"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            กลับหน้าแรก
-          </Link>
+          <div className="flex items-center gap-2">
+            {canManage && (
+              <Link
+                href="/g15-womens-series/manage"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-white/15 px-3 py-2 text-sm font-medium text-indigo-200 transition-colors hover:bg-white/10 hover:text-white"
+              >
+                <Settings className="h-4 w-4" />
+                จัดการข้อมูล
+              </Link>
+            )}
+            <Link
+              href="/"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-white/15 px-3 py-2 text-sm font-medium text-indigo-200 transition-colors hover:bg-white/10 hover:text-white"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              กลับหน้าแรก
+            </Link>
+          </div>
         </div>
       </header>
 
@@ -102,15 +155,184 @@ export default async function G15WomensSeriesPage() {
           ))}
         </div>
 
-        <div className="flex flex-col items-center justify-center gap-3 rounded-3xl border border-dashed border-slate-300 bg-white px-6 py-16 text-center">
-          <Trophy className="h-8 w-8 text-slate-300" />
-          <p className="font-medium text-slate-500">
-            กำหนดการและรายละเอียดการแข่งขัน
-          </p>
-          <p className="text-sm text-slate-400">
-            อยู่ระหว่างการพัฒนา เร็วๆ นี้จะมีตารางแข่งขันและข้อมูลเพิ่มเติม
-          </p>
-        </div>
+        {teams.length === 0 ? (
+          <div className="flex flex-col items-center justify-center gap-3 rounded-3xl border border-dashed border-slate-300 bg-white px-6 py-16 text-center">
+            <Trophy className="h-8 w-8 text-slate-300" />
+            <p className="font-medium text-slate-500">
+              กำหนดการและรายละเอียดการแข่งขัน
+            </p>
+            <p className="text-sm text-slate-400">
+              อยู่ระหว่างการพัฒนา เร็วๆ นี้จะมีตารางแข่งขันและข้อมูลเพิ่มเติม
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-10">
+            {/* ตารางคะแนน */}
+            <section>
+              <div className="mb-4 flex items-center gap-2 text-sm font-medium text-slate-500">
+                <ListOrdered className="h-4 w-4" />
+                ตารางคะแนน
+              </div>
+              <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                {standingGroups.map((group) => (
+                  <div
+                    key={group.groupName}
+                    className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"
+                  >
+                    <div className="border-b border-slate-100 px-5 py-3">
+                      <h3 className="font-semibold text-slate-900">
+                        {group.groupName}
+                      </h3>
+                    </div>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left text-sm">
+                        <thead className="bg-slate-50 text-[11px] font-medium uppercase tracking-wide text-slate-500">
+                          <tr>
+                            <th className="px-4 py-2.5">ทีม</th>
+                            <th className="px-2 py-2.5 text-center">แข่ง</th>
+                            <th className="px-2 py-2.5 text-center">ชนะ</th>
+                            <th className="px-2 py-2.5 text-center">เสมอ</th>
+                            <th className="px-2 py-2.5 text-center">แพ้</th>
+                            <th className="px-2 py-2.5 text-center">ผลต่าง</th>
+                            <th className="px-4 py-2.5 text-center">คะแนน</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {group.rows.map((row) => (
+                            <tr key={row.teamId}>
+                              <td className="whitespace-nowrap px-4 py-2.5 font-medium text-slate-900">
+                                {row.teamName}
+                              </td>
+                              <td className="px-2 py-2.5 text-center text-slate-500">
+                                {row.played}
+                              </td>
+                              <td className="px-2 py-2.5 text-center text-slate-500">
+                                {row.won}
+                              </td>
+                              <td className="px-2 py-2.5 text-center text-slate-500">
+                                {row.drawn}
+                              </td>
+                              <td className="px-2 py-2.5 text-center text-slate-500">
+                                {row.lost}
+                              </td>
+                              <td className="px-2 py-2.5 text-center text-slate-500">
+                                {row.goalDiff > 0 ? `+${row.goalDiff}` : row.goalDiff}
+                              </td>
+                              <td className="px-4 py-2.5 text-center font-bold text-indigo-600">
+                                {row.points}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            {/* ตารางการแข่งขัน */}
+            <section>
+              <div className="mb-4 flex items-center gap-2 text-sm font-medium text-slate-500">
+                <CalendarClock className="h-4 w-4" />
+                ตารางการแข่งขัน
+              </div>
+              {matches.length === 0 ? (
+                <p className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-10 text-center text-sm text-slate-400">
+                  ยังไม่มีนัดการแข่งขัน
+                </p>
+              ) : (
+                <div className="space-y-6">
+                  {Object.entries(matchesByRound).map(([round, roundMatches]) => (
+                    <div
+                      key={round}
+                      className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"
+                    >
+                      <div className="border-b border-slate-100 px-5 py-3">
+                        <h3 className="font-semibold text-slate-900">{round}</h3>
+                      </div>
+                      <ul className="divide-y divide-slate-100">
+                        {roundMatches.map((match) => (
+                          <li
+                            key={match.id}
+                            className="flex flex-wrap items-center justify-between gap-3 px-5 py-3.5"
+                          >
+                            <div className="flex items-center gap-3">
+                              <span className="font-medium text-slate-900">
+                                {match.homeTeam.name}
+                              </span>
+                              {match.status === "FINISHED" ? (
+                                <span className="rounded-lg bg-slate-900 px-2.5 py-1 text-xs font-bold text-white">
+                                  {match.homeScore} - {match.awayScore}
+                                </span>
+                              ) : (
+                                <span className="text-xs font-medium text-slate-400">
+                                  vs
+                                </span>
+                              )}
+                              <span className="font-medium text-slate-900">
+                                {match.awayTeam.name}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-3 text-xs text-slate-400">
+                              <span className="flex items-center gap-1">
+                                <Calendar className="h-3.5 w-3.5" />
+                                {formatDateTime(match.matchDate)}
+                              </span>
+                              {match.venue && (
+                                <span className="flex items-center gap-1">
+                                  <MapPin className="h-3.5 w-3.5" />
+                                  {match.venue}
+                                </span>
+                              )}
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+
+            {/* ทีมที่เข้าร่วม */}
+            <section>
+              <div className="mb-4 flex items-center gap-2 text-sm font-medium text-slate-500">
+                <Users className="h-4 w-4" />
+                ทีมที่เข้าร่วม ({teams.length})
+              </div>
+              <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+                {teams.map((team) => (
+                  <div
+                    key={team.id}
+                    className="flex flex-col items-center gap-2 rounded-2xl border border-slate-200 bg-white p-4 text-center shadow-sm"
+                  >
+                    {team.logoUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={team.logoUrl}
+                        alt=""
+                        className="h-14 w-14 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-14 w-14 items-center justify-center rounded-full bg-rose-100 text-lg font-semibold text-rose-700">
+                        {team.name.charAt(0)}
+                      </div>
+                    )}
+                    <p className="text-sm font-medium text-slate-900">
+                      {team.name}
+                    </p>
+                    {team.groupName && (
+                      <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-500">
+                        {team.groupName}
+                      </span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </section>
+          </div>
+        )}
       </div>
     </div>
   );

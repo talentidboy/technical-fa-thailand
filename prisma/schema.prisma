@@ -242,3 +242,36 @@ model Event {
 
   @@map("events")
 }
+
+// ทีมที่เข้าร่วม G15 Women's Football Series
+model G15Team {
+  id        Int      @id @default(autoincrement())
+  name      String
+  logoUrl   String?  @map("logo_url")
+  groupName String?  @map("group_name")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  homeMatches G15Match[] @relation("G15HomeTeam")
+  awayMatches G15Match[] @relation("G15AwayTeam")
+
+  @@map("g15_teams")
+}
+
+// นัดการแข่งขัน G15 Women's Football Series
+// status: SCHEDULED, FINISHED
+model G15Match {
+  id         Int       @id @default(autoincrement())
+  round      String
+  matchDate  DateTime? @map("match_date")
+  venue      String?
+  homeTeamId Int       @map("home_team_id")
+  awayTeamId Int       @map("away_team_id")
+  homeTeam   G15Team   @relation("G15HomeTeam", fields: [homeTeamId], references: [id], onDelete: Cascade)
+  awayTeam   G15Team   @relation("G15AwayTeam", fields: [awayTeamId], references: [id], onDelete: Cascade)
+  homeScore  Int?      @map("home_score")
+  awayScore  Int?      @map("away_score")
+  status     String    @default("SCHEDULED")
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  @@map("g15_matches")
+}
