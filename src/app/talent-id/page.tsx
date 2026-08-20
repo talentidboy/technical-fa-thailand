@@ -4,72 +4,41 @@ import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { getTalentPlayers, type TalentPlayer } from "@/lib/talent-id";
 import { LOGO_URL } from "@/lib/brand";
-import { ArrowLeft, Search, Target, Users } from "lucide-react";
-
-type SearchParams = {
-  q?: string;
-  province?: string;
-  region?: string;
-  position?: string;
-  year?: string;
-  sort?: string;
-  dir?: string;
-};
-
-type SortKey = "name" | "position" | "club" | "age" | "height" | "weight" | "rating";
-
-const SORT_LABELS: Record<SortKey, string> = {
-  name: "ชื่อ",
-  position: "ตำแหน่ง",
-  club: "สโมสร/โรงเรียน",
-  age: "อายุ",
-  height: "ส่วนสูง",
-  weight: "น้ำหนัก",
-  rating: "คะแนน",
-};
-
-function bestRating(p: TalentPlayer): number | null {
-  return p.avgRatingCamp2026 ?? p.avgRatingLeg2 ?? p.avgRatingLeg1 ?? null;
-}
+import { TalentIdNav } from "@/components/talent-id/TalentIdNav";
+import { DonutChart, CategoryBarChart, CATEGORICAL_PALETTE } from "@/components/DashboardCharts";
+import {
+  ArrowLeft,
+  Target,
+  Users,
+  ClipboardList,
+  Video,
+  Star,
+  Award,
+} from "lucide-react";
 
 function bestGrade(p: TalentPlayer): string | null {
   return p.gradeCamp2026 ?? p.gradeLeg2 ?? p.gradeLeg1 ?? null;
 }
 
-function sortValue(p: TalentPlayer, key: SortKey): string | number {
-  switch (key) {
-    case "name":
-      return p.fullNameTh;
-    case "position":
-      return p.position1 ?? "";
-    case "club":
-      return p.club ?? p.school ?? "";
-    case "age":
-      return p.age ?? -1;
-    case "height":
-      return p.height ?? -1;
-    case "weight":
-      return p.weight ?? -1;
-    case "rating":
-      return bestRating(p) ?? -1;
+function hasAnyRating(p: TalentPlayer): boolean {
+  return p.avgRatingLeg1 != null || p.avgRatingLeg2 != null || p.avgRatingCamp2026 != null;
+}
+
+function countBy(players: TalentPlayer[], pick: (p: TalentPlayer) => string | null) {
+  const counts = new Map<string, number>();
+  for (const p of players) {
+    const key = pick(p);
+    if (!key) continue;
+    counts.set(key, (counts.get(key) ?? 0) + 1);
   }
+  return Array.from(counts.entries())
+    .map(([name, value]) => ({ key: name, name, value }))
+    .sort((a, b) => b.value - a.value);
 }
 
-function distinctSorted(values: (string | null)[]) {
-  return Array.from(new Set(values.filter((v): v is string => Boolean(v)))).sort((a, b) =>
-    a.localeCompare(b, "th"),
-  );
-}
-
-export default async function TalentIdPage({
-  searchParams,
-}: {
-  searchParams: Promise<SearchParams>;
-}) {
+export default async function TalentIdHomePage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
-
-  const params = await searchParams;
 
   let players: TalentPlayer[] = [];
   let loadError: string | null = null;
@@ -79,51 +48,42 @@ export default async function TalentIdPage({
     loadError = err instanceof Error ? err.message : "ไม่สามารถดึงข้อมูลจาก Airtable ได้";
   }
 
-  const provinces = distinctSorted(players.map((p) => p.province));
-  const regions = distinctSorted(players.map((p) => p.region));
-  const positions = distinctSorted(players.map((p) => p.position1));
-  const years = distinctSorted(players.map((p) => p.yearOfBirth));
+  const total = players.length;
+  const neverRated = players.filter((p) => !hasAnyRating(p)).length;
+  const withVideo = players.filter((p) => p.hudlVideoLeg1 || p.hudlVideoLeg2).length;
+  const withScoutScores = players.filter((p) => p.scoutScores.length > 0).length;
 
-  const q = (params.q ?? "").trim().toLowerCase();
-  const filtered = players.filter((p) => {
-    if (params.province && p.province !== params.province) return false;
-    if (params.region && p.region !== params.region) return false;
-    if (params.position && p.position1 !== params.position) return false;
-    if (params.year && p.yearOfBirth !== params.year) return false;
-    if (q) {
-      const haystack = `${p.fullNameTh} ${p.fullNameEn ?? ""} ${p.nickname ?? ""} ${p.club ?? ""} ${p.school ?? ""}`.toLowerCase();
-      if (!haystack.includes(q)) return false;
+  const gradeDist = countBy(players, bestGrade);
+  const positionDist = countBy(players, (p) => p.position1).slice(0, 11);
+  const regionDist = countBy(players, (p) => p.region);
+
+  // นับความถี่แท็กสถานะการคัดเลือกทั้งหมด (Longlist, Top U14 ฯลฯ) รวมทุกคน
+  const tagCounts = new Map<string, number>();
+  for (const p of players) {
+    for (const t of p.tags) {
+      tagCounts.set(t, (tagCounts.get(t) ?? 0) + 1);
     }
-    return true;
-  });
-
-  const sortKey: SortKey = (params.sort as SortKey) in SORT_LABELS ? (params.sort as SortKey) : "name";
-  const sortAsc = params.dir !== "desc";
-  const sorted = [...filtered].sort((a, b) => {
-    const va = sortValue(a, sortKey);
-    const vb = sortValue(b, sortKey);
-    const cmp =
-      typeof va === "number" && typeof vb === "number"
-        ? va - vb
-        : String(va).localeCompare(String(vb), "th");
-    return sortAsc ? cmp : -cmp;
-  });
-
-  const hasFilters = Boolean(
-    params.q || params.province || params.region || params.position || params.year,
-  );
-
-  function sortHref(key: SortKey) {
-    const q2 = new URLSearchParams();
-    if (params.q) q2.set("q", params.q);
-    if (params.province) q2.set("province", params.province);
-    if (params.region) q2.set("region", params.region);
-    if (params.position) q2.set("position", params.position);
-    if (params.year) q2.set("year", params.year);
-    q2.set("sort", key);
-    if (sortKey === key && sortAsc) q2.set("dir", "desc");
-    return `/talent-id?${q2.toString()}`;
   }
+  const topTags = Array.from(tagCounts.entries())
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 10);
+
+  const stats = [
+    { icon: Users, label: "ผู้เล่นทั้งหมด", value: total, accent: "bg-indigo-400/15 text-indigo-300" },
+    {
+      icon: ClipboardList,
+      label: "ยังไม่มีคะแนนประเมิน",
+      value: neverRated,
+      accent: "bg-red-400/15 text-red-300",
+    },
+    { icon: Video, label: "มีวิดีโอ HUDL", value: withVideo, accent: "bg-sky-400/15 text-sky-300" },
+    {
+      icon: Star,
+      label: "มีคะแนนจากสแกาต์",
+      value: withScoutScores,
+      accent: "bg-amber-400/15 text-amber-300",
+    },
+  ];
 
   return (
     <div className="min-h-screen bg-indigo-950 text-white">
@@ -138,9 +98,7 @@ export default async function TalentIdPage({
               className="h-9 w-9 rounded-lg object-cover"
             />
             <div>
-              <p className="text-sm font-bold text-white">
-                FA Thailand Technical
-              </p>
+              <p className="text-sm font-bold text-white">FA Thailand Technical</p>
               <p className="text-[11px] text-indigo-300">หมวด: Talent ID</p>
             </div>
           </Link>
@@ -158,6 +116,10 @@ export default async function TalentIdPage({
         <div className="pointer-events-none absolute -left-24 -top-10 h-72 w-72 rounded-full bg-indigo-500/10 blur-3xl" />
         <div className="pointer-events-none absolute -right-16 top-40 h-80 w-80 rounded-full bg-amber-500/10 blur-3xl" />
 
+        <div className="relative">
+          <TalentIdNav />
+        </div>
+
         <div className="relative mb-8">
           <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-400/15 text-amber-300 ring-1 ring-amber-400/30">
             <Target className="h-7 w-7" />
@@ -172,217 +134,82 @@ export default async function TalentIdPage({
           <div className="relative rounded-2xl border border-dashed border-red-400/30 bg-red-400/5 px-6 py-10 text-center text-sm text-red-300">
             ดึงข้อมูลจาก Airtable ไม่สำเร็จ: {loadError}
           </div>
+        ) : total === 0 ? (
+          <div className="relative flex flex-col items-center gap-3 rounded-2xl border border-dashed border-white/15 bg-white/5 px-6 py-16 text-center">
+            <Users className="h-8 w-8 text-indigo-400" />
+            <p className="text-sm text-indigo-300">ยังไม่มีข้อมูลนักกีฬาใน Airtable</p>
+          </div>
         ) : (
-          <>
-            {/* ตัวกรอง */}
-            <form className="relative mb-6 space-y-4 rounded-2xl border border-white/10 bg-white/5 p-5">
-              <div className="relative">
-                <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-indigo-400" />
-                <input
-                  type="text"
-                  name="q"
-                  defaultValue={params.q}
-                  placeholder="ค้นหาชื่อ, สโมสร, โรงเรียน..."
-                  className="w-full rounded-lg border border-white/15 bg-white/5 py-2.5 pl-10 pr-4 text-sm text-white placeholder:text-indigo-400 focus:border-amber-400/50 focus:outline-none focus:ring-2 focus:ring-amber-400/20"
+          <div className="relative space-y-6">
+            {/* KPI */}
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+              {stats.map(({ icon: Icon, label, value, accent }) => (
+                <div
+                  key={label}
+                  className="rounded-2xl border border-white/10 bg-white/5 p-5"
+                >
+                  <div className={`inline-flex rounded-xl p-2.5 ${accent}`}>
+                    <Icon className="h-5 w-5" />
+                  </div>
+                  <p className="mt-4 text-sm text-indigo-300">{label}</p>
+                  <p className="mt-1 text-3xl font-bold text-white">{value.toLocaleString()}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* กราฟภาพรวม */}
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
+                <h2 className="mb-4 font-semibold text-white">สัดส่วนเกรดล่าสุด</h2>
+                <DonutChart
+                  data={gradeDist}
+                  centerLabel="คน"
+                  emptyMessage="ยังไม่มีข้อมูลเกรดสำหรับแสดงกราฟ"
                 />
               </div>
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                <FilterSelect label="จังหวัด" name="province" options={provinces} value={params.province} />
-                <FilterSelect label="ภูมิภาค" name="region" options={regions} value={params.region} />
-                <FilterSelect label="ตำแหน่ง" name="position" options={positions} value={params.position} />
-                <FilterSelect label="ปีเกิด" name="year" options={years} value={params.year} />
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
+                <h2 className="mb-4 font-semibold text-white">ผู้เล่นแยกตามตำแหน่ง</h2>
+                <CategoryBarChart
+                  data={positionDist}
+                  color={CATEGORICAL_PALETTE[0]}
+                  emptyMessage="ยังไม่มีข้อมูลตำแหน่งสำหรับแสดงกราฟ"
+                />
               </div>
-              <div className="flex items-center gap-3">
-                <button
-                  type="submit"
-                  className="rounded-lg bg-amber-400 px-4 py-2 text-sm font-semibold text-indigo-950 hover:bg-amber-300"
-                >
-                  กรองข้อมูล
-                </button>
-                {hasFilters && (
-                  <Link
-                    href="/talent-id"
-                    className="text-sm font-medium text-indigo-300 hover:text-white"
-                  >
-                    ล้างตัวกรอง
-                  </Link>
-                )}
-                <span className="ml-auto text-xs text-indigo-400">
-                  พบ {sorted.length.toLocaleString()} จาก {players.length.toLocaleString()} คน
-                </span>
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-6 lg:col-span-2">
+                <h2 className="mb-4 font-semibold text-white">ผู้เล่นแยกตามภูมิภาค</h2>
+                <CategoryBarChart
+                  data={regionDist}
+                  color={CATEGORICAL_PALETTE[2]}
+                  emptyMessage="ยังไม่มีข้อมูลภูมิภาคสำหรับแสดงกราฟ"
+                />
               </div>
-            </form>
+            </div>
 
-            {sorted.length === 0 ? (
-              <div className="relative flex flex-col items-center gap-3 rounded-2xl border border-dashed border-white/15 bg-white/5 px-6 py-16 text-center">
-                <Users className="h-8 w-8 text-indigo-400" />
-                <p className="text-sm text-indigo-300">
-                  {players.length === 0
-                    ? "ยังไม่มีข้อมูลนักกีฬาใน Airtable"
-                    : "ไม่พบนักกีฬาที่ตรงกับเงื่อนไขที่เลือก"}
-                </p>
-              </div>
-            ) : (
-              <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/5">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-sm">
-                    <thead className="bg-black/20 text-[11px] font-medium uppercase tracking-wide text-indigo-300">
-                      <tr>
-                        <th className="px-4 py-3">
-                          <SortHeader href={sortHref("name")} active={sortKey === "name"} asc={sortAsc}>
-                            {SORT_LABELS.name}
-                          </SortHeader>
-                        </th>
-                        <th className="px-4 py-3">
-                          <SortHeader href={sortHref("position")} active={sortKey === "position"} asc={sortAsc}>
-                            {SORT_LABELS.position}
-                          </SortHeader>
-                        </th>
-                        <th className="px-4 py-3">
-                          <SortHeader href={sortHref("club")} active={sortKey === "club"} asc={sortAsc}>
-                            {SORT_LABELS.club}
-                          </SortHeader>
-                        </th>
-                        <th className="px-4 py-3 text-center">
-                          <SortHeader href={sortHref("age")} active={sortKey === "age"} asc={sortAsc}>
-                            {SORT_LABELS.age}
-                          </SortHeader>
-                        </th>
-                        <th className="px-4 py-3 text-center">
-                          <SortHeader href={sortHref("height")} active={sortKey === "height"} asc={sortAsc}>
-                            {SORT_LABELS.height}
-                          </SortHeader>
-                        </th>
-                        <th className="px-4 py-3 text-center">
-                          <SortHeader href={sortHref("weight")} active={sortKey === "weight"} asc={sortAsc}>
-                            {SORT_LABELS.weight}
-                          </SortHeader>
-                        </th>
-                        <th className="px-4 py-3 text-center">
-                          <SortHeader href={sortHref("rating")} active={sortKey === "rating"} asc={sortAsc}>
-                            {SORT_LABELS.rating}
-                          </SortHeader>
-                        </th>
-                        <th className="px-4 py-3 text-center">เกรด</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-white/10">
-                      {sorted.map((player) => {
-                        const rating = bestRating(player);
-                        const grade = bestGrade(player);
-                        return (
-                          <tr key={player.id} className="transition-colors hover:bg-white/5">
-                            <td className="px-4 py-3">
-                              <Link href={`/talent-id/${player.id}`} className="flex items-center gap-3">
-                                {player.photoUrl ? (
-                                  // eslint-disable-next-line @next/next/no-img-element
-                                  <img
-                                    src={player.photoUrl}
-                                    alt=""
-                                    className="h-8 w-8 flex-none rounded-full object-cover"
-                                  />
-                                ) : (
-                                  <div className="flex h-8 w-8 flex-none items-center justify-center rounded-full bg-indigo-800 text-xs font-semibold text-indigo-200">
-                                    {player.fullNameTh.charAt(0)}
-                                  </div>
-                                )}
-                                <span className="font-medium text-white hover:text-amber-300">
-                                  {player.fullNameTh}
-                                </span>
-                              </Link>
-                            </td>
-                            <td className="whitespace-nowrap px-4 py-3 text-indigo-200">
-                              {player.position1 ?? "-"}
-                            </td>
-                            <td className="whitespace-nowrap px-4 py-3 text-indigo-200">
-                              {player.club || player.school || "-"}
-                            </td>
-                            <td className="px-4 py-3 text-center text-indigo-200">
-                              {player.age ?? "-"}
-                            </td>
-                            <td className="px-4 py-3 text-center text-indigo-200">
-                              {player.height ?? "-"}
-                            </td>
-                            <td className="px-4 py-3 text-center text-indigo-200">
-                              {player.weight ?? "-"}
-                            </td>
-                            <td className="px-4 py-3 text-center">
-                              {rating != null ? (
-                                <span className="rounded-md bg-amber-400/15 px-2 py-0.5 text-xs font-bold text-amber-300">
-                                  {rating.toFixed(2)}
-                                </span>
-                              ) : (
-                                <span className="text-indigo-400">-</span>
-                              )}
-                            </td>
-                            <td className="px-4 py-3 text-center text-indigo-200">
-                              {grade ?? "-"}
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
+            {/* สถานะการคัดเลือก */}
+            {topTags.length > 0 && (
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
+                <div className="mb-4 flex items-center gap-2">
+                  <Award className="h-4 w-4 text-amber-400" />
+                  <h2 className="font-semibold text-white">สถานะการคัดเลือกที่พบบ่อย</h2>
+                </div>
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                  {topTags.map(([tag, count]) => (
+                    <div
+                      key={tag}
+                      className="flex items-center justify-between rounded-lg border border-white/10 bg-black/20 px-3.5 py-2.5 text-sm"
+                    >
+                      <span className="truncate text-indigo-200">{tag}</span>
+                      <span className="ml-2 flex-none rounded-full bg-amber-400/15 px-2 py-0.5 text-xs font-bold text-amber-300">
+                        {count}
+                      </span>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
-          </>
+          </div>
         )}
       </div>
     </div>
-  );
-}
-
-function SortHeader({
-  href,
-  active,
-  asc,
-  children,
-}: {
-  href: string;
-  active: boolean;
-  asc: boolean;
-  children: React.ReactNode;
-}) {
-  return (
-    <Link
-      href={href}
-      className={`inline-flex items-center gap-1 hover:text-white ${active ? "text-amber-300" : ""}`}
-    >
-      {children}
-      {active && <span>{asc ? "▲" : "▼"}</span>}
-    </Link>
-  );
-}
-
-function FilterSelect({
-  label,
-  name,
-  options,
-  value,
-}: {
-  label: string;
-  name: string;
-  options: string[];
-  value?: string;
-}) {
-  return (
-    <label className="flex flex-col gap-1">
-      <span className="text-[10px] font-semibold uppercase tracking-wide text-indigo-400">
-        {label}
-      </span>
-      <select
-        name={name}
-        defaultValue={value ?? ""}
-        className="rounded-lg border border-white/15 bg-indigo-950 px-2.5 py-2 text-xs text-indigo-100 focus:border-amber-400/50 focus:outline-none focus:ring-2 focus:ring-amber-400/20"
-      >
-        <option value="">ทั้งหมด</option>
-        {options.map((o) => (
-          <option key={o} value={o}>
-            {o}
-          </option>
-        ))}
-      </select>
-    </label>
   );
 }
