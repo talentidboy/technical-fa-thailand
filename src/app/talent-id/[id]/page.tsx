@@ -248,13 +248,11 @@ export default async function TalentIdDetailPage({
         </div>
       </div>
 
-      {(player.talent.length > 0 || player.tags.length > 0) && (
+      {player.talent.length > 0 && (
         <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
           <div className="mb-3 flex items-center gap-2">
-            <Tag className="h-4 w-4 text-amber-400" />
-            <h2 className="font-semibold text-white">
-              ความสามารถโดดเด่น / สถานะการคัดเลือก
-            </h2>
+            <Tag className="h-4 w-4 text-rose-400" />
+            <h2 className="font-semibold text-white">ความสามารถโดดเด่น</h2>
           </div>
           <div className="flex flex-wrap gap-1.5">
             {player.talent.map((t) => (
@@ -265,6 +263,17 @@ export default async function TalentIdDetailPage({
                 {t}
               </span>
             ))}
+          </div>
+        </div>
+      )}
+
+      {player.tags.length > 0 && (
+        <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
+          <div className="mb-3 flex items-center gap-2">
+            <Tag className="h-4 w-4 text-emerald-400" />
+            <h2 className="font-semibold text-white">สถานะการคัดเลือก</h2>
+          </div>
+          <div className="flex flex-wrap gap-1.5">
             {player.tags.map((t) => (
               <span
                 key={t}
