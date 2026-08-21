@@ -324,7 +324,7 @@ export default async function TalentIdDetailPage({
   );
 
   const statsTab = matchStats ? (
-    <MatchStatsPanel row={matchStats.row} statsMax={matchStats.statsMax} />
+    <MatchStatsPanel row={matchStats.row} statsMax={matchStats.statsMax} statsDist={matchStats.statsDist} />
   ) : null;
 
   const mediaTab = (

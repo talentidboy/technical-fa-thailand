@@ -12,6 +12,7 @@ import {
   STAT_LABELS,
   RADAR_AXES,
   computeFormScore,
+  statPercentile,
   type MatchStatsRow,
 } from "@/lib/talent-match-stats";
 import { ratingTier } from "@/lib/rating-scale";
@@ -33,8 +34,7 @@ function rate(numerator: number, denominator: number): string | null {
   return `${((100 * numerator) / denominator).toFixed(1)}%`;
 }
 
-function StatCell({ label, value, max }: { label: string; value: number; max: number }) {
-  const percent = (100 * value) / (max || 1);
+function StatCell({ label, value, percent }: { label: string; value: number; percent: number }) {
   const tier = value === 0 ? null : ratingTier(percent);
   return (
     <div className="flex items-center justify-between gap-2 border-b border-white/5 py-1.5 text-xs">
@@ -53,12 +53,14 @@ function StatCell({ label, value, max }: { label: string; value: number; max: nu
 export function MatchStatsPanel({
   row,
   statsMax,
+  statsDist,
 }: {
   row: MatchStatsRow;
   statsMax: Record<string, number>;
+  statsDist: Record<string, number[]>;
 }) {
   const color = row.positionCategory ? POSITION_COLOR[row.positionCategory] : DEFAULT_COLOR;
-  const form = computeFormScore(row, statsMax);
+  const form = computeFormScore(row, statsDist);
   const formTier = ratingTier(form);
 
   const rates = [
@@ -87,7 +89,7 @@ export function MatchStatsPanel({
         </div>
         <div className="min-w-0 flex-1">
           <p className="text-xs text-indigo-400">
-            คะแนนฟอร์มรวม ({formTier.label}) — เฉลี่ยจาก 8 สถิติหลักเทียบกับผู้เล่นที่ดีที่สุดในทีม
+            คะแนนฟอร์มรวม ({formTier.label}) — เฉลี่ยเปอร์เซ็นไทล์จาก 8 สถิติหลักเทียบกับผู้เล่นทั้งหมดในทีม
           </p>
           {rates.length > 0 && (
             <p className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1 text-xs text-indigo-300">
@@ -129,7 +131,7 @@ export function MatchStatsPanel({
                     key={key}
                     label={labelOf(key)}
                     value={row.stats[key] ?? 0}
-                    max={statsMax[key] ?? 1}
+                    percent={statPercentile(row, key, statsDist)}
                   />
                 ))}
               </div>

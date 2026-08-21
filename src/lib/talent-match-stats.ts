@@ -178,7 +178,8 @@ export async function getAllMatchStats(): Promise<MatchStatsRow[]> {
 }
 
 // ค่าสูงสุดจริงของทั้งทีมต่อสถิติแต่ละตัว (ทุกคอลัมน์ใน STAT_GROUPS ไม่ใช่แค่แกนเรดาร์)
-// ใช้ normalize เป็น % เทียบกับผู้เล่นที่ทำได้ดีที่สุดในทีม สำหรับกราฟเรดาร์และไล่สีช่องสถิติ
+// ใช้เฉพาะกับ "รูปทรง" กราฟเรดาร์ (% เทียบผู้เล่นที่ทำได้สูงสุด — ทำให้กราฟมีรูปทรงเป็นหนามได้
+// ตามธรรมชาติของสถิตินับจำนวนที่มีคนเก่งโดดเด่นเพียงไม่กี่คนต่อแกน)
 export function computeStatsMax(rows: MatchStatsRow[]): Record<string, number> {
   const allKeys = STAT_GROUPS.flatMap((g) => g.stats);
   const max: Record<string, number> = {};
@@ -188,26 +189,55 @@ export function computeStatsMax(rows: MatchStatsRow[]): Record<string, number> {
   return max;
 }
 
-// คะแนน "ฟอร์มรวม" 0-100 — ค่าเฉลี่ยของ % เทียบสูงสุดทีมใน 8 แกนหลัก (RADAR_AXES)
-// เป็นค่าที่คำนวณจากข้อมูลจริงล้วน ๆ (ไม่มีแกนที่เดาขึ้นมาเอง) ใช้แสดงเป็นแบดจ์สรุปเดียว
-export function computeFormScore(row: MatchStatsRow, statsMax: Record<string, number>): number {
-  const values = RADAR_AXES.map((axis) =>
-    Math.min(100, (100 * (row.stats[axis] ?? 0)) / (statsMax[axis] || 1)),
-  );
+// การกระจายค่าจริงของทั้งทีมต่อสถิติแต่ละตัว (เรียงจากน้อยไปมาก) ใช้หา percentile ของ
+// ผู้เล่นแต่ละคน — ต่างจาก computeStatsMax ตรงที่ percentile ไม่ถูกบิดเบือนจากคนเก่งโดดเด่น
+// เพียงคนเดียว (ถ้าใช้ % เทียบค่าสูงสุดตรง ๆ คนส่วนใหญ่จะโดนดันไปกองอยู่ที่คะแนนต่ำหมด
+// เพราะสถิติแบบนับจำนวนต่อแมตช์กระจายเบ้ขวาเป็นปกติ)
+export function computeStatsDistribution(rows: MatchStatsRow[]): Record<string, number[]> {
+  const allKeys = STAT_GROUPS.flatMap((g) => g.stats);
+  const dist: Record<string, number[]> = {};
+  for (const key of allKeys) {
+    dist[key] = rows.map((r) => r.stats[key] ?? 0).sort((a, b) => a - b);
+  }
+  return dist;
+}
+
+// percentile rank ของค่าหนึ่งเทียบกับการกระจายทั้งหมด (0-100) — นับคนที่น้อยกว่าเต็ม ๆ
+// บวกครึ่งหนึ่งของคนที่เท่ากัน (มาตรฐาน mid-rank percentile กันค่า 0 ที่คนส่วนใหญ่ทำได้
+// เท่ากันหมดถูกตัดสินว่า "แย่" ทั้งที่จริงคือค่าเฉลี่ยของกลุ่ม)
+function percentileOf(value: number, sorted: number[]): number {
+  if (sorted.length === 0) return 0;
+  let below = 0;
+  let equal = 0;
+  for (const v of sorted) {
+    if (v < value) below++;
+    else if (v === value) equal++;
+  }
+  return Math.round(((below + equal / 2) / sorted.length) * 100);
+}
+
+export function statPercentile(row: MatchStatsRow, key: string, dist: Record<string, number[]>): number {
+  return percentileOf(row.stats[key] ?? 0, dist[key] ?? []);
+}
+
+// คะแนน "ฟอร์มรวม" 0-100 — ค่าเฉลี่ยของ percentile ใน 8 สถิติหลัก (RADAR_AXES) เทียบกับ
+// ผู้เล่นทั้งหมดในทีม เป็นค่าที่คำนวณจากข้อมูลจริงล้วน ๆ (ไม่มีแกนที่เดาขึ้นมาเอง)
+export function computeFormScore(row: MatchStatsRow, dist: Record<string, number[]>): number {
+  const values = RADAR_AXES.map((axis) => percentileOf(row.stats[axis] ?? 0, dist[axis] ?? []));
   return Math.round(values.reduce((s, v) => s + v, 0) / values.length);
 }
 
 // หาแถวสถิติของผู้เล่นคนเดียวด้วย Airtable record id ตรง ๆ ผ่าน linked record field
-// (แม่นกว่าการจับคู่ชื่อ — กันปัญหาชื่อไทยสะกดคลาดเคลื่อนระหว่างสองตาราง) พร้อมค่าสูงสุด
-// ของทั้งทีมต่อสถิติ สำหรับวาดกราฟเรดาร์และไล่สีตารางสถิติเทียบกับผู้เล่นคนอื่น
+// (แม่นกว่าการจับคู่ชื่อ — กันปัญหาชื่อไทยสะกดคลาดเคลื่อนระหว่างสองตาราง) พร้อมค่าสูงสุด/
+// การกระจายของทั้งทีมต่อสถิติ สำหรับวาดกราฟเรดาร์และไล่สีตารางสถิติเทียบกับผู้เล่นคนอื่น
 export async function getPlayerMatchStatsRow(
   playerId: string,
-): Promise<{ row: MatchStatsRow; statsMax: Record<string, number> } | null> {
+): Promise<{ row: MatchStatsRow; statsMax: Record<string, number>; statsDist: Record<string, number[]> } | null> {
   const all = await getAllMatchStats();
   const row = all.find((r) => r.playerId === playerId);
   if (!row) return null;
 
-  return { row, statsMax: computeStatsMax(all) };
+  return { row, statsMax: computeStatsMax(all), statsDist: computeStatsDistribution(all) };
 }
 
 export type Leaderboard = { stat: string; rows: { row: MatchStatsRow; value: number }[] };

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Search, Trophy, Target } from "lucide-react";
 import {
   POSITION_CATEGORY_LABEL,
-  computeStatsMax,
+  computeStatsDistribution,
   computeFormScore,
   type MatchStatsRow,
 } from "@/lib/talent-match-stats";
@@ -268,12 +268,12 @@ export function StatsExplorer({ data }: { data: MatchStatsRow[] }) {
     [data],
   );
 
-  const statsMax = useMemo(() => computeStatsMax(data), [data]);
+  const statsDist = useMemo(() => computeStatsDistribution(data), [data]);
   const formScores = useMemo(() => {
     const map = new Map<string, number>();
-    for (const row of data) map.set(row.id, computeFormScore(row, statsMax));
+    for (const row of data) map.set(row.id, computeFormScore(row, statsDist));
     return map;
-  }, [data, statsMax]);
+  }, [data, statsDist]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
