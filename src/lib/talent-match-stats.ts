@@ -1,5 +1,4 @@
-import { getAirtableRecords, queryAirtablePage, escapeAirtableFormulaString } from "./airtable";
-import type { TalentPlayer } from "./talent-id";
+import { getAirtableRecords } from "./airtable";
 
 const TABLE_NAME = "INDIVIDUAL STATS LEG 2 / 2026";
 
@@ -131,45 +130,6 @@ export const STAT_GROUPS: { title: string; stats: string[] }[] = [
 
 export type PlayerMatchStats = Record<string, number>;
 
-function esc(v: string) {
-  return escapeAirtableFormulaString(v.trim());
-}
-
-// จับคู่ผู้เล่นด้วยชื่อแบบ exact match เท่านั้น (ตาราง INDIVIDUAL STATS ไม่มี link record
-// กลับไปที่ตาราง Players จริงๆ มีแค่ชื่อเป็นข้อความ) ถ้าไม่เจอ match ตรงเป๊ะ คืนค่า null
-// แทนการเดา — กันข้อมูลสถิติไปติดผิดคน
-export async function getPlayerMatchStats(
-  player: Pick<TalentPlayer, "fullNameTh" | "nickname">,
-): Promise<PlayerMatchStats | null> {
-  const names = [player.fullNameTh, player.nickname].filter(
-    (n): n is string => Boolean(n?.trim()),
-  );
-  if (names.length === 0) return null;
-
-  const conditions = names.flatMap((name) => [
-    `TRIM({${FIELD.playerName}}) = "${esc(name)}"`,
-    `TRIM({${FIELD.nickCode}}) = "${esc(name)}"`,
-  ]);
-  const formula = conditions.length === 1 ? conditions[0] : `OR(${conditions.join(",")})`;
-
-  const { records } = await queryAirtablePage<Record<string, unknown>>(TABLE_NAME, {
-    filterByFormula: formula,
-    pageSize: 1,
-  });
-
-  const record = records[0];
-  if (!record) return null;
-
-  const stats: PlayerMatchStats = {};
-  for (const group of STAT_GROUPS) {
-    for (const key of group.stats) {
-      const v = record.fields[key];
-      if (typeof v === "number") stats[key] = v;
-    }
-  }
-  return stats;
-}
-
 export type MatchStatsRow = {
   id: string;
   playerId: string | null;
@@ -215,6 +175,23 @@ export async function getAllMatchStats(): Promise<MatchStatsRow[]> {
       stats,
     };
   });
+}
+
+// หาแถวสถิติของผู้เล่นคนเดียวด้วย Airtable record id ตรง ๆ ผ่าน linked record field
+// (แม่นกว่าการจับคู่ชื่อ — กันปัญหาชื่อไทยสะกดคลาดเคลื่อนระหว่างสองตาราง) พร้อมค่าสูงสุด
+// ของทั้งทีมต่อแกน สำหรับวาดกราฟเรดาร์เทียบกับผู้เล่นคนอื่น
+export async function getPlayerMatchStatsRow(
+  playerId: string,
+): Promise<{ row: MatchStatsRow; radarMax: Record<string, number> } | null> {
+  const all = await getAllMatchStats();
+  const row = all.find((r) => r.playerId === playerId);
+  if (!row) return null;
+
+  const radarMax: Record<string, number> = {};
+  for (const axis of RADAR_AXES) {
+    radarMax[axis] = Math.max(1, ...all.map((r) => r.stats[axis] ?? 0));
+  }
+  return { row, radarMax };
 }
 
 export type Leaderboard = { stat: string; rows: { row: MatchStatsRow; value: number }[] };

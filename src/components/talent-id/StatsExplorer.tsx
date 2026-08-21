@@ -2,21 +2,8 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { Search, X, Trophy, Target, ExternalLink } from "lucide-react";
-import {
-  RadarChart,
-  PolarGrid,
-  PolarAngleAxis,
-  Radar,
-  ResponsiveContainer,
-} from "recharts";
-import {
-  STAT_GROUPS,
-  STAT_LABELS,
-  RADAR_AXES,
-  POSITION_CATEGORY_LABEL,
-  type MatchStatsRow,
-} from "@/lib/talent-match-stats";
+import { Search, Trophy, Target } from "lucide-react";
+import { POSITION_CATEGORY_LABEL, type MatchStatsRow } from "@/lib/talent-match-stats";
 
 const POSITION_COLOR: Record<string, string> = {
   FW: "#fbbf24", // amber-400
@@ -47,22 +34,16 @@ function initials(name: string) {
   return name.trim().charAt(0) || "?";
 }
 
-function labelOf(key: string) {
-  return STAT_LABELS[key]?.th ?? key;
-}
-
 function MiniLeaderboard({
   title,
   icon: Icon,
   data,
   statKey,
-  onSelect,
 }: {
   title: string;
   icon: typeof Trophy;
   data: MatchStatsRow[];
   statKey: string;
-  onSelect: (id: string) => void;
 }) {
   const rows = [...data]
     .map((row) => ({ row, value: row.stats[statKey] ?? 0 }))
@@ -80,45 +61,54 @@ function MiniLeaderboard({
         <p className="text-xs text-indigo-400">ยังไม่มีข้อมูล</p>
       ) : (
         <ul className="space-y-2.5">
-          {rows.map(({ row, value }, i) => (
-            <li key={row.id}>
-              <button
-                type="button"
-                onClick={() => onSelect(row.id)}
-                className="flex w-full items-center gap-2.5 rounded-lg text-left transition-colors hover:bg-white/5"
+          {rows.map(({ row, value }, i) => {
+            const rank = (
+              <span
+                className={`flex h-6 w-6 flex-none items-center justify-center rounded-full text-[11px] font-bold ${
+                  i === 0
+                    ? "bg-amber-400 text-amber-950"
+                    : i === 1
+                      ? "bg-slate-300 text-slate-900"
+                      : i === 2
+                        ? "bg-orange-400/80 text-orange-950"
+                        : "bg-white/10 text-indigo-300"
+                }`}
               >
-                <span
-                  className={`flex h-6 w-6 flex-none items-center justify-center rounded-full text-[11px] font-bold ${
-                    i === 0
-                      ? "bg-amber-400 text-amber-950"
-                      : i === 1
-                        ? "bg-slate-300 text-slate-900"
-                        : i === 2
-                          ? "bg-orange-400/80 text-orange-950"
-                          : "bg-white/10 text-indigo-300"
-                  }`}
-                >
-                  {i + 1}
-                </span>
+                {i + 1}
+              </span>
+            );
+            const content = (
+              <>
+                {rank}
                 <span className="min-w-0 flex-1 truncate text-sm text-indigo-100">{row.name}</span>
                 <span className="flex-none text-sm font-bold text-amber-300">{value}</span>
-              </button>
-            </li>
-          ))}
+              </>
+            );
+            return (
+              <li key={row.id}>
+                {row.playerId ? (
+                  <Link
+                    href={`/talent-id/${row.playerId}`}
+                    className="flex w-full items-center gap-2.5 rounded-lg transition-colors hover:bg-white/5"
+                  >
+                    {content}
+                  </Link>
+                ) : (
+                  <div className="flex w-full items-center gap-2.5 rounded-lg">{content}</div>
+                )}
+              </li>
+            );
+          })}
         </ul>
       )}
     </div>
   );
 }
 
-function PlayerCard({ row, onOpen }: { row: MatchStatsRow; onOpen: () => void }) {
+function PlayerCard({ row }: { row: MatchStatsRow }) {
   const color = row.positionCategory ? POSITION_COLOR[row.positionCategory] : DEFAULT_COLOR;
-  return (
-    <button
-      type="button"
-      onClick={onOpen}
-      className="group flex flex-col rounded-2xl border border-white/10 bg-linear-to-b from-white/[0.07] to-white/[0.02] p-4 text-left transition-all hover:-translate-y-0.5 hover:border-amber-400/40"
-    >
+  const body = (
+    <>
       <div className="mb-3 flex items-center gap-3">
         {row.photoUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -158,155 +148,19 @@ function PlayerCard({ row, onOpen }: { row: MatchStatsRow; onOpen: () => void })
           </div>
         ))}
       </div>
-    </button>
+    </>
   );
-}
 
-function rate(numerator: number, denominator: number): string | null {
-  if (denominator <= 0) return null;
-  return `${((100 * numerator) / denominator).toFixed(1)}%`;
-}
+  const className =
+    "group flex flex-col rounded-2xl border border-white/10 bg-linear-to-b from-white/7 to-white/2 p-4 text-left transition-all hover:-translate-y-0.5 hover:border-amber-400/40";
 
-function PlayerModal({
-  row,
-  radarMax,
-  onClose,
-}: {
-  row: MatchStatsRow;
-  radarMax: Record<string, number>;
-  onClose: () => void;
-}) {
-  const color = row.positionCategory ? POSITION_COLOR[row.positionCategory] : DEFAULT_COLOR;
-
-  const rates = [
-    { label: "จ่ายแม่น", value: rate(row.stats.PASSING ?? 0, (row.stats.PASSING ?? 0) + (row.stats["LOSS PASS"] ?? 0)) },
-    { label: "ชนะเลี้ยง 1v1", value: rate(row.stats["WIN TAKE ON 1V1"] ?? 0, row.stats["TAKE ON 1V1"] ?? 0) },
-    { label: "ยิงเข้ากรอบ", value: rate(row.stats["ON TARGET"] ?? 0, row.stats.SHOT ?? 0) },
-  ].filter((r): r is { label: string; value: string } => r.value != null);
-
-  const radarData = RADAR_AXES.map((axis) => {
-    const max = radarMax[axis] || 1;
-    const value = row.stats[axis] ?? 0;
-    return { axis: labelOf(axis), full: Math.round((100 * value) / max) };
-  });
-
+  if (!row.playerId) {
+    return <div className={className}>{body}</div>;
+  }
   return (
-    <div
-      className="fixed inset-0 z-100 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
-    >
-      <div className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-3xl border border-white/10 bg-indigo-950 p-6">
-        <div className="mb-5 flex items-start gap-4 border-b border-white/10 pb-5">
-          {row.photoUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={row.photoUrl}
-              alt=""
-              className="h-16 w-16 flex-none rounded-2xl border-2 object-cover"
-              style={{ borderColor: color }}
-            />
-          ) : (
-            <div
-              className="flex h-16 w-16 flex-none items-center justify-center rounded-2xl border-2 bg-indigo-900 text-xl font-bold text-indigo-200"
-              style={{ borderColor: color }}
-            >
-              {initials(row.name)}
-            </div>
-          )}
-          <div className="min-w-0 flex-1">
-            <h3 className="text-lg font-bold text-white">{row.name}</h3>
-            <p className="mt-0.5 text-sm font-medium" style={{ color }}>
-              {row.position ?? "-"}
-            </p>
-            {(row.school || row.region) && (
-              <p className="mt-1 truncate text-xs text-indigo-400">
-                {[row.school, row.region].filter(Boolean).join(" · ")}
-              </p>
-            )}
-            {rates.length > 0 && (
-              <p className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-indigo-300">
-                {rates.map((r) => (
-                  <span key={r.label}>
-                    {r.label} <span className="font-bold text-amber-300">{r.value}</span>
-                  </span>
-                ))}
-              </p>
-            )}
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="flex h-9 w-9 flex-none items-center justify-center rounded-lg border border-white/15 text-indigo-300 hover:border-red-400/50 hover:text-red-300"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-
-        {row.playerId && (
-          <Link
-            href={`/talent-id/${row.playerId}`}
-            className="mb-5 inline-flex items-center gap-1.5 rounded-lg border border-amber-400/30 bg-amber-400/10 px-3 py-1.5 text-xs font-semibold text-amber-300 hover:bg-amber-400/20"
-          >
-            ดูโปรไฟล์เต็ม
-            <ExternalLink className="h-3 w-3" />
-          </Link>
-        )}
-
-        <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-            <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-indigo-300">
-              โปรไฟล์เทียบกับผู้เล่นทั้งหมด
-            </h4>
-            <div className="h-64 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <RadarChart data={radarData} outerRadius="70%">
-                  <PolarGrid stroke="#27324a" />
-                  <PolarAngleAxis
-                    dataKey="axis"
-                    tick={{ fill: "#b6c2d6", fontSize: 10 }}
-                  />
-                  <Radar
-                    dataKey="full"
-                    stroke={color}
-                    fill={color}
-                    fillOpacity={0.28}
-                    strokeWidth={2}
-                  />
-                </RadarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-
-          <div className="text-sm">
-            {STAT_GROUPS.map((group) => (
-              <div key={group.title} className="mb-4 last:mb-0">
-                <p className="mb-1.5 text-[11px] font-bold uppercase tracking-wide text-amber-400">
-                  {group.title}
-                </p>
-                <div className="space-y-1">
-                  {group.stats.map((key) => {
-                    const value = row.stats[key] ?? 0;
-                    return (
-                      <div
-                        key={key}
-                        className="flex items-center justify-between border-b border-white/5 py-1 text-xs"
-                      >
-                        <span className="text-indigo-300">{labelOf(key)}</span>
-                        <span className={value === 0 ? "font-medium text-indigo-500" : "font-bold text-white"}>
-                          {value}
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
+    <Link href={`/talent-id/${row.playerId}`} className={className}>
+      {body}
+    </Link>
   );
 }
 
@@ -315,20 +169,11 @@ export function StatsExplorer({ data }: { data: MatchStatsRow[] }) {
   const [region, setRegion] = useState("ALL");
   const [positionTab, setPositionTab] = useState<"ALL" | "FW" | "MF" | "DF" | "GK">("ALL");
   const [sortKey, setSortKey] = useState("NAME");
-  const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const regions = useMemo(
     () => Array.from(new Set(data.map((d) => d.region).filter((r): r is string => Boolean(r)))).sort(),
     [data],
   );
-
-  const radarMax = useMemo(() => {
-    const max: Record<string, number> = {};
-    for (const axis of RADAR_AXES) {
-      max[axis] = Math.max(1, ...data.map((d) => d.stats[axis] ?? 0));
-    }
-    return max;
-  }, [data]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -347,13 +192,11 @@ export function StatsExplorer({ data }: { data: MatchStatsRow[] }) {
     return rows;
   }, [data, search, region, positionTab, sortKey]);
 
-  const selected = selectedId ? data.find((d) => d.id === selectedId) ?? null : null;
-
   return (
     <div>
       {/* ตัวกรอง */}
       <div className="mb-5 flex flex-col gap-4 rounded-2xl border border-white/10 bg-white/5 p-5 sm:flex-row sm:flex-wrap">
-        <div className="relative flex-1 sm:min-w-[220px]">
+        <div className="relative flex-1 sm:min-w-55">
           <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-indigo-400" />
           <input
             type="text"
@@ -408,8 +251,8 @@ export function StatsExplorer({ data }: { data: MatchStatsRow[] }) {
 
       <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:order-2 lg:w-72 lg:flex-none">
-          <MiniLeaderboard title="ทำประตูสูงสุด" icon={Target} data={data} statKey="GOAL" onSelect={setSelectedId} />
-          <MiniLeaderboard title="แอสซิสต์สูงสุด" icon={Trophy} data={data} statKey="ASSIST" onSelect={setSelectedId} />
+          <MiniLeaderboard title="ทำประตูสูงสุด" icon={Target} data={data} statKey="GOAL" />
+          <MiniLeaderboard title="แอสซิสต์สูงสุด" icon={Trophy} data={data} statKey="ASSIST" />
         </div>
 
         <div className="min-w-0 flex-1 lg:order-1">
@@ -420,14 +263,12 @@ export function StatsExplorer({ data }: { data: MatchStatsRow[] }) {
           ) : (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
               {filtered.map((row) => (
-                <PlayerCard key={row.id} row={row} onOpen={() => setSelectedId(row.id)} />
+                <PlayerCard key={row.id} row={row} />
               ))}
             </div>
           )}
         </div>
       </div>
-
-      {selected && <PlayerModal row={selected} radarMax={radarMax} onClose={() => setSelectedId(null)} />}
     </div>
   );
 }
