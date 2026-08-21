@@ -103,12 +103,12 @@ export function MatchStatsPanel({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:items-start">
         <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
           <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-indigo-300">
             โปรไฟล์เทียบกับผู้เล่นทั้งหมด
           </h3>
-          <div className="h-64 w-full">
+          <div className="h-56 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <RadarChart data={radarData} outerRadius="70%">
                 <PolarGrid stroke="#27324a" />
@@ -116,6 +116,25 @@ export function MatchStatsPanel({
                 <Radar dataKey="full" stroke={color} fill={color} fillOpacity={0.28} strokeWidth={2} />
               </RadarChart>
             </ResponsiveContainer>
+          </div>
+          <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1.5 border-t border-white/10 pt-3">
+            {RADAR_AXES.map((axis) => {
+              const value = row.stats[axis] ?? 0;
+              const percent = statPercentile(row, axis, statsDist);
+              const tier = value === 0 ? null : ratingTier(percent);
+              return (
+                <div key={axis} className="flex items-center justify-between gap-2 text-xs">
+                  <span className="truncate text-indigo-300">{labelOf(axis)}</span>
+                  <span
+                    className={`min-w-7 flex-none rounded-md px-1.5 py-0.5 text-center font-bold ${
+                      tier ? `${tier.bg} ${tier.text}` : "text-indigo-500"
+                    }`}
+                  >
+                    {value}
+                  </span>
+                </div>
+              );
+            })}
           </div>
         </div>
 
