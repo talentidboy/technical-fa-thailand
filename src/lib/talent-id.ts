@@ -168,6 +168,9 @@ function mapPlayer(record: AirtableRecord<RawFields>): TalentPlayer {
   };
 }
 
+// หมายเหตุ: ตาราง Players มีมากกว่า 2,000 แถว — ผลลัพธ์ที่ map แล้วเกิน 2MB
+// (ขีดจำกัดของ Next.js Data Cache ต่อ 1 entry) จึง cache ด้วย unstable_cache ตรงๆ ไม่ได้
+// (ลองแล้ว เงียบๆ fail — ดูรายละเอียดในบทสนทนา ต้องคุยเรื่องสถาปัตยกรรมใหม่ก่อนแก้จริง)
 export async function getTalentPlayers(): Promise<TalentPlayer[]> {
   const records = await getAirtableRecords<RawFields>(TABLE_NAME);
   return records.map(mapPlayer);

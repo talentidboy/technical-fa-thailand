@@ -14,11 +14,12 @@ function authHeaders() {
   return { Authorization: `Bearer ${AIRTABLE_API_KEY}` };
 }
 
-// ดึงข้อมูลทุกแถวจากตาราง Airtable (วนดึงตาม offset จนหมด) — cache 30 นาที
-// ต้องวน sequential ตาม offset ของ Airtable เอง (ทำ parallel ไม่ได้) รอบละ 100 แถว
-// ถ้ามีผู้เล่น ~400 คน = 4 round-trip ไปหา Airtable ทุกครั้งที่ cache หมดอายุ
-// ยืด revalidate ให้ยาวขึ้นเพื่อให้ผู้ใช้ส่วนใหญ่เจอแคชที่ยัง fresh อยู่แทนที่จะต้องรอ
-// รอบ cold-fetch เต็มๆ บ่อยเกินไป (ข้อมูลสแกาต์ไม่ได้เปลี่ยนทุกไม่กี่นาทีอยู่แล้ว)
+// วนดึงทุกหน้าจาก Airtable แบบสดเสมอ ไม่ cache รายหน้า — offset/iterator ของ Airtable
+// หมดอายุเร็ว (ไม่กี่นาที) ถ้า cache แต่ละหน้าแยกกันด้วย revalidate ยาวๆ จะเกิดเคสที่
+// หน้าแรกเสิร์ฟจาก cache เก่า แต่หน้าถัดไปต้องยิงสดด้วย offset ที่ Airtable มองว่าหมดอายุ
+// ไปแล้ว → 422 LIST_RECORDS_ITERATOR_NOT_AVAILABLE. ผู้เรียก (เช่น getTalentPlayers)
+// ควร cache ผลลัพธ์ที่ map/ตัดทอนแล้วแทน ไม่ใช่ cache raw records ตรงนี้ (raw records ทั้ง
+// เบสใหญ่เกิน 2MB ที่ Next.js Data Cache รับได้ต่อ 1 entry อยู่แล้ว)
 export async function getAirtableRecords<T = Record<string, unknown>>(
   tableName: string,
 ): Promise<AirtableRecord<T>[]> {
@@ -34,7 +35,7 @@ export async function getAirtableRecords<T = Record<string, unknown>>(
 
     const res = await fetch(url, {
       headers: authHeaders(),
-      next: { revalidate: 1800 },
+      cache: "no-store",
     });
     if (!res.ok) {
       throw new Error(`ดึงข้อมูลจาก Airtable ไม่สำเร็จ (${res.status}): ${await res.text()}`);
