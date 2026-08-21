@@ -1,4 +1,4 @@
-import { queryAirtablePage, escapeAirtableFormulaString } from "./airtable";
+import { getAirtableRecords, queryAirtablePage, escapeAirtableFormulaString } from "./airtable";
 import type { TalentPlayer } from "./talent-id";
 
 const TABLE_NAME = "INDIVIDUAL STATS LEG 2 / 2026";
@@ -6,6 +6,10 @@ const TABLE_NAME = "INDIVIDUAL STATS LEG 2 / 2026";
 const FIELD = {
   nickCode: "Sport Code Nick Name",
   playerName: "Players / ผู้เล่น",
+  position: "ตำแหน่ง",
+  region: "ภูมิภาค",
+  school: "โรงเรียน",
+  photo: "รูป",
 } as const;
 
 // รายชื่อสถิติทั้งหมดในตาราง จัดกลุ่มตามหมวดฟุตบอลจริง (ชื่อคอลัมน์ตรงกับ Airtable เป๊ะ)
@@ -85,4 +89,65 @@ export async function getPlayerMatchStats(
     }
   }
   return stats;
+}
+
+export type MatchStatsRow = {
+  id: string;
+  name: string;
+  position: string | null;
+  region: string | null;
+  school: string | null;
+  photoUrl: string | null;
+  stats: PlayerMatchStats;
+};
+
+function photoUrl(v: unknown): string | null {
+  const attachments = v as { url: string; thumbnails?: { large?: { url: string } } }[] | undefined;
+  const first = attachments?.[0];
+  return first?.thumbnails?.large?.url ?? first?.url ?? null;
+}
+
+// ตารางนี้เล็ก (หลักสิบแถว) ดึงทั้งหมดมาสรุปภาพรวมได้โดยไม่กระทบ perf แบบตาราง Players
+export async function getAllMatchStats(): Promise<MatchStatsRow[]> {
+  const records = await getAirtableRecords<Record<string, unknown>>(TABLE_NAME);
+  return records.map((r) => {
+    const stats: PlayerMatchStats = {};
+    for (const group of STAT_GROUPS) {
+      for (const key of group.stats) {
+        const v = r.fields[key];
+        if (typeof v === "number") stats[key] = v;
+      }
+    }
+    const name =
+      (r.fields[FIELD.playerName] as string) || (r.fields[FIELD.nickCode] as string) || "ไม่ระบุชื่อ";
+    return {
+      id: r.id,
+      name,
+      position: (r.fields[FIELD.position] as string) || null,
+      region: (r.fields[FIELD.region] as string) || null,
+      school: (r.fields[FIELD.school] as string) || null,
+      photoUrl: photoUrl(r.fields[FIELD.photo]),
+      stats,
+    };
+  });
+}
+
+export type Leaderboard = { stat: string; rows: { row: MatchStatsRow; value: number }[] };
+
+// จัดอันดับ top N รายบุคคลสำหรับทุกสถิติในกลุ่ม โดยตัดคนที่ค่าเป็น 0 หรือไม่มีข้อมูลออก
+export function buildLeaderboards(
+  data: MatchStatsRow[],
+  statKeys: string[],
+  topN = 5,
+): Leaderboard[] {
+  return statKeys
+    .map((stat) => {
+      const rows = data
+        .map((row) => ({ row, value: row.stats[stat] }))
+        .filter((r): r is { row: MatchStatsRow; value: number } => (r.value ?? 0) > 0)
+        .sort((a, b) => b.value - a.value)
+        .slice(0, topN);
+      return { stat, rows };
+    })
+    .filter((lb) => lb.rows.length > 0);
 }

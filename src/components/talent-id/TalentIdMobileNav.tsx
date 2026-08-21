@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Users, Trophy } from "lucide-react";
+import { LayoutDashboard, Users, Trophy, Activity } from "lucide-react";
 
 const NAV = [
   { href: "/talent-id", label: "ภาพรวม", icon: LayoutDashboard },
   { href: "/talent-id/players", label: "ผู้เล่น", icon: Users },
   { href: "/talent-id/standouts", label: "โดดเด่น", icon: Trophy },
+  { href: "/talent-id/stats", label: "สถิติ", icon: Activity },
 ];
 
 export function TalentIdMobileNav() {

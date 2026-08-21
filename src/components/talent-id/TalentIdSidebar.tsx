@@ -3,13 +3,14 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Users, Trophy, ArrowLeft } from "lucide-react";
+import { LayoutDashboard, Users, Trophy, Activity, ArrowLeft } from "lucide-react";
 import { LOGO_URL } from "@/lib/brand";
 
 const NAV = [
   { href: "/talent-id", label: "ภาพรวม", icon: LayoutDashboard },
   { href: "/talent-id/players", label: "ผู้เล่นทั้งหมด", icon: Users },
   { href: "/talent-id/standouts", label: "ผู้เล่นโดดเด่นตามเกรด", icon: Trophy },
+  { href: "/talent-id/stats", label: "สถิติการแข่งขัน", icon: Activity },
 ];
 
 export function TalentIdSidebar({
