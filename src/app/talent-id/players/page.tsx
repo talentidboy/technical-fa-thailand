@@ -199,22 +199,22 @@ export default async function TalentIdPlayersPage({
                           {SORT_LABELS.position}
                         </SortHeader>
                       </th>
-                      <th className="px-4 py-3">
+                      <th className="hidden px-4 py-3 md:table-cell">
                         <SortHeader href={sortHref("club")} active={sortKey === "club"} asc={sortAsc}>
                           {SORT_LABELS.club}
                         </SortHeader>
                       </th>
-                      <th className="px-4 py-3 text-center">
+                      <th className="hidden px-4 py-3 text-center sm:table-cell">
                         <SortHeader href={sortHref("age")} active={sortKey === "age"} asc={sortAsc}>
                           {SORT_LABELS.age}
                         </SortHeader>
                       </th>
-                      <th className="px-4 py-3 text-center">
+                      <th className="hidden px-4 py-3 text-center md:table-cell">
                         <SortHeader href={sortHref("height")} active={sortKey === "height"} asc={sortAsc}>
                           {SORT_LABELS.height}
                         </SortHeader>
                       </th>
-                      <th className="px-4 py-3 text-center">
+                      <th className="hidden px-4 py-3 text-center md:table-cell">
                         <SortHeader href={sortHref("weight")} active={sortKey === "weight"} asc={sortAsc}>
                           {SORT_LABELS.weight}
                         </SortHeader>
@@ -224,7 +224,7 @@ export default async function TalentIdPlayersPage({
                           {SORT_LABELS.rating}
                         </SortHeader>
                       </th>
-                      <th className="px-4 py-3 text-center">เกรด</th>
+                      <th className="hidden px-4 py-3 text-center sm:table-cell">เกรด</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-white/10">
@@ -255,16 +255,16 @@ export default async function TalentIdPlayersPage({
                           <td className="whitespace-nowrap px-4 py-3 text-indigo-200">
                             {player.position1 ?? "-"}
                           </td>
-                          <td className="whitespace-nowrap px-4 py-3 text-indigo-200">
+                          <td className="hidden whitespace-nowrap px-4 py-3 text-indigo-200 md:table-cell">
                             {player.club || player.school || "-"}
                           </td>
-                          <td className="px-4 py-3 text-center text-indigo-200">
+                          <td className="hidden px-4 py-3 text-center text-indigo-200 sm:table-cell">
                             {player.age ?? "-"}
                           </td>
-                          <td className="px-4 py-3 text-center text-indigo-200">
+                          <td className="hidden px-4 py-3 text-center text-indigo-200 md:table-cell">
                             {player.height ?? "-"}
                           </td>
-                          <td className="px-4 py-3 text-center text-indigo-200">
+                          <td className="hidden px-4 py-3 text-center text-indigo-200 md:table-cell">
                             {player.weight ?? "-"}
                           </td>
                           <td className="px-4 py-3 text-center">
@@ -276,7 +276,7 @@ export default async function TalentIdPlayersPage({
                               <span className="text-indigo-400">-</span>
                             )}
                           </td>
-                          <td className="px-4 py-3 text-center text-indigo-200">
+                          <td className="hidden px-4 py-3 text-center text-indigo-200 sm:table-cell">
                             {grade ?? "-"}
                           </td>
                         </tr>

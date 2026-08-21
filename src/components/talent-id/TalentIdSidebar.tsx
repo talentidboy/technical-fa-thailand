@@ -22,7 +22,7 @@ export function TalentIdSidebar({
   const pathname = usePathname();
 
   return (
-    <aside className="flex h-screen w-64 shrink-0 flex-col border-r border-white/10 bg-black/20">
+    <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r border-white/10 bg-black/20 lg:flex">
       <div className="flex items-center gap-2 px-5 py-5">
         <Image
           src={LOGO_URL}
