@@ -14,8 +14,11 @@ function authHeaders() {
   return { Authorization: `Bearer ${AIRTABLE_API_KEY}` };
 }
 
-// ดึงข้อมูลทุกแถวจากตาราง Airtable (วนดึงตาม offset จนหมด) — cache 5 นาที
-// เพราะ Airtable ยังเป็น source of truth หลัก ข้อมูลเปลี่ยนบ่อยจากทีมสแกาต์
+// ดึงข้อมูลทุกแถวจากตาราง Airtable (วนดึงตาม offset จนหมด) — cache 30 นาที
+// ต้องวน sequential ตาม offset ของ Airtable เอง (ทำ parallel ไม่ได้) รอบละ 100 แถว
+// ถ้ามีผู้เล่น ~400 คน = 4 round-trip ไปหา Airtable ทุกครั้งที่ cache หมดอายุ
+// ยืด revalidate ให้ยาวขึ้นเพื่อให้ผู้ใช้ส่วนใหญ่เจอแคชที่ยัง fresh อยู่แทนที่จะต้องรอ
+// รอบ cold-fetch เต็มๆ บ่อยเกินไป (ข้อมูลสแกาต์ไม่ได้เปลี่ยนทุกไม่กี่นาทีอยู่แล้ว)
 export async function getAirtableRecords<T = Record<string, unknown>>(
   tableName: string,
 ): Promise<AirtableRecord<T>[]> {
@@ -31,7 +34,7 @@ export async function getAirtableRecords<T = Record<string, unknown>>(
 
     const res = await fetch(url, {
       headers: authHeaders(),
-      next: { revalidate: 300 },
+      next: { revalidate: 1800 },
     });
     if (!res.ok) {
       throw new Error(`ดึงข้อมูลจาก Airtable ไม่สำเร็จ (${res.status}): ${await res.text()}`);
