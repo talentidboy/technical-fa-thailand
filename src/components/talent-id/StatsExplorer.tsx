@@ -1,0 +1,433 @@
+"use client";
+
+import { useMemo, useState } from "react";
+import Link from "next/link";
+import { Search, X, Trophy, Target, ExternalLink } from "lucide-react";
+import {
+  RadarChart,
+  PolarGrid,
+  PolarAngleAxis,
+  Radar,
+  ResponsiveContainer,
+} from "recharts";
+import {
+  STAT_GROUPS,
+  STAT_LABELS,
+  RADAR_AXES,
+  POSITION_CATEGORY_LABEL,
+  type MatchStatsRow,
+} from "@/lib/talent-match-stats";
+
+const POSITION_COLOR: Record<string, string> = {
+  FW: "#fbbf24", // amber-400
+  MF: "#38bdf8", // sky-400
+  DF: "#34d399", // emerald-400
+  GK: "#a78bfa", // violet-400
+};
+const DEFAULT_COLOR = "#818cf8"; // indigo-400
+
+const POSITION_TABS: { key: "ALL" | "FW" | "MF" | "DF" | "GK"; label: string }[] = [
+  { key: "ALL", label: "ทั้งหมด" },
+  { key: "FW", label: "กองหน้า" },
+  { key: "MF", label: "กองกลาง" },
+  { key: "DF", label: "กองหลัง" },
+  { key: "GK", label: "ผู้รักษาประตู" },
+];
+
+const SORT_OPTIONS: { key: string; label: string }[] = [
+  { key: "NAME", label: "ชื่อ (ก-ฮ)" },
+  { key: "GOAL", label: "ทำประตูสูงสุด" },
+  { key: "ASSIST", label: "แอสซิสต์สูงสุด" },
+  { key: "PASSING", label: "จ่ายบอลสูงสุด" },
+  { key: "DEFENSIVE ACTION", label: "เกมรับสูงสุด" },
+  { key: "TAKE ON 1V1", label: "เลี้ยงผ่าน 1v1 สูงสุด" },
+];
+
+function initials(name: string) {
+  return name.trim().charAt(0) || "?";
+}
+
+function labelOf(key: string) {
+  return STAT_LABELS[key]?.th ?? key;
+}
+
+function MiniLeaderboard({
+  title,
+  icon: Icon,
+  data,
+  statKey,
+  onSelect,
+}: {
+  title: string;
+  icon: typeof Trophy;
+  data: MatchStatsRow[];
+  statKey: string;
+  onSelect: (id: string) => void;
+}) {
+  const rows = [...data]
+    .map((row) => ({ row, value: row.stats[statKey] ?? 0 }))
+    .filter((r) => r.value > 0)
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 5);
+
+  return (
+    <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+      <div className="mb-4 flex items-center gap-2">
+        <Icon className="h-4 w-4 text-amber-400" />
+        <h3 className="text-sm font-semibold text-white">{title}</h3>
+      </div>
+      {rows.length === 0 ? (
+        <p className="text-xs text-indigo-400">ยังไม่มีข้อมูล</p>
+      ) : (
+        <ul className="space-y-2.5">
+          {rows.map(({ row, value }, i) => (
+            <li key={row.id}>
+              <button
+                type="button"
+                onClick={() => onSelect(row.id)}
+                className="flex w-full items-center gap-2.5 rounded-lg text-left transition-colors hover:bg-white/5"
+              >
+                <span
+                  className={`flex h-6 w-6 flex-none items-center justify-center rounded-full text-[11px] font-bold ${
+                    i === 0
+                      ? "bg-amber-400 text-amber-950"
+                      : i === 1
+                        ? "bg-slate-300 text-slate-900"
+                        : i === 2
+                          ? "bg-orange-400/80 text-orange-950"
+                          : "bg-white/10 text-indigo-300"
+                  }`}
+                >
+                  {i + 1}
+                </span>
+                <span className="min-w-0 flex-1 truncate text-sm text-indigo-100">{row.name}</span>
+                <span className="flex-none text-sm font-bold text-amber-300">{value}</span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+function PlayerCard({ row, onOpen }: { row: MatchStatsRow; onOpen: () => void }) {
+  const color = row.positionCategory ? POSITION_COLOR[row.positionCategory] : DEFAULT_COLOR;
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      className="group flex flex-col rounded-2xl border border-white/10 bg-linear-to-b from-white/[0.07] to-white/[0.02] p-4 text-left transition-all hover:-translate-y-0.5 hover:border-amber-400/40"
+    >
+      <div className="mb-3 flex items-center gap-3">
+        {row.photoUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={row.photoUrl}
+            alt=""
+            className="h-12 w-12 flex-none rounded-full border-2 object-cover"
+            style={{ borderColor: color }}
+          />
+        ) : (
+          <div
+            className="flex h-12 w-12 flex-none items-center justify-center rounded-full border-2 bg-indigo-950 text-sm font-semibold text-indigo-200"
+            style={{ borderColor: color }}
+          >
+            {initials(row.name)}
+          </div>
+        )}
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-semibold text-white group-hover:text-amber-300">
+            {row.name}
+          </p>
+          <p className="truncate text-xs" style={{ color }}>
+            {row.positionCategory ? POSITION_CATEGORY_LABEL[row.positionCategory] : row.position ?? "-"}
+          </p>
+        </div>
+      </div>
+      <div className="grid grid-cols-4 gap-1 border-t border-white/10 pt-3">
+        {[
+          { label: "ประตู", value: row.stats.GOAL ?? 0 },
+          { label: "แอสซิสต์", value: row.stats.ASSIST ?? 0 },
+          { label: "จ่าย", value: row.stats.PASSING ?? 0 },
+          { label: "เกมรับ", value: row.stats["DEFENSIVE ACTION"] ?? 0 },
+        ].map((s) => (
+          <div key={s.label} className="text-center">
+            <p className="text-sm font-bold text-white">{s.value}</p>
+            <p className="text-[10px] uppercase tracking-wide text-indigo-400">{s.label}</p>
+          </div>
+        ))}
+      </div>
+    </button>
+  );
+}
+
+function rate(numerator: number, denominator: number): string | null {
+  if (denominator <= 0) return null;
+  return `${((100 * numerator) / denominator).toFixed(1)}%`;
+}
+
+function PlayerModal({
+  row,
+  radarMax,
+  onClose,
+}: {
+  row: MatchStatsRow;
+  radarMax: Record<string, number>;
+  onClose: () => void;
+}) {
+  const color = row.positionCategory ? POSITION_COLOR[row.positionCategory] : DEFAULT_COLOR;
+
+  const rates = [
+    { label: "จ่ายแม่น", value: rate(row.stats.PASSING ?? 0, (row.stats.PASSING ?? 0) + (row.stats["LOSS PASS"] ?? 0)) },
+    { label: "ชนะเลี้ยง 1v1", value: rate(row.stats["WIN TAKE ON 1V1"] ?? 0, row.stats["TAKE ON 1V1"] ?? 0) },
+    { label: "ยิงเข้ากรอบ", value: rate(row.stats["ON TARGET"] ?? 0, row.stats.SHOT ?? 0) },
+  ].filter((r): r is { label: string; value: string } => r.value != null);
+
+  const radarData = RADAR_AXES.map((axis) => {
+    const max = radarMax[axis] || 1;
+    const value = row.stats[axis] ?? 0;
+    return { axis: labelOf(axis), full: Math.round((100 * value) / max) };
+  });
+
+  return (
+    <div
+      className="fixed inset-0 z-100 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-3xl border border-white/10 bg-indigo-950 p-6">
+        <div className="mb-5 flex items-start gap-4 border-b border-white/10 pb-5">
+          {row.photoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={row.photoUrl}
+              alt=""
+              className="h-16 w-16 flex-none rounded-2xl border-2 object-cover"
+              style={{ borderColor: color }}
+            />
+          ) : (
+            <div
+              className="flex h-16 w-16 flex-none items-center justify-center rounded-2xl border-2 bg-indigo-900 text-xl font-bold text-indigo-200"
+              style={{ borderColor: color }}
+            >
+              {initials(row.name)}
+            </div>
+          )}
+          <div className="min-w-0 flex-1">
+            <h3 className="text-lg font-bold text-white">{row.name}</h3>
+            <p className="mt-0.5 text-sm font-medium" style={{ color }}>
+              {row.position ?? "-"}
+            </p>
+            {(row.school || row.region) && (
+              <p className="mt-1 truncate text-xs text-indigo-400">
+                {[row.school, row.region].filter(Boolean).join(" · ")}
+              </p>
+            )}
+            {rates.length > 0 && (
+              <p className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-indigo-300">
+                {rates.map((r) => (
+                  <span key={r.label}>
+                    {r.label} <span className="font-bold text-amber-300">{r.value}</span>
+                  </span>
+                ))}
+              </p>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex h-9 w-9 flex-none items-center justify-center rounded-lg border border-white/15 text-indigo-300 hover:border-red-400/50 hover:text-red-300"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        {row.playerId && (
+          <Link
+            href={`/talent-id/${row.playerId}`}
+            className="mb-5 inline-flex items-center gap-1.5 rounded-lg border border-amber-400/30 bg-amber-400/10 px-3 py-1.5 text-xs font-semibold text-amber-300 hover:bg-amber-400/20"
+          >
+            ดูโปรไฟล์เต็ม
+            <ExternalLink className="h-3 w-3" />
+          </Link>
+        )}
+
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+            <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-indigo-300">
+              โปรไฟล์เทียบกับผู้เล่นทั้งหมด
+            </h4>
+            <div className="h-64 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <RadarChart data={radarData} outerRadius="70%">
+                  <PolarGrid stroke="#27324a" />
+                  <PolarAngleAxis
+                    dataKey="axis"
+                    tick={{ fill: "#b6c2d6", fontSize: 10 }}
+                  />
+                  <Radar
+                    dataKey="full"
+                    stroke={color}
+                    fill={color}
+                    fillOpacity={0.28}
+                    strokeWidth={2}
+                  />
+                </RadarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          <div className="text-sm">
+            {STAT_GROUPS.map((group) => (
+              <div key={group.title} className="mb-4 last:mb-0">
+                <p className="mb-1.5 text-[11px] font-bold uppercase tracking-wide text-amber-400">
+                  {group.title}
+                </p>
+                <div className="space-y-1">
+                  {group.stats.map((key) => {
+                    const value = row.stats[key] ?? 0;
+                    return (
+                      <div
+                        key={key}
+                        className="flex items-center justify-between border-b border-white/5 py-1 text-xs"
+                      >
+                        <span className="text-indigo-300">{labelOf(key)}</span>
+                        <span className={value === 0 ? "font-medium text-indigo-500" : "font-bold text-white"}>
+                          {value}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function StatsExplorer({ data }: { data: MatchStatsRow[] }) {
+  const [search, setSearch] = useState("");
+  const [region, setRegion] = useState("ALL");
+  const [positionTab, setPositionTab] = useState<"ALL" | "FW" | "MF" | "DF" | "GK">("ALL");
+  const [sortKey, setSortKey] = useState("NAME");
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+
+  const regions = useMemo(
+    () => Array.from(new Set(data.map((d) => d.region).filter((r): r is string => Boolean(r)))).sort(),
+    [data],
+  );
+
+  const radarMax = useMemo(() => {
+    const max: Record<string, number> = {};
+    for (const axis of RADAR_AXES) {
+      max[axis] = Math.max(1, ...data.map((d) => d.stats[axis] ?? 0));
+    }
+    return max;
+  }, [data]);
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    let rows = data.filter((row) => {
+      const matchTab = positionTab === "ALL" || row.positionCategory === positionTab;
+      const matchSearch = !q || row.name.toLowerCase().includes(q) || (row.school ?? "").toLowerCase().includes(q);
+      const matchRegion = region === "ALL" || row.region === region;
+      return matchTab && matchSearch && matchRegion;
+    });
+
+    if (sortKey === "NAME") {
+      rows = [...rows].sort((a, b) => a.name.localeCompare(b.name, "th"));
+    } else {
+      rows = [...rows].sort((a, b) => (b.stats[sortKey] ?? 0) - (a.stats[sortKey] ?? 0));
+    }
+    return rows;
+  }, [data, search, region, positionTab, sortKey]);
+
+  const selected = selectedId ? data.find((d) => d.id === selectedId) ?? null : null;
+
+  return (
+    <div>
+      {/* ตัวกรอง */}
+      <div className="mb-5 flex flex-col gap-4 rounded-2xl border border-white/10 bg-white/5 p-5 sm:flex-row sm:flex-wrap">
+        <div className="relative flex-1 sm:min-w-[220px]">
+          <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-indigo-400" />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="ค้นหาชื่อ, โรงเรียน..."
+            className="w-full rounded-lg border border-white/15 bg-white/5 py-2.5 pl-10 pr-4 text-sm text-white placeholder:text-indigo-400 focus:border-amber-400/50 focus:outline-none focus:ring-2 focus:ring-amber-400/20"
+          />
+        </div>
+        <select
+          value={region}
+          onChange={(e) => setRegion(e.target.value)}
+          className="rounded-lg border border-white/15 bg-indigo-950 px-3 py-2.5 text-sm text-indigo-100 focus:border-amber-400/50 focus:outline-none focus:ring-2 focus:ring-amber-400/20 sm:w-56"
+        >
+          <option value="ALL">ทุกภูมิภาค</option>
+          {regions.map((r) => (
+            <option key={r} value={r}>
+              {r}
+            </option>
+          ))}
+        </select>
+        <select
+          value={sortKey}
+          onChange={(e) => setSortKey(e.target.value)}
+          className="rounded-lg border border-white/15 bg-indigo-950 px-3 py-2.5 text-sm text-indigo-100 focus:border-amber-400/50 focus:outline-none focus:ring-2 focus:ring-amber-400/20 sm:w-56"
+        >
+          {SORT_OPTIONS.map((s) => (
+            <option key={s.key} value={s.key}>
+              {s.label}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {/* แท็บตำแหน่ง */}
+      <div className="mb-6 flex gap-2 overflow-x-auto pb-1">
+        {POSITION_TABS.map((tab) => (
+          <button
+            key={tab.key}
+            type="button"
+            onClick={() => setPositionTab(tab.key)}
+            className={`flex-none rounded-full border px-4 py-1.5 text-xs font-semibold transition-colors ${
+              positionTab === tab.key
+                ? "border-amber-400 bg-amber-400/15 text-amber-300"
+                : "border-white/15 bg-white/5 text-indigo-300 hover:text-white"
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:order-2 lg:w-72 lg:flex-none">
+          <MiniLeaderboard title="ทำประตูสูงสุด" icon={Target} data={data} statKey="GOAL" onSelect={setSelectedId} />
+          <MiniLeaderboard title="แอสซิสต์สูงสุด" icon={Trophy} data={data} statKey="ASSIST" onSelect={setSelectedId} />
+        </div>
+
+        <div className="min-w-0 flex-1 lg:order-1">
+          {filtered.length === 0 ? (
+            <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-white/15 bg-white/5 px-6 py-16 text-center">
+              <p className="text-sm text-indigo-300">ไม่พบนักเตะที่ตรงกับเงื่อนไขที่เลือก</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              {filtered.map((row) => (
+                <PlayerCard key={row.id} row={row} onOpen={() => setSelectedId(row.id)} />
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {selected && <PlayerModal row={selected} radarMax={radarMax} onClose={() => setSelectedId(null)} />}
+    </div>
+  );
+}

@@ -1,6 +1,7 @@
-import { getAllMatchStats, buildLeaderboards, STAT_GROUPS } from "@/lib/talent-match-stats";
+import { getAllMatchStats } from "@/lib/talent-match-stats";
 import { Activity, Users } from "lucide-react";
 import { Breadcrumb } from "@/components/talent-id/Breadcrumb";
+import { StatsExplorer } from "@/components/talent-id/StatsExplorer";
 
 export const fetchCache = "default-cache";
 
@@ -61,53 +62,7 @@ export default async function TalentIdStatsPage() {
             ))}
           </div>
 
-          {/* จัดอันดับตามหมวด */}
-          {STAT_GROUPS.map((group) => {
-            const leaderboards = buildLeaderboards(data, group.stats, 5);
-            if (leaderboards.length === 0) return null;
-            return (
-              <section key={group.title}>
-                <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-indigo-300">
-                  {group.title}
-                </h2>
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                  {leaderboards.map((lb) => (
-                    <div
-                      key={lb.stat}
-                      className="rounded-2xl border border-white/10 bg-white/5 p-5"
-                    >
-                      <h3 className="mb-3 text-xs font-bold text-amber-300">{lb.stat}</h3>
-                      <ul className="space-y-2">
-                        {lb.rows.map((r, i) => (
-                          <li key={r.row.id} className="flex items-center gap-2.5 text-sm">
-                            <span className="w-4 flex-none text-xs font-bold text-indigo-400">
-                              {i + 1}
-                            </span>
-                            {r.row.photoUrl ? (
-                              // eslint-disable-next-line @next/next/no-img-element
-                              <img
-                                src={r.row.photoUrl}
-                                alt=""
-                                className="h-6 w-6 flex-none rounded-full object-cover"
-                              />
-                            ) : (
-                              <div className="flex h-6 w-6 flex-none items-center justify-center rounded-full bg-indigo-800 text-[10px] font-semibold text-indigo-200">
-                                {r.row.name.charAt(0)}
-                              </div>
-                            )}
-                            <span className="min-w-0 flex-1 truncate text-indigo-100">
-                              {r.row.name}
-                            </span>
-                            <span className="flex-none font-bold text-white">{r.value}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  ))}
-                </div>
-              </section>
-            );
-          })}
+          <StatsExplorer data={data} />
         </div>
       )}
     </div>
