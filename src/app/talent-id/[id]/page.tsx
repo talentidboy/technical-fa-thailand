@@ -1,12 +1,19 @@
 import { notFound, redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { getTalentPlayerById } from "@/lib/talent-id";
-import { getPlayerMatchStatsRow } from "@/lib/talent-match-stats";
+import {
+  getPlayerMatchStatsRow,
+  computeFormScore,
+  statPercentile,
+  RADAR_AXES,
+  STAT_LABELS,
+} from "@/lib/talent-match-stats";
 import { PositionPitch } from "@/components/PositionPitch";
 import { PlayerTabs } from "@/components/talent-id/PlayerTabs";
 import { InfoPill } from "@/components/talent-id/InfoPill";
 import { Breadcrumb } from "@/components/talent-id/Breadcrumb";
 import { MatchStatsPanel } from "@/components/talent-id/MatchStatsPanel";
+import { StatChip } from "@/components/talent-id/StatChip";
 import { avgRatingToScore, ratingTier } from "@/lib/rating-scale";
 import {
   Ruler,
@@ -24,6 +31,8 @@ import {
   TrendingUp,
   Users2,
   Compass,
+  Activity,
+  Gauge,
 } from "lucide-react";
 
 export const fetchCache = "default-cache";
@@ -241,6 +250,64 @@ export default async function TalentIdDetailPage({
         </div>
       </div>
 
+      {(player.scoutScores.length > 0 || matchStats) && (
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          {player.scoutScores.length > 0 && (
+            <div
+              className={`rounded-2xl border border-white/10 bg-white/5 p-6 ${!matchStats ? "lg:col-span-2" : ""}`}
+            >
+              <div className="mb-4 flex items-center gap-2">
+                <Gauge className="h-4 w-4 text-amber-400" />
+                <h2 className="font-semibold text-white">คะแนนจากสแกาต์รายบุคคล</h2>
+              </div>
+              <ScoutScoresBars scores={player.scoutScores} />
+            </div>
+          )}
+
+          {matchStats && (
+            <div
+              className={`rounded-2xl border border-white/10 bg-white/5 p-6 ${
+                player.scoutScores.length === 0 ? "lg:col-span-2" : ""
+              }`}
+            >
+              <div className="mb-4 flex items-center gap-2">
+                <Activity className="h-4 w-4 text-amber-400" />
+                <h2 className="font-semibold text-white">ไฮไลท์สถิติการแข่งขัน</h2>
+              </div>
+              {(() => {
+                const form = computeFormScore(matchStats.row, matchStats.statsDist);
+                const formTier = ratingTier(form);
+                return (
+                  <>
+                    <div className="mb-4 flex items-center gap-3">
+                      <div
+                        className={`flex h-12 w-12 flex-none flex-col items-center justify-center rounded-xl ring-2 ${formTier.bg} ${formTier.ring}`}
+                      >
+                        <span className={`text-lg font-black leading-none ${formTier.text}`}>{form}</span>
+                      </div>
+                      <p className="text-xs text-indigo-300">
+                        ฟอร์มรวม ({formTier.label}) — เปอร์เซ็นไทล์เทียบผู้เล่นทั้งหมด ดูรายละเอียดครบทุกหมวดที่แท็บ
+                        &ldquo;สถิติการแข่งขัน&rdquo;
+                      </p>
+                    </div>
+                    <div className="grid grid-cols-4 gap-2">
+                      {RADAR_AXES.map((axis) => (
+                        <StatChip
+                          key={axis}
+                          label={STAT_LABELS[axis]?.th ?? axis}
+                          value={matchStats.row.stats[axis] ?? 0}
+                          percent={statPercentile(matchStats.row, axis, matchStats.statsDist)}
+                        />
+                      ))}
+                    </div>
+                  </>
+                );
+              })()}
+            </div>
+          )}
+        </div>
+      )}
+
       {player.talent.length > 0 && (
         <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
           <div className="mb-3 flex items-center gap-2">
@@ -311,14 +378,6 @@ export default async function TalentIdDetailPage({
             </div>
           )}
         </div>
-      </div>
-
-      <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
-        <div className="mb-4 flex items-center gap-2">
-          <Users2 className="h-4 w-4 text-amber-400" />
-          <h2 className="font-semibold text-white">คะแนนจากสแกาต์รายบุคคล</h2>
-        </div>
-        <ScoutScoresBars scores={player.scoutScores} />
       </div>
     </>
   );
