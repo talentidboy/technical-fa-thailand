@@ -147,19 +147,31 @@ function ScoutScoresBars({ scores }: { scores: { label: string; value: number }[
 
 function AttrRow({ label, value, percent }: { label: string; value: number; percent: number }) {
   const tier = value === 0 ? null : ratingTier(percent);
+  const barPercent = tier ? Math.max(8, percent) : 4;
   return (
-    <div className="flex items-center justify-between gap-2 border-b border-white/5 py-1.5 text-xs">
-      <span className="text-indigo-300">{label}</span>
-      <span
-        className={`min-w-8 rounded-md px-1.5 py-0.5 text-center font-bold ${
-          tier ? `${tier.bg} ${tier.text}` : "text-indigo-500"
-        }`}
-      >
+    <div className="flex items-center gap-2 border-b border-white/5 py-1.5 text-xs">
+      <span className="min-w-0 flex-1 truncate text-indigo-300">{label}</span>
+      <div className="h-1.5 w-9 flex-none overflow-hidden rounded-full bg-white/10">
+        <div
+          className={`h-full rounded-full ${tier ? `bg-current ${tier.text}` : "bg-indigo-700"}`}
+          style={{ width: `${barPercent}%` }}
+        />
+      </div>
+      <span className={`w-6 flex-none text-right font-bold ${tier ? tier.text : "text-indigo-500"}`}>
         {value}
       </span>
     </div>
   );
 }
+
+// จัดกลุ่มหมวดสถิติจริง (จาก STAT_GROUPS) เป็น 3 คอลัมน์ย่อยที่สัดส่วนใกล้เคียงกัน
+// เลียนแบบผังคอลัมน์ Technical / Mental / Physical ของเกมจัดการทีม — ไม่ได้เปลี่ยนหมวดหมู่จริง
+// แค่จัดเรียงให้แสดงผลเป็น 3 คอลัมน์แทนการเรียงต่อกันยาวคอลัมน์เดียว
+const ATTR_COLUMNS: string[][] = [
+  ["การทำประตู"],
+  ["การจ่ายบอล", "การเลี้ยงบอล / ดวลตัวต่อตัว"],
+  ["การป้องกัน", "การดวลกลางอากาศ", "อื่นๆ"],
+];
 
 export default async function TalentIdDetailPage({
   params,
@@ -215,7 +227,7 @@ export default async function TalentIdDetailPage({
 
   const overviewTab = (
     <>
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 lg:items-start">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-4 lg:items-start">
         {/* คอลัมน์ 1 — ตำแหน่งในสนาม */}
         <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
           <div className="mb-4 flex items-center gap-2">
@@ -245,28 +257,32 @@ export default async function TalentIdDetailPage({
         </div>
 
         {/* คอลัมน์ 2 — คุณลักษณะ (สถิติแข่งจริงจัดหมวด หรือคะแนนสแกาต์ถ้าไม่มีสถิติแข่ง) */}
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
+        <div className="rounded-2xl border border-white/10 bg-white/5 p-6 lg:col-span-2">
           <div className="mb-4 flex items-center gap-2">
             <Gauge className="h-4 w-4 text-amber-400" />
             <h2 className="font-semibold text-white">คุณลักษณะ</h2>
           </div>
           {matchStats ? (
-            <div className="text-sm">
-              {STAT_GROUPS.map((group) => (
-                <div key={group.title} className="mb-4 last:mb-0">
-                  <p className="mb-1.5 text-[11px] font-bold uppercase tracking-wide text-amber-400">
-                    {group.title}
-                  </p>
-                  <div className="space-y-0.5">
-                    {group.stats.map((key) => (
-                      <AttrRow
-                        key={key}
-                        label={STAT_LABELS[key]?.th ?? key}
-                        value={matchStats.row.stats[key] ?? 0}
-                        percent={statPercentile(matchStats.row, key, matchStats.statsDist)}
-                      />
-                    ))}
-                  </div>
+            <div className="grid grid-cols-1 gap-x-5 gap-y-4 text-sm sm:grid-cols-3">
+              {ATTR_COLUMNS.map((titles) => (
+                <div key={titles.join("+")}>
+                  {STAT_GROUPS.filter((g) => titles.includes(g.title)).map((group) => (
+                    <div key={group.title} className="mb-4 last:mb-0">
+                      <p className="mb-1.5 text-[11px] font-bold uppercase tracking-wide text-amber-400">
+                        {group.title}
+                      </p>
+                      <div className="space-y-0.5">
+                        {group.stats.map((key) => (
+                          <AttrRow
+                            key={key}
+                            label={STAT_LABELS[key]?.th ?? key}
+                            value={matchStats.row.stats[key] ?? 0}
+                            percent={statPercentile(matchStats.row, key, matchStats.statsDist)}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               ))}
             </div>
