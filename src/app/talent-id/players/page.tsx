@@ -1,6 +1,13 @@
 import Link from "next/link";
-import { getTalentPlayers, type TalentPlayer } from "@/lib/talent-id";
-import { Search, Users } from "lucide-react";
+import {
+  getTalentPlayersPage,
+  POSITIONS,
+  REGIONS,
+  YEARS_OF_BIRTH,
+  PROVINCES,
+  type TalentSortKey,
+} from "@/lib/talent-id";
+import { Search, Users, ChevronLeft, ChevronRight } from "lucide-react";
 
 export const fetchCache = "default-cache";
 
@@ -12,51 +19,24 @@ type SearchParams = {
   year?: string;
   sort?: string;
   dir?: string;
+  c?: string | string[];
 };
 
-type SortKey = "name" | "position" | "club" | "age" | "height" | "weight" | "rating";
-
-const SORT_LABELS: Record<SortKey, string> = {
+const SORT_LABELS: Record<TalentSortKey, string> = {
   name: "ชื่อ",
   position: "ตำแหน่ง",
-  club: "สโมสร/โรงเรียน",
+  club: "สโมสร",
   age: "อายุ",
   height: "ส่วนสูง",
   weight: "น้ำหนัก",
-  rating: "คะแนน",
+  rating: "คะแนน (Camp 2026)",
 };
 
-function bestRating(p: TalentPlayer): number | null {
-  return p.avgRatingCamp2026 ?? p.avgRatingLeg2 ?? p.avgRatingLeg1 ?? null;
-}
+const SORT_KEYS = Object.keys(SORT_LABELS) as TalentSortKey[];
 
-function bestGrade(p: TalentPlayer): string | null {
-  return p.gradeCamp2026 ?? p.gradeLeg2 ?? p.gradeLeg1 ?? null;
-}
-
-function sortValue(p: TalentPlayer, key: SortKey): string | number {
-  switch (key) {
-    case "name":
-      return p.fullNameTh;
-    case "position":
-      return p.position1 ?? "";
-    case "club":
-      return p.club ?? p.school ?? "";
-    case "age":
-      return p.age ?? -1;
-    case "height":
-      return p.height ?? -1;
-    case "weight":
-      return p.weight ?? -1;
-    case "rating":
-      return bestRating(p) ?? -1;
-  }
-}
-
-function distinctSorted(values: (string | null)[]) {
-  return Array.from(new Set(values.filter((v): v is string => Boolean(v)))).sort((a, b) =>
-    a.localeCompare(b, "th"),
-  );
+function toArray(v: string | string[] | undefined): string[] {
+  if (!v) return [];
+  return Array.isArray(v) ? v : [v];
 }
 
 export default async function TalentIdPlayersPage({
@@ -66,58 +46,62 @@ export default async function TalentIdPlayersPage({
 }) {
   const params = await searchParams;
 
-  let players: TalentPlayer[] = [];
+  const sortKey: TalentSortKey = SORT_KEYS.includes(params.sort as TalentSortKey)
+    ? (params.sort as TalentSortKey)
+    : "name";
+  const sortAsc = params.dir !== "desc";
+  const cursors = toArray(params.c);
+  const currentOffset = cursors[cursors.length - 1];
+  const pageNum = cursors.length + 1;
+
+  let players: Awaited<ReturnType<typeof getTalentPlayersPage>>["players"] = [];
+  let nextOffset: string | undefined;
   let loadError: string | null = null;
   try {
-    players = await getTalentPlayers();
+    const result = await getTalentPlayersPage({
+      search: params.q,
+      province: params.province,
+      region: params.region,
+      position: params.position,
+      year: params.year,
+      sortKey,
+      sortAsc,
+      offset: currentOffset,
+      pageSize: 50,
+    });
+    players = result.players;
+    nextOffset = result.offset;
   } catch (err) {
     loadError = err instanceof Error ? err.message : "ไม่สามารถดึงข้อมูลจาก Airtable ได้";
   }
-
-  const provinces = distinctSorted(players.map((p) => p.province));
-  const regions = distinctSorted(players.map((p) => p.region));
-  const positions = distinctSorted(players.map((p) => p.position1));
-  const years = distinctSorted(players.map((p) => p.yearOfBirth));
-
-  const q = (params.q ?? "").trim().toLowerCase();
-  const filtered = players.filter((p) => {
-    if (params.province && p.province !== params.province) return false;
-    if (params.region && p.region !== params.region) return false;
-    if (params.position && p.position1 !== params.position) return false;
-    if (params.year && p.yearOfBirth !== params.year) return false;
-    if (q) {
-      const haystack = `${p.fullNameTh} ${p.fullNameEn ?? ""} ${p.nickname ?? ""} ${p.club ?? ""} ${p.school ?? ""}`.toLowerCase();
-      if (!haystack.includes(q)) return false;
-    }
-    return true;
-  });
-
-  const sortKey: SortKey = (params.sort as SortKey) in SORT_LABELS ? (params.sort as SortKey) : "name";
-  const sortAsc = params.dir !== "desc";
-  const sorted = [...filtered].sort((a, b) => {
-    const va = sortValue(a, sortKey);
-    const vb = sortValue(b, sortKey);
-    const cmp =
-      typeof va === "number" && typeof vb === "number"
-        ? va - vb
-        : String(va).localeCompare(String(vb), "th");
-    return sortAsc ? cmp : -cmp;
-  });
 
   const hasFilters = Boolean(
     params.q || params.province || params.region || params.position || params.year,
   );
 
-  function sortHref(key: SortKey) {
-    const q2 = new URLSearchParams();
-    if (params.q) q2.set("q", params.q);
-    if (params.province) q2.set("province", params.province);
-    if (params.region) q2.set("region", params.region);
-    if (params.position) q2.set("position", params.position);
-    if (params.year) q2.set("year", params.year);
-    q2.set("sort", key);
-    if (sortKey === key && sortAsc) q2.set("dir", "desc");
-    return `/talent-id/players?${q2.toString()}`;
+  function baseParams() {
+    const q = new URLSearchParams();
+    if (params.q) q.set("q", params.q);
+    if (params.province) q.set("province", params.province);
+    if (params.region) q.set("region", params.region);
+    if (params.position) q.set("position", params.position);
+    if (params.year) q.set("year", params.year);
+    return q;
+  }
+
+  function sortHref(key: TalentSortKey) {
+    const q = baseParams();
+    q.set("sort", key);
+    if (sortKey === key && sortAsc) q.set("dir", "desc");
+    return `/talent-id/players?${q.toString()}`;
+  }
+
+  function pageHref(newCursors: string[]) {
+    const q = baseParams();
+    if (sortKey !== "name") q.set("sort", sortKey);
+    if (!sortAsc) q.set("dir", "desc");
+    for (const c of newCursors) q.append("c", c);
+    return `/talent-id/players?${q.toString()}`;
   }
 
   return (
@@ -125,7 +109,7 @@ export default async function TalentIdPlayersPage({
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-white">ผู้เล่นทั้งหมด</h1>
         <p className="mt-1 max-w-xl text-sm text-indigo-300">
-          ค้นหาและกรองรายชื่อนักกีฬาในระบบ Talent ID
+          ค้นหาและกรองรายชื่อนักกีฬาในระบบ Talent ID — ดึงข้อมูลตรงจาก Airtable ทุกครั้ง
         </p>
       </div>
 
@@ -148,12 +132,12 @@ export default async function TalentIdPlayersPage({
               />
             </div>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-              <FilterSelect label="จังหวัด" name="province" options={provinces} value={params.province} />
-              <FilterSelect label="ภูมิภาค" name="region" options={regions} value={params.region} />
-              <FilterSelect label="ตำแหน่ง" name="position" options={positions} value={params.position} />
-              <FilterSelect label="ปีเกิด" name="year" options={years} value={params.year} />
+              <FilterSelect label="จังหวัด" name="province" options={PROVINCES} value={params.province} />
+              <FilterSelect label="ภูมิภาค" name="region" options={REGIONS} value={params.region} />
+              <FilterSelect label="ตำแหน่ง" name="position" options={POSITIONS} value={params.position} />
+              <FilterSelect label="ปีเกิด" name="year" options={YEARS_OF_BIRTH} value={params.year} />
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <button
                 type="submit"
                 className="rounded-lg bg-amber-400 px-4 py-2 text-sm font-semibold text-indigo-950 hover:bg-amber-300"
@@ -168,19 +152,31 @@ export default async function TalentIdPlayersPage({
                   ล้างตัวกรอง
                 </Link>
               )}
-              <span className="ml-auto text-xs text-indigo-400">
-                พบ {sorted.length.toLocaleString()} จาก {players.length.toLocaleString()} คน
-              </span>
+              <div className="ml-auto flex flex-wrap items-center gap-1.5 text-xs text-indigo-400">
+                เรียงตาม:
+                {SORT_KEYS.map((key) => (
+                  <Link
+                    key={key}
+                    href={sortHref(key)}
+                    className={`rounded-md px-2 py-1 font-medium ${
+                      sortKey === key ? "bg-amber-400/15 text-amber-300" : "hover:text-white"
+                    }`}
+                  >
+                    {SORT_LABELS[key]}
+                    {sortKey === key && (sortAsc ? " ▲" : " ▼")}
+                  </Link>
+                ))}
+              </div>
             </div>
           </form>
 
-          {sorted.length === 0 ? (
+          {players.length === 0 ? (
             <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-white/15 bg-white/5 px-6 py-16 text-center">
               <Users className="h-8 w-8 text-indigo-400" />
               <p className="text-sm text-indigo-300">
-                {players.length === 0
-                  ? "ยังไม่มีข้อมูลนักกีฬาใน Airtable"
-                  : "ไม่พบนักกีฬาที่ตรงกับเงื่อนไขที่เลือก"}
+                {pageNum === 1
+                  ? "ไม่พบนักกีฬาที่ตรงกับเงื่อนไขที่เลือก"
+                  : "ไม่มีข้อมูลในหน้านี้แล้ว"}
               </p>
             </div>
           ) : (
@@ -189,48 +185,21 @@ export default async function TalentIdPlayersPage({
                 <table className="w-full text-left text-sm">
                   <thead className="bg-black/20 text-[11px] font-medium uppercase tracking-wide text-indigo-300">
                     <tr>
-                      <th className="px-4 py-3">
-                        <SortHeader href={sortHref("name")} active={sortKey === "name"} asc={sortAsc}>
-                          {SORT_LABELS.name}
-                        </SortHeader>
-                      </th>
-                      <th className="px-4 py-3">
-                        <SortHeader href={sortHref("position")} active={sortKey === "position"} asc={sortAsc}>
-                          {SORT_LABELS.position}
-                        </SortHeader>
-                      </th>
-                      <th className="hidden px-4 py-3 md:table-cell">
-                        <SortHeader href={sortHref("club")} active={sortKey === "club"} asc={sortAsc}>
-                          {SORT_LABELS.club}
-                        </SortHeader>
-                      </th>
-                      <th className="hidden px-4 py-3 text-center sm:table-cell">
-                        <SortHeader href={sortHref("age")} active={sortKey === "age"} asc={sortAsc}>
-                          {SORT_LABELS.age}
-                        </SortHeader>
-                      </th>
-                      <th className="hidden px-4 py-3 text-center md:table-cell">
-                        <SortHeader href={sortHref("height")} active={sortKey === "height"} asc={sortAsc}>
-                          {SORT_LABELS.height}
-                        </SortHeader>
-                      </th>
-                      <th className="hidden px-4 py-3 text-center md:table-cell">
-                        <SortHeader href={sortHref("weight")} active={sortKey === "weight"} asc={sortAsc}>
-                          {SORT_LABELS.weight}
-                        </SortHeader>
-                      </th>
-                      <th className="px-4 py-3 text-center">
-                        <SortHeader href={sortHref("rating")} active={sortKey === "rating"} asc={sortAsc}>
-                          {SORT_LABELS.rating}
-                        </SortHeader>
-                      </th>
+                      <th className="px-4 py-3">ชื่อ</th>
+                      <th className="px-4 py-3">ตำแหน่ง</th>
+                      <th className="hidden px-4 py-3 md:table-cell">สโมสร/โรงเรียน</th>
+                      <th className="hidden px-4 py-3 text-center sm:table-cell">อายุ</th>
+                      <th className="hidden px-4 py-3 text-center md:table-cell">ส่วนสูง</th>
+                      <th className="hidden px-4 py-3 text-center md:table-cell">น้ำหนัก</th>
+                      <th className="px-4 py-3 text-center">คะแนน</th>
                       <th className="hidden px-4 py-3 text-center sm:table-cell">เกรด</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-white/10">
-                    {sorted.map((player) => {
-                      const rating = bestRating(player);
-                      const grade = bestGrade(player);
+                    {players.map((player) => {
+                      const rating =
+                        player.avgRatingCamp2026 ?? player.avgRatingLeg2 ?? player.avgRatingLeg1;
+                      const grade = player.gradeCamp2026 ?? player.gradeLeg2 ?? player.gradeLeg1;
                       return (
                         <tr key={player.id} className="transition-colors hover:bg-white/5">
                           <td className="px-4 py-3">
@@ -285,33 +254,37 @@ export default async function TalentIdPlayersPage({
                   </tbody>
                 </table>
               </div>
+
+              <div className="flex items-center justify-between border-t border-white/10 px-4 py-3">
+                {cursors.length > 0 ? (
+                  <Link
+                    href={pageHref(cursors.slice(0, -1))}
+                    className="inline-flex items-center gap-1 rounded-lg border border-white/15 px-3 py-1.5 text-xs font-medium text-indigo-200 hover:bg-white/10"
+                  >
+                    <ChevronLeft className="h-3.5 w-3.5" />
+                    ก่อนหน้า
+                  </Link>
+                ) : (
+                  <span />
+                )}
+                <span className="text-xs text-indigo-400">หน้า {pageNum}</span>
+                {nextOffset ? (
+                  <Link
+                    href={pageHref([...cursors, nextOffset])}
+                    className="inline-flex items-center gap-1 rounded-lg border border-white/15 px-3 py-1.5 text-xs font-medium text-indigo-200 hover:bg-white/10"
+                  >
+                    ถัดไป
+                    <ChevronRight className="h-3.5 w-3.5" />
+                  </Link>
+                ) : (
+                  <span />
+                )}
+              </div>
             </div>
           )}
         </>
       )}
     </div>
-  );
-}
-
-function SortHeader({
-  href,
-  active,
-  asc,
-  children,
-}: {
-  href: string;
-  active: boolean;
-  asc: boolean;
-  children: React.ReactNode;
-}) {
-  return (
-    <Link
-      href={href}
-      className={`inline-flex items-center gap-1 hover:text-white ${active ? "text-amber-300" : ""}`}
-    >
-      {children}
-      {active && <span>{asc ? "▲" : "▼"}</span>}
-    </Link>
   );
 }
 

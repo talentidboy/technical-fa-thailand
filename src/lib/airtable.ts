@@ -48,6 +48,45 @@ export async function getAirtableRecords<T = Record<string, unknown>>(
   return records;
 }
 
+export type AirtableSort = { field: string; direction: "asc" | "desc" };
+
+// ดึงข้อมูลแค่ "หนึ่งหน้า" ตรงจาก Airtable โดยผลัก filter/sort ไปให้ Airtable ทำเอง
+// (filterByFormula + sort[]) แทนที่จะดึงทุกแถวมากรอง/เรียงในเมมโมรีฝั่งเรา — จำเป็นมาก
+// สำหรับตารางขนาดหลักพันแถว ไม่ cache เพราะต้องการข้อมูลสดตรงจาก Airtable เสมอตามที่ตกลง
+export async function queryAirtablePage<T = Record<string, unknown>>(
+  tableName: string,
+  options: {
+    filterByFormula?: string;
+    sort?: AirtableSort[];
+    pageSize?: number;
+    offset?: string;
+  } = {},
+): Promise<{ records: AirtableRecord<T>[]; offset?: string }> {
+  const url = new URL(
+    `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${encodeURIComponent(tableName)}`,
+  );
+  url.searchParams.set("pageSize", String(options.pageSize ?? 50));
+  if (options.filterByFormula) {
+    url.searchParams.set("filterByFormula", options.filterByFormula);
+  }
+  if (options.offset) url.searchParams.set("offset", options.offset);
+  options.sort?.forEach((s, i) => {
+    url.searchParams.set(`sort[${i}][field]`, s.field);
+    url.searchParams.set(`sort[${i}][direction]`, s.direction);
+  });
+
+  const res = await fetch(url, { headers: authHeaders(), cache: "no-store" });
+  if (!res.ok) {
+    throw new Error(`ดึงข้อมูลจาก Airtable ไม่สำเร็จ (${res.status}): ${await res.text()}`);
+  }
+  return res.json();
+}
+
+// escape ค่าที่จะฝังในสตริงของ Airtable formula (กัน " ในคำค้นหาทำให้ formula พัง)
+export function escapeAirtableFormulaString(value: string): string {
+  return value.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+}
+
 export async function getAirtableRecord<T = Record<string, unknown>>(
   tableName: string,
   id: string,

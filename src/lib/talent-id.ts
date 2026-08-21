@@ -1,4 +1,10 @@
-import { getAirtableRecords, getAirtableRecord, type AirtableRecord } from "./airtable";
+import {
+  getAirtableRecords,
+  getAirtableRecord,
+  queryAirtablePage,
+  escapeAirtableFormulaString,
+  type AirtableRecord,
+} from "./airtable";
 
 type RawFields = Record<string, unknown>;
 
@@ -88,6 +94,60 @@ const FIELD = {
 
 const NON_TAG_KEYS = new Set<string>(Object.values(FIELD));
 
+// ตัวเลือกจริงจาก Airtable field schema (singleSelect choices) — ใช้ทำ dropdown ตัวกรอง
+// โดยไม่ต้องดึงข้อมูลทุกแถวมาหาค่าที่ไม่ซ้ำกันเอง (ตารางมี 2,000+ แถว ทำแบบนั้นไม่ไหว)
+export const POSITIONS = [
+  "ผู้รักษาประตู / Goalkeeper",
+  "แบ็คซ้าย / Left Back",
+  "เซ็นเตอร์ซ้าย / Left Centerback",
+  "เซ็นเตอร์ขวา / Right Centerback",
+  "แบ็คขวา / Right Back",
+  "กองกลางตัวรับ / Defensive Midfielder",
+  "กองกลาง / Central Midfielder",
+  "กองกลางตัวรุก / Attacking Midfielder",
+  "ปีกซ้าย / Left Winger",
+  "ปีกขวา / Right Winger",
+  "หน้าเป้า / Striker",
+];
+
+export const REGIONS = [
+  "กรุงเทพ / Bangkok",
+  "ภาคเหนือ / North",
+  "ภาคกลาง / Central",
+  "ภาคตะวันตก / West",
+  "ภาคตะวันออก / East",
+  "ภาคตะวันออกเฉียงเหนือ (ตอนบน) / North East (Upper)",
+  "ภาคตะวันออกเฉียงเหนือ (ตอนล่าง) / North East (Lower)",
+  "ภาคใต้ (ตอนบน) / South (Upper)",
+  "ภาคใต้(ตอนล่าง) / South (Lower)",
+  "ต่างประเทศ",
+];
+
+export const YEARS_OF_BIRTH = [
+  "2009 / 2552",
+  "2010 / 2553",
+  "2011 / 2554",
+  "2012 / 2555",
+  "2013 / 2556",
+  "2014 / 2557",
+];
+
+export const PROVINCES = [
+  "กระบี่", "กาญจนบุรี", "กาฬสินธุ์", "กำแพงเพชร", "ขอนแก่น", "จันทบุรี",
+  "ฉะเชิงเทรา", "ชัยนาท", "ชัยภูมิ", "ชุมพร", "ชลบุรี", "เชียงใหม่", "เชียงราย",
+  "ตรัง", "ตราด", "ตาก", "นครนายก", "นครปฐม", "นครพนม", "นครราชสีมา",
+  "นครศรีธรรมราช", "นครสวรรค์", "นนทบุรี", "นราธิวาส", "น่าน", "บึงกาฬ",
+  "บุรีรัมย์", "ประจวบคีรีขันธ์", "ปทุมธานี", "ปราจีนบุรี", "ปัตตานี",
+  "พระนครศรีอยุธยา", "พังงา", "พัทลุง", "พิจิตร", "พิษณุโลก", "เพชรบุรี",
+  "เพชรบูรณ์", "แพร่", "พะเยา", "ภูเก็ต", "มหาสารคาม", "มุกดาหาร", "แม่ฮ่องสอน",
+  "ยะลา", "ยโสธร", "ร้อยเอ็ด", "ระนอง", "ระยอง", "ราชบุรี", "ลพบุรี", "ลำปาง",
+  "ลำพูน", "เลย", "ศรีสะเกษ", "สกลนคร", "สงขลา", "สมุทรสาคร", "สมุทรปราการ",
+  "สมุทรสงคราม", "สระแก้ว", "สระบุรี", "สิงห์บุรี", "สุโขทัย", "สุพรรณบุรี",
+  "สุราษฎร์ธานี", "สุรินทร์", "สตูล", "หนองคาย", "หนองบัวลำภู", "อำนาจเจริญ",
+  "อุดรธานี", "อุตรดิตถ์", "อุทัยธานี", "อุบลราชธานี", "อ่างทอง", "กรุงเทพ",
+  "England",
+];
+
 function str(v: unknown): string | null {
   if (v == null || v === "") return null;
   return String(v);
@@ -168,12 +228,85 @@ function mapPlayer(record: AirtableRecord<RawFields>): TalentPlayer {
   };
 }
 
-// หมายเหตุ: ตาราง Players มีมากกว่า 2,000 แถว — ผลลัพธ์ที่ map แล้วเกิน 2MB
-// (ขีดจำกัดของ Next.js Data Cache ต่อ 1 entry) จึง cache ด้วย unstable_cache ตรงๆ ไม่ได้
-// (ลองแล้ว เงียบๆ fail — ดูรายละเอียดในบทสนทนา ต้องคุยเรื่องสถาปัตยกรรมใหม่ก่อนแก้จริง)
+// หมายเหตุ: ตาราง Players มีมากกว่า 2,000 แถว — ใช้เฉพาะหน้า Home/Standouts ที่ต้อง
+// สรุปภาพรวมทั้งหมดจริงๆ เท่านั้น (ดึงช้าโดยธรรมชาติ เพราะต้องวน ~21+ รอบ) หน้ารายชื่อ
+// ผู้เล่นให้ใช้ getTalentPlayersPage() แทน ซึ่งผลัก filter/sort/pagination ไปที่ Airtable
 export async function getTalentPlayers(): Promise<TalentPlayer[]> {
   const records = await getAirtableRecords<RawFields>(TABLE_NAME);
   return records.map(mapPlayer);
+}
+
+export type TalentSortKey = "name" | "position" | "club" | "age" | "height" | "weight" | "rating";
+
+const SORT_FIELD: Record<TalentSortKey, string> = {
+  name: FIELD.fullNameTh,
+  position: FIELD.position1,
+  club: FIELD.club,
+  age: FIELD.age,
+  height: FIELD.height,
+  weight: FIELD.weight,
+  // ไม่มีฟิลด์ "คะแนนล่าสุด" รวมเดียวใน Airtable (เราคำนวณเอง = Camp2026 ?? Leg2 ?? Leg1)
+  // ใช้ Camp 2026 เป็นตัวแทนคะแนนล่าสุดสำหรับการเรียงลำดับฝั่ง Airtable
+  rating: FIELD.avgRatingCamp2026,
+};
+
+export type TalentPlayerQuery = {
+  search?: string;
+  province?: string;
+  region?: string;
+  position?: string;
+  year?: string;
+  sortKey?: TalentSortKey;
+  sortAsc?: boolean;
+  pageSize?: number;
+  offset?: string;
+};
+
+function buildFilterFormula(query: TalentPlayerQuery): string | undefined {
+  const conditions: string[] = [];
+
+  if (query.province) {
+    conditions.push(
+      `TRIM({${FIELD.province}}) = "${escapeAirtableFormulaString(query.province)}"`,
+    );
+  }
+  if (query.region) {
+    conditions.push(
+      `TRIM({${FIELD.region}}) = "${escapeAirtableFormulaString(query.region)}"`,
+    );
+  }
+  if (query.position) {
+    conditions.push(
+      `TRIM({${FIELD.position1}}) = "${escapeAirtableFormulaString(query.position)}"`,
+    );
+  }
+  if (query.year) {
+    conditions.push(`{${FIELD.yearOfBirth}} = "${escapeAirtableFormulaString(query.year)}"`);
+  }
+  if (query.search?.trim()) {
+    const q = escapeAirtableFormulaString(query.search.trim().toLowerCase());
+    const searchFields = [FIELD.fullNameTh, FIELD.fullNameEn, FIELD.nickname, FIELD.club, FIELD.school];
+    conditions.push(
+      `OR(${searchFields.map((f) => `SEARCH("${q}", LOWER({${f}}))`).join(",")})`,
+    );
+  }
+
+  if (conditions.length === 0) return undefined;
+  if (conditions.length === 1) return conditions[0];
+  return `AND(${conditions.join(",")})`;
+}
+
+export async function getTalentPlayersPage(
+  query: TalentPlayerQuery,
+): Promise<{ players: TalentPlayer[]; offset?: string }> {
+  const sortKey = query.sortKey ?? "name";
+  const { records, offset } = await queryAirtablePage<RawFields>(TABLE_NAME, {
+    filterByFormula: buildFilterFormula(query),
+    sort: [{ field: SORT_FIELD[sortKey], direction: query.sortAsc === false ? "desc" : "asc" }],
+    pageSize: query.pageSize ?? 50,
+    offset: query.offset,
+  });
+  return { players: records.map(mapPlayer), offset };
 }
 
 export async function getTalentPlayerById(id: string): Promise<TalentPlayer | null> {
