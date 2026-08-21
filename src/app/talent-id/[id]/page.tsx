@@ -7,6 +7,7 @@ import { PlayerTabs } from "@/components/talent-id/PlayerTabs";
 import { InfoPill } from "@/components/talent-id/InfoPill";
 import { Breadcrumb } from "@/components/talent-id/Breadcrumb";
 import { MatchStatsPanel } from "@/components/talent-id/MatchStatsPanel";
+import { avgRatingToScore, ratingTier } from "@/lib/rating-scale";
 import {
   Ruler,
   Weight,
@@ -113,20 +114,24 @@ function ScoutScoresBars({ scores }: { scores: { label: string; value: number }[
 
   return (
     <div className="space-y-2.5">
-      {scores.map((s) => (
-        <div key={s.label} className="flex items-center gap-3">
-          <span className="w-20 flex-none text-xs text-indigo-300">{s.label}</span>
-          <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-white/10">
-            <div
-              className="h-full rounded-full bg-linear-to-r from-amber-500 to-amber-300"
-              style={{ width: `${Math.min(100, (s.value / max) * 100)}%` }}
-            />
+      {scores.map((s) => {
+        const percent = Math.min(100, (s.value / max) * 100);
+        const tier = ratingTier(percent);
+        return (
+          <div key={s.label} className="flex items-center gap-3">
+            <span className="w-20 flex-none text-xs text-indigo-300">{s.label}</span>
+            <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-white/10">
+              <div
+                className={`h-full rounded-full bg-current ${tier.text}`}
+                style={{ width: `${percent}%` }}
+              />
+            </div>
+            <span className={`w-8 flex-none rounded-md py-0.5 text-right text-xs font-bold ${tier.text}`}>
+              {s.value}
+            </span>
           </div>
-          <span className="w-8 flex-none text-right text-xs font-bold text-white">
-            {s.value}
-          </span>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
@@ -182,6 +187,10 @@ export default async function TalentIdDetailPage({
     { label: "Leg 2", value: player.avgRatingLeg2 },
     { label: "Camp 2026", value: player.avgRatingCamp2026 },
   ];
+
+  const bestRating = player.avgRatingCamp2026 ?? player.avgRatingLeg2 ?? player.avgRatingLeg1;
+  const ovr = bestRating != null ? avgRatingToScore(bestRating) : null;
+  const ovrTier = ovr != null ? ratingTier(ovr) : null;
 
   const overviewTab = (
     <>
@@ -315,7 +324,7 @@ export default async function TalentIdDetailPage({
   );
 
   const statsTab = matchStats ? (
-    <MatchStatsPanel row={matchStats.row} radarMax={matchStats.radarMax} />
+    <MatchStatsPanel row={matchStats.row} statsMax={matchStats.statsMax} />
   ) : null;
 
   const mediaTab = (
@@ -372,20 +381,34 @@ export default async function TalentIdDetailPage({
       {/* Profile hero */}
       <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-linear-to-br from-indigo-900 via-indigo-950 to-slate-950 shadow-2xl">
         <div className="absolute inset-x-0 top-0 h-1 bg-linear-to-r from-amber-600 via-amber-400 to-amber-600" />
+        <div
+          className={`pointer-events-none absolute -left-16 -top-16 h-72 w-72 rounded-full bg-current opacity-15 blur-3xl ${ovrTier?.text ?? "text-amber-400"}`}
+        />
         <div className="flex flex-col gap-6 p-6 sm:p-8 lg:flex-row lg:items-start">
           <div className="flex flex-none items-end gap-4">
-            {player.photoUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={player.photoUrl}
-                alt=""
-                className="h-32 w-32 flex-none rounded-2xl object-cover ring-2 ring-white/15"
-              />
-            ) : (
-              <div className="flex h-32 w-32 flex-none items-center justify-center rounded-2xl bg-white/10 text-4xl font-semibold text-indigo-200 ring-2 ring-white/15">
-                {player.fullNameTh.charAt(0)}
-              </div>
-            )}
+            <div className="relative">
+              {player.photoUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={player.photoUrl}
+                  alt=""
+                  className="h-32 w-32 flex-none rounded-2xl object-cover ring-2 ring-white/15"
+                />
+              ) : (
+                <div className="flex h-32 w-32 flex-none items-center justify-center rounded-2xl bg-white/10 text-4xl font-semibold text-indigo-200 ring-2 ring-white/15">
+                  {player.fullNameTh.charAt(0)}
+                </div>
+              )}
+              {ovr != null && ovrTier && (
+                <div
+                  className={`absolute -bottom-2.5 -right-2.5 flex h-14 w-14 flex-col items-center justify-center rounded-2xl border-2 border-indigo-950 ${ovrTier.bg} ring-2 ${ovrTier.ring}`}
+                  title={`คะแนนรวม ${ovr}/100 (${ovrTier.label}) — เทียบจากคะแนนประเมินเฉลี่ย ${bestRating?.toFixed(2)}`}
+                >
+                  <span className={`text-lg font-black leading-none ${ovrTier.text}`}>{ovr}</span>
+                  <span className={`text-[8px] font-bold uppercase leading-none ${ovrTier.text}`}>OVR</span>
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="min-w-0 flex-1">

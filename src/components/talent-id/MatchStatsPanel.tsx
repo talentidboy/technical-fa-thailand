@@ -7,7 +7,14 @@ import {
   Radar,
   ResponsiveContainer,
 } from "recharts";
-import { STAT_GROUPS, STAT_LABELS, RADAR_AXES, type MatchStatsRow } from "@/lib/talent-match-stats";
+import {
+  STAT_GROUPS,
+  STAT_LABELS,
+  RADAR_AXES,
+  computeFormScore,
+  type MatchStatsRow,
+} from "@/lib/talent-match-stats";
+import { ratingTier } from "@/lib/rating-scale";
 
 const POSITION_COLOR: Record<string, string> = {
   FW: "#fbbf24", // amber-400
@@ -26,14 +33,33 @@ function rate(numerator: number, denominator: number): string | null {
   return `${((100 * numerator) / denominator).toFixed(1)}%`;
 }
 
+function StatCell({ label, value, max }: { label: string; value: number; max: number }) {
+  const percent = (100 * value) / (max || 1);
+  const tier = value === 0 ? null : ratingTier(percent);
+  return (
+    <div className="flex items-center justify-between gap-2 border-b border-white/5 py-1.5 text-xs">
+      <span className="text-indigo-300">{label}</span>
+      <span
+        className={`min-w-8 rounded-md px-1.5 py-0.5 text-center font-bold ${
+          tier ? `${tier.bg} ${tier.text}` : "text-indigo-500"
+        }`}
+      >
+        {value}
+      </span>
+    </div>
+  );
+}
+
 export function MatchStatsPanel({
   row,
-  radarMax,
+  statsMax,
 }: {
   row: MatchStatsRow;
-  radarMax: Record<string, number>;
+  statsMax: Record<string, number>;
 }) {
   const color = row.positionCategory ? POSITION_COLOR[row.positionCategory] : DEFAULT_COLOR;
+  const form = computeFormScore(row, statsMax);
+  const formTier = ratingTier(form);
 
   const rates = [
     {
@@ -45,26 +71,34 @@ export function MatchStatsPanel({
   ].filter((r): r is { label: string; value: string } => r.value != null);
 
   const radarData = RADAR_AXES.map((axis) => {
-    const max = radarMax[axis] || 1;
+    const max = statsMax[axis] || 1;
     const value = row.stats[axis] ?? 0;
     return { axis: labelOf(axis), full: Math.round((100 * value) / max) };
   });
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/10 bg-white/5 px-5 py-3">
-        <p className="text-xs text-indigo-400">
-          สถิติการแข่งขันจริงจากตาราง Individual Stats Leg 2 / 2026
-        </p>
-        {rates.length > 0 && (
-          <p className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-indigo-300">
-            {rates.map((r) => (
-              <span key={r.label}>
-                {r.label} <span className="font-bold text-amber-300">{r.value}</span>
-              </span>
-            ))}
+      <div className="flex flex-wrap items-center gap-4 rounded-2xl border border-white/10 bg-white/5 px-5 py-4">
+        <div
+          className={`flex h-16 w-16 flex-none flex-col items-center justify-center rounded-2xl ring-2 ${formTier.bg} ${formTier.ring}`}
+        >
+          <span className={`text-2xl font-black ${formTier.text}`}>{form}</span>
+          <span className={`text-[9px] font-semibold uppercase tracking-wide ${formTier.text}`}>ฟอร์ม</span>
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-xs text-indigo-400">
+            คะแนนฟอร์มรวม ({formTier.label}) — เฉลี่ยจาก 8 สถิติหลักเทียบกับผู้เล่นที่ดีที่สุดในทีม
           </p>
-        )}
+          {rates.length > 0 && (
+            <p className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1 text-xs text-indigo-300">
+              {rates.map((r) => (
+                <span key={r.label}>
+                  {r.label} <span className="font-bold text-amber-300">{r.value}</span>
+                </span>
+              ))}
+            </p>
+          )}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
@@ -89,21 +123,15 @@ export function MatchStatsPanel({
               <p className="mb-1.5 text-[11px] font-bold uppercase tracking-wide text-amber-400">
                 {group.title}
               </p>
-              <div className="space-y-1">
-                {group.stats.map((key) => {
-                  const value = row.stats[key] ?? 0;
-                  return (
-                    <div
-                      key={key}
-                      className="flex items-center justify-between border-b border-white/5 py-1 text-xs"
-                    >
-                      <span className="text-indigo-300">{labelOf(key)}</span>
-                      <span className={value === 0 ? "font-medium text-indigo-500" : "font-bold text-white"}>
-                        {value}
-                      </span>
-                    </div>
-                  );
-                })}
+              <div className="space-y-0.5">
+                {group.stats.map((key) => (
+                  <StatCell
+                    key={key}
+                    label={labelOf(key)}
+                    value={row.stats[key] ?? 0}
+                    max={statsMax[key] ?? 1}
+                  />
+                ))}
               </div>
             </div>
           ))}

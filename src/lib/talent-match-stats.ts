@@ -177,21 +177,37 @@ export async function getAllMatchStats(): Promise<MatchStatsRow[]> {
   });
 }
 
+// ค่าสูงสุดจริงของทั้งทีมต่อสถิติแต่ละตัว (ทุกคอลัมน์ใน STAT_GROUPS ไม่ใช่แค่แกนเรดาร์)
+// ใช้ normalize เป็น % เทียบกับผู้เล่นที่ทำได้ดีที่สุดในทีม สำหรับกราฟเรดาร์และไล่สีช่องสถิติ
+export function computeStatsMax(rows: MatchStatsRow[]): Record<string, number> {
+  const allKeys = STAT_GROUPS.flatMap((g) => g.stats);
+  const max: Record<string, number> = {};
+  for (const key of allKeys) {
+    max[key] = Math.max(1, ...rows.map((r) => r.stats[key] ?? 0));
+  }
+  return max;
+}
+
+// คะแนน "ฟอร์มรวม" 0-100 — ค่าเฉลี่ยของ % เทียบสูงสุดทีมใน 8 แกนหลัก (RADAR_AXES)
+// เป็นค่าที่คำนวณจากข้อมูลจริงล้วน ๆ (ไม่มีแกนที่เดาขึ้นมาเอง) ใช้แสดงเป็นแบดจ์สรุปเดียว
+export function computeFormScore(row: MatchStatsRow, statsMax: Record<string, number>): number {
+  const values = RADAR_AXES.map((axis) =>
+    Math.min(100, (100 * (row.stats[axis] ?? 0)) / (statsMax[axis] || 1)),
+  );
+  return Math.round(values.reduce((s, v) => s + v, 0) / values.length);
+}
+
 // หาแถวสถิติของผู้เล่นคนเดียวด้วย Airtable record id ตรง ๆ ผ่าน linked record field
 // (แม่นกว่าการจับคู่ชื่อ — กันปัญหาชื่อไทยสะกดคลาดเคลื่อนระหว่างสองตาราง) พร้อมค่าสูงสุด
-// ของทั้งทีมต่อแกน สำหรับวาดกราฟเรดาร์เทียบกับผู้เล่นคนอื่น
+// ของทั้งทีมต่อสถิติ สำหรับวาดกราฟเรดาร์และไล่สีตารางสถิติเทียบกับผู้เล่นคนอื่น
 export async function getPlayerMatchStatsRow(
   playerId: string,
-): Promise<{ row: MatchStatsRow; radarMax: Record<string, number> } | null> {
+): Promise<{ row: MatchStatsRow; statsMax: Record<string, number> } | null> {
   const all = await getAllMatchStats();
   const row = all.find((r) => r.playerId === playerId);
   if (!row) return null;
 
-  const radarMax: Record<string, number> = {};
-  for (const axis of RADAR_AXES) {
-    radarMax[axis] = Math.max(1, ...all.map((r) => r.stats[axis] ?? 0));
-  }
-  return { row, radarMax };
+  return { row, statsMax: computeStatsMax(all) };
 }
 
 export type Leaderboard = { stat: string; rows: { row: MatchStatsRow; value: number }[] };
