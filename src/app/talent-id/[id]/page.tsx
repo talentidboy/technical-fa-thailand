@@ -15,6 +15,7 @@ import { Breadcrumb } from "@/components/talent-id/Breadcrumb";
 import { MatchStatsPanel } from "@/components/talent-id/MatchStatsPanel";
 import { MiniRadar } from "@/components/talent-id/MiniRadar";
 import { ratingTier } from "@/lib/rating-scale";
+import { categoryForPosition, positionColor } from "@/lib/position-color";
 import {
   Ruler,
   Weight,
@@ -33,6 +34,9 @@ import {
   Gauge,
   ThumbsUp,
   ThumbsDown,
+  Calendar,
+  Building2,
+  ShieldHalf,
 } from "lucide-react";
 
 export const fetchCache = "default-cache";
@@ -178,6 +182,8 @@ export default async function TalentIdDetailPage({
     { label: "Leg 2", value: player.avgRatingLeg2 },
     { label: "Camp 2026", value: player.avgRatingCamp2026 },
   ];
+
+  const heroColor = positionColor(categoryForPosition(player.position1));
 
   // จุดแข็ง/จุดที่ควรพัฒนา — คำนวณจาก percentile จริงของสถิติที่ผู้เล่นทำได้ (เฉพาะค่าที่ไม่ใช่ 0
   // เพื่อไม่ให้ "ไม่เคยทำ" ปนกับ "ทำได้น้อย") ไม่ใช่ข้อความที่เขียนเอง
@@ -504,19 +510,33 @@ export default async function TalentIdDetailPage({
 
       {/* Profile hero */}
       <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-linear-to-br from-indigo-900 via-indigo-950 to-slate-950 shadow-2xl">
-        <div className="absolute inset-x-0 top-0 h-1 bg-linear-to-r from-amber-600 via-amber-400 to-amber-600" />
-        <div className="pointer-events-none absolute -left-16 -top-16 h-72 w-72 rounded-full bg-amber-400 opacity-15 blur-3xl" />
-        <div className="flex flex-col gap-6 p-6 sm:p-8 lg:flex-row lg:items-start">
+        <div
+          className="absolute inset-x-0 top-0 h-1"
+          style={{ background: `linear-gradient(90deg, transparent, ${heroColor}, transparent)` }}
+        />
+        <div
+          className="pointer-events-none absolute -left-20 -top-20 h-80 w-80 rounded-full opacity-20 blur-3xl"
+          style={{ backgroundColor: heroColor }}
+        />
+        <div
+          className="pointer-events-none absolute -bottom-24 -right-24 h-72 w-72 rounded-full opacity-10 blur-3xl"
+          style={{ backgroundColor: heroColor }}
+        />
+        <div className="relative flex flex-col gap-6 p-6 sm:p-8 lg:flex-row lg:items-start">
           <div className="flex flex-none items-end gap-4">
             {player.photoUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={player.photoUrl}
                 alt=""
-                className="h-32 w-32 flex-none rounded-2xl object-cover ring-2 ring-white/15"
+                className="h-32 w-32 flex-none rounded-2xl border-2 object-cover shadow-lg"
+                style={{ borderColor: heroColor }}
               />
             ) : (
-              <div className="flex h-32 w-32 flex-none items-center justify-center rounded-2xl bg-white/10 text-4xl font-semibold text-indigo-200 ring-2 ring-white/15">
+              <div
+                className="flex h-32 w-32 flex-none items-center justify-center rounded-2xl border-2 bg-white/10 text-4xl font-semibold text-indigo-200 shadow-lg"
+                style={{ borderColor: heroColor }}
+              >
                 {player.fullNameTh.charAt(0)}
               </div>
             )}
@@ -541,9 +561,13 @@ export default async function TalentIdDetailPage({
               )}
             </div>
 
-            <div className="mt-3 flex flex-wrap gap-1.5">
+            <div className="mt-3 flex flex-wrap items-center gap-1.5">
               {player.position1 && (
-                <span className="rounded-full bg-amber-400/15 px-2.5 py-1 text-xs font-semibold text-amber-300 ring-1 ring-amber-400/30">
+                <span
+                  className="flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold"
+                  style={{ backgroundColor: `${heroColor}26`, color: heroColor, boxShadow: `inset 0 0 0 1px ${heroColor}66` }}
+                >
+                  <ShieldHalf className="h-3 w-3" />
                   {player.position1}
                 </span>
               )}
@@ -554,13 +578,17 @@ export default async function TalentIdDetailPage({
               )}
             </div>
 
-            <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
-              <InfoPill label="ปีเกิด" value={player.yearOfBirth ?? "-"} />
-              <InfoPill label="ตำแหน่งหลัก" value={player.position1 ?? "-"} accent />
-              <InfoPill label="อายุ" value={player.age != null ? `${player.age} ปี` : "-"} />
-              <InfoPill label="จังหวัด" value={player.province ?? "-"} />
-              <InfoPill label="สโมสร / โรงเรียน" value={player.club || player.school || "-"} />
-              <InfoPill label="เท้าถนัด" value={player.strongFoot ?? "-"} />
+            <div className="mt-6 grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-6">
+              <InfoPill icon={Calendar} label="ปีเกิด" value={player.yearOfBirth ?? "-"} />
+              <InfoPill icon={Users2} label="อายุ" value={player.age != null ? `${player.age} ปี` : "-"} />
+              <InfoPill icon={MapPin} label="จังหวัด" value={player.province ?? "-"} />
+              <InfoPill
+                icon={Building2}
+                label="สโมสร / โรงเรียน"
+                value={player.club || player.school || "-"}
+              />
+              <InfoPill icon={Footprints} label="เท้าถนัด" value={player.strongFoot ?? "-"} />
+              <InfoPill icon={ShieldHalf} label="ตำแหน่งหลัก" value={player.position1 ?? "-"} accent />
             </div>
           </div>
         </div>

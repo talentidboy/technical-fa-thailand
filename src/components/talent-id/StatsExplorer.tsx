@@ -10,14 +10,7 @@ import {
   type MatchStatsRow,
 } from "@/lib/talent-match-stats";
 import { ratingTier } from "@/lib/rating-scale";
-
-const POSITION_COLOR: Record<string, string> = {
-  FW: "#fbbf24", // amber-400
-  MF: "#38bdf8", // sky-400
-  DF: "#34d399", // emerald-400
-  GK: "#a78bfa", // violet-400
-};
-const DEFAULT_COLOR = "#818cf8"; // indigo-400
+import { positionColor } from "@/lib/position-color";
 
 const POSITION_TABS: { key: "ALL" | "FW" | "MF" | "DF" | "GK"; label: string }[] = [
   { key: "ALL", label: "ทั้งหมด" },
@@ -113,7 +106,7 @@ function MiniLeaderboard({
 }
 
 function SpotlightCard({ row, form }: { row: MatchStatsRow; form: number }) {
-  const color = row.positionCategory ? POSITION_COLOR[row.positionCategory] : DEFAULT_COLOR;
+  const color = positionColor(row.positionCategory);
   const formTier = ratingTier(form);
 
   const highlights = [
@@ -190,7 +183,7 @@ function SpotlightCard({ row, form }: { row: MatchStatsRow; form: number }) {
 }
 
 function PlayerCard({ row, form }: { row: MatchStatsRow; form: number }) {
-  const color = row.positionCategory ? POSITION_COLOR[row.positionCategory] : DEFAULT_COLOR;
+  const color = positionColor(row.positionCategory);
   const formTier = ratingTier(form);
   const body = (
     <>

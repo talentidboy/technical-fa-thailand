@@ -23,14 +23,7 @@ import {
   type MatchStatsRow,
 } from "@/lib/talent-match-stats";
 import { ratingTier } from "@/lib/rating-scale";
-
-const POSITION_COLOR: Record<string, string> = {
-  FW: "#fbbf24",
-  MF: "#38bdf8",
-  DF: "#34d399",
-  GK: "#a78bfa",
-};
-const DEFAULT_COLOR = "#818cf8";
+import { positionColor } from "@/lib/position-color";
 
 function labelOf(key: string) {
   return STAT_LABELS[key]?.th ?? key;
@@ -121,7 +114,7 @@ export function MatchStatsPanel({
   statsMax: Record<string, number>;
   statsDist: Record<string, number[]>;
 }) {
-  const color = row.positionCategory ? POSITION_COLOR[row.positionCategory] : DEFAULT_COLOR;
+  const color = positionColor(row.positionCategory);
   const form = computeFormScore(row, statsDist);
   const formTier = ratingTier(form);
 

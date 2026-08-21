@@ -2,17 +2,10 @@
 
 import { RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer } from "recharts";
 import { RADAR_AXES, STAT_LABELS, type MatchStatsRow } from "@/lib/talent-match-stats";
-
-const POSITION_COLOR: Record<string, string> = {
-  FW: "#fbbf24",
-  MF: "#38bdf8",
-  DF: "#34d399",
-  GK: "#a78bfa",
-};
-const DEFAULT_COLOR = "#818cf8";
+import { positionColor } from "@/lib/position-color";
 
 export function MiniRadar({ row, statsMax }: { row: MatchStatsRow; statsMax: Record<string, number> }) {
-  const color = row.positionCategory ? POSITION_COLOR[row.positionCategory] : DEFAULT_COLOR;
+  const color = positionColor(row.positionCategory);
   const data = RADAR_AXES.map((axis) => {
     const max = statsMax[axis] || 1;
     const value = row.stats[axis] ?? 0;

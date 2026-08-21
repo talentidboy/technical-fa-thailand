@@ -1,4 +1,5 @@
 import { getAirtableRecords } from "./airtable";
+import { categoryForPosition } from "./position-color";
 
 const TABLE_NAME = "INDIVIDUAL STATS LEG 2 / 2026";
 
@@ -20,21 +21,6 @@ function firstOrSelf(v: unknown): string | null {
   const raw = Array.isArray(v) ? v[0] : v;
   return typeof raw === "string" && raw.trim() ? raw.trim() : null;
 }
-
-// จับกลุ่มตำแหน่งจากค่าจริงที่ตรวจสอบแล้วใน field ตำแหน่ง (11 ตำแหน่งเป๊ะ ไม่เดาด้วย substring)
-const POSITION_CATEGORY: Record<string, "FW" | "MF" | "DF" | "GK"> = {
-  "ผู้รักษาประตู / Goalkeeper": "GK",
-  "แบ็คซ้าย / Left Back": "DF",
-  "เซ็นเตอร์ซ้าย / Left Centerback": "DF",
-  "เซ็นเตอร์ขวา / Right Centerback": "DF",
-  "แบ็คขวา / Right Back": "DF",
-  "กองกลางตัวรับ / Defensive Midfielder": "MF",
-  "กองกลาง / Central Midfielder": "MF",
-  "กองกลางตัวรุก / Attacking Midfielder": "MF",
-  "ปีกซ้าย / Left Winger": "FW",
-  "ปีกขวา / Right Winger": "FW",
-  "หน้าเป้า / Striker": "FW",
-};
 
 export const POSITION_CATEGORY_LABEL: Record<"FW" | "MF" | "DF" | "GK", string> = {
   FW: "กองหน้า",
@@ -168,7 +154,7 @@ export async function getAllMatchStats(): Promise<MatchStatsRow[]> {
       playerId: Array.isArray(linkedPlayerIds) ? (linkedPlayerIds[0] as string) ?? null : null,
       name,
       position,
-      positionCategory: position ? POSITION_CATEGORY[position] ?? null : null,
+      positionCategory: categoryForPosition(position),
       region: firstOrSelf(r.fields[FIELD.region]),
       school: firstOrSelf(r.fields[FIELD.school]),
       photoUrl: photoUrl(r.fields[FIELD.photo]),
