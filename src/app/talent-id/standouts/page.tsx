@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getTalentPlayers, type TalentPlayer } from "@/lib/talent-id";
 import { Trophy, Medal } from "lucide-react";
+import { Breadcrumb } from "@/components/talent-id/Breadcrumb";
 
 export const fetchCache = "default-cache";
 
@@ -40,6 +41,7 @@ export default async function TalentIdStandoutsPage() {
 
   return (
     <div>
+      <Breadcrumb items={[{ label: "Talent ID", href: "/talent-id" }, { label: "ผู้เล่นโดดเด่นตามเกรด" }]} />
       <div className="mb-8">
         <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-400/15 text-amber-300 ring-1 ring-amber-400/30">
           <Trophy className="h-7 w-7" />

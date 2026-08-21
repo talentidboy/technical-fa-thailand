@@ -1,5 +1,6 @@
 import { getAllMatchStats, buildLeaderboards, STAT_GROUPS } from "@/lib/talent-match-stats";
 import { Activity, Users } from "lucide-react";
+import { Breadcrumb } from "@/components/talent-id/Breadcrumb";
 
 export const fetchCache = "default-cache";
 
@@ -24,6 +25,7 @@ export default async function TalentIdStatsPage() {
 
   return (
     <div>
+      <Breadcrumb items={[{ label: "Talent ID", href: "/talent-id" }, { label: "สถิติการแข่งขัน" }]} />
       <div className="mb-8">
         <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-400/15 text-amber-300 ring-1 ring-amber-400/30">
           <Activity className="h-7 w-7" />

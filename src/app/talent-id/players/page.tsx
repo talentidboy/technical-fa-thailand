@@ -8,6 +8,7 @@ import {
   type TalentSortKey,
 } from "@/lib/talent-id";
 import { Search, Users, ChevronLeft, ChevronRight } from "lucide-react";
+import { Breadcrumb } from "@/components/talent-id/Breadcrumb";
 
 export const fetchCache = "default-cache";
 
@@ -106,6 +107,7 @@ export default async function TalentIdPlayersPage({
 
   return (
     <div>
+      <Breadcrumb items={[{ label: "Talent ID", href: "/talent-id" }, { label: "ผู้เล่นทั้งหมด" }]} />
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-white">ผู้เล่นทั้งหมด</h1>
         <p className="mt-1 max-w-xl text-sm text-indigo-300">

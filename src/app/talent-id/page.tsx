@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getTalentPlayers, type TalentPlayer } from "@/lib/talent-id";
 import { DonutChart, CategoryBarChart, CATEGORICAL_PALETTE } from "@/components/DashboardCharts";
+import { Breadcrumb } from "@/components/talent-id/Breadcrumb";
 import {
   Target,
   Users,
@@ -116,6 +117,7 @@ export default async function TalentIdHomePage() {
 
   return (
     <div>
+      <Breadcrumb items={[{ label: "Talent ID" }, { label: "ภาพรวม" }]} />
       <div className="mb-8">
         <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-400/15 text-amber-300 ring-1 ring-amber-400/30">
           <Target className="h-7 w-7" />

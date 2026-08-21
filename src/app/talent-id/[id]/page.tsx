@@ -1,18 +1,16 @@
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { getTalentPlayerById } from "@/lib/talent-id";
 import { getPlayerMatchStats, STAT_GROUPS } from "@/lib/talent-match-stats";
 import { PositionPitch } from "@/components/PositionPitch";
 import { PlayerTabs } from "@/components/talent-id/PlayerTabs";
+import { InfoPill } from "@/components/talent-id/InfoPill";
+import { Breadcrumb } from "@/components/talent-id/Breadcrumb";
 import {
-  ArrowLeft,
   Ruler,
   Weight,
   Footprints,
   MapPin,
-  School,
-  Shield,
   Video,
   Star,
   Phone,
@@ -190,38 +188,20 @@ export default async function TalentIdDetailPage({
         <div className="rounded-2xl border border-white/10 bg-white/5 p-6 lg:col-span-2">
           <div className="mb-4 flex items-center gap-2">
             <Compass className="h-4 w-4 text-amber-400" />
-            <h2 className="font-semibold text-white">ข้อมูลทั่วไป</h2>
+            <h2 className="font-semibold text-white">สถิติร่างกาย</h2>
           </div>
-          <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div className="flex items-center gap-2 text-sm">
-              <School className="h-4 w-4 flex-none text-indigo-400" />
-              <span className="text-indigo-100">{player.school || "-"}</span>
-            </div>
-            <div className="flex items-center gap-2 text-sm">
-              <Shield className="h-4 w-4 flex-none text-indigo-400" />
-              <span className="text-indigo-100">{player.club || "-"}</span>
-            </div>
-            <div className="flex items-center gap-2 text-sm">
-              <MapPin className="h-4 w-4 flex-none text-indigo-400" />
-              <span className="text-indigo-100">
-                {[player.province, player.region].filter(Boolean).join(" · ") || "-"}
-              </span>
-            </div>
-            <div className="flex items-center gap-2 text-sm">
-              <span className="text-indigo-400">ปีเกิด</span>
-              <span className="text-indigo-100">
-                {player.yearOfBirth ?? "-"}
-                {player.age ? ` (อายุ ${player.age})` : ""}
-              </span>
-            </div>
-          </dl>
-
-          {stats.length > 0 && (
-            <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <p className="mb-4 flex items-center gap-2 text-sm text-indigo-300">
+            <MapPin className="h-4 w-4 flex-none text-indigo-400" />
+            {[player.province, player.region].filter(Boolean).join(" · ") || "-"}
+          </p>
+          {stats.length > 0 ? (
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
               {stats.map((s) => (
                 <StatCard key={s.label} {...s} />
               ))}
             </div>
+          ) : (
+            <p className="text-sm text-indigo-300">ยังไม่มีข้อมูลสถิติร่างกาย</p>
           )}
         </div>
 
@@ -406,53 +386,76 @@ export default async function TalentIdDetailPage({
 
   return (
     <div className="space-y-6">
-      <Link
-        href="/talent-id/players"
-        className="inline-flex items-center gap-1.5 text-sm font-medium text-indigo-300 transition-colors hover:text-white"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        กลับรายชื่อ
-      </Link>
+      <Breadcrumb
+        items={[
+          { label: "Talent ID", href: "/talent-id" },
+          { label: "ผู้เล่นทั้งหมด", href: "/talent-id/players" },
+          { label: player.fullNameTh },
+        ]}
+      />
 
       {/* Profile hero */}
-        <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-linear-to-br from-indigo-900 via-indigo-950 to-slate-950 shadow-2xl">
-          <div className="flex flex-wrap items-center gap-6 p-8">
+      <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-linear-to-br from-indigo-900 via-indigo-950 to-slate-950 shadow-2xl">
+        <div className="absolute inset-x-0 top-0 h-1 bg-linear-to-r from-amber-600 via-amber-400 to-amber-600" />
+        <div className="flex flex-col gap-6 p-6 sm:p-8 lg:flex-row lg:items-start">
+          <div className="flex flex-none items-end gap-4">
             {player.photoUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={player.photoUrl}
                 alt=""
-                className="h-28 w-28 flex-none rounded-2xl object-cover ring-2 ring-white/15"
+                className="h-32 w-32 flex-none rounded-2xl object-cover ring-2 ring-white/15"
               />
             ) : (
-              <div className="flex h-28 w-28 flex-none items-center justify-center rounded-2xl bg-white/10 text-3xl font-semibold text-indigo-200 ring-2 ring-white/15">
+              <div className="flex h-32 w-32 flex-none items-center justify-center rounded-2xl bg-white/10 text-4xl font-semibold text-indigo-200 ring-2 ring-white/15">
                 {player.fullNameTh.charAt(0)}
               </div>
             )}
-            <div className="min-w-0">
-              <h1 className="text-2xl font-bold tracking-tight text-white">
-                {player.fullNameTh}
-              </h1>
-              <p className="mt-0.5 text-sm text-indigo-300">
-                {[player.fullNameEn, player.nickname && `"${player.nickname}"`]
-                  .filter(Boolean)
-                  .join(" · ") || "-"}
-              </p>
-              <div className="mt-3 flex flex-wrap gap-1.5">
-                {player.position1 && (
-                  <span className="rounded-full bg-amber-400/15 px-2.5 py-1 text-xs font-semibold text-amber-300 ring-1 ring-amber-400/30">
-                    {player.position1}
-                  </span>
-                )}
-                {player.styleOfPlay && (
-                  <span className="rounded-full bg-white/10 px-2.5 py-1 text-xs font-medium text-indigo-200">
-                    {player.styleOfPlay}
-                  </span>
-                )}
+          </div>
+
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">
+                  {player.fullNameTh}
+                </h1>
+                <p className="mt-0.5 text-sm text-indigo-300">
+                  {[player.fullNameEn, player.nickname && `"${player.nickname}"`]
+                    .filter(Boolean)
+                    .join(" · ") || "-"}
+                </p>
               </div>
+              {player.playerId != null && (
+                <span className="flex-none text-4xl font-black text-white/10 sm:text-5xl">
+                  #{player.playerId}
+                </span>
+              )}
+            </div>
+
+            <div className="mt-3 flex flex-wrap gap-1.5">
+              {player.position1 && (
+                <span className="rounded-full bg-amber-400/15 px-2.5 py-1 text-xs font-semibold text-amber-300 ring-1 ring-amber-400/30">
+                  {player.position1}
+                </span>
+              )}
+              {player.styleOfPlay && (
+                <span className="rounded-full bg-white/10 px-2.5 py-1 text-xs font-medium text-indigo-200">
+                  {player.styleOfPlay}
+                </span>
+              )}
+            </div>
+
+            <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
+              <InfoPill label="ปีเกิด" value={player.yearOfBirth ?? "-"} />
+              <InfoPill label="ตำแหน่งหลัก" value={player.position1 ?? "-"} accent />
+              <InfoPill label="อายุ" value={player.age != null ? `${player.age} ปี` : "-"} />
+              <InfoPill label="จังหวัด" value={player.province ?? "-"} />
+              <InfoPill label="สโมสร / โรงเรียน" value={player.club || player.school || "-"} />
+              <InfoPill label="เท้าถนัด" value={player.strongFoot ?? "-"} />
             </div>
           </div>
         </div>
+      </div>
 
         <PlayerTabs
           overview={overviewTab}
