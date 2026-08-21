@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { getTalentPlayerById } from "@/lib/talent-id";
+import { getPlayerMatchStats, STAT_GROUPS } from "@/lib/talent-match-stats";
 import { PositionPitch } from "@/components/PositionPitch";
 import { PlayerTabs } from "@/components/talent-id/PlayerTabs";
 import {
@@ -161,6 +162,8 @@ export default async function TalentIdDetailPage({
   const { id } = await params;
   const player = await getTalentPlayerById(id);
   if (!player) notFound();
+
+  const matchStats = await getPlayerMatchStats(player).catch(() => null);
 
   const stats: { icon: typeof Ruler; label: string; value: string }[] = [
     player.height ? { icon: Ruler, label: "ส่วนสูง", value: `${player.height} ซม.` } : null,
@@ -330,6 +333,36 @@ export default async function TalentIdDetailPage({
     </>
   );
 
+  const statsTab = matchStats ? (
+    <>
+      <p className="text-xs text-indigo-400">
+        สถิติการแข่งขันจริงจากตาราง Individual Stats Leg 2 / 2026 (จับคู่ด้วยชื่อผู้เล่น)
+      </p>
+      {STAT_GROUPS.map((group) => {
+        const entries = group.stats
+          .map((key) => ({ key, value: matchStats[key] }))
+          .filter((e) => e.value != null);
+        if (entries.length === 0) return null;
+        return (
+          <div key={group.title} className="rounded-2xl border border-white/10 bg-white/5 p-6">
+            <h2 className="mb-4 font-semibold text-white">{group.title}</h2>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+              {entries.map(({ key, value }) => (
+                <div
+                  key={key}
+                  className="flex flex-col items-center gap-1 rounded-xl border border-white/10 bg-black/20 p-3 text-center"
+                >
+                  <p className="text-xl font-bold text-amber-300">{value}</p>
+                  <p className="text-[11px] text-indigo-300">{key}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })}
+    </>
+  ) : null;
+
   const mediaTab = (
     <>
       {player.hudlVideoLeg1 || player.hudlVideoLeg2 ? (
@@ -421,7 +454,12 @@ export default async function TalentIdDetailPage({
           </div>
         </div>
 
-        <PlayerTabs overview={overviewTab} ratings={ratingsTab} media={mediaTab} />
+        <PlayerTabs
+          overview={overviewTab}
+          ratings={ratingsTab}
+          stats={statsTab ?? undefined}
+          media={mediaTab}
+        />
 
         {/* Contact — ADMIN/STAFF only, always visible regardless of tab */}
         {canSeeContact && (
