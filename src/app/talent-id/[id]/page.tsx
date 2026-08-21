@@ -14,7 +14,7 @@ import { InfoPill } from "@/components/talent-id/InfoPill";
 import { Breadcrumb } from "@/components/talent-id/Breadcrumb";
 import { MatchStatsPanel } from "@/components/talent-id/MatchStatsPanel";
 import { StatChip } from "@/components/talent-id/StatChip";
-import { avgRatingToScore, ratingTier } from "@/lib/rating-scale";
+import { ratingTier } from "@/lib/rating-scale";
 import {
   Ruler,
   Weight,
@@ -196,10 +196,6 @@ export default async function TalentIdDetailPage({
     { label: "Leg 2", value: player.avgRatingLeg2 },
     { label: "Camp 2026", value: player.avgRatingCamp2026 },
   ];
-
-  const bestRating = player.avgRatingCamp2026 ?? player.avgRatingLeg2 ?? player.avgRatingLeg1;
-  const ovr = bestRating != null ? avgRatingToScore(bestRating) : null;
-  const ovrTier = ovr != null ? ratingTier(ovr) : null;
 
   const overviewTab = (
     <>
@@ -440,34 +436,21 @@ export default async function TalentIdDetailPage({
       {/* Profile hero */}
       <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-linear-to-br from-indigo-900 via-indigo-950 to-slate-950 shadow-2xl">
         <div className="absolute inset-x-0 top-0 h-1 bg-linear-to-r from-amber-600 via-amber-400 to-amber-600" />
-        <div
-          className={`pointer-events-none absolute -left-16 -top-16 h-72 w-72 rounded-full bg-current opacity-15 blur-3xl ${ovrTier?.text ?? "text-amber-400"}`}
-        />
+        <div className="pointer-events-none absolute -left-16 -top-16 h-72 w-72 rounded-full bg-amber-400 opacity-15 blur-3xl" />
         <div className="flex flex-col gap-6 p-6 sm:p-8 lg:flex-row lg:items-start">
           <div className="flex flex-none items-end gap-4">
-            <div className="relative">
-              {player.photoUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={player.photoUrl}
-                  alt=""
-                  className="h-32 w-32 flex-none rounded-2xl object-cover ring-2 ring-white/15"
-                />
-              ) : (
-                <div className="flex h-32 w-32 flex-none items-center justify-center rounded-2xl bg-white/10 text-4xl font-semibold text-indigo-200 ring-2 ring-white/15">
-                  {player.fullNameTh.charAt(0)}
-                </div>
-              )}
-              {ovr != null && ovrTier && (
-                <div
-                  className={`absolute -bottom-2.5 -right-2.5 flex h-14 w-14 flex-col items-center justify-center rounded-2xl border-2 border-indigo-950 ${ovrTier.bg} ring-2 ${ovrTier.ring}`}
-                  title={`คะแนนรวม ${ovr}/100 (${ovrTier.label}) — เทียบจากคะแนนประเมินเฉลี่ย ${bestRating?.toFixed(2)}`}
-                >
-                  <span className={`text-lg font-black leading-none ${ovrTier.text}`}>{ovr}</span>
-                  <span className={`text-[8px] font-bold uppercase leading-none ${ovrTier.text}`}>OVR</span>
-                </div>
-              )}
-            </div>
+            {player.photoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={player.photoUrl}
+                alt=""
+                className="h-32 w-32 flex-none rounded-2xl object-cover ring-2 ring-white/15"
+              />
+            ) : (
+              <div className="flex h-32 w-32 flex-none items-center justify-center rounded-2xl bg-white/10 text-4xl font-semibold text-indigo-200 ring-2 ring-white/15">
+                {player.fullNameTh.charAt(0)}
+              </div>
+            )}
           </div>
 
           <div className="min-w-0 flex-1">
