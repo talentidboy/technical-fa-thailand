@@ -5,6 +5,13 @@ import {
   PolarGrid,
   PolarAngleAxis,
   Radar,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Cell,
   ResponsiveContainer,
 } from "recharts";
 import {
@@ -18,12 +25,12 @@ import {
 import { ratingTier } from "@/lib/rating-scale";
 
 const POSITION_COLOR: Record<string, string> = {
-  FW: "#fbbf24", // amber-400
-  MF: "#38bdf8", // sky-400
-  DF: "#34d399", // emerald-400
-  GK: "#a78bfa", // violet-400
+  FW: "#fbbf24",
+  MF: "#38bdf8",
+  DF: "#34d399",
+  GK: "#a78bfa",
 };
-const DEFAULT_COLOR = "#818cf8"; // indigo-400
+const DEFAULT_COLOR = "#818cf8";
 
 function labelOf(key: string) {
   return STAT_LABELS[key]?.th ?? key;
@@ -34,19 +41,74 @@ function rate(numerator: number, denominator: number): string | null {
   return `${((100 * numerator) / denominator).toFixed(1)}%`;
 }
 
-function StatCell({ label, value, percent }: { label: string; value: number; percent: number }) {
-  const tier = value === 0 ? null : ratingTier(percent);
+function TopStatsChart({
+  row,
+  statsDist,
+}: {
+  row: MatchStatsRow;
+  statsDist: Record<string, number[]>;
+}) {
+  const allKeys = STAT_GROUPS.flatMap((g) => g.stats);
+  const top = allKeys
+    .map((key) => ({
+      key,
+      name: labelOf(key),
+      value: row.stats[key] ?? 0,
+      percent: statPercentile(row, key, statsDist),
+    }))
+    .filter((s) => s.value > 0)
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 8);
+
+  if (top.length === 0) {
+    return (
+      <p className="py-8 text-center text-sm text-indigo-300">ยังไม่มีสถิติที่บันทึกไว้สำหรับผู้เล่นคนนี้</p>
+    );
+  }
+
   return (
-    <div className="flex items-center justify-between gap-2 border-b border-white/5 py-1.5 text-xs">
-      <span className="text-indigo-300">{label}</span>
-      <span
-        className={`min-w-8 rounded-md px-1.5 py-0.5 text-center font-bold ${
-          tier ? `${tier.bg} ${tier.text}` : "text-indigo-500"
-        }`}
-      >
-        {value}
-      </span>
-    </div>
+    <ResponsiveContainer width="100%" height={Math.max(200, top.length * 36)}>
+      <BarChart data={top} layout="vertical" margin={{ left: 0, right: 20, top: 4, bottom: 4 }}>
+        <CartesianGrid strokeDasharray="0" horizontal={false} stroke="#1c2333" />
+        <XAxis
+          type="number"
+          allowDecimals={false}
+          tick={{ fontSize: 11, fill: "#8a98b8" }}
+          axisLine={false}
+          tickLine={false}
+        />
+        <YAxis
+          type="category"
+          dataKey="name"
+          width={112}
+          tick={{ fontSize: 11.5, fill: "#c7d2e8" }}
+          axisLine={false}
+          tickLine={false}
+        />
+        <Tooltip
+          cursor={{ fill: "rgba(255,255,255,0.04)" }}
+          content={({ active, payload }) => {
+            if (!active || !payload?.length) return null;
+            const p = payload[0].payload as (typeof top)[number];
+            const tier = ratingTier(p.percent);
+            return (
+              <div className="rounded-lg border border-white/10 bg-indigo-950 px-3 py-2 text-xs shadow-xl">
+                <p className="font-semibold text-white">{p.name}</p>
+                <p className="text-indigo-300">
+                  ค่า <span className="font-bold text-white">{p.value}</span> · เปอร์เซ็นไทล์{" "}
+                  <span className={`font-bold ${tier.text}`}>{p.percent}</span>
+                </p>
+              </div>
+            );
+          }}
+        />
+        <Bar dataKey="value" radius={[0, 4, 4, 0]} maxBarSize={16} animationDuration={500}>
+          {top.map((s) => (
+            <Cell key={s.key} fill={ratingTier(s.percent).hex} />
+          ))}
+        </Bar>
+      </BarChart>
+    </ResponsiveContainer>
   );
 }
 
@@ -78,86 +140,101 @@ export function MatchStatsPanel({
     return { axis: labelOf(axis), full: Math.round((100 * value) / max) };
   });
 
+  // เฉพาะกลุ่ม/สถิติที่มีค่าจริงมากกว่า 0 เท่านั้น — ตัดแถว 0 ที่ไม่มีความหมายออกจากรายการยาว
+  const nonEmptyGroups = STAT_GROUPS.map((group) => ({
+    title: group.title,
+    stats: group.stats.filter((key) => (row.stats[key] ?? 0) > 0),
+  })).filter((g) => g.stats.length > 0);
+
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-4 rounded-2xl border border-white/10 bg-white/5 px-5 py-4">
-        <div
-          className={`flex h-16 w-16 flex-none flex-col items-center justify-center rounded-2xl ring-2 ${formTier.bg} ${formTier.ring}`}
-        >
-          <span className={`text-2xl font-black ${formTier.text}`}>{form}</span>
-          <span className={`text-[9px] font-semibold uppercase tracking-wide ${formTier.text}`}>ฟอร์ม</span>
-        </div>
-        <div className="min-w-0 flex-1">
-          <p className="text-xs text-indigo-400">
-            คะแนนฟอร์มรวม ({formTier.label}) — เฉลี่ยเปอร์เซ็นไทล์จาก 8 สถิติหลักเทียบกับผู้เล่นทั้งหมดในทีม
-          </p>
+    <div className="space-y-5">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-5 lg:items-start">
+        <div className="rounded-3xl border border-white/10 bg-linear-to-b from-white/6 to-white/2 p-6 lg:col-span-2">
+          <div className="flex items-center gap-4">
+            <div
+              className={`flex h-16 w-16 flex-none flex-col items-center justify-center rounded-2xl ring-2 ${formTier.bg} ${formTier.ring}`}
+            >
+              <span className={`text-2xl font-black leading-none ${formTier.text}`}>{form}</span>
+              <span className={`mt-0.5 text-[9px] font-semibold uppercase tracking-wide ${formTier.text}`}>
+                ฟอร์ม
+              </span>
+            </div>
+            <div className="min-w-0">
+              <p className={`text-sm font-bold ${formTier.text}`}>{formTier.label}</p>
+              <p className="text-xs text-indigo-400">เปอร์เซ็นไทล์เทียบผู้เล่นทั้งหมดในทีม</p>
+            </div>
+          </div>
+
           {rates.length > 0 && (
-            <p className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1 text-xs text-indigo-300">
+            <div className="mt-4 flex flex-wrap gap-x-4 gap-y-1 border-t border-white/10 pt-3 text-xs text-indigo-300">
               {rates.map((r) => (
                 <span key={r.label}>
                   {r.label} <span className="font-bold text-amber-300">{r.value}</span>
                 </span>
               ))}
-            </p>
+            </div>
           )}
-        </div>
-      </div>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:items-start">
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
-          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-indigo-300">
+          <h3 className="mb-1 mt-5 text-xs font-semibold uppercase tracking-wide text-indigo-300">
             โปรไฟล์เทียบกับผู้เล่นทั้งหมด
           </h3>
-          <div className="h-56 w-full">
+          <div className="h-64 w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <RadarChart data={radarData} outerRadius="70%">
+              <RadarChart data={radarData} outerRadius="72%">
                 <PolarGrid stroke="#27324a" />
                 <PolarAngleAxis dataKey="axis" tick={{ fill: "#b6c2d6", fontSize: 10 }} />
-                <Radar dataKey="full" stroke={color} fill={color} fillOpacity={0.28} strokeWidth={2} />
+                <Radar dataKey="full" stroke={color} fill={color} fillOpacity={0.3} strokeWidth={2} />
               </RadarChart>
             </ResponsiveContainer>
           </div>
-          <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1.5 border-t border-white/10 pt-3">
-            {RADAR_AXES.map((axis) => {
-              const value = row.stats[axis] ?? 0;
-              const percent = statPercentile(row, axis, statsDist);
-              const tier = value === 0 ? null : ratingTier(percent);
-              return (
-                <div key={axis} className="flex items-center justify-between gap-2 text-xs">
-                  <span className="truncate text-indigo-300">{labelOf(axis)}</span>
-                  <span
-                    className={`min-w-7 flex-none rounded-md px-1.5 py-0.5 text-center font-bold ${
-                      tier ? `${tier.bg} ${tier.text}` : "text-indigo-500"
-                    }`}
-                  >
-                    {value}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
         </div>
 
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-5 text-sm">
-          {STAT_GROUPS.map((group) => (
-            <div key={group.title} className="mb-4 last:mb-0">
-              <p className="mb-1.5 text-[11px] font-bold uppercase tracking-wide text-amber-400">
-                {group.title}
-              </p>
-              <div className="space-y-0.5">
-                {group.stats.map((key) => (
-                  <StatCell
-                    key={key}
-                    label={labelOf(key)}
-                    value={row.stats[key] ?? 0}
-                    percent={statPercentile(row, key, statsDist)}
-                  />
-                ))}
-              </div>
-            </div>
-          ))}
+        <div className="rounded-3xl border border-white/10 bg-white/5 p-6 lg:col-span-3">
+          <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-indigo-300">
+            สถิติเด่น (Top 8)
+          </h3>
+          <TopStatsChart row={row} statsDist={statsDist} />
         </div>
       </div>
+
+      {nonEmptyGroups.length > 0 && (
+        <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
+          <h3 className="mb-4 text-xs font-semibold uppercase tracking-wide text-indigo-300">
+            รายละเอียดสถิติทั้งหมด
+          </h3>
+          <div className="grid grid-cols-1 gap-x-6 gap-y-4 text-sm sm:grid-cols-2 lg:grid-cols-3">
+            {nonEmptyGroups.map((group) => (
+              <div key={group.title}>
+                <p className="mb-1.5 text-[11px] font-bold uppercase tracking-wide text-amber-400">
+                  {group.title}
+                </p>
+                <div className="space-y-0.5">
+                  {group.stats.map((key) => {
+                    const value = row.stats[key] ?? 0;
+                    const percent = statPercentile(row, key, statsDist);
+                    const tier = ratingTier(percent);
+                    return (
+                      <div
+                        key={key}
+                        className="flex items-center gap-2 border-b border-white/5 py-1.5 text-xs"
+                      >
+                        <span className="min-w-0 flex-1 truncate text-indigo-300">{labelOf(key)}</span>
+                        <div className="h-1.5 w-9 flex-none overflow-hidden rounded-full bg-white/10">
+                          <div
+                            className="h-full rounded-full"
+                            style={{ width: `${Math.max(8, percent)}%`, backgroundColor: tier.hex }}
+                          />
+                        </div>
+                        <span className={`w-6 flex-none text-right font-bold ${tier.text}`}>{value}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

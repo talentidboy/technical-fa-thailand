@@ -3,6 +3,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { getTalentPlayerById } from "@/lib/talent-id";
 import {
   getPlayerMatchStatsRow,
+  computeFormScore,
   statPercentile,
   STAT_GROUPS,
   STAT_LABELS,
@@ -29,7 +30,6 @@ import {
   Tag,
   TrendingUp,
   Users2,
-  Compass,
   Gauge,
   ThumbsUp,
   ThumbsDown,
@@ -145,34 +145,6 @@ function ScoutScoresBars({ scores }: { scores: { label: string; value: number }[
   );
 }
 
-function AttrRow({ label, value, percent }: { label: string; value: number; percent: number }) {
-  const tier = value === 0 ? null : ratingTier(percent);
-  const barPercent = tier ? Math.max(8, percent) : 4;
-  return (
-    <div className="flex items-center gap-2 border-b border-white/5 py-1.5 text-xs">
-      <span className="min-w-0 flex-1 truncate text-indigo-300">{label}</span>
-      <div className="h-1.5 w-9 flex-none overflow-hidden rounded-full bg-white/10">
-        <div
-          className={`h-full rounded-full ${tier ? `bg-current ${tier.text}` : "bg-indigo-700"}`}
-          style={{ width: `${barPercent}%` }}
-        />
-      </div>
-      <span className={`w-6 flex-none text-right font-bold ${tier ? tier.text : "text-indigo-500"}`}>
-        {value}
-      </span>
-    </div>
-  );
-}
-
-// จัดกลุ่มหมวดสถิติจริง (จาก STAT_GROUPS) เป็น 3 คอลัมน์ย่อยที่สัดส่วนใกล้เคียงกัน
-// เลียนแบบผังคอลัมน์ Technical / Mental / Physical ของเกมจัดการทีม — ไม่ได้เปลี่ยนหมวดหมู่จริง
-// แค่จัดเรียงให้แสดงผลเป็น 3 คอลัมน์แทนการเรียงต่อกันยาวคอลัมน์เดียว
-const ATTR_COLUMNS: string[][] = [
-  ["การทำประตู"],
-  ["การจ่ายบอล", "การเลี้ยงบอล / ดวลตัวต่อตัว"],
-  ["การป้องกัน", "การดวลกลางอากาศ", "อื่นๆ"],
-];
-
 export default async function TalentIdDetailPage({
   params,
 }: {
@@ -227,126 +199,99 @@ export default async function TalentIdDetailPage({
 
   const overviewTab = (
     <>
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-4 lg:items-start">
-        {/* คอลัมน์ 1 — ตำแหน่งในสนาม */}
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:items-start">
+        {/* การ์ด 1 — ตำแหน่งและร่างกาย */}
+        <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
           <div className="mb-4 flex items-center gap-2">
             <Users2 className="h-4 w-4 text-amber-400" />
-            <h2 className="font-semibold text-white">ตำแหน่งในสนาม</h2>
+            <h2 className="font-semibold text-white">ตำแหน่งและร่างกาย</h2>
           </div>
           <div className="flex justify-center">
             <PositionPitch primary={player.position1} secondary={player.position2} />
           </div>
-          <div className="mt-4 space-y-1.5">
+          <div className="mt-4 flex flex-wrap justify-center gap-1.5">
             {player.position1 && (
-              <div className="flex items-center justify-between rounded-lg bg-amber-400/10 px-3 py-1.5 text-xs">
-                <span className="font-semibold text-amber-300">{player.position1}</span>
-                <span className="text-[10px] uppercase tracking-wide text-amber-400/70">หลัก</span>
-              </div>
+              <span className="rounded-full bg-amber-400/15 px-2.5 py-1 text-xs font-semibold text-amber-300 ring-1 ring-amber-400/30">
+                {player.position1}
+              </span>
             )}
             {player.position2.map((p) => (
-              <div
+              <span
                 key={p}
-                className="flex items-center justify-between rounded-lg bg-white/5 px-3 py-1.5 text-xs"
+                className="rounded-full bg-white/10 px-2.5 py-1 text-xs font-medium text-indigo-200"
               >
-                <span className="text-indigo-200">{p}</span>
-                <span className="text-[10px] uppercase tracking-wide text-indigo-400">รอง</span>
-              </div>
+                {p}
+              </span>
             ))}
           </div>
-        </div>
 
-        {/* คอลัมน์ 2 — คุณลักษณะ (สถิติแข่งจริงจัดหมวด หรือคะแนนสแกาต์ถ้าไม่มีสถิติแข่ง) */}
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-6 lg:col-span-2">
-          <div className="mb-4 flex items-center gap-2">
-            <Gauge className="h-4 w-4 text-amber-400" />
-            <h2 className="font-semibold text-white">คุณลักษณะ</h2>
-          </div>
-          {matchStats ? (
-            <div className="grid grid-cols-1 gap-x-5 gap-y-4 text-sm sm:grid-cols-3">
-              {ATTR_COLUMNS.map((titles) => (
-                <div key={titles.join("+")}>
-                  {STAT_GROUPS.filter((g) => titles.includes(g.title)).map((group) => (
-                    <div key={group.title} className="mb-4 last:mb-0">
-                      <p className="mb-1.5 text-[11px] font-bold uppercase tracking-wide text-amber-400">
-                        {group.title}
-                      </p>
-                      <div className="space-y-0.5">
-                        {group.stats.map((key) => (
-                          <AttrRow
-                            key={key}
-                            label={STAT_LABELS[key]?.th ?? key}
-                            value={matchStats.row.stats[key] ?? 0}
-                            percent={statPercentile(matchStats.row, key, matchStats.statsDist)}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  ))}
+          <p className="mt-5 flex items-center gap-2 border-t border-white/10 pt-4 text-xs text-indigo-300">
+            <MapPin className="h-3.5 w-3.5 flex-none text-indigo-400" />
+            {[player.province, player.region].filter(Boolean).join(" · ") || "-"}
+          </p>
+          {stats.length > 0 ? (
+            <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+              {stats.map((s) => (
+                <div
+                  key={s.label}
+                  className="flex flex-col items-center gap-1 rounded-2xl bg-black/20 p-3 text-center"
+                >
+                  <s.icon className="h-4 w-4 text-amber-400" />
+                  <p className="text-base font-bold text-white">{s.value}</p>
+                  <p className="text-[10px] text-indigo-300">{s.label}</p>
                 </div>
               ))}
             </div>
-          ) : player.scoutScores.length > 0 ? (
-            <ScoutScoresBars scores={player.scoutScores} />
           ) : (
-            <p className="text-sm text-indigo-300">ยังไม่มีข้อมูลเชิงลึกสำหรับผู้เล่นคนนี้</p>
+            <p className="mt-3 text-xs text-indigo-300">ยังไม่มีข้อมูลสถิติร่างกาย</p>
           )}
         </div>
 
-        {/* คอลัมน์ 3 — ข้อมูลนักกีฬา: ร่างกาย, เรดาร์, สแกาต์ (ถ้ายังไม่โชว์คอลัมน์ 2), จุดแข็ง/จุดที่ควรพัฒนา */}
-        <div className="space-y-4">
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
-            <div className="mb-4 flex items-center gap-2">
-              <Compass className="h-4 w-4 text-amber-400" />
-              <h2 className="font-semibold text-white">ข้อมูลนักกีฬา</h2>
-            </div>
-            <p className="mb-3 flex items-center gap-2 text-xs text-indigo-300">
-              <MapPin className="h-3.5 w-3.5 flex-none text-indigo-400" />
-              {[player.province, player.region].filter(Boolean).join(" · ") || "-"}
-            </p>
-            {stats.length > 0 ? (
-              <div className="space-y-1">
-                {stats.map((s) => (
-                  <div
-                    key={s.label}
-                    className="flex items-center justify-between border-b border-white/5 py-1.5 text-xs"
-                  >
-                    <span className="flex items-center gap-1.5 text-indigo-300">
-                      <s.icon className="h-3.5 w-3.5 text-indigo-400" />
-                      {s.label}
-                    </span>
-                    <span className="font-bold text-white">{s.value}</span>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-xs text-indigo-300">ยังไม่มีข้อมูลสถิติร่างกาย</p>
-            )}
+        {/* การ์ด 2 — ฟอร์ม/เรดาร์ + คะแนนสแกาต์ + จุดแข็ง/จุดที่ควรพัฒนา */}
+        <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
+          <div className="mb-4 flex items-center gap-2">
+            <Gauge className="h-4 w-4 text-amber-400" />
+            <h2 className="font-semibold text-white">ฟอร์มและความสามารถ</h2>
           </div>
 
-          {matchStats && (
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
-              <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-indigo-300">
-                โปรไฟล์เทียบกับผู้เล่นทั้งหมด
-              </h3>
+          {matchStats ? (
+            <>
+              {(() => {
+                const form = computeFormScore(matchStats.row, matchStats.statsDist);
+                const formTier = ratingTier(form);
+                return (
+                  <div className="mb-4 flex items-center gap-3">
+                    <div
+                      className={`flex h-12 w-12 flex-none flex-col items-center justify-center rounded-xl ring-2 ${formTier.bg} ${formTier.ring}`}
+                    >
+                      <span className={`text-lg font-black leading-none ${formTier.text}`}>{form}</span>
+                    </div>
+                    <p className="text-xs text-indigo-300">
+                      ฟอร์มรวม (<span className={`font-bold ${formTier.text}`}>{formTier.label}</span>) —
+                      ดูรายละเอียดเต็มที่แท็บ &ldquo;สถิติการแข่งขัน&rdquo;
+                    </p>
+                  </div>
+                );
+              })()}
               <MiniRadar row={matchStats.row} statsMax={matchStats.statsMax} />
-            </div>
-          )}
+            </>
+          ) : player.scoutScores.length === 0 ? (
+            <p className="text-sm text-indigo-300">ยังไม่มีข้อมูลเชิงลึกสำหรับผู้เล่นคนนี้</p>
+          ) : null}
 
-          {matchStats && player.scoutScores.length > 0 && (
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
-              <div className="mb-4 flex items-center gap-2">
-                <Star className="h-4 w-4 text-amber-400" />
-                <h2 className="font-semibold text-white">คะแนนจากสแกาต์รายบุคคล</h2>
-              </div>
+          {player.scoutScores.length > 0 && (
+            <div className={matchStats ? "mt-4 border-t border-white/10 pt-4" : ""}>
+              <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-indigo-300">
+                คะแนนจากสแกาต์รายบุคคล
+              </p>
               <ScoutScoresBars scores={player.scoutScores} />
             </div>
           )}
 
           {(strengths.length > 0 || weaknesses.length > 0) && (
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
+            <div className="mt-4 grid grid-cols-1 gap-4 border-t border-white/10 pt-4 sm:grid-cols-2">
               {strengths.length > 0 && (
-                <div className="mb-3 last:mb-0">
+                <div>
                   <div className="mb-1.5 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-emerald-400">
                     <ThumbsUp className="h-3.5 w-3.5" />
                     จุดแข็ง
@@ -380,41 +325,45 @@ export default async function TalentIdDetailPage({
         </div>
       </div>
 
-      {player.talent.length > 0 && (
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
-          <div className="mb-3 flex items-center gap-2">
-            <Tag className="h-4 w-4 text-rose-400" />
-            <h2 className="font-semibold text-white">ความสามารถโดดเด่น</h2>
-          </div>
-          <div className="flex flex-wrap gap-1.5">
-            {player.talent.map((t) => (
-              <span
-                key={t}
-                className="rounded-full bg-rose-400/15 px-2.5 py-1 text-xs font-medium text-rose-300 ring-1 ring-rose-400/20"
-              >
-                {t}
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
+      {(player.talent.length > 0 || player.tags.length > 0) && (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          {player.talent.length > 0 && (
+            <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
+              <div className="mb-3 flex items-center gap-2">
+                <Tag className="h-4 w-4 text-rose-400" />
+                <h2 className="font-semibold text-white">ความสามารถโดดเด่น</h2>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {player.talent.map((t) => (
+                  <span
+                    key={t}
+                    className="rounded-full bg-rose-400/15 px-2.5 py-1 text-xs font-medium text-rose-300 ring-1 ring-rose-400/20"
+                  >
+                    {t}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
 
-      {player.tags.length > 0 && (
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
-          <div className="mb-3 flex items-center gap-2">
-            <Tag className="h-4 w-4 text-emerald-400" />
-            <h2 className="font-semibold text-white">สถานะการคัดเลือก</h2>
-          </div>
-          <div className="flex flex-wrap gap-1.5">
-            {player.tags.map((t) => (
-              <span
-                key={t}
-                className="rounded-full bg-emerald-400/15 px-2.5 py-1 text-xs font-medium text-emerald-300 ring-1 ring-emerald-400/20"
-              >
-                {t}
-              </span>
-            ))}
-          </div>
+          {player.tags.length > 0 && (
+            <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
+              <div className="mb-3 flex items-center gap-2">
+                <Tag className="h-4 w-4 text-emerald-400" />
+                <h2 className="font-semibold text-white">สถานะการคัดเลือก</h2>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {player.tags.map((t) => (
+                  <span
+                    key={t}
+                    className="rounded-full bg-emerald-400/15 px-2.5 py-1 text-xs font-medium text-emerald-300 ring-1 ring-emerald-400/20"
+                  >
+                    {t}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
