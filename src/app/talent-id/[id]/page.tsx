@@ -14,6 +14,7 @@ import { InfoPill } from "@/components/talent-id/InfoPill";
 import { Breadcrumb } from "@/components/talent-id/Breadcrumb";
 import { MatchStatsPanel } from "@/components/talent-id/MatchStatsPanel";
 import { MiniRadar } from "@/components/talent-id/MiniRadar";
+import { TopStatsChart } from "@/components/talent-id/TopStatsChart";
 import { ratingTier } from "@/lib/rating-scale";
 import {
   Ruler,
@@ -278,12 +279,20 @@ export default async function TalentIdDetailPage({
                     </div>
                     <p className="text-xs text-indigo-300">
                       ฟอร์มรวม (<span className={`font-bold ${formTier.text}`}>{formTier.label}</span>) —
-                      ดูรายละเอียดเต็มที่แท็บ &ldquo;สถิติการแข่งขัน&rdquo;
+                      เปอร์เซ็นไทล์เทียบผู้เล่นทั้งหมดในทีม
                     </p>
                   </div>
                 );
               })()}
               <MiniRadar row={matchStats.row} statsMax={matchStats.statsMax} />
+
+              <p className="mb-2 mt-4 border-t border-white/10 pt-4 text-xs font-semibold uppercase tracking-wide text-indigo-300">
+                สถิติเด่น
+              </p>
+              <TopStatsChart row={matchStats.row} statsDist={matchStats.statsDist} limit={6} />
+              <p className="mt-1 text-[11px] text-indigo-500">
+                ดูสถิติครบทุกหมวดที่แท็บ &ldquo;สถิติการแข่งขัน&rdquo;
+              </p>
             </>
           ) : player.scoutScores.length === 0 ? (
             <p className="text-sm text-indigo-300">ยังไม่มีข้อมูลเชิงลึกสำหรับผู้เล่นคนนี้</p>
