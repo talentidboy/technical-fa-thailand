@@ -69,6 +69,17 @@ export default async function G15TeamDetailPage({
     .flatMap((g) => g.rows)
     .find((r) => r.teamId === id);
 
+  // ฟอร์ม 5 นัดล่าสุด (W/D/L) ของทีมนี้ — allMatches เรียงตามวันแข่งจากเก่าไปใหม่อยู่แล้ว
+  const recentForm = allMatches
+    .filter((m) => m.status === "FINISHED" && m.homeScore != null && m.awayScore != null)
+    .slice(-5)
+    .map((m) => {
+      const isHome = m.homeTeamId === id;
+      const gf = isHome ? m.homeScore! : m.awayScore!;
+      const ga = isHome ? m.awayScore! : m.homeScore!;
+      return gf > ga ? "W" : gf < ga ? "L" : "D";
+    });
+
   const parsed = parseRegionGroup(team.groupName);
   const style = regionStyle(parsed?.region ?? null);
 
@@ -144,6 +155,52 @@ export default async function G15TeamDetailPage({
                   <p className="mt-0.5 text-[10px] uppercase tracking-wide text-slate-400">{s.label}</p>
                 </div>
               ))}
+            </div>
+          )}
+
+          {standing && standing.played > 0 && (
+            <div className="border-t border-slate-100 px-6 py-5">
+              <p className="mb-2.5 text-xs font-medium text-slate-500">ฟอร์มการแข่งขัน ({standing.played} นัด)</p>
+              <div className="flex h-2.5 overflow-hidden rounded-full bg-slate-100">
+                {standing.won > 0 && (
+                  <div className="bg-emerald-500" style={{ width: `${(standing.won / standing.played) * 100}%` }} />
+                )}
+                {standing.drawn > 0 && (
+                  <div className="bg-amber-400" style={{ width: `${(standing.drawn / standing.played) * 100}%` }} />
+                )}
+                {standing.lost > 0 && (
+                  <div className="bg-red-400" style={{ width: `${(standing.lost / standing.played) * 100}%` }} />
+                )}
+              </div>
+              <div className="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
+                <span className="flex items-center gap-1.5 font-medium text-emerald-700">
+                  <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                  {Math.round((standing.won / standing.played) * 100)}% ชนะ {standing.won}
+                </span>
+                <span className="flex items-center gap-1.5 font-medium text-amber-700">
+                  <span className="h-2 w-2 rounded-full bg-amber-400" />
+                  {Math.round((standing.drawn / standing.played) * 100)}% เสมอ {standing.drawn}
+                </span>
+                <span className="flex items-center gap-1.5 font-medium text-red-600">
+                  <span className="h-2 w-2 rounded-full bg-red-400" />
+                  {Math.round((standing.lost / standing.played) * 100)}% แพ้ {standing.lost}
+                </span>
+              </div>
+              {recentForm.length > 0 && (
+                <div className="mt-3 flex items-center gap-1.5">
+                  <span className="text-xs text-slate-400">ฟอร์มล่าสุด:</span>
+                  {recentForm.map((r, i) => (
+                    <span
+                      key={i}
+                      className={`flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold text-white ${
+                        r === "W" ? "bg-emerald-500" : r === "D" ? "bg-amber-400" : "bg-red-400"
+                      }`}
+                    >
+                      {r}
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </div>
