@@ -3,7 +3,6 @@ import { getCurrentUser } from "@/lib/auth";
 import { getTalentPlayerById } from "@/lib/talent-id";
 import {
   getPlayerMatchStatsRow,
-  computeFormScore,
   statPercentile,
   STAT_GROUPS,
   STAT_LABELS,
@@ -262,32 +261,18 @@ export default async function TalentIdDetailPage({
           )}
         </div>
 
-        {/* การ์ด 2 — ฟอร์ม/เรดาร์ + คะแนนสแกาต์ + จุดแข็ง/จุดที่ควรพัฒนา */}
+        {/* การ์ด 2 — เรดาร์/สถิติเด่น + คะแนนสแกาต์ + จุดแข็ง/จุดที่ควรพัฒนา */}
         <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
           <div className="mb-4 flex items-center gap-2">
             <Gauge className="h-4 w-4 text-amber-400" />
-            <h2 className="font-semibold text-white">ฟอร์มและความสามารถ</h2>
+            <h2 className="font-semibold text-white">ความสามารถ</h2>
           </div>
 
           {matchStats ? (
             <>
-              {(() => {
-                const form = computeFormScore(matchStats.row, matchStats.statsDist);
-                const formTier = ratingTier(form);
-                return (
-                  <div className="mb-4 flex items-center gap-3">
-                    <div
-                      className={`flex h-12 w-12 flex-none flex-col items-center justify-center rounded-xl ring-2 ${formTier.bg} ${formTier.ring}`}
-                    >
-                      <span className={`text-lg font-black leading-none ${formTier.text}`}>{form}</span>
-                    </div>
-                    <p className="text-xs text-indigo-300">
-                      ฟอร์มรวม (<span className={`font-bold ${formTier.text}`}>{formTier.label}</span>) —
-                      เปอร์เซ็นไทล์เทียบผู้เล่นทั้งหมดในทีม
-                    </p>
-                  </div>
-                );
-              })()}
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-indigo-300">
+                โปรไฟล์เทียบกับผู้เล่นทั้งหมด
+              </p>
               <MiniRadar row={matchStats.row} statsMax={matchStats.statsMax} />
 
               <p className="mb-2 mt-4 border-t border-white/10 pt-4 text-xs font-semibold uppercase tracking-wide text-indigo-300">

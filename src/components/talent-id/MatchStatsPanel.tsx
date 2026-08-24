@@ -5,7 +5,6 @@ import {
   STAT_GROUPS,
   STAT_LABELS,
   RADAR_AXES,
-  computeFormScore,
   statPercentile,
   type MatchStatsRow,
 } from "@/lib/talent-match-stats";
@@ -32,8 +31,6 @@ export function MatchStatsPanel({
   statsDist: Record<string, number[]>;
 }) {
   const color = positionColor(row.positionCategory);
-  const form = computeFormScore(row, statsDist);
-  const formTier = ratingTier(form);
 
   const rates = [
     {
@@ -60,23 +57,8 @@ export function MatchStatsPanel({
     <div className="space-y-5">
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-5 lg:items-start">
         <div className="rounded-3xl border border-white/10 bg-linear-to-b from-white/6 to-white/2 p-6 lg:col-span-2">
-          <div className="flex items-center gap-4">
-            <div
-              className={`flex h-16 w-16 flex-none flex-col items-center justify-center rounded-2xl ring-2 ${formTier.bg} ${formTier.ring}`}
-            >
-              <span className={`text-2xl font-black leading-none ${formTier.text}`}>{form}</span>
-              <span className={`mt-0.5 text-[9px] font-semibold uppercase tracking-wide ${formTier.text}`}>
-                ฟอร์ม
-              </span>
-            </div>
-            <div className="min-w-0">
-              <p className={`text-sm font-bold ${formTier.text}`}>{formTier.label}</p>
-              <p className="text-xs text-indigo-400">เปอร์เซ็นไทล์เทียบผู้เล่นทั้งหมดในทีม</p>
-            </div>
-          </div>
-
           {rates.length > 0 && (
-            <div className="mt-4 flex flex-wrap gap-x-4 gap-y-1 border-t border-white/10 pt-3 text-xs text-indigo-300">
+            <div className="mb-4 flex flex-wrap gap-x-4 gap-y-1 text-xs text-indigo-300">
               {rates.map((r) => (
                 <span key={r.label}>
                   {r.label} <span className="font-bold text-amber-300">{r.value}</span>
@@ -85,7 +67,7 @@ export function MatchStatsPanel({
             </div>
           )}
 
-          <h3 className="mb-1 mt-5 text-xs font-semibold uppercase tracking-wide text-indigo-300">
+          <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-indigo-300">
             โปรไฟล์เทียบกับผู้เล่นทั้งหมด
           </h3>
           <div className="h-64 w-full">

@@ -3,13 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { Search, Trophy, Target } from "lucide-react";
-import {
-  POSITION_CATEGORY_LABEL,
-  computeStatsDistribution,
-  computeFormScore,
-  type MatchStatsRow,
-} from "@/lib/talent-match-stats";
-import { ratingTier } from "@/lib/rating-scale";
+import { POSITION_CATEGORY_LABEL, type MatchStatsRow } from "@/lib/talent-match-stats";
 import { positionColor } from "@/lib/position-color";
 
 const POSITION_TABS: { key: "ALL" | "FW" | "MF" | "DF" | "GK"; label: string }[] = [
@@ -22,7 +16,6 @@ const POSITION_TABS: { key: "ALL" | "FW" | "MF" | "DF" | "GK"; label: string }[]
 
 const SORT_OPTIONS: { key: string; label: string }[] = [
   { key: "NAME", label: "ชื่อ (ก-ฮ)" },
-  { key: "FORM", label: "ฟอร์มรวมสูงสุด" },
   { key: "GOAL", label: "ทำประตูสูงสุด" },
   { key: "ASSIST", label: "แอสซิสต์สูงสุด" },
   { key: "PASSING", label: "จ่ายบอลสูงสุด" },
@@ -105,113 +98,27 @@ function MiniLeaderboard({
   );
 }
 
-function SpotlightCard({ row, form }: { row: MatchStatsRow; form: number }) {
+function PlayerCard({ row }: { row: MatchStatsRow }) {
   const color = positionColor(row.positionCategory);
-  const formTier = ratingTier(form);
-
-  const highlights = [
-    { label: "ประตู", value: row.stats.GOAL ?? 0 },
-    { label: "แอสซิสต์", value: row.stats.ASSIST ?? 0 },
-    { label: "จ่ายบอล", value: row.stats.PASSING ?? 0 },
-    { label: "เกมรับ", value: row.stats["DEFENSIVE ACTION"] ?? 0 },
-  ];
-
-  const content = (
-    <>
-      <div
-        className={`pointer-events-none absolute -right-10 -top-10 h-56 w-56 rounded-full bg-current opacity-15 blur-3xl ${formTier.text}`}
-      />
-      <div className="relative flex flex-col gap-5 p-6 sm:flex-row sm:items-center sm:p-8">
-        <div className="relative flex-none">
-          {row.photoUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={row.photoUrl}
-              alt=""
-              className="h-24 w-24 rounded-2xl border-2 object-cover ring-2 ring-white/10 sm:h-28 sm:w-28"
-              style={{ borderColor: color }}
-            />
-          ) : (
-            <div
-              className="flex h-24 w-24 items-center justify-center rounded-2xl border-2 bg-indigo-950 text-3xl font-semibold text-indigo-200 ring-2 ring-white/10 sm:h-28 sm:w-28"
-              style={{ borderColor: color }}
-            >
-              {initials(row.name)}
-            </div>
-          )}
-          <div
-            className={`absolute -bottom-3 -right-3 flex h-12 w-12 flex-col items-center justify-center rounded-2xl border-2 border-indigo-950 ${formTier.bg} ring-2 ${formTier.ring}`}
-          >
-            <span className={`text-base font-black leading-none ${formTier.text}`}>{form}</span>
-          </div>
-        </div>
-
-        <div className="min-w-0 flex-1">
-          <p className="text-[11px] font-bold uppercase tracking-widest text-amber-400">
-            ผู้เล่นฟอร์มยอดเยี่ยม
-          </p>
-          <h3 className="mt-1 truncate text-xl font-bold text-white sm:text-2xl">{row.name}</h3>
-          <p className="mt-0.5 text-sm font-medium" style={{ color }}>
-            {row.positionCategory ? POSITION_CATEGORY_LABEL[row.positionCategory] : row.position ?? "-"}
-            {row.school ? ` · ${row.school}` : ""}
-          </p>
-        </div>
-
-        <div className="grid flex-none grid-cols-4 gap-4 sm:gap-6">
-          {highlights.map((h) => (
-            <div key={h.label} className="text-center">
-              <p className="text-lg font-bold text-white sm:text-xl">{h.value}</p>
-              <p className="text-[10px] uppercase tracking-wide text-indigo-400">{h.label}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-    </>
-  );
-
-  const className =
-    "group relative mb-5 overflow-hidden rounded-2xl border border-amber-400/20 bg-linear-to-br from-indigo-900 via-indigo-950 to-slate-950 shadow-xl transition-colors hover:border-amber-400/40";
-
-  if (!row.playerId) {
-    return <div className={className}>{content}</div>;
-  }
-  return (
-    <Link href={`/talent-id/${row.playerId}`} className={className}>
-      {content}
-    </Link>
-  );
-}
-
-function PlayerCard({ row, form }: { row: MatchStatsRow; form: number }) {
-  const color = positionColor(row.positionCategory);
-  const formTier = ratingTier(form);
   const body = (
     <>
       <div className="mb-3 flex items-center gap-3">
-        <div className="relative flex-none">
-          {row.photoUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={row.photoUrl}
-              alt=""
-              className="h-12 w-12 rounded-full border-2 object-cover"
-              style={{ borderColor: color }}
-            />
-          ) : (
-            <div
-              className="flex h-12 w-12 items-center justify-center rounded-full border-2 bg-indigo-950 text-sm font-semibold text-indigo-200"
-              style={{ borderColor: color }}
-            >
-              {initials(row.name)}
-            </div>
-          )}
-          <span
-            className={`absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full border border-indigo-950 text-[9px] font-black ${formTier.bg} ${formTier.text}`}
-            title={`ฟอร์ม ${form}/100 (${formTier.label})`}
+        {row.photoUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={row.photoUrl}
+            alt=""
+            className="h-12 w-12 flex-none rounded-full border-2 object-cover"
+            style={{ borderColor: color }}
+          />
+        ) : (
+          <div
+            className="flex h-12 w-12 flex-none items-center justify-center rounded-full border-2 bg-indigo-950 text-sm font-semibold text-indigo-200"
+            style={{ borderColor: color }}
           >
-            {form}
-          </span>
-        </div>
+            {initials(row.name)}
+          </div>
+        )}
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-semibold text-white group-hover:text-amber-300">
             {row.name}
@@ -261,13 +168,6 @@ export function StatsExplorer({ data }: { data: MatchStatsRow[] }) {
     [data],
   );
 
-  const statsDist = useMemo(() => computeStatsDistribution(data), [data]);
-  const formScores = useMemo(() => {
-    const map = new Map<string, number>();
-    for (const row of data) map.set(row.id, computeFormScore(row, statsDist));
-    return map;
-  }, [data, statsDist]);
-
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     let rows = data.filter((row) => {
@@ -279,32 +179,14 @@ export function StatsExplorer({ data }: { data: MatchStatsRow[] }) {
 
     if (sortKey === "NAME") {
       rows = [...rows].sort((a, b) => a.name.localeCompare(b.name, "th"));
-    } else if (sortKey === "FORM") {
-      rows = [...rows].sort((a, b) => (formScores.get(b.id) ?? 0) - (formScores.get(a.id) ?? 0));
     } else {
       rows = [...rows].sort((a, b) => (b.stats[sortKey] ?? 0) - (a.stats[sortKey] ?? 0));
     }
     return rows;
-  }, [data, search, region, positionTab, sortKey, formScores]);
-
-  const spotlight = useMemo(() => {
-    if (data.length === 0) return null;
-    let best = data[0];
-    let bestScore = formScores.get(best.id) ?? 0;
-    for (const row of data) {
-      const s = formScores.get(row.id) ?? 0;
-      if (s > bestScore) {
-        best = row;
-        bestScore = s;
-      }
-    }
-    return { row: best, score: bestScore };
-  }, [data, formScores]);
+  }, [data, search, region, positionTab, sortKey]);
 
   return (
     <div>
-      {spotlight && <SpotlightCard row={spotlight.row} form={spotlight.score} />}
-
       {/* ตัวกรอง */}
       <div className="mb-5 flex flex-col gap-4 rounded-2xl border border-white/10 bg-white/5 p-5 sm:flex-row sm:flex-wrap">
         <div className="relative flex-1 sm:min-w-55">
@@ -374,7 +256,7 @@ export function StatsExplorer({ data }: { data: MatchStatsRow[] }) {
           ) : (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
               {filtered.map((row) => (
-                <PlayerCard key={row.id} row={row} form={formScores.get(row.id) ?? 0} />
+                <PlayerCard key={row.id} row={row} />
               ))}
             </div>
           )}

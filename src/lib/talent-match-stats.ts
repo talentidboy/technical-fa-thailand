@@ -236,13 +236,6 @@ export function statPercentile(row: MatchStatsRow, key: string, dist: Record<str
   return percentileOf(row.stats[key] ?? 0, dist[key] ?? []);
 }
 
-// คะแนน "ฟอร์มรวม" 0-100 — ค่าเฉลี่ยของ percentile ใน 8 สถิติหลัก (RADAR_AXES) เทียบกับ
-// ผู้เล่นทั้งหมดในทีม เป็นค่าที่คำนวณจากข้อมูลจริงล้วน ๆ (ไม่มีแกนที่เดาขึ้นมาเอง)
-export function computeFormScore(row: MatchStatsRow, dist: Record<string, number[]>): number {
-  const values = RADAR_AXES.map((axis) => percentileOf(row.stats[axis] ?? 0, dist[axis] ?? []));
-  return Math.round(values.reduce((s, v) => s + v, 0) / values.length);
-}
-
 // หาแถวสถิติของผู้เล่นคนเดียวด้วย Airtable record id ตรง ๆ ผ่าน linked record field
 // (แม่นกว่าการจับคู่ชื่อ — กันปัญหาชื่อไทยสะกดคลาดเคลื่อนระหว่างสองตาราง) พร้อมค่าสูงสุด/
 // การกระจายของทั้งทีมต่อสถิติ สำหรับวาดกราฟเรดาร์และไล่สีตารางสถิติเทียบกับผู้เล่นคนอื่น
