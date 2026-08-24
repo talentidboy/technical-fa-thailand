@@ -47,6 +47,18 @@ function dateOnly(formData: FormData, key: string) {
   return v ? new Date(v) : null;
 }
 
+// saveUploadedPhoto โยน Error ได้ (ชนิดไฟล์ไม่รองรับ/ไฟล์ใหญ่เกิน/อัปโหลดล้มเหลว) — ถ้าไม่ดัก
+// การอัปเดตทั้งฟอร์ม (เช่น ชื่อทีม) จะพังไปด้วยเพราะ Server Action โยน error ที่ไม่มีใครจับ
+// จึงถือว่า "อัปโหลดโลโก้ไม่สำเร็จ" เท่ากับ "ไม่ได้แนบโลโก้ใหม่" แล้วให้ฟิลด์อื่นบันทึกต่อไปได้ตามปกติ
+async function trySaveUploadedPhoto(file: File | null): Promise<string | null> {
+  try {
+    return await saveUploadedPhoto(file);
+  } catch (err) {
+    console.error("อัปโหลดโลโก้ไม่สำเร็จ:", err);
+    return null;
+  }
+}
+
 // ===== ทีม =====
 
 export async function createTeam(formData: FormData) {
@@ -59,7 +71,7 @@ export async function createTeam(formData: FormData) {
     throw new Error("กรุณากรอกชื่อทีม");
   }
 
-  const logoUrl = await saveUploadedPhoto(formData.get("logo") as File | null);
+  const logoUrl = await trySaveUploadedPhoto(formData.get("logo") as File | null);
 
   await prisma.g15Team.create({
     data: {
@@ -83,7 +95,7 @@ export async function updateTeam(formData: FormData) {
     throw new Error("กรุณากรอกชื่อทีม");
   }
 
-  const newLogoUrl = await saveUploadedPhoto(formData.get("logo") as File | null);
+  const newLogoUrl = await trySaveUploadedPhoto(formData.get("logo") as File | null);
 
   await prisma.g15Team.update({
     where: { id },
