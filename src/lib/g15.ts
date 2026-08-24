@@ -1,3 +1,42 @@
+// เซิร์ฟเวอร์ (Vercel) รันเวลา UTC แต่การแข่งขันทั้งหมดใช้เวลาไทย — ต้องระบุโซนเวลาให้ชัดเจนเสมอ
+// ไทยไม่มี daylight saving จึง offset +07:00 คงที่ ใช้แปลงตรงได้โดยไม่ต้องพึ่ง timezone database
+const BANGKOK_TZ = "Asia/Bangkok";
+
+export function formatMatchDateTime(date: Date | null) {
+  if (!date) return "ยังไม่กำหนดวันแข่ง";
+  return date.toLocaleString("th-TH", {
+    timeZone: BANGKOK_TZ,
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+// แปลง Date -> ค่าเริ่มต้นของ <input type="datetime-local"> โดยยึดเวลาไทยเสมอ ไม่ใช่ timezone ของเซิร์ฟเวอร์
+export function toDateTimeLocalValue(date: Date | null) {
+  if (!date) return "";
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: BANGKOK_TZ,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(date);
+  const get = (type: string) => parts.find((p) => p.type === type)?.value ?? "";
+  return `${get("year")}-${get("month")}-${get("day")}T${get("hour")}:${get("minute")}`;
+}
+
+// แปลงค่าจาก <input type="datetime-local"> (ตีความเป็นเวลาไทยเสมอ) กลับเป็น Date ที่ถูกต้อง
+// ไม่ใช้ new Date(rawString) ตรงๆ เพราะจะถูกตีความตาม timezone ของ runtime (UTC บน Vercel) ทำให้เวลาคลาดเคลื่อน 7 ชั่วโมง
+export function parseBangkokDateTimeLocal(value: string): Date | null {
+  if (!value) return null;
+  return new Date(`${value}:00+07:00`);
+}
+
 export type G15TeamInput = {
   id: number;
   name: string;

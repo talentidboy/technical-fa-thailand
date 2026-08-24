@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth";
 import { saveUploadedPhoto } from "@/lib/upload";
+import { parseBangkokDateTimeLocal } from "@/lib/g15";
 import { revalidatePath } from "next/cache";
 
 async function requireAdminOrStaff() {
@@ -127,7 +128,7 @@ export async function createMatch(formData: FormData) {
     data: {
       round,
       venue: venue || null,
-      matchDate: matchDateRaw ? new Date(matchDateRaw) : null,
+      matchDate: parseBangkokDateTimeLocal(matchDateRaw),
       homeTeamId,
       awayTeamId,
     },
@@ -166,7 +167,7 @@ export async function updateMatch(formData: FormData) {
     data: {
       round,
       venue: venue || null,
-      matchDate: matchDateRaw ? new Date(matchDateRaw) : null,
+      matchDate: parseBangkokDateTimeLocal(matchDateRaw),
       homeTeamId,
       awayTeamId,
       homeScore,

@@ -3,7 +3,7 @@ import Image from "next/image";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
-import { getStandings, type StandingGroup, type StandingRow } from "@/lib/g15";
+import { getStandings, formatMatchDateTime, type StandingGroup, type StandingRow } from "@/lib/g15";
 import { REGION_ORDER, REGION_STYLE, DEFAULT_REGION_STYLE, parseRegionGroup } from "@/lib/g15-region";
 import { LOGO_URL, G15_IMAGE_URL } from "@/lib/brand";
 import { G15Tabs } from "@/components/g15/G15Tabs";
@@ -157,17 +157,6 @@ const highlights = [
   },
 ];
 
-function formatDateTime(date: Date | null) {
-  if (!date) return "ยังไม่กำหนดวันแข่ง";
-  return date.toLocaleString("th-TH", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
-
 export default async function G15WomensSeriesPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
@@ -308,7 +297,7 @@ export default async function G15WomensSeriesPage() {
                           {match.matchDate && (
                             <span className="flex items-center gap-1">
                               <Calendar className="h-3 w-3" />
-                              {formatDateTime(match.matchDate)}
+                              {formatMatchDateTime(match.matchDate)}
                             </span>
                           )}
                           {match.venue && (

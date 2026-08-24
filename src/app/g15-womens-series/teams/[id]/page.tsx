@@ -3,21 +3,10 @@ import Image from "next/image";
 import { notFound, redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
-import { getStandings } from "@/lib/g15";
+import { getStandings, formatMatchDateTime } from "@/lib/g15";
 import { regionStyle, parseRegionGroup } from "@/lib/g15-region";
 import { LOGO_URL } from "@/lib/brand";
 import { ArrowLeft, MapPin, Calendar, Users, UserCog, ListOrdered } from "lucide-react";
-
-function formatDateTime(date: Date | null) {
-  if (!date) return "ยังไม่กำหนดวันแข่ง";
-  return date.toLocaleString("th-TH", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
 
 export default async function G15TeamDetailPage({
   params,
@@ -287,7 +276,7 @@ export default async function G15TeamDetailPage({
                       <div className="flex items-center gap-3 text-xs text-slate-500">
                         <span className="flex items-center gap-1">
                           <Calendar className="h-3.5 w-3.5" />
-                          {formatDateTime(match.matchDate)}
+                          {formatMatchDateTime(match.matchDate)}
                         </span>
                         {match.venue && (
                           <span className="flex items-center gap-1">

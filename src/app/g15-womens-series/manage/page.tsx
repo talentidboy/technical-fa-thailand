@@ -6,16 +6,11 @@ import { getCurrentUser } from "@/lib/auth";
 import { createTeam, deleteTeam, createMatch, deleteMatch, updateMatch } from "./actions";
 import { Field, SelectField } from "@/components/FormField";
 import { LOGO_URL } from "@/lib/brand";
+import { toDateTimeLocalValue } from "@/lib/g15";
 import { REGION_ORDER, REGION_STYLE, DEFAULT_REGION_STYLE, parseRegionGroup } from "@/lib/g15-region";
 import { ManageTabs } from "@/components/g15/ManageTabs";
 import { ModalTrigger } from "@/components/g15/Modal";
 import { Trophy, Trash2, ArrowLeft, MapPin, ChevronRight, ChevronDown } from "lucide-react";
-
-function toLocalInputValue(date: Date | null) {
-  if (!date) return "";
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
-}
 
 export default async function G15ManagePage() {
   const currentUser = await getCurrentUser();
@@ -305,7 +300,7 @@ export default async function G15ManagePage() {
                           label="วันเวลาแข่งขัน"
                           name="matchDate"
                           type="datetime-local"
-                          defaultValue={toLocalInputValue(match.matchDate)}
+                          defaultValue={toDateTimeLocalValue(match.matchDate)}
                         />
                         <Field label="สนาม" name="venue" defaultValue={match.venue ?? ""} />
                         <div className="flex flex-col gap-1.5">
