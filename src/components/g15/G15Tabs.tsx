@@ -28,7 +28,7 @@ export function G15Tabs({
 
   return (
     <div>
-      <div className="mb-8 flex gap-1 overflow-x-auto border-b border-white/10">
+      <div className="mb-8 flex gap-1 overflow-x-auto border-b border-slate-200">
         {TABS.map(({ key, label, icon: Icon }) => (
           <button
             key={key}
@@ -36,8 +36,8 @@ export function G15Tabs({
             onClick={() => setActive(key)}
             className={`flex flex-none items-center gap-1.5 border-b-2 px-4 py-3.5 text-sm font-semibold transition-colors ${
               active === key
-                ? "border-cyan-400 text-white"
-                : "border-transparent text-violet-300 hover:text-white"
+                ? "border-rose-600 text-slate-900"
+                : "border-transparent text-slate-500 hover:text-slate-900"
             }`}
           >
             <Icon className="h-4 w-4" />

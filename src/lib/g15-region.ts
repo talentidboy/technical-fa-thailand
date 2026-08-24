@@ -2,13 +2,13 @@
 export const REGION_ORDER = ["ภาคใต้", "ภาคเหนือ", "ภาคกลาง", "ภาคตะวันออกเฉียงเหนือ"];
 
 export const REGION_STYLE: Record<string, { bg: string; text: string; light: string; ring: string }> = {
-  ภาคใต้: { bg: "bg-cyan-500", text: "text-cyan-300", light: "bg-cyan-400/15", ring: "ring-cyan-400/30" },
-  ภาคเหนือ: { bg: "bg-emerald-500", text: "text-emerald-300", light: "bg-emerald-400/15", ring: "ring-emerald-400/30" },
-  ภาคกลาง: { bg: "bg-purple-500", text: "text-purple-300", light: "bg-purple-400/15", ring: "ring-purple-400/30" },
-  ภาคตะวันออกเฉียงเหนือ: { bg: "bg-amber-500", text: "text-amber-300", light: "bg-amber-400/15", ring: "ring-amber-400/30" },
+  ภาคใต้: { bg: "bg-cyan-500", text: "text-cyan-700", light: "bg-cyan-50", ring: "ring-cyan-400/30" },
+  ภาคเหนือ: { bg: "bg-emerald-500", text: "text-emerald-700", light: "bg-emerald-50", ring: "ring-emerald-400/30" },
+  ภาคกลาง: { bg: "bg-purple-500", text: "text-purple-700", light: "bg-purple-50", ring: "ring-purple-400/30" },
+  ภาคตะวันออกเฉียงเหนือ: { bg: "bg-amber-500", text: "text-amber-700", light: "bg-amber-50", ring: "ring-amber-400/30" },
 };
 
-export const DEFAULT_REGION_STYLE = { bg: "bg-slate-500", text: "text-slate-300", light: "bg-white/10", ring: "ring-white/15" };
+export const DEFAULT_REGION_STYLE = { bg: "bg-slate-500", text: "text-slate-600", light: "bg-slate-100", ring: "ring-slate-300" };
 
 export function regionStyle(region: string | null) {
   if (!region) return DEFAULT_REGION_STYLE;

@@ -84,19 +84,19 @@ export default async function G15TeamDetailPage({
   const style = regionStyle(parsed?.region ?? null);
 
   return (
-    <div className="min-h-screen bg-violet-950">
-      <header className="sticky top-0 z-20 border-b border-white/10 bg-violet-950/90 backdrop-blur">
+    <div className="min-h-screen bg-slate-50">
+      <header className="sticky top-0 z-20 border-b border-white/10 bg-indigo-950/80 backdrop-blur">
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-6 py-4">
           <Link href="/" className="flex items-center gap-2">
             <Image src={LOGO_URL} alt="FA Thailand" width={36} height={36} className="h-9 w-9 rounded-lg object-cover" />
             <div>
               <p className="text-sm font-bold text-white">FA Thailand Technical</p>
-              <p className="text-[11px] text-violet-300">หมวด: G15 Women&apos;s Football Series</p>
+              <p className="text-[11px] text-indigo-300">หมวด: G15 Women&apos;s Football Series</p>
             </div>
           </Link>
           <Link
             href="/g15-womens-series"
-            className="inline-flex items-center gap-1.5 rounded-lg border border-white/15 px-3 py-2 text-sm font-medium text-violet-200 transition-colors hover:bg-white/10 hover:text-white"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-white/15 px-3 py-2 text-sm font-medium text-indigo-200 transition-colors hover:bg-white/10 hover:text-white"
           >
             <ArrowLeft className="h-4 w-4" />
             กลับหน้า G15
@@ -105,8 +105,8 @@ export default async function G15TeamDetailPage({
       </header>
 
       <div className="mx-auto max-w-5xl px-6 py-10">
-        <nav className="mb-6 flex flex-wrap items-center gap-1.5 text-xs text-violet-400">
-          <Link href="/g15-womens-series" className="hover:text-white">
+        <nav className="mb-6 flex flex-wrap items-center gap-1.5 text-xs text-slate-400">
+          <Link href="/g15-womens-series" className="hover:text-slate-900">
             G15 Women&apos;s Football Series
           </Link>
           {parsed && (
@@ -116,11 +116,11 @@ export default async function G15TeamDetailPage({
             </>
           )}
           <span>›</span>
-          <span className="font-medium text-violet-200">{team.name}</span>
+          <span className="font-medium text-slate-600">{team.name}</span>
         </nav>
 
         {/* การ์ดข้อมูลทีม */}
-        <div className={`overflow-hidden rounded-3xl border border-white/10 bg-white/5 ring-1 ${style.ring}`}>
+        <div className={`overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm ring-1 ${style.ring}`}>
           <div className={`flex flex-wrap items-center gap-4 px-6 py-5 ${style.bg}`}>
             {team.logoUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
@@ -140,7 +140,7 @@ export default async function G15TeamDetailPage({
           </div>
 
           {standing && (
-            <div className="grid grid-cols-3 gap-px bg-white/10 sm:grid-cols-7">
+            <div className="grid grid-cols-3 gap-px bg-slate-100 sm:grid-cols-7">
               {[
                 { label: "แข่ง", value: standing.played },
                 { label: "ชนะ", value: standing.won },
@@ -150,9 +150,9 @@ export default async function G15TeamDetailPage({
                 { label: "เสีย", value: standing.goalsAgainst },
                 { label: "คะแนน", value: standing.points },
               ].map((s) => (
-                <div key={s.label} className="bg-violet-950 px-3 py-4 text-center">
-                  <p className={`text-lg font-bold ${s.label === "คะแนน" ? "text-cyan-300" : "text-white"}`}>{s.value}</p>
-                  <p className="mt-0.5 text-[10px] uppercase tracking-wide text-violet-400">{s.label}</p>
+                <div key={s.label} className="bg-white px-3 py-4 text-center">
+                  <p className={`text-lg font-bold ${s.label === "คะแนน" ? "text-rose-600" : "text-slate-900"}`}>{s.value}</p>
+                  <p className="mt-0.5 text-[10px] uppercase tracking-wide text-slate-400">{s.label}</p>
                 </div>
               ))}
             </div>
@@ -161,19 +161,19 @@ export default async function G15TeamDetailPage({
 
         {/* นักกีฬา */}
         <section className="mt-8">
-          <div className="mb-4 flex items-center gap-2 text-sm font-medium text-violet-300">
+          <div className="mb-4 flex items-center gap-2 text-sm font-medium text-slate-500">
             <Users className="h-4 w-4" />
             นักกีฬา ({players.length})
           </div>
           {players.length === 0 ? (
-            <p className="rounded-2xl border border-dashed border-white/15 bg-white/5 px-6 py-10 text-center text-sm text-violet-300">
+            <p className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-10 text-center text-sm text-slate-500">
               ยังไม่มีข้อมูลนักกีฬาที่ขึ้นทะเบียนสำหรับทีมนี้
             </p>
           ) : (
-            <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/5">
+            <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-sm">
-                  <thead className="bg-black/20 text-[11px] font-medium uppercase tracking-wide text-violet-300">
+                  <thead className="bg-slate-50 text-[11px] font-medium uppercase tracking-wide text-slate-500">
                     <tr>
                       <th className="w-12 px-3 py-2.5 text-center">เบอร์</th>
                       <th className="px-3 py-2.5">ชื่อ-นามสกุล</th>
@@ -182,22 +182,22 @@ export default async function G15TeamDetailPage({
                       <th className="hidden px-3 py-2.5 md:table-cell">สัญชาติ</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-white/10">
+                  <tbody className="divide-y divide-slate-100">
                     {players.map((p) => (
                       <tr key={p.id}>
                         <td className="px-3 py-2.5 text-center">
-                          <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-cyan-400/15 text-xs font-bold text-cyan-300">
+                          <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-rose-50 text-xs font-bold text-rose-600">
                             {p.jerseyNumber ?? "-"}
                           </span>
                         </td>
-                        <td className="whitespace-nowrap px-3 py-2.5 font-medium text-white">
+                        <td className="whitespace-nowrap px-3 py-2.5 font-medium text-slate-900">
                           {p.firstNameTh} {p.lastNameTh}
                         </td>
-                        <td className="hidden whitespace-nowrap px-3 py-2.5 text-violet-300 sm:table-cell">
+                        <td className="hidden whitespace-nowrap px-3 py-2.5 text-slate-500 sm:table-cell">
                           {[p.firstNameEn, p.lastNameEn].filter(Boolean).join(" ") || "-"}
                         </td>
-                        <td className="whitespace-nowrap px-3 py-2.5 text-violet-200">{p.position ?? "-"}</td>
-                        <td className="hidden whitespace-nowrap px-3 py-2.5 text-violet-300 md:table-cell">
+                        <td className="whitespace-nowrap px-3 py-2.5 text-slate-600">{p.position ?? "-"}</td>
+                        <td className="hidden whitespace-nowrap px-3 py-2.5 text-slate-500 md:table-cell">
                           {p.nationality ?? "-"}
                         </td>
                       </tr>
@@ -211,19 +211,19 @@ export default async function G15TeamDetailPage({
 
         {/* เจ้าหน้าที่ */}
         <section className="mt-8">
-          <div className="mb-4 flex items-center gap-2 text-sm font-medium text-violet-300">
+          <div className="mb-4 flex items-center gap-2 text-sm font-medium text-slate-500">
             <UserCog className="h-4 w-4" />
             เจ้าหน้าที่ ({officials.length})
           </div>
           {officials.length === 0 ? (
-            <p className="rounded-2xl border border-dashed border-white/15 bg-white/5 px-6 py-10 text-center text-sm text-violet-300">
+            <p className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-10 text-center text-sm text-slate-500">
               ยังไม่มีข้อมูลเจ้าหน้าที่ที่ขึ้นทะเบียนสำหรับทีมนี้
             </p>
           ) : (
-            <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/5">
+            <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-sm">
-                  <thead className="bg-black/20 text-[11px] font-medium uppercase tracking-wide text-violet-300">
+                  <thead className="bg-slate-50 text-[11px] font-medium uppercase tracking-wide text-slate-500">
                     <tr>
                       <th className="px-3 py-2.5">ชื่อ-นามสกุล</th>
                       <th className="px-3 py-2.5">บทบาท</th>
@@ -231,17 +231,17 @@ export default async function G15TeamDetailPage({
                       <th className="hidden px-3 py-2.5 md:table-cell">ใบอนุญาตผู้ฝึกสอน</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-white/10">
+                  <tbody className="divide-y divide-slate-100">
                     {officials.map((o) => (
                       <tr key={o.id}>
-                        <td className="whitespace-nowrap px-3 py-2.5 font-medium text-white">
+                        <td className="whitespace-nowrap px-3 py-2.5 font-medium text-slate-900">
                           {o.firstNameTh} {o.lastNameTh}
                         </td>
-                        <td className="whitespace-nowrap px-3 py-2.5 text-violet-200">{o.role ?? "-"}</td>
-                        <td className="hidden whitespace-nowrap px-3 py-2.5 text-violet-300 sm:table-cell">
+                        <td className="whitespace-nowrap px-3 py-2.5 text-slate-600">{o.role ?? "-"}</td>
+                        <td className="hidden whitespace-nowrap px-3 py-2.5 text-slate-500 sm:table-cell">
                           {o.gender ?? "-"}
                         </td>
-                        <td className="hidden whitespace-nowrap px-3 py-2.5 text-violet-300 md:table-cell">
+                        <td className="hidden whitespace-nowrap px-3 py-2.5 text-slate-500 md:table-cell">
                           {o.coachingLicense ?? "-"}
                         </td>
                       </tr>
@@ -255,36 +255,36 @@ export default async function G15TeamDetailPage({
 
         {/* ตารางการแข่งขันของทีม */}
         <section className="mt-8">
-          <div className="mb-4 flex items-center gap-2 text-sm font-medium text-violet-300">
+          <div className="mb-4 flex items-center gap-2 text-sm font-medium text-slate-500">
             <ListOrdered className="h-4 w-4" />
             ตารางการแข่งขันของทีม ({allMatches.length})
           </div>
           {allMatches.length === 0 ? (
-            <p className="rounded-2xl border border-dashed border-white/15 bg-white/5 px-6 py-10 text-center text-sm text-violet-300">
+            <p className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-10 text-center text-sm text-slate-500">
               ยังไม่มีนัดการแข่งขันสำหรับทีมนี้
             </p>
           ) : (
-            <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/5">
-              <ul className="divide-y divide-white/10">
+            <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+              <ul className="divide-y divide-slate-100">
                 {allMatches.map((match) => {
                   const isHome = match.homeTeamId === id;
                   const opponent = isHome ? match.awayTeam : match.homeTeam;
                   return (
                     <li key={match.id} className="flex flex-wrap items-center justify-between gap-3 px-5 py-3.5">
                       <div className="flex items-center gap-3">
-                        <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-semibold text-violet-300">
+                        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-500">
                           {isHome ? "เหย้า" : "เยือน"}
                         </span>
-                        <span className="font-medium text-white">พบ {opponent.name}</span>
+                        <span className="font-medium text-slate-900">พบ {opponent.name}</span>
                         {match.status === "FINISHED" ? (
-                          <span className="rounded-lg bg-cyan-500 px-2.5 py-1 text-xs font-bold text-cyan-950">
+                          <span className="rounded-lg bg-rose-600 px-2.5 py-1 text-xs font-bold text-white">
                             {match.homeScore} - {match.awayScore}
                           </span>
                         ) : (
-                          <span className="text-xs font-medium text-violet-400">ยังไม่แข่ง</span>
+                          <span className="text-xs font-medium text-slate-400">ยังไม่แข่ง</span>
                         )}
                       </div>
-                      <div className="flex items-center gap-3 text-xs text-violet-400">
+                      <div className="flex items-center gap-3 text-xs text-slate-500">
                         <span className="flex items-center gap-1">
                           <Calendar className="h-3.5 w-3.5" />
                           {formatDateTime(match.matchDate)}
