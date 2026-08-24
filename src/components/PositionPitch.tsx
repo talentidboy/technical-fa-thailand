@@ -1,7 +1,6 @@
-import { categoryForPosition, positionColor } from "@/lib/position-color";
-
-// พิกัด (%) บนสนามอ้างอิงจากรายชื่อตำแหน่งจริงใน Airtable (1st/2nd Position field)
-// วางตามรูปทรงแผนผังทีมมาตรฐาน — GK ล่างสุด ผู้เล่นแนวรุกอยู่บนสุด
+// พิกัด (%) บนสนามอ้างอิงจากรายชื่อตำแหน่งจริงใน Airtable (1st/2nd Position field) — ครบ
+// ทั้ง 11 ตำแหน่ง (ตรวจสอบกับ Airtable schema แล้ว) วางตามรูปทรงแผนผังทีมมาตรฐาน
+// GK ล่างสุด ผู้เล่นแนวรุกอยู่บนสุด
 const POSITION_COORDS: Record<string, { x: number; y: number }> = {
   "ผู้รักษาประตู / Goalkeeper": { x: 50, y: 92 },
   "แบ็คซ้าย / Left Back": { x: 14, y: 74 },
@@ -11,11 +10,12 @@ const POSITION_COORDS: Record<string, { x: number; y: number }> = {
   "กองกลางตัวรับ / Defensive Midfielder": { x: 50, y: 62 },
   "กองกลาง / Central Midfielder": { x: 50, y: 48 },
   "กองกลางตัวรุก / Attacking Midfielder": { x: 50, y: 34 },
-  "กองกลางตัวรุก / Attacking Midfielder ": { x: 50, y: 34 },
   "ปีกซ้าย / Left Winger": { x: 14, y: 24 },
   "ปีกขวา / Right Winger": { x: 86, y: 24 },
   "หน้าเป้า / Striker": { x: 50, y: 11 },
 };
+
+const AMBER = "#fbbf24";
 
 export function PositionPitch({
   primary,
@@ -24,16 +24,8 @@ export function PositionPitch({
   primary: string | null;
   secondary: string[];
 }) {
-  const primaryPos = primary ? POSITION_COORDS[primary.trim()] : null;
-  const primaryColor = positionColor(categoryForPosition(primary?.trim()));
-
-  const secondaryPos = secondary
-    .map((p) => {
-      const coords = POSITION_COORDS[p.trim()];
-      if (!coords) return null;
-      return { ...coords, color: positionColor(categoryForPosition(p.trim())) };
-    })
-    .filter((p): p is { x: number; y: number; color: string } => Boolean(p));
+  const primaryKey = primary?.trim();
+  const secondaryKeys = new Set(secondary.map((p) => p.trim()));
 
   return (
     <svg viewBox="0 0 100 130" className="w-full max-w-56">
@@ -44,25 +36,38 @@ export function PositionPitch({
       <rect x="24" y="2" width="52" height="18" fill="none" stroke="#ffffff20" strokeWidth="1" />
       <rect x="24" y="110" width="52" height="18" fill="none" stroke="#ffffff20" strokeWidth="1" />
 
-      {secondaryPos.map((p, i) => (
-        <circle
-          key={i}
-          cx={p.x}
-          cy={p.y}
-          r="5"
-          fill={p.color}
-          fillOpacity="0.35"
-          stroke={p.color}
-          strokeOpacity="0.8"
-          strokeWidth="1.5"
-        />
-      ))}
-      {primaryPos && (
-        <>
-          <circle cx={primaryPos.x} cy={primaryPos.y} r="13" fill={primaryColor} fillOpacity="0.2" />
-          <circle cx={primaryPos.x} cy={primaryPos.y} r="8" fill={primaryColor} stroke="#1e1b4b" strokeWidth="2" />
-        </>
-      )}
+      {/* โชว์ครบทุกตำแหน่งบนสนาม — ตำแหน่งที่ไม่ใช่ของผู้เล่นคนนี้แสดงเป็นจุดจางๆ ไว้เป็นผัง */}
+      {Object.entries(POSITION_COORDS).map(([label, pos]) => {
+        const isPrimary = label === primaryKey;
+        const isSecondary = !isPrimary && secondaryKeys.has(label);
+
+        if (isPrimary) {
+          return (
+            <g key={label}>
+              <circle cx={pos.x} cy={pos.y} r="13" fill={AMBER} fillOpacity="0.2" />
+              <circle cx={pos.x} cy={pos.y} r="8" fill={AMBER} stroke="#1e1b4b" strokeWidth="2" />
+            </g>
+          );
+        }
+        if (isSecondary) {
+          return (
+            <circle
+              key={label}
+              cx={pos.x}
+              cy={pos.y}
+              r="5.5"
+              fill={AMBER}
+              fillOpacity="0.35"
+              stroke={AMBER}
+              strokeOpacity="0.7"
+              strokeWidth="1.5"
+            />
+          );
+        }
+        return (
+          <circle key={label} cx={pos.x} cy={pos.y} r="3.5" fill="#ffffff12" stroke="#ffffff25" strokeWidth="1" />
+        );
+      })}
     </svg>
   );
 }

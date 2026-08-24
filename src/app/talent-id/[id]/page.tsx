@@ -15,7 +15,6 @@ import { Breadcrumb } from "@/components/talent-id/Breadcrumb";
 import { MatchStatsPanel } from "@/components/talent-id/MatchStatsPanel";
 import { MiniRadar } from "@/components/talent-id/MiniRadar";
 import { ratingTier } from "@/lib/rating-scale";
-import { categoryForPosition, positionColor } from "@/lib/position-color";
 import {
   Ruler,
   Weight,
@@ -183,7 +182,9 @@ export default async function TalentIdDetailPage({
     { label: "Camp 2026", value: player.avgRatingCamp2026 },
   ];
 
-  const heroColor = positionColor(categoryForPosition(player.position1));
+  // สีหลักของหน้าโปรไฟล์คงที่เป็นสีเหลืองอำพันเสมอ (ไม่ผูกกับกลุ่มตำแหน่ง) — ต่างจากหน้ารายชื่อ/
+  // สถิติที่ไล่สีตามกลุ่มตำแหน่งเพื่อช่วยกวาดตาดูหลายคนพร้อมกัน แต่หน้าโปรไฟล์มีคนเดียวไม่ต้องแยกสี
+  const heroColor = "#fbbf24";
 
   // จุดแข็ง/จุดที่ควรพัฒนา — คำนวณจาก percentile จริงของสถิติที่ผู้เล่นทำได้ (เฉพาะค่าที่ไม่ใช่ 0
   // เพื่อไม่ให้ "ไม่เคยทำ" ปนกับ "ทำได้น้อย") ไม่ใช่ข้อความที่เขียนเอง
@@ -224,18 +225,14 @@ export default async function TalentIdDetailPage({
                 {player.position1}
               </span>
             )}
-            {player.position2.map((p) => {
-              const c = positionColor(categoryForPosition(p));
-              return (
-                <span
-                  key={p}
-                  className="rounded-full px-2.5 py-1 text-[11px] font-medium opacity-80"
-                  style={{ backgroundColor: `${c}1a`, color: c }}
-                >
-                  {p}
-                </span>
-              );
-            })}
+            {player.position2.map((p) => (
+              <span
+                key={p}
+                className="rounded-full bg-amber-400/10 px-2.5 py-1 text-[11px] font-medium text-amber-300/70 ring-1 ring-amber-400/15"
+              >
+                {p}
+              </span>
+            ))}
           </div>
 
           <p className="mt-5 flex items-center gap-2 border-t border-white/10 pt-4 text-xs text-indigo-300">
