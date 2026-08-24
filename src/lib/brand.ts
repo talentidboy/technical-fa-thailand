@@ -6,3 +6,6 @@ export const COVER_URL =
 
 export const COACH_CENTRE_IMAGE_URL =
   "https://res.cloudinary.com/dkmi9kye7/image/upload/v1782470062/53176710_545215805999964_5741669180743090176_n_xnwyeo.jpg";
+
+export const G15_IMAGE_URL =
+  "https://rgqahrqwxwhaechiodzf.supabase.co/storage/v1/object/public/uploads/g15-logo-a2d7d593-9c4a-4ad3-8ee4-8c5d5a099c8f.jpg";

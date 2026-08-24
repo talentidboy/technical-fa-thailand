@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { logout } from "@/app/login/actions";
 import { NewsSection } from "@/components/NewsSection";
-import { LOGO_URL, COVER_URL, COACH_CENTRE_IMAGE_URL } from "@/lib/brand";
+import { LOGO_URL, COVER_URL, COACH_CENTRE_IMAGE_URL, G15_IMAGE_URL } from "@/lib/brand";
 import {
   FileBadge,
   GraduationCap,
@@ -81,7 +81,7 @@ const categories = [
     title: "G15 Women's Football Series 2026",
     subtitle: "เวทีการแข่งขันฟุตบอลหญิงรุ่นอายุไม่เกิน 15 ปี",
     href: "/g15-womens-series" as string | null,
-    image: null as string | null,
+    image: G15_IMAGE_URL as string | null,
     icon: Trophy,
     features: [] as { icon: typeof FileBadge; label: string }[],
     comingSoon: false,
