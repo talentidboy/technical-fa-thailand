@@ -11,7 +11,8 @@ import { REGION_ORDER, REGION_STYLE, DEFAULT_REGION_STYLE, parseRegionGroup } fr
 import { ManageTabs } from "@/components/g15/ManageTabs";
 import { ModalTrigger } from "@/components/g15/Modal";
 import { MatchStatusBoard } from "@/components/g15/MatchStatusBoard";
-import { Trash2, ArrowLeft, MapPin, ChevronRight, ChevronDown } from "lucide-react";
+import { TeamBadge } from "@/components/g15/TeamBadge";
+import { Trash2, ArrowLeft, MapPin, ChevronRight, ChevronDown, Flame } from "lucide-react";
 
 export default async function G15ManagePage() {
   const currentUser = await getCurrentUser();
@@ -150,16 +151,6 @@ export default async function G15ManagePage() {
                     {groupMap.get(letter)!.map((team) => {
                       const playerCount = playerCountByTeam.get(team.id) ?? 0;
                       const officialCount = officialCountByTeam.get(team.id) ?? 0;
-                      const badge = team.logoUrl ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={team.logoUrl} alt="" className="h-6 w-6 flex-none rounded-full object-cover" />
-                      ) : (
-                        <span
-                          className={`flex h-6 w-6 flex-none items-center justify-center rounded-full text-[10px] font-bold text-white ${style.bg}`}
-                        >
-                          {team.name.charAt(0)}
-                        </span>
-                      );
 
                       return (
                         <li key={team.id} className="flex items-center gap-2 rounded-lg hover:bg-slate-50">
@@ -167,7 +158,7 @@ export default async function G15ManagePage() {
                             href={`/g15-womens-series/manage/teams/${team.id}`}
                             className="flex min-w-0 flex-1 items-center gap-2.5 px-2.5 py-1.5 text-sm text-slate-700"
                           >
-                            {badge}
+                            <TeamBadge team={team} size="sm" />
                             <span className="min-w-0 flex-1 truncate">{team.name}</span>
                             <span className="flex-none text-[10px] text-slate-400">
                               {playerCount} นักกีฬา · {officialCount} จนท.
@@ -249,29 +240,61 @@ export default async function G15ManagePage() {
               region: round,
               wrapperClassName: `overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm ring-1 ${style.ring}`,
               headerClassName: `flex items-center gap-2.5 px-5 py-3 ${style.bg}`,
-              items: roundMatches.map((match) => ({
-                status: match.status,
-                node: (
-                  <details key={match.id} className="group">
-                    <summary className="flex cursor-pointer list-none items-center gap-3 px-5 py-3 hover:bg-slate-50 [&::-webkit-details-marker]:hidden">
-                      <ChevronDown className="h-3.5 w-3.5 flex-none text-slate-400 transition-transform group-open:rotate-180" />
-                      <span className="min-w-0 flex-1 truncate text-sm">
-                        <span className="font-medium text-slate-900">{match.homeTeam.name}</span>
-                        <span className="mx-2 rounded bg-slate-100 px-1.5 py-0.5 text-xs font-bold tabular-nums text-slate-700">
-                          {match.homeScore ?? "-"} - {match.awayScore ?? "-"}
+              items: roundMatches.map((match) => {
+                const isFinished =
+                  match.status === "FINISHED" && match.homeScore != null && match.awayScore != null;
+                const homeWon = isFinished && match.homeScore! > match.awayScore!;
+                const awayWon = isFinished && match.awayScore! > match.homeScore!;
+                const isBlowout = isFinished && Math.abs(match.homeScore! - match.awayScore!) >= 10;
+
+                return {
+                  status: match.status,
+                  node: (
+                    <details key={match.id} className="group">
+                      <summary className="flex cursor-pointer list-none items-center gap-3 px-5 py-3 hover:bg-slate-50 [&::-webkit-details-marker]:hidden">
+                        <ChevronDown className="h-3.5 w-3.5 flex-none text-slate-400 transition-transform group-open:rotate-180" />
+
+                        <div className="flex min-w-0 flex-2 items-center justify-end gap-2 text-right">
+                          <span
+                            className={`min-w-0 truncate text-sm ${homeWon ? "font-bold text-slate-900" : "text-slate-600"}`}
+                          >
+                            {match.homeTeam.name}
+                          </span>
+                          <TeamBadge team={match.homeTeam} size="sm" />
+                        </div>
+
+                        {isFinished ? (
+                          <span className="relative flex-none rounded-lg bg-slate-900 px-2.5 py-1 text-xs font-bold tabular-nums text-white">
+                            {match.homeScore} - {match.awayScore}
+                            {isBlowout && (
+                              <Flame className="absolute -right-1.5 -top-1.5 h-3 w-3 fill-amber-400 text-amber-500" />
+                            )}
+                          </span>
+                        ) : (
+                          <span className="flex-none rounded-lg bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-400">
+                            VS
+                          </span>
+                        )}
+
+                        <div className="flex min-w-0 flex-2 items-center gap-2">
+                          <TeamBadge team={match.awayTeam} size="sm" />
+                          <span
+                            className={`min-w-0 truncate text-sm ${awayWon ? "font-bold text-slate-900" : "text-slate-600"}`}
+                          >
+                            {match.awayTeam.name}
+                          </span>
+                        </div>
+
+                        <span
+                          className={`flex-none rounded-full px-2 py-0.5 text-[10px] font-medium ${
+                            match.status === "FINISHED"
+                              ? "bg-emerald-50 text-emerald-600"
+                              : "bg-slate-100 text-slate-500"
+                          }`}
+                        >
+                          {match.status === "FINISHED" ? "จบแล้ว" : "ยังไม่แข่ง"}
                         </span>
-                        <span className="font-medium text-slate-900">{match.awayTeam.name}</span>
-                      </span>
-                      <span
-                        className={`flex-none rounded-full px-2 py-0.5 text-[10px] font-medium ${
-                          match.status === "FINISHED"
-                            ? "bg-emerald-50 text-emerald-600"
-                            : "bg-slate-100 text-slate-500"
-                        }`}
-                      >
-                        {match.status === "FINISHED" ? "จบแล้ว" : "ยังไม่แข่ง"}
-                      </span>
-                    </summary>
+                      </summary>
 
                     <div className="border-t border-slate-100 px-5 py-4">
                       <form action={updateMatch} className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
@@ -344,7 +367,8 @@ export default async function G15ManagePage() {
                     </div>
                   </details>
                 ),
-              })),
+                };
+              }),
             };
           })}
         />

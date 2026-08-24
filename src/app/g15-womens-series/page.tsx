@@ -7,6 +7,7 @@ import { getStandings, formatMatchDateTime, type StandingGroup, type StandingRow
 import { REGION_ORDER, REGION_STYLE, DEFAULT_REGION_STYLE, parseRegionGroup } from "@/lib/g15-region";
 import { LOGO_URL, G15_IMAGE_URL } from "@/lib/brand";
 import { G15Tabs } from "@/components/g15/G15Tabs";
+import { TeamBadge } from "@/components/g15/TeamBadge";
 import {
   ArrowLeft,
   Trophy,
@@ -118,24 +119,6 @@ function MiniLeaderboard({
         </ul>
       )}
     </div>
-  );
-}
-
-function TeamBadge({ team }: { team: { name: string; logoUrl: string | null; groupName: string | null } }) {
-  const parsed = parseRegionGroup(team.groupName);
-  const style = (parsed && REGION_STYLE[parsed.region]) ?? DEFAULT_REGION_STYLE;
-  if (team.logoUrl) {
-    return (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img src={team.logoUrl} alt="" className="h-8 w-8 flex-none rounded-full object-cover ring-1 ring-slate-200" />
-    );
-  }
-  return (
-    <span
-      className={`flex h-8 w-8 flex-none items-center justify-center rounded-full text-xs font-bold text-white ${style.bg}`}
-    >
-      {team.name.charAt(0)}
-    </span>
   );
 }
 
