@@ -3,8 +3,8 @@ import Image from "next/image";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
-import { getStandings } from "@/lib/g15";
-import { LOGO_URL } from "@/lib/brand";
+import { getStandings, type StandingGroup } from "@/lib/g15";
+import { LOGO_URL, G15_IMAGE_URL } from "@/lib/brand";
 import {
   ArrowLeft,
   Trophy,
@@ -34,6 +34,62 @@ function parseRegionGroup(groupName: string | null): { region: string; letter: s
   const m = groupName.match(/^(.+?)\s*-\s*กลุ่ม\s*(.+)$/);
   if (!m) return null;
   return { region: m[1].trim(), letter: m[2].trim() };
+}
+
+function StandingTable({ group }: { group: StandingGroup }) {
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-left text-sm">
+        <thead className="bg-slate-50 text-[11px] font-medium uppercase tracking-wide text-slate-500">
+          <tr>
+            <th className="w-10 px-3 py-2.5"></th>
+            <th className="px-2 py-2.5">ทีม</th>
+            <th className="px-2 py-2.5 text-center">แข่ง</th>
+            <th className="px-2 py-2.5 text-center">ชนะ</th>
+            <th className="px-2 py-2.5 text-center">เสมอ</th>
+            <th className="px-2 py-2.5 text-center">แพ้</th>
+            <th className="px-2 py-2.5 text-center">ผลต่าง</th>
+            <th className="px-4 py-2.5 text-center">คะแนน</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-slate-100">
+          {group.rows.map((row, i) => {
+            const rank = i + 1;
+            const badge =
+              rank === 1
+                ? "bg-amber-400 text-amber-950"
+                : rank === 2
+                  ? "bg-slate-300 text-slate-900"
+                  : rank === 3
+                    ? "bg-orange-300 text-orange-950"
+                    : "bg-slate-100 text-slate-400";
+            return (
+              <tr key={row.teamId}>
+                <td className="px-3 py-2.5">
+                  <span
+                    className={`flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-bold ${badge}`}
+                  >
+                    {rank}
+                  </span>
+                </td>
+                <td className="whitespace-nowrap px-2 py-2.5 font-medium text-slate-900">
+                  {row.teamName}
+                </td>
+                <td className="px-2 py-2.5 text-center text-slate-500">{row.played}</td>
+                <td className="px-2 py-2.5 text-center text-slate-500">{row.won}</td>
+                <td className="px-2 py-2.5 text-center text-slate-500">{row.drawn}</td>
+                <td className="px-2 py-2.5 text-center text-slate-500">{row.lost}</td>
+                <td className="px-2 py-2.5 text-center text-slate-500">
+                  {row.goalDiff > 0 ? `+${row.goalDiff}` : row.goalDiff}
+                </td>
+                <td className="px-4 py-2.5 text-center font-bold text-indigo-600">{row.points}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
 }
 
 const highlights = [
@@ -99,6 +155,23 @@ export default async function G15WomensSeriesPage() {
     ...Array.from(teamsByRegion.keys()).filter((r) => !REGION_ORDER.includes(r)),
   ];
 
+  // จัดตารางคะแนนเป็นกลุ่มตามภูมิภาคเดียวกับทีมที่เข้าร่วม — รวม A/B ของภาคเดียวกันไว้การ์ดเดียว
+  const standingsByRegion = new Map<string, Map<string, (typeof standingGroups)[number]>>();
+  const ungroupedStandings: typeof standingGroups = [];
+  for (const group of standingGroups) {
+    const parsed = parseRegionGroup(group.groupName);
+    if (!parsed) {
+      ungroupedStandings.push(group);
+      continue;
+    }
+    if (!standingsByRegion.has(parsed.region)) standingsByRegion.set(parsed.region, new Map());
+    standingsByRegion.get(parsed.region)!.set(parsed.letter, group);
+  }
+  const standingsRegionOrder = [
+    ...REGION_ORDER.filter((r) => standingsByRegion.has(r)),
+    ...Array.from(standingsByRegion.keys()).filter((r) => !REGION_ORDER.includes(r)),
+  ];
+
   const matchesByRound = matches.reduce<Record<string, typeof matches>>(
     (acc, match) => {
       (acc[match.round] ??= []).push(match);
@@ -156,8 +229,8 @@ export default async function G15WomensSeriesPage() {
         <div className="absolute -right-16 top-1/3 h-96 w-96 rounded-full bg-amber-500/20 blur-3xl" />
 
         <div className="relative mx-auto max-w-4xl px-6 py-20 text-center">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-white/10 ring-1 ring-white/20">
-            <Trophy className="h-7 w-7 text-amber-300" />
+          <div className="mx-auto flex h-28 w-28 items-center justify-center overflow-hidden rounded-3xl bg-white/10 shadow-xl ring-1 ring-white/20">
+            <Image src={G15_IMAGE_URL} alt="G15 Women's Football Series" width={112} height={112} className="h-full w-full object-cover" priority />
           </div>
           <h1 className="mt-5 text-3xl font-bold tracking-tight text-white sm:text-4xl">
             G15 Women&apos;s Football Series 2026
@@ -211,62 +284,50 @@ export default async function G15WomensSeriesPage() {
                 <ListOrdered className="h-4 w-4" />
                 ตารางคะแนน
               </div>
+
               <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-                {standingGroups.map((group) => (
-                  <div
-                    key={group.groupName}
-                    className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"
-                  >
-                    <div className="border-b border-slate-100 px-5 py-3">
-                      <h3 className="font-semibold text-slate-900">
-                        {group.groupName}
-                      </h3>
+                {standingsRegionOrder.map((region) => {
+                  const style = REGION_STYLE[region] ?? DEFAULT_REGION_STYLE;
+                  const groupMap = standingsByRegion.get(region)!;
+                  const letters = Array.from(groupMap.keys()).sort();
+
+                  return (
+                    <div
+                      key={region}
+                      className={`overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm ring-1 ${style.ring}`}
+                    >
+                      <div className={`flex items-center gap-2.5 px-5 py-3 ${style.bg}`}>
+                        <MapPin className="h-4 w-4 text-white" />
+                        <h3 className="font-bold text-white">{region}</h3>
+                      </div>
+                      <div className="divide-y divide-slate-100">
+                        {letters.map((letter) => (
+                          <div key={letter}>
+                            <p className={`px-5 pt-3 text-xs font-bold ${style.text}`}>กลุ่ม {letter}</p>
+                            <StandingTable group={groupMap.get(letter)!} />
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-left text-sm">
-                        <thead className="bg-slate-50 text-[11px] font-medium uppercase tracking-wide text-slate-500">
-                          <tr>
-                            <th className="px-4 py-2.5">ทีม</th>
-                            <th className="px-2 py-2.5 text-center">แข่ง</th>
-                            <th className="px-2 py-2.5 text-center">ชนะ</th>
-                            <th className="px-2 py-2.5 text-center">เสมอ</th>
-                            <th className="px-2 py-2.5 text-center">แพ้</th>
-                            <th className="px-2 py-2.5 text-center">ผลต่าง</th>
-                            <th className="px-4 py-2.5 text-center">คะแนน</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100">
-                          {group.rows.map((row) => (
-                            <tr key={row.teamId}>
-                              <td className="whitespace-nowrap px-4 py-2.5 font-medium text-slate-900">
-                                {row.teamName}
-                              </td>
-                              <td className="px-2 py-2.5 text-center text-slate-500">
-                                {row.played}
-                              </td>
-                              <td className="px-2 py-2.5 text-center text-slate-500">
-                                {row.won}
-                              </td>
-                              <td className="px-2 py-2.5 text-center text-slate-500">
-                                {row.drawn}
-                              </td>
-                              <td className="px-2 py-2.5 text-center text-slate-500">
-                                {row.lost}
-                              </td>
-                              <td className="px-2 py-2.5 text-center text-slate-500">
-                                {row.goalDiff > 0 ? `+${row.goalDiff}` : row.goalDiff}
-                              </td>
-                              <td className="px-4 py-2.5 text-center font-bold text-indigo-600">
-                                {row.points}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
+
+              {ungroupedStandings.length > 0 && (
+                <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
+                  {ungroupedStandings.map((group) => (
+                    <div
+                      key={group.groupName}
+                      className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"
+                    >
+                      <div className="border-b border-slate-100 px-5 py-3">
+                        <h3 className="font-semibold text-slate-900">{group.groupName}</h3>
+                      </div>
+                      <StandingTable group={group} />
+                    </div>
+                  ))}
+                </div>
+              )}
             </section>
 
             {/* ตารางการแข่งขัน */}
