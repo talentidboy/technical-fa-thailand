@@ -7,6 +7,7 @@ import {
   statPercentile,
   STAT_GROUPS,
   STAT_LABELS,
+  STAT_DIRECTION,
 } from "@/lib/talent-match-stats";
 import { PositionPitch } from "@/components/PositionPitch";
 import { PlayerTabs } from "@/components/talent-id/PlayerTabs";
@@ -188,20 +189,23 @@ export default async function TalentIdDetailPage({
   const heroColor = "#fbbf24";
 
   // จุดแข็ง/จุดที่ควรพัฒนา — คำนวณจาก percentile จริงของสถิติที่ผู้เล่นทำได้ (เฉพาะค่าที่ไม่ใช่ 0
-  // เพื่อไม่ให้ "ไม่เคยทำ" ปนกับ "ทำได้น้อย") ไม่ใช่ข้อความที่เขียนเอง
+  // เพื่อไม่ให้ "ไม่เคยทำ" ปนกับ "ทำได้น้อย") ไม่ใช่ข้อความที่เขียนเอง — เฉพาะสถิติที่รู้ทิศทางชัดเจน
+  // (STAT_DIRECTION) และกลับด้าน percentile ของสถิติเชิงลบ (เช่น "จ่ายเสีย") ก่อนจัดอันดับ
+  // ไม่งั้นค่าที่สูงของสถิติแย่ ๆ จะโผล่มาเป็น "จุดแข็ง" ผิดทิศ
   const scoredStats = matchStats
     ? STAT_GROUPS.flatMap((g) => g.stats)
-        .map((key) => ({
-          key,
-          label: STAT_LABELS[key]?.th ?? key,
-          value: matchStats.row.stats[key] ?? 0,
-          percent: statPercentile(matchStats.row, key, matchStats.statsDist),
-        }))
+        .filter((key) => STAT_DIRECTION[key] != null)
+        .map((key) => {
+          const value = matchStats.row.stats[key] ?? 0;
+          const percent = statPercentile(matchStats.row, key, matchStats.statsDist);
+          const goodness = STAT_DIRECTION[key] === "negative" ? 100 - percent : percent;
+          return { key, label: STAT_LABELS[key]?.th ?? key, value, goodness };
+        })
         .filter((s) => s.value > 0)
     : [];
-  const strengths = [...scoredStats].sort((a, b) => b.percent - a.percent).slice(0, 3);
+  const strengths = [...scoredStats].sort((a, b) => b.goodness - a.goodness).slice(0, 3);
   const weaknesses = [...scoredStats]
-    .sort((a, b) => a.percent - b.percent)
+    .sort((a, b) => a.goodness - b.goodness)
     .slice(0, 3)
     .filter((s) => !strengths.some((st) => st.key === s.key));
 

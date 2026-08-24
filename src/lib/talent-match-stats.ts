@@ -63,6 +63,36 @@ export const STAT_LABELS: Record<string, { th: string; en: string }> = {
   "NO REACTION": { th: "ไม่รีแอค", en: "No Reaction" },
 };
 
+// ทิศทางของแต่ละสถิติ — บางสถิติค่ายิ่งสูงยิ่งดี (positive) บางสถิติค่ายิ่งสูงยิ่งแย่ (negative)
+// เช่น "จ่ายเสีย"/"เสียบอล" ค่าสูงคือปัญหา ไม่ใช่จุดเด่น — ใช้ตัดสินว่าใครแข็ง/ใครควรพัฒนาให้ถูกทิศทาง
+// สถิติที่เป็นแค่ "จำนวนครั้งที่พยายาม" (เช่น SHOT, CROSSING, TAKE ON 1V1) ไม่ชี้ชัดว่าดีหรือแย่
+// เลยไม่ใส่ในนี้ — ถือเป็นกลาง ๆ ไม่ถูกใช้ตัดสินจุดแข็ง/จุดที่ควรพัฒนา
+export const STAT_DIRECTION: Record<string, "positive" | "negative"> = {
+  GOAL: "positive",
+  ASSIST: "positive",
+  "ON TARGET": "positive",
+  "OFF TARGET": "negative",
+  "MISS CHANCE": "negative",
+  "CHANCE CREATION": "positive",
+  PASSING: "positive",
+  "LOSS PASS": "negative",
+  "LINE BREAK PASS": "positive",
+  "ACCURATE CROSSING": "positive",
+  "LOSS CROSSING": "negative",
+  "WIN TAKE ON 1V1": "positive",
+  "LOST TAKE ON 1V1": "negative",
+  TACKLE: "positive",
+  INTERCEP: "positive",
+  "DEFENSIVE ACTION": "positive",
+  "WIN DEFENSIVE DUEL 1V1": "positive",
+  "LOST DEFENSIVE DUEL 1v1": "negative",
+  "COUNTER PRESSING": "positive",
+  "WIN AERIAL CONTEST": "positive",
+  "LOST AERIAL CONTEST": "negative",
+  "BALL LOSS": "negative",
+  "NO REACTION": "negative",
+};
+
 // แกนสำหรับกราฟเรดาร์เทียบโปรไฟล์ผู้เล่นกับค่าสูงสุดของทุกคนในตาราง (real per-category
 // data จริงจาก Airtable — ไม่ใช่แกนที่เดาขึ้นมาเอง)
 export const RADAR_AXES = [
