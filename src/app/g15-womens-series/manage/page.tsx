@@ -10,7 +10,8 @@ import { toDateTimeLocalValue } from "@/lib/g15";
 import { REGION_ORDER, REGION_STYLE, DEFAULT_REGION_STYLE, parseRegionGroup } from "@/lib/g15-region";
 import { ManageTabs } from "@/components/g15/ManageTabs";
 import { ModalTrigger } from "@/components/g15/Modal";
-import { Trophy, Trash2, ArrowLeft, MapPin, ChevronRight, ChevronDown } from "lucide-react";
+import { MatchStatusBoard } from "@/components/g15/MatchStatusBoard";
+import { Trash2, ArrowLeft, MapPin, ChevronRight, ChevronDown } from "lucide-react";
 
 export default async function G15ManagePage() {
   const currentUser = await getCurrentUser();
@@ -241,20 +242,16 @@ export default async function G15ManagePage() {
           ยังไม่มีนัดการแข่งขัน
         </p>
       ) : (
-        Object.entries(matchesByRound).map(([round, roundMatches]) => {
-          const style = REGION_STYLE[round] ?? DEFAULT_REGION_STYLE;
-          return (
-            <div
-              key={round}
-              className={`overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm ring-1 ${style.ring}`}
-            >
-              <div className={`flex items-center gap-2.5 px-5 py-3 ${style.bg}`}>
-                <Trophy className="h-4 w-4 text-white" />
-                <h3 className="font-bold text-white">{round}</h3>
-                <span className="ml-auto text-xs font-medium text-white/80">{roundMatches.length} นัด</span>
-              </div>
-              <div className="divide-y divide-slate-100">
-                {roundMatches.map((match) => (
+        <MatchStatusBoard
+          groups={Object.entries(matchesByRound).map(([round, roundMatches]) => {
+            const style = REGION_STYLE[round] ?? DEFAULT_REGION_STYLE;
+            return {
+              region: round,
+              wrapperClassName: `overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm ring-1 ${style.ring}`,
+              headerClassName: `flex items-center gap-2.5 px-5 py-3 ${style.bg}`,
+              items: roundMatches.map((match) => ({
+                status: match.status,
+                node: (
                   <details key={match.id} className="group">
                     <summary className="flex cursor-pointer list-none items-center gap-3 px-5 py-3 hover:bg-slate-50 [&::-webkit-details-marker]:hidden">
                       <ChevronDown className="h-3.5 w-3.5 flex-none text-slate-400 transition-transform group-open:rotate-180" />
@@ -346,11 +343,11 @@ export default async function G15ManagePage() {
                       </form>
                     </div>
                   </details>
-                ))}
-              </div>
-            </div>
-          );
-        })
+                ),
+              })),
+            };
+          })}
+        />
       )}
     </div>
   );
