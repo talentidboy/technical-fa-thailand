@@ -2,17 +2,17 @@
 // ทั้ง 11 ตำแหน่ง (ตรวจสอบกับ Airtable schema แล้ว) วางตามรูปทรงแผนผังทีมมาตรฐาน
 // GK ล่างสุด ผู้เล่นแนวรุกอยู่บนสุด
 const POSITION_COORDS: Record<string, { x: number; y: number }> = {
-  "ผู้รักษาประตู / Goalkeeper": { x: 50, y: 92 },
-  "แบ็คซ้าย / Left Back": { x: 14, y: 74 },
-  "เซ็นเตอร์ซ้าย / Left Centerback": { x: 37, y: 80 },
-  "เซ็นเตอร์ขวา / Right Centerback": { x: 63, y: 80 },
-  "แบ็คขวา / Right Back": { x: 86, y: 74 },
-  "กองกลางตัวรับ / Defensive Midfielder": { x: 50, y: 62 },
-  "กองกลาง / Central Midfielder": { x: 50, y: 48 },
-  "กองกลางตัวรุก / Attacking Midfielder": { x: 50, y: 34 },
-  "ปีกซ้าย / Left Winger": { x: 14, y: 24 },
-  "ปีกขวา / Right Winger": { x: 86, y: 24 },
-  "หน้าเป้า / Striker": { x: 50, y: 11 },
+  "ผู้รักษาประตู / Goalkeeper": { x: 50, y: 122 },
+  "แบ็คซ้าย / Left Back": { x: 14, y: 96 },
+  "เซ็นเตอร์ซ้าย / Left Centerback": { x: 37, y: 104 },
+  "เซ็นเตอร์ขวา / Right Centerback": { x: 63, y: 104 },
+  "แบ็คขวา / Right Back": { x: 86, y: 96 },
+  "กองกลางตัวรับ / Defensive Midfielder": { x: 50, y: 78 },
+  "กองกลาง / Central Midfielder": { x: 50, y: 62 },
+  "กองกลางตัวรุก / Attacking Midfielder": { x: 50, y: 46 },
+  "ปีกซ้าย / Left Winger": { x: 14, y: 30 },
+  "ปีกขวา / Right Winger": { x: 86, y: 30 },
+  "หน้าเป้า / Striker": { x: 50, y: 14 },
 };
 
 const AMBER = "#fbbf24";
