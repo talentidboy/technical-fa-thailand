@@ -1,0 +1,309 @@
+import Link from "next/link";
+import Image from "next/image";
+import { notFound, redirect } from "next/navigation";
+import { prisma } from "@/lib/prisma";
+import { getCurrentUser } from "@/lib/auth";
+import { getStandings } from "@/lib/g15";
+import { regionStyle, parseRegionGroup } from "@/lib/g15-region";
+import { LOGO_URL } from "@/lib/brand";
+import { ArrowLeft, MapPin, Calendar, Users, UserCog, ListOrdered } from "lucide-react";
+
+function formatDateTime(date: Date | null) {
+  if (!date) return "ยังไม่กำหนดวันแข่ง";
+  return date.toLocaleString("th-TH", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+export default async function G15TeamDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const user = await getCurrentUser();
+  if (!user) redirect("/login");
+
+  const { id: idParam } = await params;
+  const id = Number(idParam);
+  if (!Number.isInteger(id)) notFound();
+
+  const team = await prisma.g15Team.findUnique({ where: { id } });
+  if (!team) notFound();
+
+  const [allTeams, allMatchesForStandings, allMatches, players, officials] = await Promise.all([
+    prisma.g15Team.findMany(),
+    prisma.g15Match.findMany(),
+    prisma.g15Match.findMany({
+      where: { OR: [{ homeTeamId: id }, { awayTeamId: id }] },
+      orderBy: [{ matchDate: "asc" }, { createdAt: "asc" }],
+      include: { homeTeam: true, awayTeam: true },
+    }),
+    // ไม่ดึง idCardNumber/passportNumber มาเลย — ข้อมูลอ่อนไหวเก็บไว้ในฐานข้อมูลอย่างเดียว ไม่แสดงผลที่ไหน
+    prisma.g15Player.findMany({
+      where: { teamId: id },
+      orderBy: { no: "asc" },
+      select: {
+        id: true,
+        no: true,
+        firstNameTh: true,
+        lastNameTh: true,
+        firstNameEn: true,
+        lastNameEn: true,
+        nationality: true,
+        jerseyNumber: true,
+        position: true,
+      },
+    }),
+    prisma.g15Official.findMany({
+      where: { teamId: id },
+      orderBy: { no: "asc" },
+      select: {
+        id: true,
+        no: true,
+        firstNameTh: true,
+        lastNameTh: true,
+        firstNameEn: true,
+        lastNameEn: true,
+        gender: true,
+        nationality: true,
+        role: true,
+        coachingLicense: true,
+      },
+    }),
+  ]);
+
+  const standing = getStandings(allTeams, allMatchesForStandings)
+    .flatMap((g) => g.rows)
+    .find((r) => r.teamId === id);
+
+  const parsed = parseRegionGroup(team.groupName);
+  const style = regionStyle(parsed?.region ?? null);
+
+  return (
+    <div className="min-h-screen bg-violet-950">
+      <header className="sticky top-0 z-20 border-b border-white/10 bg-violet-950/90 backdrop-blur">
+        <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-6 py-4">
+          <Link href="/" className="flex items-center gap-2">
+            <Image src={LOGO_URL} alt="FA Thailand" width={36} height={36} className="h-9 w-9 rounded-lg object-cover" />
+            <div>
+              <p className="text-sm font-bold text-white">FA Thailand Technical</p>
+              <p className="text-[11px] text-violet-300">หมวด: G15 Women&apos;s Football Series</p>
+            </div>
+          </Link>
+          <Link
+            href="/g15-womens-series"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-white/15 px-3 py-2 text-sm font-medium text-violet-200 transition-colors hover:bg-white/10 hover:text-white"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            กลับหน้า G15
+          </Link>
+        </div>
+      </header>
+
+      <div className="mx-auto max-w-5xl px-6 py-10">
+        <nav className="mb-6 flex flex-wrap items-center gap-1.5 text-xs text-violet-400">
+          <Link href="/g15-womens-series" className="hover:text-white">
+            G15 Women&apos;s Football Series
+          </Link>
+          {parsed && (
+            <>
+              <span>›</span>
+              <span>{parsed.region}</span>
+            </>
+          )}
+          <span>›</span>
+          <span className="font-medium text-violet-200">{team.name}</span>
+        </nav>
+
+        {/* การ์ดข้อมูลทีม */}
+        <div className={`overflow-hidden rounded-3xl border border-white/10 bg-white/5 ring-1 ${style.ring}`}>
+          <div className={`flex flex-wrap items-center gap-4 px-6 py-5 ${style.bg}`}>
+            {team.logoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={team.logoUrl} alt="" className="h-16 w-16 flex-none rounded-2xl border-2 border-white/30 object-cover" />
+            ) : (
+              <div className="flex h-16 w-16 flex-none items-center justify-center rounded-2xl border-2 border-white/30 bg-white/10 text-2xl font-bold text-white">
+                {team.name.charAt(0)}
+              </div>
+            )}
+            <div className="min-w-0 flex-1">
+              <h1 className="truncate text-xl font-bold text-white sm:text-2xl">{team.name}</h1>
+              <p className="mt-0.5 flex items-center gap-1.5 text-sm text-white/80">
+                <MapPin className="h-3.5 w-3.5" />
+                {team.groupName ?? "ยังไม่จัดกลุ่ม"}
+              </p>
+            </div>
+          </div>
+
+          {standing && (
+            <div className="grid grid-cols-3 gap-px bg-white/10 sm:grid-cols-7">
+              {[
+                { label: "แข่ง", value: standing.played },
+                { label: "ชนะ", value: standing.won },
+                { label: "เสมอ", value: standing.drawn },
+                { label: "แพ้", value: standing.lost },
+                { label: "ได้", value: standing.goalsFor },
+                { label: "เสีย", value: standing.goalsAgainst },
+                { label: "คะแนน", value: standing.points },
+              ].map((s) => (
+                <div key={s.label} className="bg-violet-950 px-3 py-4 text-center">
+                  <p className={`text-lg font-bold ${s.label === "คะแนน" ? "text-cyan-300" : "text-white"}`}>{s.value}</p>
+                  <p className="mt-0.5 text-[10px] uppercase tracking-wide text-violet-400">{s.label}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* นักกีฬา */}
+        <section className="mt-8">
+          <div className="mb-4 flex items-center gap-2 text-sm font-medium text-violet-300">
+            <Users className="h-4 w-4" />
+            นักกีฬา ({players.length})
+          </div>
+          {players.length === 0 ? (
+            <p className="rounded-2xl border border-dashed border-white/15 bg-white/5 px-6 py-10 text-center text-sm text-violet-300">
+              ยังไม่มีข้อมูลนักกีฬาที่ขึ้นทะเบียนสำหรับทีมนี้
+            </p>
+          ) : (
+            <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/5">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm">
+                  <thead className="bg-black/20 text-[11px] font-medium uppercase tracking-wide text-violet-300">
+                    <tr>
+                      <th className="w-12 px-3 py-2.5 text-center">เบอร์</th>
+                      <th className="px-3 py-2.5">ชื่อ-นามสกุล</th>
+                      <th className="hidden px-3 py-2.5 sm:table-cell">English</th>
+                      <th className="px-3 py-2.5">ตำแหน่ง</th>
+                      <th className="hidden px-3 py-2.5 md:table-cell">สัญชาติ</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/10">
+                    {players.map((p) => (
+                      <tr key={p.id}>
+                        <td className="px-3 py-2.5 text-center">
+                          <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-cyan-400/15 text-xs font-bold text-cyan-300">
+                            {p.jerseyNumber ?? "-"}
+                          </span>
+                        </td>
+                        <td className="whitespace-nowrap px-3 py-2.5 font-medium text-white">
+                          {p.firstNameTh} {p.lastNameTh}
+                        </td>
+                        <td className="hidden whitespace-nowrap px-3 py-2.5 text-violet-300 sm:table-cell">
+                          {[p.firstNameEn, p.lastNameEn].filter(Boolean).join(" ") || "-"}
+                        </td>
+                        <td className="whitespace-nowrap px-3 py-2.5 text-violet-200">{p.position ?? "-"}</td>
+                        <td className="hidden whitespace-nowrap px-3 py-2.5 text-violet-300 md:table-cell">
+                          {p.nationality ?? "-"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </section>
+
+        {/* เจ้าหน้าที่ */}
+        <section className="mt-8">
+          <div className="mb-4 flex items-center gap-2 text-sm font-medium text-violet-300">
+            <UserCog className="h-4 w-4" />
+            เจ้าหน้าที่ ({officials.length})
+          </div>
+          {officials.length === 0 ? (
+            <p className="rounded-2xl border border-dashed border-white/15 bg-white/5 px-6 py-10 text-center text-sm text-violet-300">
+              ยังไม่มีข้อมูลเจ้าหน้าที่ที่ขึ้นทะเบียนสำหรับทีมนี้
+            </p>
+          ) : (
+            <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/5">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm">
+                  <thead className="bg-black/20 text-[11px] font-medium uppercase tracking-wide text-violet-300">
+                    <tr>
+                      <th className="px-3 py-2.5">ชื่อ-นามสกุล</th>
+                      <th className="px-3 py-2.5">บทบาท</th>
+                      <th className="hidden px-3 py-2.5 sm:table-cell">เพศ</th>
+                      <th className="hidden px-3 py-2.5 md:table-cell">ใบอนุญาตผู้ฝึกสอน</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/10">
+                    {officials.map((o) => (
+                      <tr key={o.id}>
+                        <td className="whitespace-nowrap px-3 py-2.5 font-medium text-white">
+                          {o.firstNameTh} {o.lastNameTh}
+                        </td>
+                        <td className="whitespace-nowrap px-3 py-2.5 text-violet-200">{o.role ?? "-"}</td>
+                        <td className="hidden whitespace-nowrap px-3 py-2.5 text-violet-300 sm:table-cell">
+                          {o.gender ?? "-"}
+                        </td>
+                        <td className="hidden whitespace-nowrap px-3 py-2.5 text-violet-300 md:table-cell">
+                          {o.coachingLicense ?? "-"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </section>
+
+        {/* ตารางการแข่งขันของทีม */}
+        <section className="mt-8">
+          <div className="mb-4 flex items-center gap-2 text-sm font-medium text-violet-300">
+            <ListOrdered className="h-4 w-4" />
+            ตารางการแข่งขันของทีม ({allMatches.length})
+          </div>
+          {allMatches.length === 0 ? (
+            <p className="rounded-2xl border border-dashed border-white/15 bg-white/5 px-6 py-10 text-center text-sm text-violet-300">
+              ยังไม่มีนัดการแข่งขันสำหรับทีมนี้
+            </p>
+          ) : (
+            <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/5">
+              <ul className="divide-y divide-white/10">
+                {allMatches.map((match) => {
+                  const isHome = match.homeTeamId === id;
+                  const opponent = isHome ? match.awayTeam : match.homeTeam;
+                  return (
+                    <li key={match.id} className="flex flex-wrap items-center justify-between gap-3 px-5 py-3.5">
+                      <div className="flex items-center gap-3">
+                        <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-semibold text-violet-300">
+                          {isHome ? "เหย้า" : "เยือน"}
+                        </span>
+                        <span className="font-medium text-white">พบ {opponent.name}</span>
+                        {match.status === "FINISHED" ? (
+                          <span className="rounded-lg bg-cyan-500 px-2.5 py-1 text-xs font-bold text-cyan-950">
+                            {match.homeScore} - {match.awayScore}
+                          </span>
+                        ) : (
+                          <span className="text-xs font-medium text-violet-400">ยังไม่แข่ง</span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-3 text-xs text-violet-400">
+                        <span className="flex items-center gap-1">
+                          <Calendar className="h-3.5 w-3.5" />
+                          {formatDateTime(match.matchDate)}
+                        </span>
+                        {match.venue && (
+                          <span className="flex items-center gap-1">
+                            <MapPin className="h-3.5 w-3.5" />
+                            {match.venue}
+                          </span>
+                        )}
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          )}
+        </section>
+      </div>
+    </div>
+  );
+}

@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { getStandings, type StandingGroup, type StandingRow } from "@/lib/g15";
+import { REGION_ORDER, REGION_STYLE, DEFAULT_REGION_STYLE, parseRegionGroup } from "@/lib/g15-region";
 import { LOGO_URL, G15_IMAGE_URL } from "@/lib/brand";
 import { G15Tabs } from "@/components/g15/G15Tabs";
 import {
@@ -16,28 +17,8 @@ import {
   MapPin,
   Settings,
   ShieldCheck,
-  ChevronDown,
-  UserCog,
+  ChevronRight,
 } from "lucide-react";
-
-// สีประจำภูมิภาค — จัดกลุ่มเองเพื่อให้ดูแยกโซนง่าย ๆ ไม่ใช่ข้อมูลจาก Airtable/DB
-const REGION_ORDER = ["ภาคใต้", "ภาคเหนือ", "ภาคกลาง", "ภาคตะวันออกเฉียงเหนือ"];
-const REGION_STYLE: Record<string, { bg: string; text: string; light: string; ring: string }> = {
-  ภาคใต้: { bg: "bg-cyan-500", text: "text-cyan-300", light: "bg-cyan-400/15", ring: "ring-cyan-400/30" },
-  ภาคเหนือ: { bg: "bg-emerald-500", text: "text-emerald-300", light: "bg-emerald-400/15", ring: "ring-emerald-400/30" },
-  ภาคกลาง: { bg: "bg-purple-500", text: "text-purple-300", light: "bg-purple-400/15", ring: "ring-purple-400/30" },
-  ภาคตะวันออกเฉียงเหนือ: { bg: "bg-amber-500", text: "text-amber-300", light: "bg-amber-400/15", ring: "ring-amber-400/30" },
-};
-const DEFAULT_REGION_STYLE = { bg: "bg-slate-500", text: "text-slate-300", light: "bg-white/10", ring: "ring-white/15" };
-
-// groupName ในฐานข้อมูลเก็บเป็น "ภาคX - กลุ่ม Y" (เช่น "ภาคใต้ - กลุ่ม A") — แยกเป็นภาค/กลุ่มย่อย
-// เพื่อจัดหมวดหมู่การ์ดต่าง ๆ ให้ดูตามภูมิภาค แทนกริดยาว ๆ รวมกันหมด
-function parseRegionGroup(groupName: string | null): { region: string; letter: string } | null {
-  if (!groupName) return null;
-  const m = groupName.match(/^(.+?)\s*-\s*กลุ่ม\s*(.+)$/);
-  if (!m) return null;
-  return { region: m[1].trim(), letter: m[2].trim() };
-}
 
 function StandingTable({ group }: { group: StandingGroup }) {
   return (
@@ -179,28 +160,13 @@ export default async function G15WomensSeriesPage() {
       orderBy: [{ matchDate: "asc" }, { createdAt: "asc" }],
       include: { homeTeam: true, awayTeam: true },
     }),
-    // เลือกเฉพาะฟิลด์ที่ปลอดภัยจะแสดงผลสาธารณะ — ไม่ดึง idCardNumber/passportNumber มาเลย
-    // แม้จะเป็น server component ที่ข้อมูลไม่หลุดไป client อยู่แล้วก็ตาม (defense in depth)
-    prisma.g15Player.findMany({
-      orderBy: [{ teamId: "asc" }, { no: "asc" }],
-      select: { id: true, teamId: true, no: true, firstNameTh: true, lastNameTh: true, jerseyNumber: true, position: true },
-    }),
-    prisma.g15Official.findMany({
-      orderBy: [{ teamId: "asc" }, { no: "asc" }],
-      select: { id: true, teamId: true, no: true, firstNameTh: true, lastNameTh: true, role: true },
-    }),
+    // แค่ตัวนับต่อทีมสำหรับหน้ารวม — รายละเอียดเต็มไปอยู่หน้าโปรไฟล์ทีมแทน
+    prisma.g15Player.groupBy({ by: ["teamId"], _count: { id: true } }),
+    prisma.g15Official.groupBy({ by: ["teamId"], _count: { id: true } }),
   ]);
 
-  const playersByTeam = new Map<number, typeof players>();
-  for (const p of players) {
-    if (!playersByTeam.has(p.teamId)) playersByTeam.set(p.teamId, []);
-    playersByTeam.get(p.teamId)!.push(p);
-  }
-  const officialsByTeam = new Map<number, typeof officials>();
-  for (const o of officials) {
-    if (!officialsByTeam.has(o.teamId)) officialsByTeam.set(o.teamId, []);
-    officialsByTeam.get(o.teamId)!.push(o);
-  }
+  const playerCountByTeam = new Map(players.map((p) => [p.teamId, p._count.id]));
+  const officialCountByTeam = new Map(officials.map((o) => [o.teamId, o._count.id]));
 
   const standingGroups = getStandings(teams, matches);
 
@@ -411,9 +377,9 @@ export default async function G15WomensSeriesPage() {
                     </p>
                     <ul className="space-y-1">
                       {groupMap.get(letter)!.map((team) => {
-                        const teamPlayers = playersByTeam.get(team.id) ?? [];
-                        const teamOfficials = officialsByTeam.get(team.id) ?? [];
-                        const hasRoster = teamPlayers.length > 0 || teamOfficials.length > 0;
+                        const playerCount = playerCountByTeam.get(team.id) ?? 0;
+                        const officialCount = officialCountByTeam.get(team.id) ?? 0;
+                        const hasRoster = playerCount > 0 || officialCount > 0;
 
                         const badge = team.logoUrl ? (
                           // eslint-disable-next-line @next/next/no-img-element
@@ -426,72 +392,23 @@ export default async function G15WomensSeriesPage() {
                           </span>
                         );
 
-                        if (!hasRoster) {
-                          return (
-                            <li
-                              key={team.id}
-                              className="flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-sm text-violet-100"
-                            >
-                              {badge}
-                              <span className="truncate">{team.name}</span>
-                            </li>
-                          );
-                        }
-
                         return (
                           <li key={team.id}>
-                            <details className="group rounded-lg">
-                              <summary className="flex cursor-pointer list-none items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-sm text-violet-100 hover:bg-white/5 [&::-webkit-details-marker]:hidden">
-                                {badge}
-                                <span className="min-w-0 flex-1 truncate">{team.name}</span>
+                            <Link
+                              href={`/g15-womens-series/teams/${team.id}`}
+                              className="flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-sm text-violet-100 hover:bg-white/5"
+                            >
+                              {badge}
+                              <span className="min-w-0 flex-1 truncate">{team.name}</span>
+                              {hasRoster && (
                                 <span className="flex-none text-[10px] text-violet-400">
-                                  {teamPlayers.length > 0 && `${teamPlayers.length} นักกีฬา`}
-                                  {teamPlayers.length > 0 && teamOfficials.length > 0 && " · "}
-                                  {teamOfficials.length > 0 && `${teamOfficials.length} จนท.`}
+                                  {playerCount > 0 && `${playerCount} นักกีฬา`}
+                                  {playerCount > 0 && officialCount > 0 && " · "}
+                                  {officialCount > 0 && `${officialCount} จนท.`}
                                 </span>
-                                <ChevronDown className="h-3.5 w-3.5 flex-none text-violet-400 transition-transform group-open:rotate-180" />
-                              </summary>
-                              <div className="ml-8 mt-1 space-y-3 border-l border-white/10 py-2 pl-3">
-                                {teamPlayers.length > 0 && (
-                                  <div>
-                                    <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-violet-400">
-                                      นักกีฬา ({teamPlayers.length})
-                                    </p>
-                                    <ul className="space-y-0.5">
-                                      {teamPlayers.map((p) => (
-                                        <li key={p.id} className="flex items-center gap-2 text-xs text-violet-200">
-                                          <span className="w-5 flex-none text-center font-bold text-cyan-300">
-                                            {p.jerseyNumber ?? "-"}
-                                          </span>
-                                          <span className="min-w-0 flex-1 truncate">
-                                            {p.firstNameTh} {p.lastNameTh}
-                                          </span>
-                                          <span className="flex-none text-violet-400">{p.position ?? "-"}</span>
-                                        </li>
-                                      ))}
-                                    </ul>
-                                  </div>
-                                )}
-                                {teamOfficials.length > 0 && (
-                                  <div>
-                                    <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-violet-400">
-                                      เจ้าหน้าที่ ({teamOfficials.length})
-                                    </p>
-                                    <ul className="space-y-0.5">
-                                      {teamOfficials.map((o) => (
-                                        <li key={o.id} className="flex items-center gap-2 text-xs text-violet-200">
-                                          <UserCog className="h-3 w-3 flex-none text-violet-400" />
-                                          <span className="min-w-0 flex-1 truncate">
-                                            {o.firstNameTh} {o.lastNameTh}
-                                          </span>
-                                          <span className="flex-none text-violet-400">{o.role ?? "-"}</span>
-                                        </li>
-                                      ))}
-                                    </ul>
-                                  </div>
-                                )}
-                              </div>
-                            </details>
+                              )}
+                              <ChevronRight className="h-3.5 w-3.5 flex-none text-violet-400" />
+                            </Link>
                           </li>
                         );
                       })}
