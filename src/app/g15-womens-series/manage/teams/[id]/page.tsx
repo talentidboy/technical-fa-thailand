@@ -13,6 +13,7 @@ import {
   deleteOfficial,
 } from "../../actions";
 import { Field } from "@/components/FormField";
+import { LogoPasteField } from "@/components/g15/LogoPasteField";
 import { LOGO_URL } from "@/lib/brand";
 import { ArrowLeft, Shield, Users, UserCog, Trash2 } from "lucide-react";
 
@@ -82,15 +83,7 @@ export default async function G15ManageTeamPage({
             <input type="hidden" name="id" value={team.id} />
             <Field label="ชื่อทีม" name="name" required defaultValue={team.name} />
             <Field label="กลุ่ม" name="groupName" placeholder="ภาคใต้ - กลุ่ม A" defaultValue={team.groupName ?? ""} />
-            <label className="flex flex-col gap-1.5">
-              <span className="text-sm font-medium text-slate-700">โลโก้ทีม (อัปโหลดใหม่เพื่อแทนที่)</span>
-              <input
-                name="logo"
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                className="rounded-lg border border-slate-200 px-3.5 py-2.5 text-sm text-slate-600 file:mr-3 file:rounded-md file:border-0 file:bg-rose-50 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-rose-600"
-              />
-            </label>
+            <LogoPasteField label="โลโก้ทีม (อัปโหลดใหม่เพื่อแทนที่)" currentUrl={team.logoUrl} />
             <div className="sm:col-span-2 lg:col-span-3">
               <button
                 type="submit"

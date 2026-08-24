@@ -12,6 +12,7 @@ import { ManageTabs } from "@/components/g15/ManageTabs";
 import { ModalTrigger } from "@/components/g15/Modal";
 import { MatchStatusBoard } from "@/components/g15/MatchStatusBoard";
 import { TeamBadge } from "@/components/g15/TeamBadge";
+import { LogoPasteField } from "@/components/g15/LogoPasteField";
 import { Trash2, ArrowLeft, MapPin, ChevronRight, ChevronDown, Flame } from "lucide-react";
 
 export default async function G15ManagePage() {
@@ -70,15 +71,9 @@ export default async function G15ManagePage() {
     <form action={createTeam} className="grid grid-cols-1 gap-4 sm:grid-cols-2">
       <Field label="ชื่อทีม" name="name" required placeholder="สโมสร A" />
       <Field label="กลุ่ม" name="groupName" placeholder="ภาคใต้ - กลุ่ม A" />
-      <label className="flex flex-col gap-1.5 sm:col-span-2">
-        <span className="text-sm font-medium text-slate-700">โลโก้ทีม</span>
-        <input
-          name="logo"
-          type="file"
-          accept="image/jpeg,image/png,image/webp"
-          className="rounded-lg border border-slate-200 px-3.5 py-2.5 text-sm text-slate-600 file:mr-3 file:rounded-md file:border-0 file:bg-rose-50 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-rose-600"
-        />
-      </label>
+      <div className="sm:col-span-2">
+        <LogoPasteField />
+      </div>
       <div className="sm:col-span-2">
         <button
           type="submit"
