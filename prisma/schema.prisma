@@ -253,8 +253,58 @@ model G15Team {
 
   homeMatches G15Match[] @relation("G15HomeTeam")
   awayMatches G15Match[] @relation("G15AwayTeam")
+  players     G15Player[]
+  officials   G15Official[]
 
   @@map("g15_teams")
+}
+
+// นักกีฬาที่ขึ้นทะเบียนของแต่ละทีม (จากแบบฟอร์มขึ้นทะเบียนนักกีฬาจริงของ FA Thailand)
+// idCardNumber/passportNumber เป็นข้อมูลอ่อนไหว — เก็บไว้เป็นส่วนหนึ่งของทะเบียนทางการ
+// แต่ไม่แสดงผลที่หน้าเว็บสาธารณะเลย (ไม่มี UI ใดอ่านค่าฟิลด์นี้ไปแสดง)
+model G15Player {
+  id             Int       @id @default(autoincrement())
+  teamId         Int       @map("team_id")
+  team           G15Team   @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  no             Int?
+  firstNameTh    String    @map("first_name_th")
+  lastNameTh     String    @map("last_name_th")
+  firstNameEn    String?   @map("first_name_en")
+  lastNameEn     String?   @map("last_name_en")
+  nationality    String?
+  jerseyName     String?   @map("jersey_name")
+  jerseyNumber   Int?      @map("jersey_number")
+  position       String?
+  dob            DateTime?
+  weightKg       Float?    @map("weight_kg")
+  heightCm       Float?    @map("height_cm")
+  idCardNumber   String?   @map("id_card_number")
+  passportNumber String?   @map("passport_number")
+  createdAt      DateTime  @default(now()) @map("created_at")
+
+  @@map("g15_players")
+}
+
+// เจ้าหน้าที่ทีม (โค้ช/ผู้จัดการทีม ฯลฯ) ที่ขึ้นทะเบียนของแต่ละทีม — โครงสร้างเดียวกับ G15Player
+model G15Official {
+  id              Int       @id @default(autoincrement())
+  teamId          Int       @map("team_id")
+  team            G15Team   @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  no              Int?
+  firstNameTh     String    @map("first_name_th")
+  lastNameTh      String    @map("last_name_th")
+  firstNameEn     String?   @map("first_name_en")
+  lastNameEn      String?   @map("last_name_en")
+  gender          String?
+  nationality     String?
+  role            String?
+  dob             DateTime?
+  coachingLicense String?   @map("coaching_license")
+  idCardNumber    String?   @map("id_card_number")
+  passportNumber  String?   @map("passport_number")
+  createdAt       DateTime  @default(now()) @map("created_at")
+
+  @@map("g15_officials")
 }
 
 // นัดการแข่งขัน G15 Women's Football Series

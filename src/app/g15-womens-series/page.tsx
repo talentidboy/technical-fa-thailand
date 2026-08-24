@@ -16,6 +16,8 @@ import {
   MapPin,
   Settings,
   ShieldCheck,
+  ChevronDown,
+  UserCog,
 } from "lucide-react";
 
 // สีประจำภูมิภาค — จัดกลุ่มเองเพื่อให้ดูแยกโซนง่าย ๆ ไม่ใช่ข้อมูลจาก Airtable/DB
@@ -171,13 +173,34 @@ export default async function G15WomensSeriesPage() {
   if (!user) redirect("/login");
   const canManage = user.role === "ADMIN" || user.role === "STAFF";
 
-  const [teams, matches] = await Promise.all([
+  const [teams, matches, players, officials] = await Promise.all([
     prisma.g15Team.findMany({ orderBy: [{ groupName: "asc" }, { name: "asc" }] }),
     prisma.g15Match.findMany({
       orderBy: [{ matchDate: "asc" }, { createdAt: "asc" }],
       include: { homeTeam: true, awayTeam: true },
     }),
+    // เลือกเฉพาะฟิลด์ที่ปลอดภัยจะแสดงผลสาธารณะ — ไม่ดึง idCardNumber/passportNumber มาเลย
+    // แม้จะเป็น server component ที่ข้อมูลไม่หลุดไป client อยู่แล้วก็ตาม (defense in depth)
+    prisma.g15Player.findMany({
+      orderBy: [{ teamId: "asc" }, { no: "asc" }],
+      select: { id: true, teamId: true, no: true, firstNameTh: true, lastNameTh: true, jerseyNumber: true, position: true },
+    }),
+    prisma.g15Official.findMany({
+      orderBy: [{ teamId: "asc" }, { no: "asc" }],
+      select: { id: true, teamId: true, no: true, firstNameTh: true, lastNameTh: true, role: true },
+    }),
   ]);
+
+  const playersByTeam = new Map<number, typeof players>();
+  for (const p of players) {
+    if (!playersByTeam.has(p.teamId)) playersByTeam.set(p.teamId, []);
+    playersByTeam.get(p.teamId)!.push(p);
+  }
+  const officialsByTeam = new Map<number, typeof officials>();
+  for (const o of officials) {
+    if (!officialsByTeam.has(o.teamId)) officialsByTeam.set(o.teamId, []);
+    officialsByTeam.get(o.teamId)!.push(o);
+  }
 
   const standingGroups = getStandings(teams, matches);
 
@@ -386,25 +409,92 @@ export default async function G15WomensSeriesPage() {
                     <p className={`mb-2 inline-flex rounded-full px-2.5 py-0.5 text-xs font-bold ${style.light} ${style.text}`}>
                       กลุ่ม {letter}
                     </p>
-                    <ul className="space-y-1.5">
-                      {groupMap.get(letter)!.map((team) => (
-                        <li
-                          key={team.id}
-                          className="flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-sm text-violet-100 hover:bg-white/5"
-                        >
-                          {team.logoUrl ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img src={team.logoUrl} alt="" className="h-6 w-6 flex-none rounded-full object-cover" />
-                          ) : (
-                            <span
-                              className={`flex h-6 w-6 flex-none items-center justify-center rounded-full text-[10px] font-bold text-white ${style.bg}`}
+                    <ul className="space-y-1">
+                      {groupMap.get(letter)!.map((team) => {
+                        const teamPlayers = playersByTeam.get(team.id) ?? [];
+                        const teamOfficials = officialsByTeam.get(team.id) ?? [];
+                        const hasRoster = teamPlayers.length > 0 || teamOfficials.length > 0;
+
+                        const badge = team.logoUrl ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={team.logoUrl} alt="" className="h-6 w-6 flex-none rounded-full object-cover" />
+                        ) : (
+                          <span
+                            className={`flex h-6 w-6 flex-none items-center justify-center rounded-full text-[10px] font-bold text-white ${style.bg}`}
+                          >
+                            {team.name.charAt(0)}
+                          </span>
+                        );
+
+                        if (!hasRoster) {
+                          return (
+                            <li
+                              key={team.id}
+                              className="flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-sm text-violet-100"
                             >
-                              {team.name.charAt(0)}
-                            </span>
-                          )}
-                          <span className="truncate">{team.name}</span>
-                        </li>
-                      ))}
+                              {badge}
+                              <span className="truncate">{team.name}</span>
+                            </li>
+                          );
+                        }
+
+                        return (
+                          <li key={team.id}>
+                            <details className="group rounded-lg">
+                              <summary className="flex cursor-pointer list-none items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-sm text-violet-100 hover:bg-white/5 [&::-webkit-details-marker]:hidden">
+                                {badge}
+                                <span className="min-w-0 flex-1 truncate">{team.name}</span>
+                                <span className="flex-none text-[10px] text-violet-400">
+                                  {teamPlayers.length > 0 && `${teamPlayers.length} นักกีฬา`}
+                                  {teamPlayers.length > 0 && teamOfficials.length > 0 && " · "}
+                                  {teamOfficials.length > 0 && `${teamOfficials.length} จนท.`}
+                                </span>
+                                <ChevronDown className="h-3.5 w-3.5 flex-none text-violet-400 transition-transform group-open:rotate-180" />
+                              </summary>
+                              <div className="ml-8 mt-1 space-y-3 border-l border-white/10 py-2 pl-3">
+                                {teamPlayers.length > 0 && (
+                                  <div>
+                                    <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-violet-400">
+                                      นักกีฬา ({teamPlayers.length})
+                                    </p>
+                                    <ul className="space-y-0.5">
+                                      {teamPlayers.map((p) => (
+                                        <li key={p.id} className="flex items-center gap-2 text-xs text-violet-200">
+                                          <span className="w-5 flex-none text-center font-bold text-cyan-300">
+                                            {p.jerseyNumber ?? "-"}
+                                          </span>
+                                          <span className="min-w-0 flex-1 truncate">
+                                            {p.firstNameTh} {p.lastNameTh}
+                                          </span>
+                                          <span className="flex-none text-violet-400">{p.position ?? "-"}</span>
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                )}
+                                {teamOfficials.length > 0 && (
+                                  <div>
+                                    <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-violet-400">
+                                      เจ้าหน้าที่ ({teamOfficials.length})
+                                    </p>
+                                    <ul className="space-y-0.5">
+                                      {teamOfficials.map((o) => (
+                                        <li key={o.id} className="flex items-center gap-2 text-xs text-violet-200">
+                                          <UserCog className="h-3 w-3 flex-none text-violet-400" />
+                                          <span className="min-w-0 flex-1 truncate">
+                                            {o.firstNameTh} {o.lastNameTh}
+                                          </span>
+                                          <span className="flex-none text-violet-400">{o.role ?? "-"}</span>
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                )}
+                              </div>
+                            </details>
+                          </li>
+                        );
+                      })}
                     </ul>
                   </div>
                 ))}
