@@ -57,6 +57,7 @@ export type StandingRow = {
   teamId: number;
   teamName: string;
   logoUrl: string | null;
+  groupName: string | null;
   played: number;
   won: number;
   drawn: number;
@@ -84,6 +85,7 @@ export function getStandings(
       teamId: team.id,
       teamName: team.name,
       logoUrl: team.logoUrl,
+      groupName: team.groupName,
       played: 0,
       won: 0,
       drawn: 0,

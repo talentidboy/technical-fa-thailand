@@ -59,7 +59,12 @@ function StandingTable({ group }: { group: StandingGroup }) {
                     {rank}
                   </span>
                 </td>
-                <td className="whitespace-nowrap px-2 py-2.5 font-medium text-slate-900">{row.teamName}</td>
+                <td className="whitespace-nowrap px-2 py-2.5">
+                  <div className="flex items-center gap-2">
+                    <TeamBadge team={{ name: row.teamName, logoUrl: row.logoUrl, groupName: row.groupName }} size="sm" />
+                    <span className="font-medium text-slate-900">{row.teamName}</span>
+                  </div>
+                </td>
                 <td className="px-2 py-2.5 text-center text-slate-500">{row.played}</td>
                 <td className="px-2 py-2.5 text-center text-slate-500">{row.won}</td>
                 <td className="px-2 py-2.5 text-center text-slate-500">{row.drawn}</td>
@@ -113,6 +118,7 @@ function MiniLeaderboard({
               >
                 {i + 1}
               </span>
+              <TeamBadge team={{ name: row.teamName, logoUrl: row.logoUrl, groupName: row.groupName }} size="sm" />
               <span className="min-w-0 flex-1 truncate text-sm text-slate-700">{row.teamName}</span>
               <span className="flex-none text-sm font-bold text-rose-600">{valueOf(row)}</span>
             </li>
