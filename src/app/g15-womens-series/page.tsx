@@ -12,14 +12,15 @@ import {
   ArrowLeft,
   Trophy,
   Target,
-  Venus,
   Calendar,
-  Users,
   MapPin,
   Settings,
   ShieldCheck,
   ChevronRight,
   Flame,
+  Globe2,
+  Award,
+  Rocket,
 } from "lucide-react";
 
 function StandingTable({ group }: { group: StandingGroup }) {
@@ -124,19 +125,19 @@ function MiniLeaderboard({
 
 const highlights = [
   {
-    icon: Venus,
-    title: "ฟุตบอลหญิง",
-    description: "เวทีการแข่งขันสำหรับนักฟุตบอลหญิงเยาวชน",
+    icon: Globe2,
+    title: "ทีมเข้าร่วมทั่วประเทศ",
+    description: "เชื่อมนักฟุตบอลหญิงจากภาคเหนือ ใต้ กลาง และอีสาน ไว้ในเวทีเดียวกัน",
   },
   {
-    icon: Users,
-    title: "รุ่นอายุไม่เกิน 15 ปี",
-    description: "เปิดโอกาสให้นักฟุตบอลหญิงรุ่นเยาว์ได้แสดงศักยภาพ",
+    icon: Award,
+    title: "มาตรฐานระดับ FIFA",
+    description: "จัดการแข่งขันภายใต้การสนับสนุนและกำกับดูแลจากผู้เชี่ยวชาญของ FIFA",
   },
   {
-    icon: Calendar,
-    title: "ซีรีส์ปี 2026",
-    description: "ส่วนหนึ่งของแผนพัฒนาฟุตบอลหญิงระยะยาวของสมาคมฯ",
+    icon: Rocket,
+    title: "เส้นทางสู่ความเป็นเลิศ",
+    description: "ปูพื้นฐานและเก็บเกี่ยวประสบการณ์แข่งขันจริง สู่เส้นทางนักฟุตบอลอาชีพ",
   },
 ];
 
@@ -512,35 +513,80 @@ export default async function G15WomensSeriesPage() {
 
       {/* Hero */}
       <section className="relative overflow-hidden bg-linear-to-br from-rose-950 via-rose-900 to-fuchsia-800">
-        <div className="absolute inset-x-0 top-0 h-1 bg-linear-to-r from-amber-600 via-amber-400 to-amber-600" />
-        <div className="absolute -left-24 -top-24 h-80 w-80 rounded-full bg-rose-400/20 blur-3xl" />
-        <div className="absolute -right-16 top-1/3 h-96 w-96 rounded-full bg-fuchsia-300/20 blur-3xl" />
+        <div className="absolute inset-x-0 top-0 h-1.5 bg-linear-to-r from-amber-600 via-amber-300 to-amber-600" />
 
-        <div className="relative mx-auto max-w-4xl px-6 py-20 text-center">
-          <div className="mx-auto flex h-28 w-28 items-center justify-center overflow-hidden rounded-3xl bg-white/10 shadow-xl ring-1 ring-white/20">
-            <Image
-              src={G15_IMAGE_URL}
-              alt="G15 Women's Football Series"
-              width={112}
-              height={112}
-              className="h-full w-full object-cover"
-              priority
-            />
+        {/* จุดไฟหลายชั้นเพิ่มมิติความหรูหรา */}
+        <div className="absolute -left-24 -top-24 h-96 w-96 rounded-full bg-rose-400/25 blur-3xl" />
+        <div className="absolute -right-20 top-1/4 h-112 w-md rounded-full bg-fuchsia-400/20 blur-3xl" />
+        <div className="absolute bottom-0 left-1/3 h-72 w-72 rounded-full bg-amber-400/10 blur-3xl" />
+
+        {/* ลายจุดแบบละเอียด เพิ่มพื้นผิวให้พื้นหลังไม่โล่งจนเกินไป */}
+        <div
+          className="absolute inset-0 opacity-[0.15]"
+          style={{
+            backgroundImage: "radial-gradient(rgba(255,255,255,0.6) 1px, transparent 1px)",
+            backgroundSize: "28px 28px",
+          }}
+        />
+
+        {/* โลโก้ถ้วยรางวัลจางๆ เป็นลายน้ำด้านหลัง เพิ่มความยิ่งใหญ่ */}
+        <Trophy className="pointer-events-none absolute -right-10 -top-10 h-72 w-72 rotate-12 text-white/4" />
+
+        <div className="relative mx-auto max-w-4xl px-6 pb-28 pt-16 text-center sm:pb-32 sm:pt-20">
+          <div className="mx-auto inline-flex items-center gap-1.5 rounded-full bg-amber-400/15 px-3.5 py-1.5 text-xs font-bold uppercase tracking-widest text-amber-300 ring-1 ring-amber-400/30">
+            <Trophy className="h-3.5 w-3.5" />
+            FA Thailand
           </div>
-          <h1 className="mt-5 text-3xl font-bold tracking-tight text-white sm:text-4xl">
+
+          <div className="relative mx-auto mt-6 flex h-32 w-32 items-center justify-center">
+            <div className="absolute inset-0 rounded-3xl bg-white/10 blur-xl" />
+            <div className="relative flex h-32 w-32 items-center justify-center overflow-hidden rounded-3xl bg-white/10 shadow-2xl ring-1 ring-white/25">
+              <Image
+                src={G15_IMAGE_URL}
+                alt="G15 Women's Football Series"
+                width={128}
+                height={128}
+                className="h-full w-full object-cover"
+                priority
+              />
+            </div>
+          </div>
+
+          <h1 className="mt-6 text-4xl font-extrabold tracking-tight text-white drop-shadow-sm sm:text-5xl">
             G15 Women&apos;s Football Series 2026
           </h1>
-          <p className="mx-auto mt-3 max-w-xl text-rose-100">
-            เวทีการแข่งขันฟุตบอลหญิงรุ่นอายุไม่เกิน 15 ปี
-            เพื่อส่งเสริมและพัฒนานักฟุตบอลหญิงเยาวชนของไทยสู่เส้นทางความเป็นเลิศ
+          <p className="mx-auto mt-4 max-w-2xl text-lg font-semibold text-amber-200">
+            เปิดรับสมัครทีมฟุตบอลหญิง รุ่นอายุไม่เกิน 15 ปี จากทั่วประเทศ เข้าร่วมการแข่งขัน
+          </p>
+          <p className="mx-auto mt-3 max-w-2xl text-rose-100">
+            เวทีการแข่งขันที่เปิดโอกาสให้น้องๆ นักกีฬาฟุตบอลหญิงอายุไม่เกิน 15 ปี ได้แสดงศักยภาพ พัฒนาฝีเท้า
+            และเก็บเกี่ยวประสบการณ์การแข่งขันอย่างเต็มที่ ภายใต้การสนับสนุนและการกำกับดูแลจากผู้เชี่ยวชาญของ FIFA
           </p>
         </div>
       </section>
 
-      <div className="mx-auto max-w-6xl px-6 pb-20 pt-10">
-        <div className="mb-10 grid grid-cols-1 gap-6 sm:grid-cols-3">
+      <div className="mx-auto max-w-6xl px-6 pb-20">
+        {/* แถบสถิติลอยทับรอยต่อ hero กับพื้นหลัง — ดึงจากข้อมูลจริงในระบบ */}
+        <div className="relative z-10 -mt-16 grid grid-cols-2 gap-px overflow-hidden rounded-3xl bg-slate-200 shadow-2xl ring-1 ring-black/5 sm:-mt-20 sm:grid-cols-4">
+          {[
+            { label: "ทีมเข้าร่วม", value: teams.length },
+            { label: "ภาคทั่วประเทศ", value: regionOrder.length },
+            { label: "นัดการแข่งขัน", value: matches.length },
+            { label: "นัดที่แข่งจบแล้ว", value: finishedMatches.length },
+          ].map((s) => (
+            <div key={s.label} className="bg-white px-4 py-6 text-center sm:py-7">
+              <p className="text-3xl font-extrabold text-slate-900 sm:text-4xl">{s.value}</p>
+              <p className="mt-1 text-xs font-medium text-slate-500">{s.label}</p>
+            </div>
+          ))}
+        </div>
+
+        <div className="mb-10 mt-10 grid grid-cols-1 gap-6 sm:grid-cols-3">
           {highlights.map(({ icon: Icon, title, description }) => (
-            <div key={title} className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div
+              key={title}
+              className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
+            >
               <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-rose-50 text-rose-600">
                 <Icon className="h-5 w-5" />
               </div>
