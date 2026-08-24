@@ -17,6 +17,25 @@ import {
   CalendarClock,
 } from "lucide-react";
 
+// สีประจำภูมิภาค — จัดกลุ่มเองเพื่อให้ดูแยกโซนง่าย ๆ ไม่ใช่ข้อมูลจาก Airtable/DB
+const REGION_ORDER = ["ภาคใต้", "ภาคเหนือ", "ภาคกลาง", "ภาคตะวันออกเฉียงเหนือ"];
+const REGION_STYLE: Record<string, { bg: string; text: string; light: string; ring: string }> = {
+  ภาคใต้: { bg: "bg-cyan-500", text: "text-cyan-700", light: "bg-cyan-50", ring: "ring-cyan-200" },
+  ภาคเหนือ: { bg: "bg-emerald-500", text: "text-emerald-700", light: "bg-emerald-50", ring: "ring-emerald-200" },
+  ภาคกลาง: { bg: "bg-purple-500", text: "text-purple-700", light: "bg-purple-50", ring: "ring-purple-200" },
+  ภาคตะวันออกเฉียงเหนือ: { bg: "bg-amber-500", text: "text-amber-700", light: "bg-amber-50", ring: "ring-amber-200" },
+};
+const DEFAULT_REGION_STYLE = { bg: "bg-slate-500", text: "text-slate-700", light: "bg-slate-50", ring: "ring-slate-200" };
+
+// groupName ในฐานข้อมูลเก็บเป็น "ภาคX - กลุ่ม Y" (เช่น "ภาคใต้ - กลุ่ม A") — แยกเป็นภาค/กลุ่มย่อย
+// เพื่อจัดหมวดหมู่การ์ดทีมที่เข้าร่วมให้ดูตามภูมิภาค แทนกริดยาว ๆ รวมกันหมด
+function parseRegionGroup(groupName: string | null): { region: string; letter: string } | null {
+  if (!groupName) return null;
+  const m = groupName.match(/^(.+?)\s*-\s*กลุ่ม\s*(.+)$/);
+  if (!m) return null;
+  return { region: m[1].trim(), letter: m[2].trim() };
+}
+
 const highlights = [
   {
     icon: Venus,
@@ -60,6 +79,25 @@ export default async function G15WomensSeriesPage() {
   ]);
 
   const standingGroups = getStandings(teams, matches);
+
+  // จัดทีมที่เข้าร่วมเป็นกลุ่มตามภูมิภาค → กลุ่มย่อย (A/B) สำหรับการ์ดทีมที่เข้าร่วม
+  const teamsByRegion = new Map<string, Map<string, typeof teams>>();
+  const ungroupedTeams: typeof teams = [];
+  for (const team of teams) {
+    const parsed = parseRegionGroup(team.groupName);
+    if (!parsed) {
+      ungroupedTeams.push(team);
+      continue;
+    }
+    if (!teamsByRegion.has(parsed.region)) teamsByRegion.set(parsed.region, new Map());
+    const groupMap = teamsByRegion.get(parsed.region)!;
+    if (!groupMap.has(parsed.letter)) groupMap.set(parsed.letter, []);
+    groupMap.get(parsed.letter)!.push(team);
+  }
+  const regionOrder = [
+    ...REGION_ORDER.filter((r) => teamsByRegion.has(r)),
+    ...Array.from(teamsByRegion.keys()).filter((r) => !REGION_ORDER.includes(r)),
+  ];
 
   const matchesByRound = matches.reduce<Record<string, typeof matches>>(
     (acc, match) => {
@@ -301,35 +339,86 @@ export default async function G15WomensSeriesPage() {
                 <Users className="h-4 w-4" />
                 ทีมที่เข้าร่วม ({teams.length})
               </div>
-              <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-                {teams.map((team) => (
-                  <div
-                    key={team.id}
-                    className="flex flex-col items-center gap-2 rounded-2xl border border-slate-200 bg-white p-4 text-center shadow-sm"
-                  >
-                    {team.logoUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={team.logoUrl}
-                        alt=""
-                        className="h-14 w-14 rounded-full object-cover"
-                      />
-                    ) : (
-                      <div className="flex h-14 w-14 items-center justify-center rounded-full bg-rose-100 text-lg font-semibold text-rose-700">
-                        {team.name.charAt(0)}
+
+              <div className="space-y-6">
+                {regionOrder.map((region) => {
+                  const style = REGION_STYLE[region] ?? DEFAULT_REGION_STYLE;
+                  const groupMap = teamsByRegion.get(region)!;
+                  const letters = Array.from(groupMap.keys()).sort();
+                  const regionTotal = letters.reduce((s, l) => s + groupMap.get(l)!.length, 0);
+
+                  return (
+                    <div
+                      key={region}
+                      className={`overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm ring-1 ${style.ring}`}
+                    >
+                      <div className={`flex items-center gap-2.5 px-5 py-3 ${style.bg}`}>
+                        <MapPin className="h-4 w-4 text-white" />
+                        <h3 className="font-bold text-white">{region}</h3>
+                        <span className="ml-auto text-xs font-medium text-white/80">{regionTotal} ทีม</span>
                       </div>
-                    )}
-                    <p className="text-sm font-medium text-slate-900">
-                      {team.name}
-                    </p>
-                    {team.groupName && (
-                      <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-500">
-                        {team.groupName}
-                      </span>
-                    )}
-                  </div>
-                ))}
+                      <div className="grid grid-cols-1 gap-5 p-5 sm:grid-cols-2">
+                        {letters.map((letter) => (
+                          <div key={letter}>
+                            <p className={`mb-2 inline-flex rounded-full px-2.5 py-0.5 text-xs font-bold ${style.light} ${style.text}`}>
+                              กลุ่ม {letter}
+                            </p>
+                            <ul className="space-y-1.5">
+                              {groupMap.get(letter)!.map((team) => (
+                                <li
+                                  key={team.id}
+                                  className="flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-sm text-slate-700 hover:bg-slate-50"
+                                >
+                                  {team.logoUrl ? (
+                                    // eslint-disable-next-line @next/next/no-img-element
+                                    <img
+                                      src={team.logoUrl}
+                                      alt=""
+                                      className="h-6 w-6 flex-none rounded-full object-cover"
+                                    />
+                                  ) : (
+                                    <span
+                                      className={`flex h-6 w-6 flex-none items-center justify-center rounded-full text-[10px] font-bold text-white ${style.bg}`}
+                                    >
+                                      {team.name.charAt(0)}
+                                    </span>
+                                  )}
+                                  <span className="truncate">{team.name}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
+
+              {ungroupedTeams.length > 0 && (
+                <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+                  {ungroupedTeams.map((team) => (
+                    <div
+                      key={team.id}
+                      className="flex flex-col items-center gap-2 rounded-2xl border border-slate-200 bg-white p-4 text-center shadow-sm"
+                    >
+                      {team.logoUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={team.logoUrl}
+                          alt=""
+                          className="h-14 w-14 rounded-full object-cover"
+                        />
+                      ) : (
+                        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-rose-100 text-lg font-semibold text-rose-700">
+                          {team.name.charAt(0)}
+                        </div>
+                      )}
+                      <p className="text-sm font-medium text-slate-900">{team.name}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
             </section>
           </div>
         )}
