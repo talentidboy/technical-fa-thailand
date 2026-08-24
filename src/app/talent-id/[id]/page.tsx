@@ -217,18 +217,25 @@ export default async function TalentIdDetailPage({
           </div>
           <div className="mt-4 flex flex-wrap justify-center gap-1.5">
             {player.position1 && (
-              <span className="rounded-full bg-amber-400/15 px-2.5 py-1 text-xs font-semibold text-amber-300 ring-1 ring-amber-400/30">
+              <span
+                className="rounded-full px-2.5 py-1 text-xs font-semibold"
+                style={{ backgroundColor: `${heroColor}26`, color: heroColor, boxShadow: `inset 0 0 0 1px ${heroColor}66` }}
+              >
                 {player.position1}
               </span>
             )}
-            {player.position2.map((p) => (
-              <span
-                key={p}
-                className="rounded-full bg-white/10 px-2.5 py-1 text-xs font-medium text-indigo-200"
-              >
-                {p}
-              </span>
-            ))}
+            {player.position2.map((p) => {
+              const c = positionColor(categoryForPosition(p));
+              return (
+                <span
+                  key={p}
+                  className="rounded-full px-2.5 py-1 text-[11px] font-medium opacity-80"
+                  style={{ backgroundColor: `${c}1a`, color: c }}
+                >
+                  {p}
+                </span>
+              );
+            })}
           </div>
 
           <p className="mt-5 flex items-center gap-2 border-t border-white/10 pt-4 text-xs text-indigo-300">

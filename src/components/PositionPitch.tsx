@@ -1,3 +1,5 @@
+import { categoryForPosition, positionColor } from "@/lib/position-color";
+
 // พิกัด (%) บนสนามอ้างอิงจากรายชื่อตำแหน่งจริงใน Airtable (1st/2nd Position field)
 // วางตามรูปทรงแผนผังทีมมาตรฐาน — GK ล่างสุด ผู้เล่นแนวรุกอยู่บนสุด
 const POSITION_COORDS: Record<string, { x: number; y: number }> = {
@@ -22,10 +24,16 @@ export function PositionPitch({
   primary: string | null;
   secondary: string[];
 }) {
-  const primaryPos = primary ? POSITION_COORDS[primary] : null;
+  const primaryPos = primary ? POSITION_COORDS[primary.trim()] : null;
+  const primaryColor = positionColor(categoryForPosition(primary?.trim()));
+
   const secondaryPos = secondary
-    .map((p) => POSITION_COORDS[p])
-    .filter((p): p is { x: number; y: number } => Boolean(p));
+    .map((p) => {
+      const coords = POSITION_COORDS[p.trim()];
+      if (!coords) return null;
+      return { ...coords, color: positionColor(categoryForPosition(p.trim())) };
+    })
+    .filter((p): p is { x: number; y: number; color: string } => Boolean(p));
 
   return (
     <svg viewBox="0 0 100 130" className="w-full max-w-56">
@@ -37,11 +45,22 @@ export function PositionPitch({
       <rect x="24" y="110" width="52" height="18" fill="none" stroke="#ffffff20" strokeWidth="1" />
 
       {secondaryPos.map((p, i) => (
-        <circle key={i} cx={p.x} cy={p.y} r="4.5" fill="#ffffff20" stroke="#ffffff40" strokeWidth="1" />
+        <circle
+          key={i}
+          cx={p.x}
+          cy={p.y}
+          r="5"
+          fill={p.color}
+          fillOpacity="0.35"
+          stroke={p.color}
+          strokeOpacity="0.8"
+          strokeWidth="1.5"
+        />
       ))}
       {primaryPos && (
         <>
-          <circle cx={primaryPos.x} cy={primaryPos.y} r="7" fill="#fbbf24" stroke="#1e1b4b" strokeWidth="2" />
+          <circle cx={primaryPos.x} cy={primaryPos.y} r="13" fill={primaryColor} fillOpacity="0.2" />
+          <circle cx={primaryPos.x} cy={primaryPos.y} r="8" fill={primaryColor} stroke="#1e1b4b" strokeWidth="2" />
         </>
       )}
     </svg>
