@@ -15,7 +15,7 @@ import {
 import { Field } from "@/components/FormField";
 import { LogoPasteField } from "@/components/g15/LogoPasteField";
 import { LOGO_URL } from "@/lib/brand";
-import { ArrowLeft, Shield, Users, UserCog, Trash2 } from "lucide-react";
+import { ArrowLeft, Shield, Users, UserCog, Trash2, ChevronDown } from "lucide-react";
 
 function toDateInputValue(date: Date | null) {
   if (!date) return "";
@@ -136,47 +136,73 @@ export default async function G15ManageTeamPage({
           ) : (
             <ul className="divide-y divide-slate-100">
               {players.map((p) => (
-                <li key={p.id} className="px-6 py-4">
-                  <form action={updatePlayer} className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-6">
-                    <input type="hidden" name="id" value={p.id} />
-                    <input type="hidden" name="teamId" value={team.id} />
-                    <Field label="เบอร์ทะเบียน" name="no" type="number" defaultValue={p.no?.toString() ?? ""} />
-                    <Field label="ชื่อ (ไทย)" name="firstNameTh" required defaultValue={p.firstNameTh} />
-                    <Field label="นามสกุล (ไทย)" name="lastNameTh" required defaultValue={p.lastNameTh} />
-                    <Field label="ชื่อ (English)" name="firstNameEn" defaultValue={p.firstNameEn ?? ""} />
-                    <Field label="นามสกุล (English)" name="lastNameEn" defaultValue={p.lastNameEn ?? ""} />
-                    <Field label="สัญชาติ" name="nationality" defaultValue={p.nationality ?? ""} />
-                    <Field label="ชื่อบนเสื้อ" name="jerseyName" defaultValue={p.jerseyName ?? ""} />
-                    <Field
-                      label="เบอร์เสื้อ"
-                      name="jerseyNumber"
-                      type="number"
-                      defaultValue={p.jerseyNumber?.toString() ?? ""}
-                    />
-                    <Field label="ตำแหน่ง" name="position" defaultValue={p.position ?? ""} />
-                    <Field label="วันเกิด" name="dob" type="date" defaultValue={toDateInputValue(p.dob)} />
-                    <Field label="น้ำหนัก (กก.)" name="weightKg" type="number" defaultValue={p.weightKg?.toString() ?? ""} />
-                    <Field label="ส่วนสูง (ซม.)" name="heightCm" type="number" defaultValue={p.heightCm?.toString() ?? ""} />
-                    <div className="col-span-full flex items-center gap-2">
-                      <button
-                        type="submit"
-                        className="rounded-lg bg-slate-900 px-4 py-2 text-xs font-medium text-white transition-colors hover:bg-slate-800"
-                      >
-                        บันทึก
-                      </button>
+                <li key={p.id}>
+                  <details className="group">
+                    <summary className="flex cursor-pointer list-none items-center gap-3 px-6 py-3 hover:bg-slate-50 [&::-webkit-details-marker]:hidden">
+                      <ChevronDown className="h-3.5 w-3.5 flex-none text-slate-400 transition-transform group-open:rotate-180" />
+                      <span className="flex h-7 w-7 flex-none items-center justify-center rounded-full bg-rose-50 text-xs font-bold text-rose-600">
+                        {p.jerseyNumber ?? p.no ?? "-"}
+                      </span>
+                      <span className="min-w-0 flex-1 truncate text-sm font-medium text-slate-900">
+                        {p.firstNameTh} {p.lastNameTh}
+                      </span>
+                      <span className="hidden flex-none text-xs text-slate-500 sm:block">{p.position ?? "-"}</span>
+                      <span className="hidden flex-none text-xs text-slate-400 md:block">{p.nationality ?? "-"}</span>
+                    </summary>
+
+                    <div className="border-t border-slate-100 px-6 py-4">
+                      <form action={updatePlayer} className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-6">
+                        <input type="hidden" name="id" value={p.id} />
+                        <input type="hidden" name="teamId" value={team.id} />
+                        <Field label="เบอร์ทะเบียน" name="no" type="number" defaultValue={p.no?.toString() ?? ""} />
+                        <Field label="ชื่อ (ไทย)" name="firstNameTh" required defaultValue={p.firstNameTh} />
+                        <Field label="นามสกุล (ไทย)" name="lastNameTh" required defaultValue={p.lastNameTh} />
+                        <Field label="ชื่อ (English)" name="firstNameEn" defaultValue={p.firstNameEn ?? ""} />
+                        <Field label="นามสกุล (English)" name="lastNameEn" defaultValue={p.lastNameEn ?? ""} />
+                        <Field label="สัญชาติ" name="nationality" defaultValue={p.nationality ?? ""} />
+                        <Field label="ชื่อบนเสื้อ" name="jerseyName" defaultValue={p.jerseyName ?? ""} />
+                        <Field
+                          label="เบอร์เสื้อ"
+                          name="jerseyNumber"
+                          type="number"
+                          defaultValue={p.jerseyNumber?.toString() ?? ""}
+                        />
+                        <Field label="ตำแหน่ง" name="position" defaultValue={p.position ?? ""} />
+                        <Field label="วันเกิด" name="dob" type="date" defaultValue={toDateInputValue(p.dob)} />
+                        <Field
+                          label="น้ำหนัก (กก.)"
+                          name="weightKg"
+                          type="number"
+                          defaultValue={p.weightKg?.toString() ?? ""}
+                        />
+                        <Field
+                          label="ส่วนสูง (ซม.)"
+                          name="heightCm"
+                          type="number"
+                          defaultValue={p.heightCm?.toString() ?? ""}
+                        />
+                        <div className="col-span-full flex items-center gap-2">
+                          <button
+                            type="submit"
+                            className="rounded-lg bg-slate-900 px-4 py-2 text-xs font-medium text-white transition-colors hover:bg-slate-800"
+                          >
+                            บันทึก
+                          </button>
+                        </div>
+                      </form>
+                      <form action={deletePlayer} className="mt-2">
+                        <input type="hidden" name="id" value={p.id} />
+                        <input type="hidden" name="teamId" value={team.id} />
+                        <button
+                          type="submit"
+                          className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs font-medium text-red-500 transition-colors hover:bg-red-50"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                          ลบนักกีฬาคนนี้
+                        </button>
+                      </form>
                     </div>
-                  </form>
-                  <form action={deletePlayer} className="mt-2">
-                    <input type="hidden" name="id" value={p.id} />
-                    <input type="hidden" name="teamId" value={team.id} />
-                    <button
-                      type="submit"
-                      className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs font-medium text-red-500 transition-colors hover:bg-red-50"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                      ลบนักกีฬาคนนี้
-                    </button>
-                  </form>
+                  </details>
                 </li>
               ))}
             </ul>
@@ -222,40 +248,53 @@ export default async function G15ManageTeamPage({
           ) : (
             <ul className="divide-y divide-slate-100">
               {officials.map((o) => (
-                <li key={o.id} className="px-6 py-4">
-                  <form action={updateOfficial} className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-5">
-                    <input type="hidden" name="id" value={o.id} />
-                    <input type="hidden" name="teamId" value={team.id} />
-                    <Field label="เบอร์ทะเบียน" name="no" type="number" defaultValue={o.no?.toString() ?? ""} />
-                    <Field label="ชื่อ (ไทย)" name="firstNameTh" required defaultValue={o.firstNameTh} />
-                    <Field label="นามสกุล (ไทย)" name="lastNameTh" required defaultValue={o.lastNameTh} />
-                    <Field label="ชื่อ (English)" name="firstNameEn" defaultValue={o.firstNameEn ?? ""} />
-                    <Field label="นามสกุล (English)" name="lastNameEn" defaultValue={o.lastNameEn ?? ""} />
-                    <Field label="เพศ" name="gender" defaultValue={o.gender ?? ""} />
-                    <Field label="สัญชาติ" name="nationality" defaultValue={o.nationality ?? ""} />
-                    <Field label="บทบาท" name="role" defaultValue={o.role ?? ""} />
-                    <Field label="วันเกิด" name="dob" type="date" defaultValue={toDateInputValue(o.dob)} />
-                    <Field label="ใบอนุญาตผู้ฝึกสอน" name="coachingLicense" defaultValue={o.coachingLicense ?? ""} />
-                    <div className="col-span-full flex items-center gap-2">
-                      <button
-                        type="submit"
-                        className="rounded-lg bg-slate-900 px-4 py-2 text-xs font-medium text-white transition-colors hover:bg-slate-800"
-                      >
-                        บันทึก
-                      </button>
+                <li key={o.id}>
+                  <details className="group">
+                    <summary className="flex cursor-pointer list-none items-center gap-3 px-6 py-3 hover:bg-slate-50 [&::-webkit-details-marker]:hidden">
+                      <ChevronDown className="h-3.5 w-3.5 flex-none text-slate-400 transition-transform group-open:rotate-180" />
+                      <span className="min-w-0 flex-1 truncate text-sm font-medium text-slate-900">
+                        {o.firstNameTh} {o.lastNameTh}
+                      </span>
+                      <span className="hidden flex-none text-xs text-slate-500 sm:block">{o.role ?? "-"}</span>
+                      <span className="hidden flex-none text-xs text-slate-400 md:block">{o.gender ?? "-"}</span>
+                    </summary>
+
+                    <div className="border-t border-slate-100 px-6 py-4">
+                      <form action={updateOfficial} className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-5">
+                        <input type="hidden" name="id" value={o.id} />
+                        <input type="hidden" name="teamId" value={team.id} />
+                        <Field label="เบอร์ทะเบียน" name="no" type="number" defaultValue={o.no?.toString() ?? ""} />
+                        <Field label="ชื่อ (ไทย)" name="firstNameTh" required defaultValue={o.firstNameTh} />
+                        <Field label="นามสกุล (ไทย)" name="lastNameTh" required defaultValue={o.lastNameTh} />
+                        <Field label="ชื่อ (English)" name="firstNameEn" defaultValue={o.firstNameEn ?? ""} />
+                        <Field label="นามสกุล (English)" name="lastNameEn" defaultValue={o.lastNameEn ?? ""} />
+                        <Field label="เพศ" name="gender" defaultValue={o.gender ?? ""} />
+                        <Field label="สัญชาติ" name="nationality" defaultValue={o.nationality ?? ""} />
+                        <Field label="บทบาท" name="role" defaultValue={o.role ?? ""} />
+                        <Field label="วันเกิด" name="dob" type="date" defaultValue={toDateInputValue(o.dob)} />
+                        <Field label="ใบอนุญาตผู้ฝึกสอน" name="coachingLicense" defaultValue={o.coachingLicense ?? ""} />
+                        <div className="col-span-full flex items-center gap-2">
+                          <button
+                            type="submit"
+                            className="rounded-lg bg-slate-900 px-4 py-2 text-xs font-medium text-white transition-colors hover:bg-slate-800"
+                          >
+                            บันทึก
+                          </button>
+                        </div>
+                      </form>
+                      <form action={deleteOfficial} className="mt-2">
+                        <input type="hidden" name="id" value={o.id} />
+                        <input type="hidden" name="teamId" value={team.id} />
+                        <button
+                          type="submit"
+                          className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs font-medium text-red-500 transition-colors hover:bg-red-50"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                          ลบเจ้าหน้าที่คนนี้
+                        </button>
+                      </form>
                     </div>
-                  </form>
-                  <form action={deleteOfficial} className="mt-2">
-                    <input type="hidden" name="id" value={o.id} />
-                    <input type="hidden" name="teamId" value={team.id} />
-                    <button
-                      type="submit"
-                      className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs font-medium text-red-500 transition-colors hover:bg-red-50"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                      ลบเจ้าหน้าที่คนนี้
-                    </button>
-                  </form>
+                  </details>
                 </li>
               ))}
             </ul>
