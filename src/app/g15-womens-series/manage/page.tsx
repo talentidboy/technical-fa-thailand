@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { createTeam, deleteTeam, createMatch, deleteMatch, updateMatch } from "./actions";
-import { Field, SelectField } from "@/components/FormField";
+import { Field } from "@/components/FormField";
 import { LOGO_URL } from "@/lib/brand";
 import { toDateTimeLocalValue } from "@/lib/g15";
 import { REGION_ORDER, REGION_STYLE, DEFAULT_REGION_STYLE, parseRegionGroup } from "@/lib/g15-region";
@@ -13,6 +13,7 @@ import { ModalTrigger } from "@/components/g15/Modal";
 import { MatchStatusBoard } from "@/components/g15/MatchStatusBoard";
 import { TeamBadge } from "@/components/g15/TeamBadge";
 import { LogoPasteField } from "@/components/g15/LogoPasteField";
+import { RegionFilteredTeamSelects } from "@/components/g15/RegionFilteredTeamSelects";
 import { Trash2, ArrowLeft, MapPin, ChevronRight, ChevronDown, Flame } from "lucide-react";
 
 export default async function G15ManagePage() {
@@ -34,11 +35,6 @@ export default async function G15ManagePage() {
 
   const playerCountByTeam = new Map(playerCounts.map((p) => [p.teamId, p._count.id]));
   const officialCountByTeam = new Map(officialCounts.map((o) => [o.teamId, o._count.id]));
-
-  const teamOptions = teams.map((t) => ({
-    value: String(t.id),
-    label: t.groupName ? `${t.name} (${t.groupName})` : t.name,
-  }));
 
   // จัดทีมเป็นกลุ่มตามภูมิภาค → กลุ่มย่อย (A/B) เหมือนหน้าสาธารณะ เพื่อให้จัดการง่ายขึ้นแทนลิสต์ยาว 43 ทีมรวด
   const teamsByRegion = new Map<string, Map<string, typeof teams>>();
@@ -96,8 +92,7 @@ export default async function G15ManagePage() {
         />
         <Field label="วันเวลาแข่งขัน" name="matchDate" type="datetime-local" />
         <Field label="สนาม" name="venue" placeholder="สนามกีฬาแห่งชาติ" />
-        <SelectField label="ทีมเหย้า" name="homeTeamId" options={teamOptions} required />
-        <SelectField label="ทีมเยือน" name="awayTeamId" options={teamOptions} required />
+        <RegionFilteredTeamSelects teams={teams} />
         <div className="flex items-end sm:col-span-2">
           <button
             type="submit"
@@ -293,25 +288,17 @@ export default async function G15ManagePage() {
                       <form
                         id={`match-form-${match.id}`}
                         action={updateMatch}
-                        className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7"
+                        className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-8"
                       >
                         <input type="hidden" name="id" value={match.id} />
                         <div className="col-span-2">
                           <Field label="รอบการแข่งขัน" name="round" required defaultValue={match.round} />
                         </div>
-                        <SelectField
-                          label="ทีมเหย้า"
-                          name="homeTeamId"
-                          options={teamOptions}
-                          required
-                          defaultValue={String(match.homeTeamId)}
-                        />
-                        <SelectField
-                          label="ทีมเยือน"
-                          name="awayTeamId"
-                          options={teamOptions}
-                          required
-                          defaultValue={String(match.awayTeamId)}
+                        <RegionFilteredTeamSelects
+                          teams={teams}
+                          defaultRegion={parseRegionGroup(match.homeTeam.groupName)?.region}
+                          defaultHomeTeamId={match.homeTeamId}
+                          defaultAwayTeamId={match.awayTeamId}
                         />
                         <Field
                           label="วันเวลาแข่งขัน"
