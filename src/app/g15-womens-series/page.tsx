@@ -7,6 +7,7 @@ import { REGION_ORDER, REGION_STYLE, DEFAULT_REGION_STYLE, parseRegionGroup } fr
 import { LOGO_URL, G15_IMAGE_URL } from "@/lib/brand";
 import { G15Tabs } from "@/components/g15/G15Tabs";
 import { TeamBadge } from "@/components/g15/TeamBadge";
+import { PublicMatchesBoard } from "@/components/g15/PublicMatchesBoard";
 import {
   ArrowLeft,
   Trophy,
@@ -17,7 +18,6 @@ import {
   LogIn,
   ShieldCheck,
   ChevronRight,
-  Flame,
   Globe2,
   Award,
   Rocket,
@@ -204,11 +204,6 @@ export default async function G15WomensSeriesPage() {
     ...Array.from(standingsByRegion.keys()).filter((r) => !REGION_ORDER.includes(r)),
   ];
 
-  const matchesByRound = matches.reduce<Record<string, typeof matches>>((acc, match) => {
-    (acc[match.round] ??= []).push(match);
-    return acc;
-  }, {});
-
   // สถิติภาพรวมทัวร์นาเมนต์ — คำนวณจากผลแข่งจริงเท่านั้น (นัดที่ยังไม่แข่งไม่นับ)
   const finishedMatches = matches.filter((m) => m.status === "FINISHED");
   const totalGoals = finishedMatches.reduce(
@@ -227,91 +222,7 @@ export default async function G15WomensSeriesPage() {
     .sort((a, b) => (b.matchDate?.getTime() ?? 0) - (a.matchDate?.getTime() ?? 0))
     .slice(0, 10);
 
-  const matchesContent =
-    matches.length === 0 ? (
-      <p className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-10 text-center text-sm text-slate-500">
-        ยังไม่มีนัดการแข่งขัน
-      </p>
-    ) : (
-      <div className="space-y-6">
-        {Object.entries(matchesByRound).map(([round, roundMatches]) => {
-          const style = REGION_STYLE[round] ?? DEFAULT_REGION_STYLE;
-          return (
-            <div
-              key={round}
-              className={`overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm ring-1 ${style.ring}`}
-            >
-              <div className={`flex items-center gap-2.5 px-5 py-3 ${style.bg}`}>
-                <MapPin className="h-4 w-4 text-white" />
-                <h3 className="font-bold text-white">{round}</h3>
-                <span className="ml-auto text-xs font-medium text-white/80">{roundMatches.length} นัด</span>
-              </div>
-              <div className="grid grid-cols-1 gap-3 p-4 lg:grid-cols-2">
-                {roundMatches.map((match) => {
-                  const isFinished =
-                    match.status === "FINISHED" && match.homeScore != null && match.awayScore != null;
-                  const homeWon = isFinished && match.homeScore! > match.awayScore!;
-                  const awayWon = isFinished && match.awayScore! > match.homeScore!;
-                  return (
-                    <div
-                      key={match.id}
-                      className="rounded-xl border border-slate-200 bg-white p-3.5 transition-colors hover:border-slate-300 hover:bg-slate-50"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="flex min-w-0 flex-1 items-center justify-end gap-2 text-right">
-                          <span
-                            className={`truncate text-sm ${homeWon ? "font-bold text-slate-900" : "text-slate-500"}`}
-                          >
-                            {match.homeTeam.name}
-                          </span>
-                          <TeamBadge team={match.homeTeam} />
-                        </div>
-                        {isFinished ? (
-                          <span className="relative flex-none rounded-lg bg-slate-900 px-3 py-1.5 text-sm font-bold tabular-nums text-white">
-                            {match.homeScore} - {match.awayScore}
-                            {Math.abs(match.homeScore! - match.awayScore!) >= 10 && (
-                              <Flame className="absolute -right-1.5 -top-1.5 h-3.5 w-3.5 fill-amber-400 text-amber-500" />
-                            )}
-                          </span>
-                        ) : (
-                          <span className="flex-none rounded-lg bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-400">
-                            VS
-                          </span>
-                        )}
-                        <div className="flex min-w-0 flex-1 items-center gap-2">
-                          <TeamBadge team={match.awayTeam} />
-                          <span
-                            className={`truncate text-sm ${awayWon ? "font-bold text-slate-900" : "text-slate-500"}`}
-                          >
-                            {match.awayTeam.name}
-                          </span>
-                        </div>
-                      </div>
-                      {(match.matchDate || match.venue) && (
-                        <div className="mt-2.5 flex items-center justify-center gap-3 border-t border-slate-100 pt-2.5 text-[11px] text-slate-400">
-                          {match.matchDate && (
-                            <span className="flex items-center gap-1">
-                              <Calendar className="h-3 w-3" />
-                              {formatMatchDateTime(match.matchDate)}
-                            </span>
-                          )}
-                          {match.venue && (
-                            <span className="flex items-center gap-1">
-                              <MapPin className="h-3 w-3" />
-                              {match.venue}
-                            </span>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    );
+  const matchesContent = <PublicMatchesBoard matches={matches} regionOrder={REGION_ORDER} />;
 
   const tableContent = (
     <>
