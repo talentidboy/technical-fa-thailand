@@ -639,8 +639,31 @@ export default async function G15WomensSeriesPage() {
       </section>
 
       <div className="mx-auto max-w-6xl px-6 pb-20">
-        {/* แถบสถิติลอยทับรอยต่อ hero กับพื้นหลัง — ดึงจากข้อมูลจริงในระบบ */}
-        <div className="relative z-10 -mt-16 grid grid-cols-2 gap-px overflow-hidden rounded-3xl bg-slate-200 shadow-2xl ring-1 ring-black/5 sm:-mt-20 sm:grid-cols-4">
+        {/* จุดเด่นของรายการ — ย้ายมาไว้ต่อจาก hero ก่อนข้อมูลจริง เพื่อไม่ให้ตัดจังหวะระหว่างผลแข่งกับตาราง/สถิติ */}
+        {/* ลอยทับรอยต่อ hero กับพื้นหลังแทนแถบสถิติเดิม เพราะตอนนี้เป็นส่วนแรกที่ตามหลัง hero */}
+        <div className="relative z-10 -mt-16 grid grid-cols-1 gap-6 sm:-mt-20 sm:grid-cols-3">
+          {highlights.map(({ icon: Icon, title, titleEn, description, descriptionEn }) => (
+            <div
+              key={title}
+              className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-6 shadow-xl shadow-rose-950/10 transition-all hover:-translate-y-0.5 hover:shadow-2xl"
+            >
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-rose-50 text-rose-600">
+                <Icon className="h-5 w-5" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-slate-900">{title}</h3>
+                <p className="text-xs font-medium text-rose-500">{titleEn}</p>
+              </div>
+              <div>
+                <p className="text-sm text-slate-500">{description}</p>
+                <p className="mt-1 text-xs text-slate-400">{descriptionEn}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* แถบสถิติจริงในระบบ */}
+        <div className="mt-8 grid grid-cols-2 gap-px overflow-hidden rounded-3xl bg-slate-200 shadow-sm ring-1 ring-black/5 sm:grid-cols-4">
           {[
             { label: "ทีมเข้าร่วม", en: "Teams", value: teams.length, icon: Users, color: "bg-rose-50 text-rose-600" },
             {
@@ -725,27 +748,6 @@ export default async function G15WomensSeriesPage() {
             </div>
           </div>
         )}
-
-        <div className="mb-10 mt-10 grid grid-cols-1 gap-6 sm:grid-cols-3">
-          {highlights.map(({ icon: Icon, title, titleEn, description, descriptionEn }) => (
-            <div
-              key={title}
-              className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
-            >
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-rose-50 text-rose-600">
-                <Icon className="h-5 w-5" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-slate-900">{title}</h3>
-                <p className="text-xs font-medium text-rose-500">{titleEn}</p>
-              </div>
-              <div>
-                <p className="text-sm text-slate-500">{description}</p>
-                <p className="mt-1 text-xs text-slate-400">{descriptionEn}</p>
-              </div>
-            </div>
-          ))}
-        </div>
 
         {teams.length === 0 ? (
           <div className="flex flex-col items-center justify-center gap-3 rounded-3xl border border-dashed border-slate-300 bg-white px-6 py-16 text-center">
