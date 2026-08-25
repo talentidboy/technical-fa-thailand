@@ -6,7 +6,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { createAnnouncement, deleteAnnouncement } from "./actions";
 import { Field } from "@/components/FormField";
 import { LOGO_URL } from "@/lib/brand";
-import { Megaphone, Trash2, Plus, ArrowLeft, ImagePlus } from "lucide-react";
+import { Megaphone, Trash2, Plus, ArrowLeft, ImagePlus, Link2 } from "lucide-react";
 
 function formatDate(date: Date) {
   return date.toLocaleDateString("th-TH", {
@@ -87,6 +87,16 @@ export default async function AnnouncementsPage() {
               placeholder="เปิดรับสมัครอบรมผู้ฝึกสอน C License รุ่นที่ 13"
             />
             <Field label="แท็ก" name="tag" placeholder="อบรม / ประกาศผล / ระบบ" />
+
+            <label className="flex flex-col gap-1.5 sm:col-span-2">
+              <span className="text-sm font-medium text-slate-700">ลิงก์ (ถ้ามี)</span>
+              <input
+                name="linkUrl"
+                type="url"
+                placeholder="https://www.facebook.com/... — ถ้าเป็นลิงก์โพสต์เฟซบุ๊ก ระบบจะแสดงโพสต์นั้นให้อัตโนมัติ"
+                className="rounded-lg border border-slate-200 px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100"
+              />
+            </label>
 
             <label className="flex flex-col gap-1.5 sm:col-span-2">
               <span className="text-sm font-medium text-slate-700">
@@ -183,16 +193,30 @@ export default async function AnnouncementsPage() {
                       </p>
                     </div>
                   </div>
-                  <form action={deleteAnnouncement}>
-                    <input type="hidden" name="id" value={item.id} />
-                    <button
-                      type="submit"
-                      aria-label="ลบข่าวประกาศ"
-                      className="inline-flex items-center justify-center rounded-lg p-2 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  </form>
+                  <div className="flex flex-none items-center gap-1">
+                    {item.linkUrl && (
+                      <a
+                        href={item.linkUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label="เปิดลิงก์"
+                        title={item.linkUrl}
+                        className="inline-flex items-center justify-center rounded-lg p-2 text-slate-400 transition-colors hover:bg-indigo-50 hover:text-indigo-600"
+                      >
+                        <Link2 className="h-4 w-4" />
+                      </a>
+                    )}
+                    <form action={deleteAnnouncement}>
+                      <input type="hidden" name="id" value={item.id} />
+                      <button
+                        type="submit"
+                        aria-label="ลบข่าวประกาศ"
+                        className="inline-flex items-center justify-center rounded-lg p-2 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </form>
+                  </div>
                 </li>
               ))}
             </ul>

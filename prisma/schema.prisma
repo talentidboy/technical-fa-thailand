@@ -121,6 +121,7 @@ model Announcement {
   excerpt   String
   content   String     @default("")
   imageUrl  String?    @map("image_url")
+  linkUrl   String?    @map("link_url")
   tag       String?
   authorId  Int?       @map("author_id")
   author    SystemUser? @relation(fields: [authorId], references: [id], onDelete: SetNull)

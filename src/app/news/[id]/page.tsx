@@ -3,7 +3,9 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { LOGO_URL } from "@/lib/brand";
-import { ArrowLeft, Calendar, Megaphone } from "lucide-react";
+import { isFacebookUrl } from "@/lib/facebook";
+import { FacebookEmbed } from "@/components/FacebookEmbed";
+import { ArrowLeft, Calendar, Megaphone, ExternalLink } from "lucide-react";
 
 export default async function NewsDetailPage({
   params,
@@ -84,6 +86,26 @@ export default async function NewsDetailPage({
         <p className="mt-6 whitespace-pre-line text-base leading-relaxed text-slate-700">
           {announcement.content || announcement.excerpt}
         </p>
+
+        {announcement.linkUrl && (
+          <div className="mt-8">
+            {isFacebookUrl(announcement.linkUrl) ? (
+              <div className="flex justify-center">
+                <FacebookEmbed url={announcement.linkUrl} />
+              </div>
+            ) : (
+              <a
+                href={announcement.linkUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-indigo-600 shadow-sm transition-colors hover:bg-indigo-50"
+              >
+                <ExternalLink className="h-4 w-4" />
+                ดูลิงก์เพิ่มเติม
+              </a>
+            )}
+          </div>
+        )}
       </article>
     </div>
   );

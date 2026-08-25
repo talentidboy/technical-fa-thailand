@@ -20,6 +20,7 @@ export async function createAnnouncement(formData: FormData) {
   const excerpt = String(formData.get("excerpt") ?? "").trim();
   const content = String(formData.get("content") ?? "").trim();
   const tag = String(formData.get("tag") ?? "").trim();
+  const linkUrl = String(formData.get("linkUrl") ?? "").trim();
 
   if (!title || !excerpt) {
     throw new Error("กรุณากรอกหัวข้อและรายละเอียดย่อ");
@@ -36,6 +37,7 @@ export async function createAnnouncement(formData: FormData) {
       content: content || excerpt,
       imageUrl,
       tag: tag || null,
+      linkUrl: linkUrl || null,
       authorId: user.id,
     },
   });
