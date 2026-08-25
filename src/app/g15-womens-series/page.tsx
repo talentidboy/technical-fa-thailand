@@ -1,6 +1,5 @@
 import Link from "next/link";
 import Image from "next/image";
-import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { getStandings, formatMatchDateTime, type StandingGroup, type StandingRow } from "@/lib/g15";
@@ -15,6 +14,7 @@ import {
   Calendar,
   MapPin,
   Settings,
+  LogIn,
   ShieldCheck,
   ChevronRight,
   Flame,
@@ -148,9 +148,9 @@ const highlights = [
 ];
 
 export default async function G15WomensSeriesPage() {
+  // หน้านี้เปิดให้ดูได้แบบสาธารณะไม่ต้องล็อกอิน — ต้องล็อกอินเฉพาะตอนจะ "จัดการข้อมูล" เท่านั้น
   const user = await getCurrentUser();
-  if (!user) redirect("/login");
-  const canManage = user.role === "ADMIN" || user.role === "STAFF";
+  const canManage = user?.role === "ADMIN" || user?.role === "STAFF";
 
   const [teams, matches, players, officials] = await Promise.all([
     prisma.g15Team.findMany({ orderBy: [{ groupName: "asc" }, { name: "asc" }] }),
@@ -502,7 +502,7 @@ export default async function G15WomensSeriesPage() {
             </div>
           </Link>
           <div className="flex items-center gap-2">
-            {canManage && (
+            {canManage ? (
               <Link
                 href="/g15-womens-series/manage"
                 className="inline-flex items-center gap-1.5 rounded-lg border border-white/15 px-3 py-2 text-sm font-medium text-indigo-200 transition-colors hover:bg-white/10 hover:text-white"
@@ -510,6 +510,16 @@ export default async function G15WomensSeriesPage() {
                 <Settings className="h-4 w-4" />
                 จัดการข้อมูล
               </Link>
+            ) : (
+              !user && (
+                <Link
+                  href="/login"
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-white/15 px-3 py-2 text-sm font-medium text-indigo-200 transition-colors hover:bg-white/10 hover:text-white"
+                >
+                  <LogIn className="h-4 w-4" />
+                  เข้าสู่ระบบ
+                </Link>
+              )
             )}
             <Link
               href="/"

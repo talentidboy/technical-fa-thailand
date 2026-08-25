@@ -28,7 +28,8 @@ export default async function G15ManageTeamPage({
   params: Promise<{ id: string }>;
 }) {
   const currentUser = await getCurrentUser();
-  if (!currentUser || (currentUser.role !== "ADMIN" && currentUser.role !== "STAFF")) {
+  if (!currentUser) redirect("/login");
+  if (currentUser.role !== "ADMIN" && currentUser.role !== "STAFF") {
     redirect("/g15-womens-series");
   }
 

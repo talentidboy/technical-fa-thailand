@@ -17,10 +17,8 @@ import { Trash2, ArrowLeft, MapPin, ChevronRight, ChevronDown, Flame } from "luc
 
 export default async function G15ManagePage() {
   const currentUser = await getCurrentUser();
-  if (
-    !currentUser ||
-    (currentUser.role !== "ADMIN" && currentUser.role !== "STAFF")
-  ) {
+  if (!currentUser) redirect("/login");
+  if (currentUser.role !== "ADMIN" && currentUser.role !== "STAFF") {
     redirect("/g15-womens-series");
   }
 

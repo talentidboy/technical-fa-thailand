@@ -1,21 +1,18 @@
 import Link from "next/link";
 import Image from "next/image";
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { getCurrentUser } from "@/lib/auth";
 import { getStandings, formatMatchDateTime } from "@/lib/g15";
 import { regionStyle, parseRegionGroup } from "@/lib/g15-region";
 import { LOGO_URL } from "@/lib/brand";
 import { ArrowLeft, MapPin, Calendar, Users, UserCog, ListOrdered } from "lucide-react";
 
+// หน้านี้เปิดให้ดูได้แบบสาธารณะไม่ต้องล็อกอิน — ต้องล็อกอินเฉพาะตอนจะ "จัดการข้อมูล" เท่านั้น
 export default async function G15TeamDetailPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const user = await getCurrentUser();
-  if (!user) redirect("/login");
-
   const { id: idParam } = await params;
   const id = Number(idParam);
   if (!Number.isInteger(id)) notFound();
