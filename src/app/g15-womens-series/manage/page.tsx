@@ -13,8 +13,7 @@ import { ModalTrigger } from "@/components/g15/Modal";
 import { MatchStatusBoard } from "@/components/g15/MatchStatusBoard";
 import { TeamBadge } from "@/components/g15/TeamBadge";
 import { LogoPasteField } from "@/components/g15/LogoPasteField";
-import { RegionFilteredTeamSelects } from "@/components/g15/RegionFilteredTeamSelects";
-import { RoundField } from "@/components/g15/RoundField";
+import { MatchRegionFields } from "@/components/g15/MatchRegionFields";
 import { Trash2, ArrowLeft, MapPin, ChevronRight, ChevronDown, Flame } from "lucide-react";
 
 export default async function G15ManagePage() {
@@ -61,8 +60,6 @@ export default async function G15ManagePage() {
     (acc[match.round] ??= []).push(match);
     return acc;
   }, {});
-  // รายชื่อ "รอบการแข่งขัน" ที่เคยใช้จริงแล้ว — ให้เลือกจากดรอปดาวแทนพิมพ์เอง กันสะกดพลาดจนกลายเป็นรอบใหม่โดยไม่ตั้งใจ
-  const existingRounds = Object.keys(matchesByRound).sort((a, b) => a.localeCompare(b, "th"));
 
   const addTeamForm = (
     <form action={createTeam} className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -87,10 +84,9 @@ export default async function G15ManagePage() {
       <p className="text-sm text-slate-400">ต้องมีทีมอย่างน้อย 2 ทีมก่อนจึงจะเพิ่มนัดการแข่งขันได้</p>
     ) : (
       <form action={createMatch} className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <RoundField existingRounds={existingRounds} />
+        <MatchRegionFields teams={teams} />
         <Field label="วันเวลาแข่งขัน" name="matchDate" type="datetime-local" />
         <Field label="สนาม" name="venue" placeholder="สนามกีฬาแห่งชาติ" />
-        <RegionFilteredTeamSelects teams={teams} />
         <div className="flex items-end sm:col-span-2">
           <button
             type="submit"
@@ -286,15 +282,12 @@ export default async function G15ManagePage() {
                       <form
                         id={`match-form-${match.id}`}
                         action={updateMatch}
-                        className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-8"
+                        className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6"
                       >
                         <input type="hidden" name="id" value={match.id} />
-                        <div className="col-span-2">
-                          <RoundField existingRounds={existingRounds} defaultValue={match.round} />
-                        </div>
-                        <RegionFilteredTeamSelects
+                        <MatchRegionFields
                           teams={teams}
-                          defaultRegion={parseRegionGroup(match.homeTeam.groupName)?.region}
+                          defaultRound={match.round}
                           defaultHomeTeamId={match.homeTeamId}
                           defaultAwayTeamId={match.awayTeamId}
                         />
