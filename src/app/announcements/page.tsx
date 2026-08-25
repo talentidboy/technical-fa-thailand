@@ -93,9 +93,13 @@ export default async function AnnouncementsPage() {
               <input
                 name="linkUrl"
                 type="url"
-                placeholder="https://www.facebook.com/... — ถ้าเป็นลิงก์โพสต์เฟซบุ๊ก ระบบจะแสดงโพสต์นั้นให้อัตโนมัติ"
+                placeholder="https://www.facebook.com/ชื่อเพจ/posts/... — ถ้าเป็นลิงก์โพสต์เฟซบุ๊ก ระบบจะแสดงโพสต์นั้นให้อัตโนมัติ"
                 className="rounded-lg border border-slate-200 px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100"
               />
+              <span className="text-xs text-slate-400">
+                ใช้ลิงก์โพสต์จริง (เปิดโพสต์บนคอมพิวเตอร์แล้วคัดลอกลิงก์จากวันที่ใต้โพสต์) — ลิงก์แบบ
+                facebook.com/share/... ที่คัดลอกจากมือถือมักฝังโพสต์ไม่ได้
+              </span>
             </label>
 
             <label className="flex flex-col gap-1.5 sm:col-span-2">
