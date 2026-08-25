@@ -2,15 +2,18 @@
 // ไทยไม่มี daylight saving จึง offset +07:00 คงที่ ใช้แปลงตรงได้โดยไม่ต้องพึ่ง timezone database
 const BANGKOK_TZ = "Asia/Bangkok";
 
+// ใช้ locale "en-GB" (ไม่ใช่ th-TH) เพื่อให้ปีเป็น ค.ศ. (Gregorian) ไม่ใช่ พ.ศ. — th-TH จะแปลงปีเป็นพุทธศักราชอัตโนมัติ
+// ซึ่งทำให้ผู้ใช้ต่างชาติสับสน (เช่น 2569 แทนที่จะเป็น 2026) จึงใช้รูปแบบสากล "16 Aug 2026, 13:00" แทน
 export function formatMatchDateTime(date: Date | null) {
-  if (!date) return "ยังไม่กำหนดวันแข่ง";
-  return date.toLocaleString("th-TH", {
+  if (!date) return "TBD";
+  return date.toLocaleString("en-GB", {
     timeZone: BANGKOK_TZ,
     day: "numeric",
     month: "short",
     year: "numeric",
     hour: "2-digit",
     minute: "2-digit",
+    hour12: false,
   });
 }
 

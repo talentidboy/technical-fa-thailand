@@ -15,6 +15,19 @@ export function regionStyle(region: string | null) {
   return REGION_STYLE[region] ?? DEFAULT_REGION_STYLE;
 }
 
+// ชื่อภาคภาษาอังกฤษ — ใช้คู่กับชื่อไทยเพื่อให้ผู้ใช้ต่างชาติเข้าใจง่ายขึ้น
+export const REGION_EN: Record<string, string> = {
+  ภาคใต้: "South",
+  ภาคเหนือ: "North",
+  ภาคกลาง: "Central",
+  ภาคตะวันออกเฉียงเหนือ: "Northeast",
+};
+
+export function regionEn(region: string | null) {
+  if (!region) return "";
+  return REGION_EN[region] ?? "";
+}
+
 // groupName ในฐานข้อมูลเก็บเป็น "ภาคX - กลุ่ม Y" (เช่น "ภาคใต้ - กลุ่ม A") — แยกเป็นภาค/กลุ่มย่อย
 // เพื่อจัดหมวดหมู่การ์ดต่าง ๆ ให้ดูตามภูมิภาค แทนกริดยาว ๆ รวมกันหมด
 export function parseRegionGroup(groupName: string | null): { region: string; letter: string } | null {

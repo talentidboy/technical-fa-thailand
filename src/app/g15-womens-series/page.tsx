@@ -3,7 +3,7 @@ import Image from "next/image";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { getStandings, formatMatchDateTime, type StandingGroup, type StandingRow } from "@/lib/g15";
-import { REGION_ORDER, REGION_STYLE, DEFAULT_REGION_STYLE, parseRegionGroup } from "@/lib/g15-region";
+import { REGION_ORDER, REGION_STYLE, DEFAULT_REGION_STYLE, parseRegionGroup, regionEn } from "@/lib/g15-region";
 import { LOGO_URL, G15_IMAGE_URL } from "@/lib/brand";
 import { G15Tabs } from "@/components/g15/G15Tabs";
 import { TeamBadge } from "@/components/g15/TeamBadge";
@@ -30,13 +30,27 @@ function StandingTable({ group }: { group: StandingGroup }) {
         <thead className="bg-slate-50 text-[11px] font-medium uppercase tracking-wide text-slate-500">
           <tr>
             <th className="w-10 px-3 py-2.5"></th>
-            <th className="px-2 py-2.5">ทีม</th>
-            <th className="px-2 py-2.5 text-center">แข่ง</th>
-            <th className="px-2 py-2.5 text-center">ชนะ</th>
-            <th className="hidden px-2 py-2.5 text-center sm:table-cell">เสมอ</th>
-            <th className="hidden px-2 py-2.5 text-center sm:table-cell">แพ้</th>
-            <th className="hidden px-2 py-2.5 text-center sm:table-cell">ผลต่าง</th>
-            <th className="px-4 py-2.5 text-center">คะแนน</th>
+            <th className="px-2 py-2.5">
+              Team <span className="normal-case text-slate-400">/ ทีม</span>
+            </th>
+            <th className="px-2 py-2.5 text-center" title="แข่ง">
+              P
+            </th>
+            <th className="px-2 py-2.5 text-center" title="ชนะ">
+              W
+            </th>
+            <th className="hidden px-2 py-2.5 text-center sm:table-cell" title="เสมอ">
+              D
+            </th>
+            <th className="hidden px-2 py-2.5 text-center sm:table-cell" title="แพ้">
+              L
+            </th>
+            <th className="hidden px-2 py-2.5 text-center sm:table-cell" title="ผลต่าง">
+              GD
+            </th>
+            <th className="px-4 py-2.5 text-center" title="คะแนน">
+              Pts
+            </th>
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-100">
@@ -100,7 +114,7 @@ function MiniLeaderboard({
         <h3 className="text-sm font-semibold text-slate-900">{title}</h3>
       </div>
       {rows.length === 0 ? (
-        <p className="text-xs text-slate-400">ยังไม่มีข้อมูล</p>
+        <p className="text-xs text-slate-400">ยังไม่มีข้อมูล / No data yet</p>
       ) : (
         <ul className="space-y-2.5">
           {rows.map((row, i) => (
@@ -133,17 +147,23 @@ const highlights = [
   {
     icon: Globe2,
     title: "ทีมเข้าร่วมทั่วประเทศ",
+    titleEn: "Nationwide Teams",
     description: "เชื่อมนักฟุตบอลหญิงจากภาคเหนือ ใต้ กลาง และอีสาน ไว้ในเวทีเดียวกัน",
+    descriptionEn: "Bringing together young female footballers from the North, South, Central, and Northeast.",
   },
   {
     icon: Award,
     title: "มาตรฐานระดับ FIFA",
+    titleEn: "FIFA Standard",
     description: "จัดการแข่งขันภายใต้การสนับสนุนและกำกับดูแลจากผู้เชี่ยวชาญของ FIFA",
+    descriptionEn: "Organised with support and oversight from FIFA development experts.",
   },
   {
     icon: Rocket,
     title: "เส้นทางสู่ความเป็นเลิศ",
+    titleEn: "Path to Excellence",
     description: "ปูพื้นฐานและเก็บเกี่ยวประสบการณ์แข่งขันจริง สู่เส้นทางนักฟุตบอลอาชีพ",
+    descriptionEn: "Building the foundations and match experience for a future in professional football.",
   },
 ];
 
@@ -239,7 +259,9 @@ export default async function G15WomensSeriesPage() {
             >
               <div className={`flex items-center gap-2.5 px-5 py-3 ${style.bg}`}>
                 <MapPin className="h-4 w-4 text-white" />
-                <h3 className="font-bold text-white">{region}</h3>
+                <h3 className="font-bold text-white">
+                  {region} <span className="font-normal text-white/70">/ {regionEn(region)}</span>
+                </h3>
               </div>
               <div className="divide-y divide-slate-100">
                 {letters.map((letter) => (
@@ -271,28 +293,36 @@ export default async function G15WomensSeriesPage() {
 
   const statsContent =
     finishedMatches.length === 0 ? (
-      <p className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-10 text-center text-sm text-slate-500">
-        ยังไม่มีผลการแข่งขัน จึงยังไม่มีสถิติให้แสดง
-      </p>
+      <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-10 text-center">
+        <p className="text-sm text-slate-500">ยังไม่มีผลการแข่งขัน จึงยังไม่มีสถิติให้แสดง</p>
+        <p className="mt-0.5 text-xs text-slate-400">No results yet, so no statistics to show</p>
+      </div>
     ) : (
       <div className="space-y-6">
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
           {[
-            { label: "ทีมทั้งหมด", value: teams.length },
-            { label: "นัดที่แข่งแล้ว", value: finishedMatches.length },
-            { label: "ประตูรวม", value: totalGoals },
-            { label: "ประตูเฉลี่ย/นัด", value: avgGoals.toFixed(2) },
+            { label: "ทีมทั้งหมด", en: "Teams", value: teams.length },
+            { label: "นัดที่แข่งแล้ว", en: "Played", value: finishedMatches.length },
+            { label: "ประตูรวม", en: "Goals", value: totalGoals },
+            { label: "ประตูเฉลี่ย/นัด", en: "Goals/Match", value: avgGoals.toFixed(2) },
           ].map((s) => (
             <div key={s.label} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
               <p className="text-2xl font-bold text-slate-900">{s.value}</p>
-              <p className="mt-1 text-xs text-slate-500">{s.label}</p>
+              <p className="mt-1 text-xs text-slate-500">
+                {s.label} <span className="text-slate-400">/ {s.en}</span>
+              </p>
             </div>
           ))}
         </div>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <MiniLeaderboard title="ทีมทำประตูสูงสุด" icon={Target} rows={topScorers} valueOf={(r) => r.goalsFor} />
           <MiniLeaderboard
-            title="ทีมเสียประตูน้อยที่สุด"
+            title="ทีมทำประตูสูงสุด / Top Scorers"
+            icon={Target}
+            rows={topScorers}
+            valueOf={(r) => r.goalsFor}
+          />
+          <MiniLeaderboard
+            title="ทีมเสียประตูน้อยที่สุด / Best Defence"
             icon={ShieldCheck}
             rows={bestDefense}
             valueOf={(r) => r.goalsAgainst}
@@ -317,14 +347,16 @@ export default async function G15WomensSeriesPage() {
             >
               <div className={`flex items-center gap-2.5 px-5 py-3 ${style.bg}`}>
                 <MapPin className="h-4 w-4 text-white" />
-                <h3 className="font-bold text-white">{region}</h3>
-                <span className="ml-auto text-xs font-medium text-white/80">{regionTotal} ทีม</span>
+                <h3 className="font-bold text-white">
+                  {region} <span className="font-normal text-white/70">/ {regionEn(region)}</span>
+                </h3>
+                <span className="ml-auto text-xs font-medium text-white/80">{regionTotal} ทีม / teams</span>
               </div>
               <div className="grid grid-cols-1 gap-5 p-5 sm:grid-cols-2">
                 {letters.map((letter) => (
                   <div key={letter}>
                     <p className={`mb-2 inline-flex rounded-full px-2.5 py-0.5 text-xs font-bold ${style.light} ${style.text}`}>
-                      กลุ่ม {letter}
+                      Group / กลุ่ม {letter}
                     </p>
                     <ul className="space-y-1">
                       {groupMap.get(letter)!.map((team) => {
@@ -353,9 +385,9 @@ export default async function G15WomensSeriesPage() {
                               <span className="min-w-0 flex-1 truncate">{team.name}</span>
                               {hasRoster && (
                                 <span className="flex-none text-[10px] text-slate-400">
-                                  {playerCount > 0 && `${playerCount} นักกีฬา`}
+                                  {playerCount > 0 && `${playerCount} players`}
                                   {playerCount > 0 && officialCount > 0 && " · "}
-                                  {officialCount > 0 && `${officialCount} จนท.`}
+                                  {officialCount > 0 && `${officialCount} staff`}
                                 </span>
                               )}
                               <ChevronRight className="h-3.5 w-3.5 flex-none text-slate-400" />
@@ -490,9 +522,16 @@ export default async function G15WomensSeriesPage() {
           <p className="mx-auto mt-4 max-w-2xl text-lg font-semibold text-amber-200">
             เปิดรับสมัครทีมฟุตบอลหญิง รุ่นอายุไม่เกิน 15 ปี จากทั่วประเทศ เข้าร่วมการแข่งขัน
           </p>
+          <p className="mx-auto mt-1 max-w-2xl text-sm font-medium text-amber-200/70">
+            Open call for U15 women&apos;s football teams nationwide
+          </p>
           <p className="mx-auto mt-3 max-w-2xl text-rose-100">
             เวทีการแข่งขันที่เปิดโอกาสให้น้องๆ นักกีฬาฟุตบอลหญิงอายุไม่เกิน 15 ปี ได้แสดงศักยภาพ พัฒนาฝีเท้า
             และเก็บเกี่ยวประสบการณ์การแข่งขันอย่างเต็มที่ ภายใต้การสนับสนุนและการกำกับดูแลจากผู้เชี่ยวชาญของ FIFA
+          </p>
+          <p className="mx-auto mt-2 max-w-2xl text-sm text-rose-100/70">
+            A tournament for U15 women footballers to showcase their skills, develop as players, and gain real
+            match experience, supported and overseen by FIFA experts.
           </p>
         </div>
       </section>
@@ -501,14 +540,16 @@ export default async function G15WomensSeriesPage() {
         {/* แถบสถิติลอยทับรอยต่อ hero กับพื้นหลัง — ดึงจากข้อมูลจริงในระบบ */}
         <div className="relative z-10 -mt-16 grid grid-cols-2 gap-px overflow-hidden rounded-3xl bg-slate-200 shadow-2xl ring-1 ring-black/5 sm:-mt-20 sm:grid-cols-4">
           {[
-            { label: "ทีมเข้าร่วม", value: teams.length },
-            { label: "ภาคทั่วประเทศ", value: regionOrder.length },
-            { label: "นัดการแข่งขัน", value: matches.length },
-            { label: "นัดที่แข่งจบแล้ว", value: finishedMatches.length },
+            { label: "ทีมเข้าร่วม", en: "Teams", value: teams.length },
+            { label: "ภาคทั่วประเทศ", en: "Regions", value: regionOrder.length },
+            { label: "นัดการแข่งขัน", en: "Matches", value: matches.length },
+            { label: "นัดที่แข่งจบแล้ว", en: "Finished", value: finishedMatches.length },
           ].map((s) => (
             <div key={s.label} className="bg-white px-4 py-6 text-center sm:py-7">
               <p className="text-3xl font-extrabold text-slate-900 sm:text-4xl">{s.value}</p>
-              <p className="mt-1 text-xs font-medium text-slate-500">{s.label}</p>
+              <p className="mt-1 text-xs font-medium text-slate-500">
+                {s.label} <span className="text-slate-400">/ {s.en}</span>
+              </p>
             </div>
           ))}
         </div>
@@ -516,8 +557,11 @@ export default async function G15WomensSeriesPage() {
         {recentResults.length > 0 && (
           <div className="mt-10">
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-lg font-bold text-slate-900">ผลการแข่งขันล่าสุด</h2>
-              <span className="text-xs text-slate-400">เลื่อนดูเพิ่มเติม →</span>
+              <div>
+                <h2 className="text-lg font-bold text-slate-900">ผลการแข่งขันล่าสุด</h2>
+                <p className="text-xs text-slate-400">Recent Results</p>
+              </div>
+              <span className="text-xs text-slate-400">เลื่อนดู / Scroll →</span>
             </div>
             <div className="-mx-6 flex gap-3 overflow-x-auto px-6 pb-2">
               {recentResults.map((match) => (
@@ -554,7 +598,7 @@ export default async function G15WomensSeriesPage() {
         )}
 
         <div className="mb-10 mt-10 grid grid-cols-1 gap-6 sm:grid-cols-3">
-          {highlights.map(({ icon: Icon, title, description }) => (
+          {highlights.map(({ icon: Icon, title, titleEn, description, descriptionEn }) => (
             <div
               key={title}
               className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
@@ -562,8 +606,14 @@ export default async function G15WomensSeriesPage() {
               <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-rose-50 text-rose-600">
                 <Icon className="h-5 w-5" />
               </div>
-              <h3 className="font-semibold text-slate-900">{title}</h3>
-              <p className="text-sm text-slate-500">{description}</p>
+              <div>
+                <h3 className="font-semibold text-slate-900">{title}</h3>
+                <p className="text-xs font-medium text-rose-500">{titleEn}</p>
+              </div>
+              <div>
+                <p className="text-sm text-slate-500">{description}</p>
+                <p className="mt-1 text-xs text-slate-400">{descriptionEn}</p>
+              </div>
             </div>
           ))}
         </div>
@@ -575,6 +625,7 @@ export default async function G15WomensSeriesPage() {
             <p className="text-sm text-slate-500">
               อยู่ระหว่างการพัฒนา เร็วๆ นี้จะมีตารางแข่งขันและข้อมูลเพิ่มเติม
             </p>
+            <p className="text-xs text-slate-400">Schedule and details coming soon</p>
           </div>
         ) : (
           <G15Tabs matches={matchesContent} table={tableContent} stats={statsContent} clubs={clubsContent} />

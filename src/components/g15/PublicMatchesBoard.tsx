@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { Search, Calendar, MapPin, Flame } from "lucide-react";
 import { TeamBadge } from "./TeamBadge";
-import { REGION_STYLE, DEFAULT_REGION_STYLE } from "@/lib/g15-region";
+import { REGION_STYLE, DEFAULT_REGION_STYLE, regionEn } from "@/lib/g15-region";
 import { formatMatchDateTime } from "@/lib/g15";
 
 type Team = { id: number; name: string; logoUrl: string | null; groupName: string | null };
@@ -26,15 +26,16 @@ function bangkokDayKey(date: Date) {
   return new Intl.DateTimeFormat("en-CA", { timeZone: BANGKOK_TZ }).format(date);
 }
 
+// ใช้ en-GB แทน th-TH เพื่อไม่ให้ปีกลายเป็นพุทธศักราช (2569) ซึ่งผู้ใช้ต่างชาติจะงงว่าเป็นปีอะไร
 function bangkokDateLabel(date: Date) {
-  return date.toLocaleDateString("th-TH", { timeZone: BANGKOK_TZ, day: "numeric", month: "short", year: "numeric" });
+  return date.toLocaleDateString("en-GB", { timeZone: BANGKOK_TZ, day: "numeric", month: "short", year: "numeric" });
 }
 
 const TIME_FILTERS = [
-  { key: "all", label: "ทั้งหมด" },
-  { key: "today", label: "วันนี้" },
-  { key: "upcoming", label: "นัดถัดไป" },
-  { key: "finished", label: "ผลจบแล้ว" },
+  { key: "all", label: "ทั้งหมด", en: "All" },
+  { key: "today", label: "วันนี้", en: "Today" },
+  { key: "upcoming", label: "นัดถัดไป", en: "Upcoming" },
+  { key: "finished", label: "ผลจบแล้ว", en: "Results" },
 ] as const;
 
 type FilterKey = (typeof TIME_FILTERS)[number]["key"];
@@ -165,18 +166,18 @@ export function PublicMatchesBoard({ matches, regionOrder }: { matches: Match[];
 
   const emptyMessage =
     filter === "today"
-      ? "วันนี้ไม่มีนัดการแข่งขัน"
+      ? { th: "วันนี้ไม่มีนัดการแข่งขัน", en: "No matches today" }
       : filter === "upcoming"
-        ? "ยังไม่มีนัดการแข่งขันที่กำลังจะถึง"
+        ? { th: "ยังไม่มีนัดการแข่งขันที่กำลังจะถึง", en: "No upcoming matches yet" }
         : search
-          ? "ไม่พบทีมที่ค้นหา"
-          : "ยังไม่มีนัดการแข่งขัน";
+          ? { th: "ไม่พบทีมที่ค้นหา", en: "No matching team found" }
+          : { th: "ยังไม่มีนัดการแข่งขัน", en: "No matches yet" };
 
   return (
     <div>
       <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-wrap gap-2">
-          {TIME_FILTERS.map(({ key, label }) => (
+          {TIME_FILTERS.map(({ key, label, en }) => (
             <button
               key={key}
               type="button"
@@ -187,7 +188,7 @@ export function PublicMatchesBoard({ matches, regionOrder }: { matches: Match[];
                   : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
               }`}
             >
-              {label} ({counts[key]})
+              {label} <span className="opacity-70">/ {en}</span> ({counts[key]})
             </button>
           ))}
         </div>
@@ -196,16 +197,17 @@ export function PublicMatchesBoard({ matches, regionOrder }: { matches: Match[];
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="ค้นหาทีม..."
+            placeholder="ค้นหาทีม / Search team"
             className="w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100"
           />
         </div>
       </div>
 
       {grouped.length === 0 ? (
-        <p className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-10 text-center text-sm text-slate-500">
-          {emptyMessage}
-        </p>
+        <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-10 text-center">
+          <p className="text-sm text-slate-500">{emptyMessage.th}</p>
+          <p className="mt-0.5 text-xs text-slate-400">{emptyMessage.en}</p>
+        </div>
       ) : (
         <div className="space-y-6">
           {grouped.map(({ region, total, dateGroups }) => {
@@ -217,8 +219,10 @@ export function PublicMatchesBoard({ matches, regionOrder }: { matches: Match[];
               >
                 <div className={`flex items-center gap-2.5 px-5 py-3 ${style.bg}`}>
                   <MapPin className="h-4 w-4 text-white" />
-                  <h3 className="font-bold text-white">{region}</h3>
-                  <span className="ml-auto text-xs font-medium text-white/80">{total} นัด</span>
+                  <h3 className="font-bold text-white">
+                    {region} <span className="font-normal text-white/70">/ {regionEn(region)}</span>
+                  </h3>
+                  <span className="ml-auto text-xs font-medium text-white/80">{total} นัด / matches</span>
                 </div>
                 <div className="divide-y divide-slate-100">
                   {dateGroups.map(([date, dateMatches]) => (
