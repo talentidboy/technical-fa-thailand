@@ -16,12 +16,11 @@ export function TeamBadge({
   const parsed = parseRegionGroup(team.groupName);
   const style = (parsed && REGION_STYLE[parsed.region]) ?? DEFAULT_REGION_STYLE;
   const { box, text } = SIZE_CLASSES[size];
-  const ring = size === "lg" ? "ring-2 ring-white/40" : "ring-1 ring-slate-200";
 
   if (team.logoUrl) {
     return (
       // eslint-disable-next-line @next/next/no-img-element
-      <img src={team.logoUrl} alt="" className={`${box} flex-none rounded-full object-cover ${ring}`} />
+      <img src={team.logoUrl} alt="" className={`${box} flex-none rounded-full object-cover ring-1 ring-slate-200`} />
     );
   }
   return (

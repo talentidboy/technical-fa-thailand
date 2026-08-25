@@ -3,7 +3,14 @@ import Image from "next/image";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { getStandings, formatMatchDateTime, type StandingGroup, type StandingRow } from "@/lib/g15";
-import { REGION_ORDER, REGION_STYLE, DEFAULT_REGION_STYLE, parseRegionGroup, regionEn } from "@/lib/g15-region";
+import {
+  REGION_ORDER,
+  REGION_STYLE,
+  DEFAULT_REGION_STYLE,
+  parseRegionGroup,
+  regionEn,
+  regionStyle,
+} from "@/lib/g15-region";
 import { LOGO_URL, G15_IMAGE_URL } from "@/lib/brand";
 import { G15Tabs } from "@/components/g15/G15Tabs";
 import { TeamBadge } from "@/components/g15/TeamBadge";
@@ -159,50 +166,47 @@ type SpotlightMatch = {
 
 function MatchSpotlight({ match, isUpcoming }: { match: SpotlightMatch; isUpcoming: boolean }) {
   const isFinished = match.status === "FINISHED" && match.homeScore != null && match.awayScore != null;
+  const style = regionStyle(match.round);
   const regionEnLabel = regionEn(match.round);
 
   return (
-    <div className="relative overflow-hidden rounded-3xl bg-linear-to-br from-rose-950 via-rose-900 to-fuchsia-800 shadow-2xl shadow-rose-950/40 ring-1 ring-white/10">
-      <div className="absolute -left-16 -top-16 h-72 w-72 rounded-full bg-rose-400/20 blur-3xl" />
-      <div className="absolute -right-10 bottom-0 h-64 w-64 rounded-full bg-amber-400/10 blur-3xl" />
-      <Trophy className="pointer-events-none absolute -right-8 -top-8 h-44 w-44 rotate-12 text-white/5" />
+    <div className={`overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-lg ring-1 ${style.ring}`}>
+      <div className={`flex flex-wrap items-center justify-between gap-2 px-5 py-3 ${style.bg}`}>
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-xs font-bold uppercase tracking-widest text-white ring-1 ring-white/30">
+          {isUpcoming ? (
+            <>
+              <Clock className="h-3.5 w-3.5" />
+              นัดถัดไป / Next Match
+            </>
+          ) : (
+            <>
+              <Trophy className="h-3.5 w-3.5" />
+              ผลล่าสุด / Latest Result
+            </>
+          )}
+        </span>
+        <span className="text-xs font-medium text-white/85">
+          {match.round}
+          {regionEnLabel && <span className="opacity-80"> / {regionEnLabel}</span>}
+        </span>
+      </div>
 
-      <div className="relative px-6 py-8 sm:px-10 sm:py-10">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-400/15 px-3 py-1.5 text-xs font-bold uppercase tracking-widest text-amber-300 ring-1 ring-amber-400/30">
-            {isUpcoming ? (
-              <>
-                <Clock className="h-3.5 w-3.5" />
-                นัดถัดไป / Next Match
-              </>
-            ) : (
-              <>
-                <Trophy className="h-3.5 w-3.5" />
-                ผลล่าสุด / Latest Result
-              </>
-            )}
-          </span>
-          <span className="rounded-full bg-white/10 px-3 py-1.5 text-xs font-medium text-white/80">
-            {match.round}
-            {regionEnLabel && <span className="opacity-70"> / {regionEnLabel}</span>}
-          </span>
-        </div>
-
-        <div className="mt-8 flex items-center justify-center gap-4 sm:gap-10">
+      <div className="px-6 py-8 sm:px-10 sm:py-10">
+        <div className="flex items-center justify-center gap-4 sm:gap-10">
           <div className="flex flex-1 flex-col items-center gap-3 text-center">
             <TeamBadge team={match.homeTeam} size="lg" />
-            <span className="max-w-28 truncate text-sm font-bold text-white sm:max-w-40 sm:text-base">
+            <span className="max-w-28 truncate text-sm font-bold text-slate-900 sm:max-w-40 sm:text-base">
               {match.homeTeam.name}
             </span>
           </div>
 
           <div className="flex flex-none flex-col items-center">
             {isFinished ? (
-              <div className="rounded-2xl bg-white/10 px-4 py-3 text-2xl font-extrabold tabular-nums text-white ring-1 ring-white/20 sm:px-6 sm:text-3xl">
+              <div className="rounded-2xl bg-slate-900 px-4 py-3 text-2xl font-extrabold tabular-nums text-white sm:px-6 sm:text-3xl">
                 {match.homeScore} - {match.awayScore}
               </div>
             ) : (
-              <div className="rounded-2xl bg-white/10 px-4 py-3 text-lg font-bold text-white/70 ring-1 ring-white/20 sm:px-6 sm:text-xl">
+              <div className="rounded-2xl bg-slate-100 px-4 py-3 text-lg font-bold text-slate-400 sm:px-6 sm:text-xl">
                 VS
               </div>
             )}
@@ -210,13 +214,13 @@ function MatchSpotlight({ match, isUpcoming }: { match: SpotlightMatch; isUpcomi
 
           <div className="flex flex-1 flex-col items-center gap-3 text-center">
             <TeamBadge team={match.awayTeam} size="lg" />
-            <span className="max-w-28 truncate text-sm font-bold text-white sm:max-w-40 sm:text-base">
+            <span className="max-w-28 truncate text-sm font-bold text-slate-900 sm:max-w-40 sm:text-base">
               {match.awayTeam.name}
             </span>
           </div>
         </div>
 
-        <div className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 border-t border-white/10 pt-5 text-sm text-rose-100/80">
+        <div className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 border-t border-slate-100 pt-5 text-sm text-slate-500">
           <span className="flex items-center gap-1.5">
             <Calendar className="h-4 w-4" />
             {formatMatchDateTime(match.matchDate)}
