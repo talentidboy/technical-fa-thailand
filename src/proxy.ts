@@ -9,7 +9,9 @@ export function proxy(request: NextRequest) {
   const isPublic =
     PUBLIC_PATHS.includes(pathname) ||
     pathname.startsWith("/verify/") ||
-    pathname.startsWith("/news/");
+    pathname.startsWith("/news/") ||
+    pathname === "/g15-womens-series" ||
+    pathname.startsWith("/g15-womens-series/teams/");
 
   if (isPublic) return NextResponse.next();
 
