@@ -25,7 +25,7 @@ export default async function G15TeamDetailPage({
     prisma.g15Match.findMany(),
     prisma.g15Match.findMany({
       where: { OR: [{ homeTeamId: id }, { awayTeamId: id }] },
-      orderBy: [{ matchDate: "asc" }, { createdAt: "asc" }],
+      orderBy: [{ matchDate: "desc" }, { createdAt: "desc" }],
       include: { homeTeam: true, awayTeam: true },
     }),
     // ไม่ดึง idCardNumber/passportNumber มาเลย — ข้อมูลอ่อนไหวเก็บไว้ในฐานข้อมูลอย่างเดียว ไม่แสดงผลที่ไหน
@@ -66,10 +66,11 @@ export default async function G15TeamDetailPage({
     .flatMap((g) => g.rows)
     .find((r) => r.teamId === id);
 
-  // ฟอร์ม 5 นัดล่าสุด (W/D/L) ของทีมนี้ — allMatches เรียงตามวันแข่งจากเก่าไปใหม่อยู่แล้ว
+  // ฟอร์ม 5 นัดล่าสุด (W/D/L) ของทีมนี้ — allMatches เรียงจากล่าสุดไปเก่าสุด จึงหยิบ 5 ตัวแรกแล้วกลับลำดับให้อ่านซ้าย(เก่า)ไปขวา(ล่าสุด)
   const recentForm = allMatches
     .filter((m) => m.status === "FINISHED" && m.homeScore != null && m.awayScore != null)
-    .slice(-5)
+    .slice(0, 5)
+    .reverse()
     .map((m) => {
       const isHome = m.homeTeamId === id;
       const gf = isHome ? m.homeScore! : m.awayScore!;

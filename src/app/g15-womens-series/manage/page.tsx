@@ -26,7 +26,7 @@ export default async function G15ManagePage() {
   const [teams, matches, playerCounts, officialCounts] = await Promise.all([
     prisma.g15Team.findMany({ orderBy: [{ groupName: "asc" }, { name: "asc" }] }),
     prisma.g15Match.findMany({
-      orderBy: [{ matchDate: "asc" }, { createdAt: "asc" }],
+      orderBy: [{ matchDate: "desc" }, { createdAt: "asc" }],
       include: { homeTeam: true, awayTeam: true },
     }),
     prisma.g15Player.groupBy({ by: ["teamId"], _count: { id: true } }),

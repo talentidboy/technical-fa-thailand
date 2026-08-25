@@ -153,7 +153,13 @@ export function PublicMatchesBoard({ matches, regionOrder }: { matches: Match[];
         if (!byDate.has(key)) byDate.set(key, []);
         byDate.get(key)!.push(m);
       }
-      return { region, total: regionMatches.length, dateGroups: Array.from(byDate.entries()) };
+      // วันที่ผ่านมาล่าสุดขึ้นก่อน — นัดที่ยังไม่กำหนดวันแข่งไปอยู่ท้ายสุด
+      const dateGroups = Array.from(byDate.entries()).sort(([, aMatches], [, bMatches]) => {
+        const aTime = aMatches[0].matchDate?.getTime() ?? -Infinity;
+        const bTime = bMatches[0].matchDate?.getTime() ?? -Infinity;
+        return bTime - aTime;
+      });
+      return { region, total: regionMatches.length, dateGroups };
     });
   }, [searched, regionOrder]);
 
