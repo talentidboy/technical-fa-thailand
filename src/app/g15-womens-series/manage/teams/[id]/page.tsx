@@ -48,20 +48,26 @@ export default async function G15ManageTeamPage({
   return (
     <div className="min-h-screen bg-slate-50">
       <header className="sticky top-0 z-20 border-b border-white/10 bg-indigo-950/80 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-6 py-4">
-          <Link href="/g15-womens-series/manage" className="flex items-center gap-2">
-            <Image src={LOGO_URL} alt="FA Thailand" width={36} height={36} className="h-9 w-9 rounded-lg object-cover" />
-            <div>
-              <p className="text-sm font-bold text-white">FA Thailand Technical</p>
-              <p className="text-[11px] text-indigo-300">จัดการข้อมูลทีม G15</p>
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-2 px-4 py-3 sm:gap-3 sm:px-6 sm:py-4">
+          <Link href="/g15-womens-series/manage" className="flex min-w-0 items-center gap-2">
+            <Image
+              src={LOGO_URL}
+              alt="FA Thailand"
+              width={36}
+              height={36}
+              className="h-9 w-9 flex-none rounded-lg object-cover"
+            />
+            <div className="min-w-0">
+              <p className="truncate text-sm font-bold text-white">FA Thailand Technical</p>
+              <p className="truncate text-[11px] text-indigo-300">จัดการข้อมูลทีม G15</p>
             </div>
           </Link>
           <Link
             href="/g15-womens-series/manage"
-            className="inline-flex items-center gap-1.5 rounded-lg border border-white/15 px-3 py-2 text-sm font-medium text-indigo-200 transition-colors hover:bg-white/10 hover:text-white"
+            className="inline-flex flex-none items-center gap-1.5 whitespace-nowrap rounded-lg border border-white/15 px-2.5 py-2 text-sm font-medium text-indigo-200 transition-colors hover:bg-white/10 hover:text-white sm:px-3"
           >
-            <ArrowLeft className="h-4 w-4" />
-            กลับหน้าจัดการข้อมูล
+            <ArrowLeft className="h-4 w-4 flex-none" />
+            <span className="hidden sm:inline">กลับหน้าจัดการข้อมูล</span>
           </Link>
         </div>
       </header>

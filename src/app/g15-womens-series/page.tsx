@@ -26,16 +26,16 @@ import {
 function StandingTable({ group }: { group: StandingGroup }) {
   return (
     <div className="overflow-x-auto">
-      <table className="w-full text-left text-sm">
+      <table className="w-full min-w-90 text-left text-sm">
         <thead className="bg-slate-50 text-[11px] font-medium uppercase tracking-wide text-slate-500">
           <tr>
             <th className="w-10 px-3 py-2.5"></th>
             <th className="px-2 py-2.5">ทีม</th>
             <th className="px-2 py-2.5 text-center">แข่ง</th>
             <th className="px-2 py-2.5 text-center">ชนะ</th>
-            <th className="px-2 py-2.5 text-center">เสมอ</th>
-            <th className="px-2 py-2.5 text-center">แพ้</th>
-            <th className="px-2 py-2.5 text-center">ผลต่าง</th>
+            <th className="hidden px-2 py-2.5 text-center sm:table-cell">เสมอ</th>
+            <th className="hidden px-2 py-2.5 text-center sm:table-cell">แพ้</th>
+            <th className="hidden px-2 py-2.5 text-center sm:table-cell">ผลต่าง</th>
             <th className="px-4 py-2.5 text-center">คะแนน</th>
           </tr>
         </thead>
@@ -59,17 +59,17 @@ function StandingTable({ group }: { group: StandingGroup }) {
                     {rank}
                   </span>
                 </td>
-                <td className="whitespace-nowrap px-2 py-2.5">
+                <td className="max-w-30 px-2 py-2.5 sm:max-w-none">
                   <div className="flex items-center gap-2">
                     <TeamBadge team={{ name: row.teamName, logoUrl: row.logoUrl, groupName: row.groupName }} size="sm" />
-                    <span className="font-medium text-slate-900">{row.teamName}</span>
+                    <span className="truncate font-medium text-slate-900 sm:whitespace-nowrap">{row.teamName}</span>
                   </div>
                 </td>
                 <td className="px-2 py-2.5 text-center text-slate-500">{row.played}</td>
                 <td className="px-2 py-2.5 text-center text-slate-500">{row.won}</td>
-                <td className="px-2 py-2.5 text-center text-slate-500">{row.drawn}</td>
-                <td className="px-2 py-2.5 text-center text-slate-500">{row.lost}</td>
-                <td className="px-2 py-2.5 text-center text-slate-500">
+                <td className="hidden px-2 py-2.5 text-center text-slate-500 sm:table-cell">{row.drawn}</td>
+                <td className="hidden px-2 py-2.5 text-center text-slate-500 sm:table-cell">{row.lost}</td>
+                <td className="hidden px-2 py-2.5 text-center text-slate-500 sm:table-cell">
                   {row.goalDiff > 0 ? `+${row.goalDiff}` : row.goalDiff}
                 </td>
                 <td className="px-4 py-2.5 text-center font-bold text-rose-600">{row.points}</td>
@@ -487,46 +487,46 @@ export default async function G15WomensSeriesPage() {
   return (
     <div className="min-h-screen bg-slate-50">
       <header className="sticky top-0 z-20 border-b border-white/10 bg-indigo-950/80 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-6 py-4">
-          <Link href="/" className="flex items-center gap-2">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-2 px-4 py-3 sm:gap-3 sm:px-6 sm:py-4">
+          <Link href="/" className="flex min-w-0 items-center gap-2">
             <Image
               src={LOGO_URL}
               alt="FA Thailand"
               width={36}
               height={36}
-              className="h-9 w-9 rounded-lg object-cover"
+              className="h-9 w-9 flex-none rounded-lg object-cover"
             />
-            <div>
-              <p className="text-sm font-bold text-white">FA Thailand Technical</p>
-              <p className="text-[11px] text-indigo-300">หมวด: G15 Women&apos;s Football Series</p>
+            <div className="min-w-0">
+              <p className="truncate text-sm font-bold text-white">FA Thailand Technical</p>
+              <p className="truncate text-[11px] text-indigo-300">หมวด: G15 Women&apos;s Football Series</p>
             </div>
           </Link>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-none items-center gap-1.5 sm:gap-2">
             {canManage ? (
               <Link
                 href="/g15-womens-series/manage"
-                className="inline-flex items-center gap-1.5 rounded-lg border border-white/15 px-3 py-2 text-sm font-medium text-indigo-200 transition-colors hover:bg-white/10 hover:text-white"
+                className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg border border-white/15 px-2.5 py-2 text-sm font-medium text-indigo-200 transition-colors hover:bg-white/10 hover:text-white sm:px-3"
               >
-                <Settings className="h-4 w-4" />
-                จัดการข้อมูล
+                <Settings className="h-4 w-4 flex-none" />
+                <span className="hidden sm:inline">จัดการข้อมูล</span>
               </Link>
             ) : (
               !user && (
                 <Link
                   href="/login"
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-white/15 px-3 py-2 text-sm font-medium text-indigo-200 transition-colors hover:bg-white/10 hover:text-white"
+                  className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg border border-white/15 px-2.5 py-2 text-sm font-medium text-indigo-200 transition-colors hover:bg-white/10 hover:text-white sm:px-3"
                 >
-                  <LogIn className="h-4 w-4" />
-                  เข้าสู่ระบบ
+                  <LogIn className="h-4 w-4 flex-none" />
+                  <span className="hidden sm:inline">เข้าสู่ระบบ</span>
                 </Link>
               )
             )}
             <Link
               href="/"
-              className="inline-flex items-center gap-1.5 rounded-lg border border-white/15 px-3 py-2 text-sm font-medium text-indigo-200 transition-colors hover:bg-white/10 hover:text-white"
+              className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg border border-white/15 px-2.5 py-2 text-sm font-medium text-indigo-200 transition-colors hover:bg-white/10 hover:text-white sm:px-3"
             >
-              <ArrowLeft className="h-4 w-4" />
-              กลับหน้าแรก
+              <ArrowLeft className="h-4 w-4 flex-none" />
+              <span className="hidden sm:inline">กลับหน้าแรก</span>
             </Link>
           </div>
         </div>
