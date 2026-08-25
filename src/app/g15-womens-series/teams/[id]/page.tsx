@@ -321,15 +321,42 @@ export default async function G15TeamDetailPage({
                 {allMatches.map((match) => {
                   const isHome = match.homeTeamId === id;
                   const opponent = isHome ? match.awayTeam : match.homeTeam;
+                  const isFinished = match.status === "FINISHED" && match.homeScore != null && match.awayScore != null;
+                  const goalsFor = isFinished ? (isHome ? match.homeScore! : match.awayScore!) : null;
+                  const goalsAgainst = isFinished ? (isHome ? match.awayScore! : match.homeScore!) : null;
+                  const outcome = isFinished ? (goalsFor! > goalsAgainst! ? "W" : goalsFor! < goalsAgainst! ? "L" : "D") : null;
+                  const outcomeBadge =
+                    outcome === "W"
+                      ? "bg-emerald-500"
+                      : outcome === "D"
+                        ? "bg-amber-400"
+                        : outcome === "L"
+                          ? "bg-red-400"
+                          : "bg-slate-200";
+                  const scorePill =
+                    outcome === "W"
+                      ? "bg-emerald-600"
+                      : outcome === "D"
+                        ? "bg-amber-500"
+                        : outcome === "L"
+                          ? "bg-red-500"
+                          : "bg-rose-600";
                   return (
                     <li key={match.id} className="flex flex-wrap items-center justify-between gap-3 px-5 py-3.5">
                       <div className="flex items-center gap-3">
+                        {outcome && (
+                          <span
+                            className={`flex h-6 w-6 flex-none items-center justify-center rounded-full text-[11px] font-bold text-white ${outcomeBadge}`}
+                          >
+                            {outcome}
+                          </span>
+                        )}
                         <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-500">
                           {isHome ? "เหย้า" : "เยือน"}
                         </span>
                         <span className="font-medium text-slate-900">พบ {opponent.name}</span>
-                        {match.status === "FINISHED" ? (
-                          <span className="rounded-lg bg-rose-600 px-2.5 py-1 text-xs font-bold text-white">
+                        {isFinished ? (
+                          <span className={`rounded-lg px-2.5 py-1 text-xs font-bold text-white ${scorePill}`}>
                             {match.homeScore} - {match.awayScore}
                           </span>
                         ) : (
