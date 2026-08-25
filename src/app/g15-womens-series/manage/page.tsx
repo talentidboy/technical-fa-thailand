@@ -292,7 +292,11 @@ export default async function G15ManagePage() {
                       </summary>
 
                     <div className="border-t border-slate-100 px-5 py-4">
-                      <form action={updateMatch} className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
+                      <form
+                        id={`match-form-${match.id}`}
+                        action={updateMatch}
+                        className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7"
+                      >
                         <input type="hidden" name="id" value={match.id} />
                         <div className="col-span-2">
                           <Field label="รอบการแข่งขัน" name="round" required defaultValue={match.round} />
@@ -340,25 +344,26 @@ export default async function G15ManagePage() {
                             />
                           </div>
                         </div>
-                        <div className="col-span-2 flex items-end gap-2 sm:col-span-4 lg:col-span-7">
+                      </form>
+                      <div className="mt-4 flex items-center justify-between gap-3 border-t border-slate-100 pt-3">
+                        <form action={deleteMatch}>
+                          <input type="hidden" name="id" value={match.id} />
                           <button
                             type="submit"
-                            className="rounded-lg bg-emerald-600 px-4 py-2.5 text-xs font-medium text-white transition-colors hover:bg-emerald-700"
+                            className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-medium text-red-500 transition-colors hover:bg-red-50"
                           >
-                            บันทึก
+                            <Trash2 className="h-3.5 w-3.5" />
+                            ลบนัดนี้
                           </button>
-                        </div>
-                      </form>
-                      <form action={deleteMatch} className="mt-2">
-                        <input type="hidden" name="id" value={match.id} />
+                        </form>
                         <button
                           type="submit"
-                          className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs font-medium text-red-500 transition-colors hover:bg-red-50"
+                          form={`match-form-${match.id}`}
+                          className="rounded-lg bg-emerald-600 px-5 py-2.5 text-xs font-medium text-white shadow-sm shadow-emerald-200 transition-colors hover:bg-emerald-700"
                         >
-                          <Trash2 className="h-3.5 w-3.5" />
-                          ลบนัดนี้
+                          บันทึก
                         </button>
-                      </form>
+                      </div>
                     </div>
                   </details>
                 ),

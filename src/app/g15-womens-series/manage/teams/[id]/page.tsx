@@ -151,7 +151,11 @@ export default async function G15ManageTeamPage({
                     </summary>
 
                     <div className="border-t border-slate-100 px-6 py-4">
-                      <form action={updatePlayer} className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-6">
+                      <form
+                        id={`player-form-${p.id}`}
+                        action={updatePlayer}
+                        className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-6"
+                      >
                         <input type="hidden" name="id" value={p.id} />
                         <input type="hidden" name="teamId" value={team.id} />
                         <Field label="เบอร์ทะเบียน" name="no" type="number" defaultValue={p.no?.toString() ?? ""} />
@@ -181,26 +185,27 @@ export default async function G15ManageTeamPage({
                           type="number"
                           defaultValue={p.heightCm?.toString() ?? ""}
                         />
-                        <div className="col-span-full flex items-center gap-2">
+                      </form>
+                      <div className="mt-4 flex items-center justify-between gap-3 border-t border-slate-100 pt-3">
+                        <form action={deletePlayer}>
+                          <input type="hidden" name="id" value={p.id} />
+                          <input type="hidden" name="teamId" value={team.id} />
                           <button
                             type="submit"
-                            className="rounded-lg bg-slate-900 px-4 py-2 text-xs font-medium text-white transition-colors hover:bg-slate-800"
+                            className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-medium text-red-500 transition-colors hover:bg-red-50"
                           >
-                            บันทึก
+                            <Trash2 className="h-3.5 w-3.5" />
+                            ลบนักกีฬาคนนี้
                           </button>
-                        </div>
-                      </form>
-                      <form action={deletePlayer} className="mt-2">
-                        <input type="hidden" name="id" value={p.id} />
-                        <input type="hidden" name="teamId" value={team.id} />
+                        </form>
                         <button
                           type="submit"
-                          className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs font-medium text-red-500 transition-colors hover:bg-red-50"
+                          form={`player-form-${p.id}`}
+                          className="rounded-lg bg-slate-900 px-5 py-2.5 text-xs font-medium text-white transition-colors hover:bg-slate-800"
                         >
-                          <Trash2 className="h-3.5 w-3.5" />
-                          ลบนักกีฬาคนนี้
+                          บันทึก
                         </button>
-                      </form>
+                      </div>
                     </div>
                   </details>
                 </li>
@@ -260,7 +265,11 @@ export default async function G15ManageTeamPage({
                     </summary>
 
                     <div className="border-t border-slate-100 px-6 py-4">
-                      <form action={updateOfficial} className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-5">
+                      <form
+                        id={`official-form-${o.id}`}
+                        action={updateOfficial}
+                        className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-5"
+                      >
                         <input type="hidden" name="id" value={o.id} />
                         <input type="hidden" name="teamId" value={team.id} />
                         <Field label="เบอร์ทะเบียน" name="no" type="number" defaultValue={o.no?.toString() ?? ""} />
@@ -273,26 +282,27 @@ export default async function G15ManageTeamPage({
                         <Field label="บทบาท" name="role" defaultValue={o.role ?? ""} />
                         <Field label="วันเกิด" name="dob" type="date" defaultValue={toDateInputValue(o.dob)} />
                         <Field label="ใบอนุญาตผู้ฝึกสอน" name="coachingLicense" defaultValue={o.coachingLicense ?? ""} />
-                        <div className="col-span-full flex items-center gap-2">
+                      </form>
+                      <div className="mt-4 flex items-center justify-between gap-3 border-t border-slate-100 pt-3">
+                        <form action={deleteOfficial}>
+                          <input type="hidden" name="id" value={o.id} />
+                          <input type="hidden" name="teamId" value={team.id} />
                           <button
                             type="submit"
-                            className="rounded-lg bg-slate-900 px-4 py-2 text-xs font-medium text-white transition-colors hover:bg-slate-800"
+                            className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-medium text-red-500 transition-colors hover:bg-red-50"
                           >
-                            บันทึก
+                            <Trash2 className="h-3.5 w-3.5" />
+                            ลบเจ้าหน้าที่คนนี้
                           </button>
-                        </div>
-                      </form>
-                      <form action={deleteOfficial} className="mt-2">
-                        <input type="hidden" name="id" value={o.id} />
-                        <input type="hidden" name="teamId" value={team.id} />
+                        </form>
                         <button
                           type="submit"
-                          className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs font-medium text-red-500 transition-colors hover:bg-red-50"
+                          form={`official-form-${o.id}`}
+                          className="rounded-lg bg-slate-900 px-5 py-2.5 text-xs font-medium text-white transition-colors hover:bg-slate-800"
                         >
-                          <Trash2 className="h-3.5 w-3.5" />
-                          ลบเจ้าหน้าที่คนนี้
+                          บันทึก
                         </button>
-                      </form>
+                      </div>
                     </div>
                   </details>
                 </li>
