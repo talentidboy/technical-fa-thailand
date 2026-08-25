@@ -14,6 +14,7 @@ import { MatchStatusBoard } from "@/components/g15/MatchStatusBoard";
 import { TeamBadge } from "@/components/g15/TeamBadge";
 import { LogoPasteField } from "@/components/g15/LogoPasteField";
 import { RegionFilteredTeamSelects } from "@/components/g15/RegionFilteredTeamSelects";
+import { RoundField } from "@/components/g15/RoundField";
 import { Trash2, ArrowLeft, MapPin, ChevronRight, ChevronDown, Flame } from "lucide-react";
 
 export default async function G15ManagePage() {
@@ -60,6 +61,8 @@ export default async function G15ManagePage() {
     (acc[match.round] ??= []).push(match);
     return acc;
   }, {});
+  // รายชื่อ "รอบการแข่งขัน" ที่เคยใช้จริงแล้ว — ให้เลือกจากดรอปดาวแทนพิมพ์เอง กันสะกดพลาดจนกลายเป็นรอบใหม่โดยไม่ตั้งใจ
+  const existingRounds = Object.keys(matchesByRound).sort((a, b) => a.localeCompare(b, "th"));
 
   const addTeamForm = (
     <form action={createTeam} className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -84,12 +87,7 @@ export default async function G15ManagePage() {
       <p className="text-sm text-slate-400">ต้องมีทีมอย่างน้อย 2 ทีมก่อนจึงจะเพิ่มนัดการแข่งขันได้</p>
     ) : (
       <form action={createMatch} className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <Field
-          label="รอบการแข่งขัน"
-          name="round"
-          required
-          placeholder="ภาคใต้ / กลุ่ม A - นัดที่ 1 / รอบรองชนะเลิศ"
-        />
+        <RoundField existingRounds={existingRounds} />
         <Field label="วันเวลาแข่งขัน" name="matchDate" type="datetime-local" />
         <Field label="สนาม" name="venue" placeholder="สนามกีฬาแห่งชาติ" />
         <RegionFilteredTeamSelects teams={teams} />
@@ -292,7 +290,7 @@ export default async function G15ManagePage() {
                       >
                         <input type="hidden" name="id" value={match.id} />
                         <div className="col-span-2">
-                          <Field label="รอบการแข่งขัน" name="round" required defaultValue={match.round} />
+                          <RoundField existingRounds={existingRounds} defaultValue={match.round} />
                         </div>
                         <RegionFilteredTeamSelects
                           teams={teams}
