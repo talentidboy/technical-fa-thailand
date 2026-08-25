@@ -123,6 +123,8 @@ export default async function HomePage() {
   const roleLabel =
     user?.role === "ADMIN" ? "ผู้ดูแลระบบ" : user?.role === "STAFF" ? "เจ้าหน้าที่" : null;
 
+  const latestAnnouncement = announcements[0] ?? null;
+
   return (
     <div className="min-h-screen bg-slate-50">
       <header className="sticky top-0 z-20 border-b border-white/10 bg-indigo-950/80 backdrop-blur">
@@ -317,6 +319,23 @@ export default async function HomePage() {
             ศูนย์รวมระบบงานด้านเทคนิคของสมาคมกีฬาฟุตบอลแห่งประเทศไทย
             เลือกหมวดที่ต้องการเข้าใช้งานด้านล่าง
           </p>
+
+          {latestAnnouncement && (
+            <Link
+              href={`/news/${latestAnnouncement.id}`}
+              className="group mx-auto mt-6 flex max-w-md items-center gap-2.5 rounded-full border border-amber-400/30 bg-amber-400/10 py-2 pl-2 pr-4 text-left backdrop-blur-sm transition-colors hover:bg-amber-400/20"
+            >
+              <span className="inline-flex flex-none items-center gap-1 rounded-full bg-amber-400 px-2.5 py-1 text-[11px] font-bold text-amber-950">
+                <Megaphone className="h-3 w-3" />
+                ข่าวล่าสุด
+              </span>
+              <span className="min-w-0 flex-1 truncate text-xs font-medium text-amber-100 sm:text-sm">
+                {latestAnnouncement.title}
+              </span>
+              <ArrowRight className="h-3.5 w-3.5 flex-none text-amber-200 transition-transform group-hover:translate-x-0.5" />
+            </Link>
+          )}
+
           <Link
             href="#categories"
             className="mt-8 inline-flex items-center gap-1.5 text-xs font-medium text-indigo-300 transition-colors hover:text-white"
