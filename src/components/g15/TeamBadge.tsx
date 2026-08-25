@@ -3,6 +3,7 @@ import { REGION_STYLE, DEFAULT_REGION_STYLE, parseRegionGroup } from "@/lib/g15-
 const SIZE_CLASSES = {
   sm: { box: "h-6 w-6", text: "text-[10px]" },
   md: { box: "h-8 w-8", text: "text-xs" },
+  lg: { box: "h-16 w-16 sm:h-20 sm:w-20", text: "text-2xl" },
 } as const;
 
 export function TeamBadge({
@@ -15,11 +16,12 @@ export function TeamBadge({
   const parsed = parseRegionGroup(team.groupName);
   const style = (parsed && REGION_STYLE[parsed.region]) ?? DEFAULT_REGION_STYLE;
   const { box, text } = SIZE_CLASSES[size];
+  const ring = size === "lg" ? "ring-2 ring-white/40" : "ring-1 ring-slate-200";
 
   if (team.logoUrl) {
     return (
       // eslint-disable-next-line @next/next/no-img-element
-      <img src={team.logoUrl} alt="" className={`${box} flex-none rounded-full object-cover ring-1 ring-slate-200`} />
+      <img src={team.logoUrl} alt="" className={`${box} flex-none rounded-full object-cover ${ring}`} />
     );
   }
   return (

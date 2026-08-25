@@ -23,6 +23,7 @@ import {
   Rocket,
   Users,
   CheckCircle2,
+  Clock,
 } from "lucide-react";
 
 function StandingTable({ group }: { group: StandingGroup }) {
@@ -145,6 +146,93 @@ function MiniLeaderboard({
   );
 }
 
+type SpotlightMatch = {
+  round: string;
+  matchDate: Date | null;
+  venue: string | null;
+  homeTeam: { name: string; logoUrl: string | null; groupName: string | null };
+  awayTeam: { name: string; logoUrl: string | null; groupName: string | null };
+  homeScore: number | null;
+  awayScore: number | null;
+  status: string;
+};
+
+function MatchSpotlight({ match, isUpcoming }: { match: SpotlightMatch; isUpcoming: boolean }) {
+  const isFinished = match.status === "FINISHED" && match.homeScore != null && match.awayScore != null;
+  const regionEnLabel = regionEn(match.round);
+
+  return (
+    <div className="relative overflow-hidden rounded-3xl bg-linear-to-br from-rose-950 via-rose-900 to-fuchsia-800 shadow-2xl shadow-rose-950/40 ring-1 ring-white/10">
+      <div className="absolute -left-16 -top-16 h-72 w-72 rounded-full bg-rose-400/20 blur-3xl" />
+      <div className="absolute -right-10 bottom-0 h-64 w-64 rounded-full bg-amber-400/10 blur-3xl" />
+      <Trophy className="pointer-events-none absolute -right-8 -top-8 h-44 w-44 rotate-12 text-white/5" />
+
+      <div className="relative px-6 py-8 sm:px-10 sm:py-10">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-400/15 px-3 py-1.5 text-xs font-bold uppercase tracking-widest text-amber-300 ring-1 ring-amber-400/30">
+            {isUpcoming ? (
+              <>
+                <Clock className="h-3.5 w-3.5" />
+                นัดถัดไป / Next Match
+              </>
+            ) : (
+              <>
+                <Trophy className="h-3.5 w-3.5" />
+                ผลล่าสุด / Latest Result
+              </>
+            )}
+          </span>
+          <span className="rounded-full bg-white/10 px-3 py-1.5 text-xs font-medium text-white/80">
+            {match.round}
+            {regionEnLabel && <span className="opacity-70"> / {regionEnLabel}</span>}
+          </span>
+        </div>
+
+        <div className="mt-8 flex items-center justify-center gap-4 sm:gap-10">
+          <div className="flex flex-1 flex-col items-center gap-3 text-center">
+            <TeamBadge team={match.homeTeam} size="lg" />
+            <span className="max-w-28 truncate text-sm font-bold text-white sm:max-w-40 sm:text-base">
+              {match.homeTeam.name}
+            </span>
+          </div>
+
+          <div className="flex flex-none flex-col items-center">
+            {isFinished ? (
+              <div className="rounded-2xl bg-white/10 px-4 py-3 text-2xl font-extrabold tabular-nums text-white ring-1 ring-white/20 sm:px-6 sm:text-3xl">
+                {match.homeScore} - {match.awayScore}
+              </div>
+            ) : (
+              <div className="rounded-2xl bg-white/10 px-4 py-3 text-lg font-bold text-white/70 ring-1 ring-white/20 sm:px-6 sm:text-xl">
+                VS
+              </div>
+            )}
+          </div>
+
+          <div className="flex flex-1 flex-col items-center gap-3 text-center">
+            <TeamBadge team={match.awayTeam} size="lg" />
+            <span className="max-w-28 truncate text-sm font-bold text-white sm:max-w-40 sm:text-base">
+              {match.awayTeam.name}
+            </span>
+          </div>
+        </div>
+
+        <div className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 border-t border-white/10 pt-5 text-sm text-rose-100/80">
+          <span className="flex items-center gap-1.5">
+            <Calendar className="h-4 w-4" />
+            {formatMatchDateTime(match.matchDate)}
+          </span>
+          {match.venue && (
+            <span className="flex items-center gap-1.5">
+              <MapPin className="h-4 w-4" />
+              {match.venue}
+            </span>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 const highlights = [
   {
     icon: Globe2,
@@ -243,6 +331,14 @@ export default async function G15WomensSeriesPage() {
   const recentResults = [...finishedMatches]
     .sort((a, b) => (b.matchDate?.getTime() ?? 0) - (a.matchDate?.getTime() ?? 0))
     .slice(0, 10);
+
+  // การ์ดพิเศษด้านบน — นัดถัดไปที่ใกล้ที่สุด ถ้าไม่มีนัดที่ยังไม่ถึงวันแข่งเลย ใช้ผลล่าสุดแทน
+  const now = new Date();
+  const nextMatch = matches
+    .filter((m) => m.status !== "FINISHED" && m.matchDate && m.matchDate.getTime() > now.getTime())
+    .sort((a, b) => a.matchDate!.getTime() - b.matchDate!.getTime())[0];
+  const spotlightMatch = nextMatch ?? recentResults[0] ?? null;
+  const spotlightIsUpcoming = !!nextMatch;
 
   const matchesContent = <PublicMatchesBoard matches={matches} regionOrder={REGION_ORDER} />;
 
@@ -576,6 +672,12 @@ export default async function G15WomensSeriesPage() {
             </div>
           ))}
         </div>
+
+        {spotlightMatch && (
+          <div className="mt-8">
+            <MatchSpotlight match={spotlightMatch} isUpcoming={spotlightIsUpcoming} />
+          </div>
+        )}
 
         {recentResults.length > 0 && (
           <div className="mt-10">
