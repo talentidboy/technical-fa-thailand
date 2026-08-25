@@ -15,11 +15,13 @@ export default async function NewsDetailPage({
   const { id } = await params;
   const announcement = await prisma.announcement.findUnique({
     where: { id: Number(id) },
+    include: { author: true },
   });
 
   if (!announcement) notFound();
 
-  const date = announcement.createdAt.toLocaleDateString("th-TH", {
+  // ระบุปฏิทินเป็นเกรกอเรียนตรงๆ (-u-ca-gregory) เพราะ th-TH ปกติจะแปลงปีเป็นพุทธศักราชอัตโนมัติ (เช่น 2569 แทน 2026)
+  const date = announcement.createdAt.toLocaleDateString("th-TH-u-ca-gregory", {
     year: "numeric",
     month: "long",
     day: "numeric",
@@ -51,54 +53,70 @@ export default async function NewsDetailPage({
         </div>
       </header>
 
-      <article className="mx-auto max-w-3xl px-6 py-10">
+      {/* Hero — รูปเต็มความกว้าง พร้อมไล่สีคลุมด้านล่างเพื่อวางแท็ก/วันที่/หัวข้อทับได้ */}
+      <div className="relative h-64 w-full overflow-hidden sm:h-96">
         {announcement.imageUrl ? (
-          <div className="relative h-56 w-full overflow-hidden rounded-2xl sm:h-80">
-            <Image
-              src={announcement.imageUrl}
-              alt={announcement.title}
-              fill
-              className="object-cover"
-            />
-          </div>
+          <Image
+            src={announcement.imageUrl}
+            alt={announcement.title}
+            fill
+            priority
+            className="object-cover"
+          />
         ) : (
-          <div className="flex h-40 w-full items-center justify-center rounded-2xl bg-linear-to-br from-indigo-600 to-indigo-900">
-            <Megaphone className="h-10 w-10 text-amber-300" />
-          </div>
+          <div className="absolute inset-0 bg-linear-to-br from-indigo-700 via-indigo-800 to-indigo-950" />
+        )}
+        <div className="absolute inset-0 bg-linear-to-t from-indigo-950/95 via-indigo-950/30 to-indigo-950/10" />
+        {!announcement.imageUrl && (
+          <Megaphone className="absolute right-8 top-8 h-16 w-16 text-amber-300/30" />
         )}
 
-        <div className="mt-6 flex items-center gap-3">
-          {announcement.tag && (
-            <span className="inline-flex rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-medium text-indigo-600">
-              {announcement.tag}
-            </span>
-          )}
-          <span className="inline-flex items-center gap-1.5 text-xs text-slate-400">
-            <Calendar className="h-3.5 w-3.5" />
-            {date}
-          </span>
+        <div className="absolute inset-x-0 bottom-0">
+          <div className="mx-auto max-w-3xl px-6 pb-7 sm:pb-9">
+            <div className="flex flex-wrap items-center gap-3">
+              {announcement.tag && (
+                <span className="inline-flex rounded-full bg-amber-400 px-2.5 py-1 text-xs font-bold text-amber-950">
+                  {announcement.tag}
+                </span>
+              )}
+              <span className="inline-flex items-center gap-1.5 text-xs font-medium text-indigo-200">
+                <Calendar className="h-3.5 w-3.5" />
+                {date}
+              </span>
+              {announcement.author && (
+                <span className="text-xs font-medium text-indigo-300">โดย {announcement.author.email}</span>
+              )}
+            </div>
+            <h1 className="mt-3 text-2xl font-bold text-white drop-shadow-sm sm:text-4xl">
+              {announcement.title}
+            </h1>
+          </div>
         </div>
+      </div>
 
-        <h1 className="mt-3 text-2xl font-bold text-slate-900 sm:text-3xl">
-          {announcement.title}
-        </h1>
-
-        <p className="mt-6 whitespace-pre-line text-base leading-relaxed text-slate-700">
+      <article className="mx-auto max-w-3xl px-6 py-10 sm:py-12">
+        <p className="whitespace-pre-line text-base leading-loose text-slate-700">
           {announcement.content || announcement.excerpt}
         </p>
 
         {announcement.linkUrl && (
-          <div className="mt-8">
+          <div className="mt-10 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             {isFacebookUrl(announcement.linkUrl) ? (
-              <div className="flex justify-center">
-                <FacebookEmbed url={announcement.linkUrl} />
-              </div>
+              <>
+                <p className="mb-4 flex items-center gap-2 text-sm font-semibold text-slate-500">
+                  <ExternalLink className="h-4 w-4" />
+                  โพสต์ต้นฉบับ
+                </p>
+                <div className="flex justify-center">
+                  <FacebookEmbed url={announcement.linkUrl} />
+                </div>
+              </>
             ) : (
               <a
                 href={announcement.linkUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-indigo-600 shadow-sm transition-colors hover:bg-indigo-50"
+                className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-indigo-700"
               >
                 <ExternalLink className="h-4 w-4" />
                 ดูลิงก์เพิ่มเติม
@@ -106,6 +124,14 @@ export default async function NewsDetailPage({
             )}
           </div>
         )}
+
+        <Link
+          href="/#news"
+          className="mt-10 inline-flex items-center gap-1.5 text-sm font-medium text-indigo-600 hover:text-indigo-700"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          กลับไปดูข่าวอื่นๆ
+        </Link>
       </article>
     </div>
   );
