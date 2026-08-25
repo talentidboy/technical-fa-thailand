@@ -21,6 +21,8 @@ import {
   Globe2,
   Award,
   Rocket,
+  Users,
+  CheckCircle2,
 } from "lucide-react";
 
 function StandingTable({ group }: { group: StandingGroup }) {
@@ -429,7 +431,7 @@ export default async function G15WomensSeriesPage() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <header className="sticky top-0 z-20 border-b border-white/10 bg-indigo-950/80 backdrop-blur">
+      <header className="sticky top-0 z-20 border-b border-white/10 bg-rose-950/90 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-2 px-4 py-3 sm:gap-3 sm:px-6 sm:py-4">
           <Link href="/" className="flex min-w-0 items-center gap-2">
             <Image
@@ -441,14 +443,14 @@ export default async function G15WomensSeriesPage() {
             />
             <div className="min-w-0">
               <p className="truncate text-sm font-bold text-white">FA Thailand Technical</p>
-              <p className="truncate text-[11px] text-indigo-300">หมวด: G15 Women&apos;s Football Series</p>
+              <p className="truncate text-[11px] text-rose-300">หมวด: G15 Women&apos;s Football Series</p>
             </div>
           </Link>
           <div className="flex flex-none items-center gap-1.5 sm:gap-2">
             {canManage ? (
               <Link
                 href="/g15-womens-series/manage"
-                className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg border border-white/15 px-2.5 py-2 text-sm font-medium text-indigo-200 transition-colors hover:bg-white/10 hover:text-white sm:px-3"
+                className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg border border-white/15 px-2.5 py-2 text-sm font-medium text-rose-200 transition-colors hover:bg-white/10 hover:text-white sm:px-3"
               >
                 <Settings className="h-4 w-4 flex-none" />
                 <span className="hidden sm:inline">จัดการข้อมูล</span>
@@ -457,7 +459,7 @@ export default async function G15WomensSeriesPage() {
               !user && (
                 <Link
                   href="/login"
-                  className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg border border-white/15 px-2.5 py-2 text-sm font-medium text-indigo-200 transition-colors hover:bg-white/10 hover:text-white sm:px-3"
+                  className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg border border-white/15 px-2.5 py-2 text-sm font-medium text-rose-200 transition-colors hover:bg-white/10 hover:text-white sm:px-3"
                 >
                   <LogIn className="h-4 w-4 flex-none" />
                   <span className="hidden sm:inline">เข้าสู่ระบบ</span>
@@ -540,12 +542,33 @@ export default async function G15WomensSeriesPage() {
         {/* แถบสถิติลอยทับรอยต่อ hero กับพื้นหลัง — ดึงจากข้อมูลจริงในระบบ */}
         <div className="relative z-10 -mt-16 grid grid-cols-2 gap-px overflow-hidden rounded-3xl bg-slate-200 shadow-2xl ring-1 ring-black/5 sm:-mt-20 sm:grid-cols-4">
           {[
-            { label: "ทีมเข้าร่วม", en: "Teams", value: teams.length },
-            { label: "ภาคทั่วประเทศ", en: "Regions", value: regionOrder.length },
-            { label: "นัดการแข่งขัน", en: "Matches", value: matches.length },
-            { label: "นัดที่แข่งจบแล้ว", en: "Finished", value: finishedMatches.length },
+            { label: "ทีมเข้าร่วม", en: "Teams", value: teams.length, icon: Users, color: "bg-rose-50 text-rose-600" },
+            {
+              label: "ภาคทั่วประเทศ",
+              en: "Regions",
+              value: regionOrder.length,
+              icon: MapPin,
+              color: "bg-fuchsia-50 text-fuchsia-600",
+            },
+            {
+              label: "นัดการแข่งขัน",
+              en: "Matches",
+              value: matches.length,
+              icon: Calendar,
+              color: "bg-amber-50 text-amber-600",
+            },
+            {
+              label: "นัดที่แข่งจบแล้ว",
+              en: "Finished",
+              value: finishedMatches.length,
+              icon: CheckCircle2,
+              color: "bg-emerald-50 text-emerald-600",
+            },
           ].map((s) => (
             <div key={s.label} className="bg-white px-4 py-6 text-center sm:py-7">
+              <div className={`mx-auto mb-2 flex h-9 w-9 items-center justify-center rounded-xl ${s.color}`}>
+                <s.icon className="h-4.5 w-4.5" />
+              </div>
               <p className="text-3xl font-extrabold text-slate-900 sm:text-4xl">{s.value}</p>
               <p className="mt-1 text-xs font-medium text-slate-500">
                 {s.label} <span className="text-slate-400">/ {s.en}</span>
