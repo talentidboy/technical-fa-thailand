@@ -7,7 +7,7 @@ export function G15Header({ user }: { user: { role: string } | null }) {
   const canManage = user?.role === "ADMIN" || user?.role === "STAFF";
 
   return (
-    <header className="sticky top-0 z-20 border-b border-white/10 bg-rose-950/90 backdrop-blur">
+    <header className="border-b border-white/10 bg-rose-950/90 backdrop-blur">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-2 px-4 py-2.5 sm:gap-3 sm:px-6 sm:py-3">
         {/* ตราสัญลักษณ์ของทัวร์นาเมนต์เอง (ไม่ใช่โลโก้ FA Thailand เฉยๆ) วางไว้เด่นชัดซ้ายสุด เหมือนเว็บทัวร์นาเมนต์ทั่วไป */}
         <Link href="/g15-womens-series" className="flex min-w-0 items-center gap-2.5">

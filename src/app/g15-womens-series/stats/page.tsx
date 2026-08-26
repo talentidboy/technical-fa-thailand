@@ -1,8 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { getStandings } from "@/lib/g15";
-import { G15Header } from "@/components/g15/G15Header";
-import { G15Nav } from "@/components/g15/G15Nav";
+import { G15Chrome } from "@/components/g15/G15Chrome";
 import { MiniLeaderboard } from "@/components/g15/MiniLeaderboard";
 import { Target, ShieldCheck } from "lucide-react";
 
@@ -25,8 +24,7 @@ export default async function G15StatsPage() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <G15Header user={user} />
-      <G15Nav />
+      <G15Chrome user={user} />
       <div className="mx-auto max-w-6xl px-6 py-10">
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-slate-900">สถิติ</h1>

@@ -5,8 +5,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { getStandings, formatMatchDateShort, formatMatchTimeShort } from "@/lib/g15";
 import { REGION_STYLE, DEFAULT_REGION_STYLE, regionEn, groupTeamsByRegion, groupStandingsByRegion } from "@/lib/g15-region";
 import { G15_HERO_BANNER_URL } from "@/lib/brand";
-import { G15Header } from "@/components/g15/G15Header";
-import { G15Nav } from "@/components/g15/G15Nav";
+import { G15Chrome } from "@/components/g15/G15Chrome";
 import { TeamBadge } from "@/components/g15/TeamBadge";
 import { StandingTable } from "@/components/g15/StandingTable";
 import { MatchSpotlight } from "@/components/g15/MatchSpotlight";
@@ -69,8 +68,7 @@ export default async function G15WomensSeriesPage() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <G15Header user={user} />
-      <G15Nav />
+      <G15Chrome user={user} />
 
       {/* Hero — แบนเนอร์ทางการมีชื่อรายการ/สโลแกน/โลโก้ในภาพอยู่แล้ว จึงโชว์เต็มความกว้างไปเลยโดยไม่มีข้อความทับ */}
       <section className="relative overflow-hidden bg-linear-to-br from-rose-950 via-rose-900 to-fuchsia-800 pb-16 sm:pb-20">
