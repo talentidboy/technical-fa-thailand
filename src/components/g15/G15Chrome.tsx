@@ -8,7 +8,7 @@ import { ArrowLeft, Settings, LogIn } from "lucide-react";
 
 const NAV_LINKS = [
   { href: "/g15-womens-series", label: "หน้าแรก", en: "Home" },
-  { href: "/g15-womens-series/matches", label: "ตารางและผล", en: "Matches & Results" },
+  { href: "/g15-womens-series/matches", label: "การแข่งขันและผล", en: "Matches & Results" },
   { href: "/g15-womens-series/standings", label: "ตารางคะแนน", en: "Standings" },
   { href: "/g15-womens-series/stats", label: "สถิติ", en: "Statistics" },
   { href: "/g15-womens-series/teams", label: "ทีมที่เข้าร่วม", en: "Teams" },
@@ -22,14 +22,15 @@ export function G15Chrome({ user }: { user: { role: string } | null }) {
 
   return (
     <header className="sticky top-0 z-20 border-b border-white/10 bg-rose-950/90 backdrop-blur">
-      <div className="mx-auto flex max-w-6xl items-center gap-2 px-4 py-2 sm:gap-4 sm:px-6">
+      <div className="mx-auto flex h-16 max-w-6xl items-center gap-2 px-4 sm:h-20 sm:gap-4 sm:px-6">
+        {/* โลโก้ใหญ่กว่าความสูงของแถบเอง ตั้งใจให้ล้นเส้นขอบบน-ล่างของแถบออกมา */}
         <Link href="/g15-womens-series" className="flex flex-none items-center gap-2">
           <Image
             src={G15_IMAGE_URL}
             alt="G15 Women's Football Series"
-            width={80}
-            height={80}
-            className="h-10 w-10 object-contain sm:h-12 sm:w-12"
+            width={140}
+            height={140}
+            className="h-20 w-20 object-contain drop-shadow-xl sm:h-28 sm:w-28"
           />
           <span className="hidden truncate text-sm font-bold text-white lg:inline">
             G15 Women&apos;s Football Series
