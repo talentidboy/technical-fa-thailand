@@ -9,15 +9,17 @@ export function G15Header({ user }: { user: { role: string } | null }) {
   return (
     <header className="border-b border-white/10 bg-rose-950/90 backdrop-blur">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-2 px-4 py-2.5 sm:gap-3 sm:px-6 sm:py-3">
-        {/* ตราสัญลักษณ์ของทัวร์นาเมนต์เอง (ไม่ใช่โลโก้ FA Thailand เฉยๆ) วางไว้เด่นชัดซ้ายสุด เหมือนเว็บทัวร์นาเมนต์ทั่วไป */}
-        <Link href="/g15-womens-series" className="flex min-w-0 items-center gap-2.5">
-          <Image
-            src={G15_IMAGE_URL}
-            alt="G15 Women's Football Series"
-            width={56}
-            height={56}
-            className="h-12 w-12 flex-none object-contain sm:h-14 sm:w-14"
-          />
+        {/* ตราสัญลักษณ์ของทัวร์นาเมนต์เอง (ไม่ใช่โลโก้ FA Thailand เฉยๆ) วางไว้เด่นชัดซ้ายสุด ขยายใหญ่พอให้ล้นเส้นแบ่งกับแถบเมนูด้านบน */}
+        <Link href="/g15-womens-series" className="flex min-w-0 items-center gap-3">
+          <div className="relative -mt-6 flex-none sm:-mt-8">
+            <Image
+              src={G15_IMAGE_URL}
+              alt="G15 Women's Football Series"
+              width={112}
+              height={112}
+              className="h-16 w-16 object-contain drop-shadow-xl sm:h-20 sm:w-20"
+            />
+          </div>
           <div className="min-w-0">
             <p className="truncate text-sm font-bold text-white sm:text-base">G15 Women&apos;s Football Series</p>
             <p className="truncate text-[11px] text-rose-300">FA Thailand Technical</p>

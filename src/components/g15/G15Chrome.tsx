@@ -6,8 +6,8 @@ import { G15Nav } from "./G15Nav";
 export function G15Chrome({ user }: { user: { role: string } | null }) {
   return (
     <div className="sticky top-0 z-20">
-      <G15Header user={user} />
       <G15Nav />
+      <G15Header user={user} />
     </div>
   );
 }
