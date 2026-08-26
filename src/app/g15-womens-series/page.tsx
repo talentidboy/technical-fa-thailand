@@ -101,13 +101,13 @@ export default async function G15WomensSeriesPage() {
 
           <div className="relative mx-auto mt-6 flex h-32 w-32 items-center justify-center">
             <div className="absolute inset-0 rounded-3xl bg-white/10 blur-xl" />
-            <div className="relative flex h-32 w-32 items-center justify-center overflow-hidden rounded-3xl bg-white/10 shadow-2xl ring-1 ring-white/25">
+            <div className="relative flex h-32 w-32 items-center justify-center overflow-hidden rounded-3xl bg-white/10 p-3 shadow-2xl ring-1 ring-white/25">
               <Image
                 src={G15_IMAGE_URL}
                 alt="G15 Women's Football Series"
                 width={128}
                 height={128}
-                className="h-full w-full object-cover"
+                className="h-full w-full object-contain"
                 priority
               />
             </div>

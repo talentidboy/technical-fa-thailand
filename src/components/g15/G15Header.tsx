@@ -14,9 +14,9 @@ export function G15Header({ user }: { user: { role: string } | null }) {
           <Image
             src={G15_IMAGE_URL}
             alt="G15 Women's Football Series"
-            width={52}
-            height={52}
-            className="h-11 w-11 flex-none rounded-xl object-cover ring-1 ring-white/20 sm:h-13 sm:w-13"
+            width={56}
+            height={56}
+            className="h-12 w-12 flex-none object-contain sm:h-14 sm:w-14"
           />
           <div className="min-w-0">
             <p className="truncate text-sm font-bold text-white sm:text-base">G15 Women&apos;s Football Series</p>

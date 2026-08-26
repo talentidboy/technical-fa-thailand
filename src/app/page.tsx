@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { logout } from "@/app/login/actions";
 import { NewsSection } from "@/components/NewsSection";
-import { LOGO_URL, COVER_URL, COACH_CENTRE_IMAGE_URL, G15_IMAGE_URL } from "@/lib/brand";
+import { LOGO_URL, COVER_URL, COACH_CENTRE_IMAGE_URL } from "@/lib/brand";
 import {
   FileBadge,
   GraduationCap,
@@ -81,7 +81,9 @@ const categories = [
     title: "G15 Women's Football Series 2026",
     subtitle: "เวทีการแข่งขันฟุตบอลหญิงรุ่นอายุไม่เกิน 15 ปี",
     href: "/g15-womens-series" as string | null,
-    image: G15_IMAGE_URL as string | null,
+    // ไม่ใช้ G15_IMAGE_URL เป็นภาพพื้นหลังการ์ด — ตอนนี้เป็นโลโก้พื้นโปร่งใส ไม่ใช่ภาพถ่าย
+    // ใช้ object-cover แล้วจะครอปเบี้ยว จึงปล่อยให้ใช้พื้นไล่สีเดียวกับหมวดอื่นที่ไม่มีภาพแทน
+    image: null as string | null,
     icon: Trophy,
     features: [] as { icon: typeof FileBadge; label: string }[],
     comingSoon: false,
