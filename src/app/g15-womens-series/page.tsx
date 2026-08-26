@@ -86,8 +86,8 @@ export default async function G15WomensSeriesPage() {
       </section>
 
       <div className="mx-auto max-w-6xl px-6 pb-20">
-        {/* จุดเด่นของรายการ — ลอยทับภาพแบนเนอร์โดยตรง แทนที่จะลอยทับแค่ช่องว่างสีทึบด้านล่างภาพ */}
-        <div className="relative z-10 -mt-24 grid grid-cols-1 gap-6 sm:-mt-32 sm:grid-cols-3">
+        {/* จุดเด่นของรายการ — ลอยทับแค่ขอบล่างสุดของภาพ (โซนที่ไล่สีจนเกือบทึบแล้ว) ไม่ทับตัวอักษรในภาพ */}
+        <div className="relative z-10 -mt-8 grid grid-cols-1 gap-6 sm:-mt-10 sm:grid-cols-3">
           {highlights.map(({ icon: Icon, title, titleEn, description, descriptionEn }) => (
             <div
               key={title}

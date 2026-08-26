@@ -24,8 +24,9 @@ export function G15Chrome({ user }: { user: { role: string } | null }) {
     <header className="sticky top-0 z-20 border-b border-white/10 bg-rose-950/90 backdrop-blur">
       {/* ไม่ใส่ max-w-6xl ตรงนี้ (ต่างจากส่วนเนื้อหาอื่นของหน้า) ให้โลโก้/ปุ่มชิดขอบซ้าย-ขวาสุดของจอจริงๆ */}
       <div className="flex h-16 w-full items-center gap-2 px-3 sm:h-20 sm:gap-4 sm:px-5">
-        {/* โลโก้ใหญ่กว่าความสูงของแถบเอง ตั้งใจให้ล้นเส้นขอบบน-ล่างของแถบออกมา */}
-        <Link href="/g15-womens-series" className="flex flex-none items-center gap-2">
+        {/* โลโก้ใหญ่กว่าความสูงของแถบเอง ชิดขอบบนของแถบ (self-start) ให้ส่วนเกินล้นออกด้านล่างเส้นทั้งหมด
+            แทนที่จะกึ่งกลางแล้วครึ่งหนึ่งโดนตัดที่ขอบบนสุดของจอ (เพราะแถบนี้คือ element แรกสุดของหน้า) */}
+        <Link href="/g15-womens-series" className="flex flex-none items-center gap-2 self-start">
           <Image
             src={G15_IMAGE_URL}
             alt="G15 Women's Football Series"
