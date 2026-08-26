@@ -14,12 +14,23 @@ import {
 } from "../../actions";
 import { Field } from "@/components/FormField";
 import { LogoPasteField } from "@/components/g15/LogoPasteField";
+import { ModalTrigger } from "@/components/g15/Modal";
 import { LOGO_URL } from "@/lib/brand";
 import { ArrowLeft, Shield, Users, UserCog, Trash2, ChevronDown } from "lucide-react";
 
 function toDateInputValue(date: Date | null) {
   if (!date) return "";
   return date.toISOString().slice(0, 10);
+}
+
+// จับคู่สีตามตำแหน่งเล่น (โกลเหลืองทอง หลังน้ำเงิน กลางเขียว หน้าแดง) — ดูจากคำแรกก่อนคอมมา/ช่องว่าง เผื่อกรอกหลายตำแหน่ง เช่น "กองกลาง,กองหน้า"
+function positionBadgeStyle(position: string | null) {
+  const primary = position?.split(/[,/]|\s+/)[0] ?? "";
+  if (primary.includes("ประตู")) return "bg-amber-100 text-amber-700";
+  if (primary.includes("หลัง") || primary.includes("แบ็ค") || primary.includes("แบ็ก")) return "bg-blue-100 text-blue-700";
+  if (primary.includes("กลาง")) return "bg-emerald-100 text-emerald-700";
+  if (primary.includes("หน้า") || primary.includes("ปีก")) return "bg-red-100 text-red-700";
+  return "bg-rose-50 text-rose-600";
 }
 
 export default async function G15ManageTeamPage({
@@ -41,7 +52,11 @@ export default async function G15ManageTeamPage({
   if (!team) notFound();
 
   const [players, officials] = await Promise.all([
-    prisma.g15Player.findMany({ where: { teamId: id }, orderBy: { no: "asc" } }),
+    // เรียงตามเบอร์เสื้อจากน้อยไปมาก — คนที่ยังไม่มีเบอร์เสื้อ (jerseyNumber = null) ให้ไปอยู่ท้ายสุด
+    prisma.g15Player.findMany({
+      where: { teamId: id },
+      orderBy: [{ jerseyNumber: { sort: "asc", nulls: "last" } }, { no: "asc" }],
+    }),
     prisma.g15Official.findMany({ where: { teamId: id }, orderBy: { no: "asc" } }),
   ]);
 
@@ -104,39 +119,42 @@ export default async function G15ManageTeamPage({
 
         {/* นักกีฬา */}
         <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
-          <div className="flex items-center gap-2 border-b border-slate-100 px-6 py-4">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
-              <Users className="h-4 w-4" />
-            </div>
-            <h2 className="font-semibold text-slate-900">นักกีฬา ({players.length})</h2>
-          </div>
-
-          <details className="border-b border-slate-100 px-6 py-4">
-            <summary className="cursor-pointer text-sm font-medium text-rose-600">+ เพิ่มนักกีฬาใหม่</summary>
-            <form action={createPlayer} className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-6">
-              <input type="hidden" name="teamId" value={team.id} />
-              <Field label="เบอร์ทะเบียน" name="no" type="number" />
-              <Field label="ชื่อ (ไทย)" name="firstNameTh" required />
-              <Field label="นามสกุล (ไทย)" name="lastNameTh" required />
-              <Field label="ชื่อ (English)" name="firstNameEn" />
-              <Field label="นามสกุล (English)" name="lastNameEn" />
-              <Field label="สัญชาติ" name="nationality" />
-              <Field label="ชื่อบนเสื้อ" name="jerseyName" />
-              <Field label="เบอร์เสื้อ" name="jerseyNumber" type="number" />
-              <Field label="ตำแหน่ง" name="position" placeholder="กองหน้า" />
-              <Field label="วันเกิด" name="dob" type="date" />
-              <Field label="น้ำหนัก (กก.)" name="weightKg" type="number" />
-              <Field label="ส่วนสูง (ซม.)" name="heightCm" type="number" />
-              <div className="col-span-full">
-                <button
-                  type="submit"
-                  className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-indigo-700"
-                >
-                  เพิ่มนักกีฬา
-                </button>
+          <div className="flex items-center justify-between gap-2 border-b border-slate-100 px-6 py-4">
+            <div className="flex items-center gap-2">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
+                <Users className="h-4 w-4" />
               </div>
-            </form>
-          </details>
+              <h2 className="font-semibold text-slate-900">นักกีฬา ({players.length})</h2>
+            </div>
+            <ModalTrigger
+              label="เพิ่มนักกีฬาใหม่"
+              buttonClassName="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3.5 py-2 text-xs font-medium text-white shadow-sm transition-colors hover:bg-indigo-700 sm:text-sm"
+            >
+              <form action={createPlayer} className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                <input type="hidden" name="teamId" value={team.id} />
+                <Field label="เบอร์ทะเบียน" name="no" type="number" />
+                <Field label="ชื่อ (ไทย)" name="firstNameTh" required />
+                <Field label="นามสกุล (ไทย)" name="lastNameTh" required />
+                <Field label="ชื่อ (English)" name="firstNameEn" />
+                <Field label="นามสกุล (English)" name="lastNameEn" />
+                <Field label="สัญชาติ" name="nationality" />
+                <Field label="ชื่อบนเสื้อ" name="jerseyName" />
+                <Field label="เบอร์เสื้อ" name="jerseyNumber" type="number" />
+                <Field label="ตำแหน่ง" name="position" placeholder="กองหน้า" />
+                <Field label="วันเกิด" name="dob" type="date" />
+                <Field label="น้ำหนัก (กก.)" name="weightKg" type="number" />
+                <Field label="ส่วนสูง (ซม.)" name="heightCm" type="number" />
+                <div className="col-span-full">
+                  <button
+                    type="submit"
+                    className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-indigo-700"
+                  >
+                    เพิ่มนักกีฬา
+                  </button>
+                </div>
+              </form>
+            </ModalTrigger>
+          </div>
 
           {players.length === 0 ? (
             <p className="px-6 py-10 text-center text-sm text-slate-400">ยังไม่มีนักกีฬาในทีมนี้</p>
@@ -147,7 +165,9 @@ export default async function G15ManageTeamPage({
                   <details className="group">
                     <summary className="flex cursor-pointer list-none items-center gap-3 px-6 py-3 hover:bg-slate-50 [&::-webkit-details-marker]:hidden">
                       <ChevronDown className="h-3.5 w-3.5 flex-none text-slate-400 transition-transform group-open:rotate-180" />
-                      <span className="flex h-7 w-7 flex-none items-center justify-center rounded-full bg-rose-50 text-xs font-bold text-rose-600">
+                      <span
+                        className={`flex h-7 w-7 flex-none items-center justify-center rounded-full text-xs font-bold ${positionBadgeStyle(p.position)}`}
+                      >
                         {p.jerseyNumber ?? p.no ?? "-"}
                       </span>
                       <span className="min-w-0 flex-1 truncate text-sm font-medium text-slate-900">
@@ -223,37 +243,40 @@ export default async function G15ManageTeamPage({
 
         {/* เจ้าหน้าที่ */}
         <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
-          <div className="flex items-center gap-2 border-b border-slate-100 px-6 py-4">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-50 text-amber-600">
-              <UserCog className="h-4 w-4" />
-            </div>
-            <h2 className="font-semibold text-slate-900">เจ้าหน้าที่ ({officials.length})</h2>
-          </div>
-
-          <details className="border-b border-slate-100 px-6 py-4">
-            <summary className="cursor-pointer text-sm font-medium text-rose-600">+ เพิ่มเจ้าหน้าที่ใหม่</summary>
-            <form action={createOfficial} className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-5">
-              <input type="hidden" name="teamId" value={team.id} />
-              <Field label="เบอร์ทะเบียน" name="no" type="number" />
-              <Field label="ชื่อ (ไทย)" name="firstNameTh" required />
-              <Field label="นามสกุล (ไทย)" name="lastNameTh" required />
-              <Field label="ชื่อ (English)" name="firstNameEn" />
-              <Field label="นามสกุล (English)" name="lastNameEn" />
-              <Field label="เพศ" name="gender" />
-              <Field label="สัญชาติ" name="nationality" />
-              <Field label="บทบาท" name="role" placeholder="หัวหน้าผู้ฝึกสอน" />
-              <Field label="วันเกิด" name="dob" type="date" />
-              <Field label="ใบอนุญาตผู้ฝึกสอน" name="coachingLicense" />
-              <div className="col-span-full">
-                <button
-                  type="submit"
-                  className="inline-flex items-center gap-2 rounded-lg bg-amber-500 px-5 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-amber-600"
-                >
-                  เพิ่มเจ้าหน้าที่
-                </button>
+          <div className="flex items-center justify-between gap-2 border-b border-slate-100 px-6 py-4">
+            <div className="flex items-center gap-2">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-50 text-amber-600">
+                <UserCog className="h-4 w-4" />
               </div>
-            </form>
-          </details>
+              <h2 className="font-semibold text-slate-900">เจ้าหน้าที่ ({officials.length})</h2>
+            </div>
+            <ModalTrigger
+              label="เพิ่มเจ้าหน้าที่ใหม่"
+              buttonClassName="inline-flex items-center gap-1.5 rounded-lg bg-amber-500 px-3.5 py-2 text-xs font-medium text-white shadow-sm transition-colors hover:bg-amber-600 sm:text-sm"
+            >
+              <form action={createOfficial} className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                <input type="hidden" name="teamId" value={team.id} />
+                <Field label="เบอร์ทะเบียน" name="no" type="number" />
+                <Field label="ชื่อ (ไทย)" name="firstNameTh" required />
+                <Field label="นามสกุล (ไทย)" name="lastNameTh" required />
+                <Field label="ชื่อ (English)" name="firstNameEn" />
+                <Field label="นามสกุล (English)" name="lastNameEn" />
+                <Field label="เพศ" name="gender" />
+                <Field label="สัญชาติ" name="nationality" />
+                <Field label="บทบาท" name="role" placeholder="หัวหน้าผู้ฝึกสอน" />
+                <Field label="วันเกิด" name="dob" type="date" />
+                <Field label="ใบอนุญาตผู้ฝึกสอน" name="coachingLicense" />
+                <div className="col-span-full">
+                  <button
+                    type="submit"
+                    className="inline-flex items-center gap-2 rounded-lg bg-amber-500 px-5 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-amber-600"
+                  >
+                    เพิ่มเจ้าหน้าที่
+                  </button>
+                </div>
+              </form>
+            </ModalTrigger>
+          </div>
 
           {officials.length === 0 ? (
             <p className="px-6 py-10 text-center text-sm text-slate-400">ยังไม่มีเจ้าหน้าที่ในทีมนี้</p>
