@@ -11,7 +11,7 @@ export const G15_IMAGE_URL =
   "https://rgqahrqwxwhaechiodzf.supabase.co/storage/v1/object/public/uploads/g15-logo-ca34690c-b68c-480d-8fd9-25fb50b2dcf5.png";
 
 export const G15_HERO_BANNER_URL =
-  "https://rgqahrqwxwhaechiodzf.supabase.co/storage/v1/object/public/uploads/g15-hero-banner-36f7b13b-15bc-4131-926f-2aa4aa82f2a4.jpg";
+  "https://rgqahrqwxwhaechiodzf.supabase.co/storage/v1/object/public/uploads/g15-hero-banner-97f8230f-a584-415e-b56d-d798baf44931.jpg";
 
 export const GRASSROOTS_LOGO_URL =
   "https://rgqahrqwxwhaechiodzf.supabase.co/storage/v1/object/public/uploads/grassroots-logo-4d4e5f10-5372-44a4-99c0-7938539d85b8.png";
