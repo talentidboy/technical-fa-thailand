@@ -14,7 +14,7 @@ import {
 } from "../../actions";
 import { Field } from "@/components/FormField";
 import { LogoPasteField } from "@/components/g15/LogoPasteField";
-import { ModalTrigger } from "@/components/g15/Modal";
+import { ModalTrigger } from "@/components/Modal";
 import { LOGO_URL } from "@/lib/brand";
 import { ArrowLeft, Shield, Users, UserCog, Trash2, ChevronDown } from "lucide-react";
 

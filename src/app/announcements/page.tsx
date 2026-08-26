@@ -3,10 +3,11 @@ import Image from "next/image";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
-import { createAnnouncement, deleteAnnouncement } from "./actions";
+import { createAnnouncement, updateAnnouncement, deleteAnnouncement } from "./actions";
 import { Field } from "@/components/FormField";
+import { ModalTrigger } from "@/components/Modal";
 import { LOGO_URL } from "@/lib/brand";
-import { Megaphone, Trash2, Plus, ArrowLeft, ImagePlus, Link2 } from "lucide-react";
+import { Megaphone, Trash2, Plus, ArrowLeft, ImagePlus, Link2, Pencil } from "lucide-react";
 
 function formatDate(date: Date) {
   return date.toLocaleDateString("th-TH", {
@@ -14,6 +15,88 @@ function formatDate(date: Date) {
     month: "short",
     day: "numeric",
   });
+}
+
+function AnnouncementFormFields({
+  defaultTitle,
+  defaultTag,
+  defaultLinkUrl,
+  defaultExcerpt,
+  defaultContent,
+  hasImage,
+}: {
+  defaultTitle?: string;
+  defaultTag?: string;
+  defaultLinkUrl?: string;
+  defaultExcerpt?: string;
+  defaultContent?: string;
+  hasImage?: boolean;
+}) {
+  return (
+    <>
+      <Field
+        label="หัวข้อข่าว"
+        name="title"
+        required
+        placeholder="เปิดรับสมัครอบรมผู้ฝึกสอน C License รุ่นที่ 13"
+        defaultValue={defaultTitle}
+      />
+      <Field label="แท็ก" name="tag" placeholder="อบรม / ประกาศผล / ระบบ" defaultValue={defaultTag} />
+
+      <label className="flex flex-col gap-1.5 sm:col-span-2">
+        <span className="text-sm font-medium text-slate-700">ลิงก์ (ถ้ามี)</span>
+        <input
+          name="linkUrl"
+          type="url"
+          defaultValue={defaultLinkUrl}
+          placeholder="https://www.facebook.com/ชื่อเพจ/posts/... — ถ้าเป็นลิงก์โพสต์เฟซบุ๊ก ระบบจะแสดงโพสต์นั้นให้อัตโนมัติ"
+          className="rounded-lg border border-slate-200 px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100"
+        />
+        <span className="text-xs text-slate-400">
+          ใช้ลิงก์โพสต์จริง (เปิดโพสต์บนคอมพิวเตอร์แล้วคัดลอกลิงก์จากวันที่ใต้โพสต์) — ลิงก์แบบ
+          facebook.com/share/... ที่คัดลอกจากมือถือมักฝังโพสต์ไม่ได้
+        </span>
+      </label>
+
+      <label className="flex flex-col gap-1.5 sm:col-span-2">
+        <span className="text-sm font-medium text-slate-700">รูปภาพประกอบข่าว</span>
+        <input
+          name="image"
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          className="rounded-lg border border-slate-200 px-3.5 py-2.5 text-sm text-slate-600 file:mr-3 file:rounded-md file:border-0 file:bg-indigo-50 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-indigo-600"
+        />
+        {hasImage && (
+          <span className="text-xs text-slate-400">มีรูปอยู่แล้ว — เลือกไฟล์ใหม่เพื่อแทนที่ หรือเว้นว่างไว้เพื่อคงรูปเดิม</span>
+        )}
+      </label>
+
+      <label className="flex flex-col gap-1.5 sm:col-span-2">
+        <span className="text-sm font-medium text-slate-700">
+          รายละเอียดย่อ (แสดงในการ์ดหน้าหลัก)
+          <span className="text-red-500"> *</span>
+        </span>
+        <textarea
+          name="excerpt"
+          required
+          rows={2}
+          defaultValue={defaultExcerpt}
+          className="rounded-lg border border-slate-200 px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100"
+        />
+      </label>
+
+      <label className="flex flex-col gap-1.5 sm:col-span-2">
+        <span className="text-sm font-medium text-slate-700">เนื้อหาข่าวฉบับเต็ม (แสดงในหน้าอ่านข่าว)</span>
+        <textarea
+          name="content"
+          rows={6}
+          defaultValue={defaultContent}
+          placeholder="หากไม่กรอก จะใช้รายละเอียดย่อแสดงในหน้าอ่านข่าวแทน"
+          className="rounded-lg border border-slate-200 px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100"
+        />
+      </label>
+    </>
+  );
 }
 
 export default async function AnnouncementsPage() {
@@ -80,64 +163,7 @@ export default async function AnnouncementsPage() {
             action={createAnnouncement}
             className="grid grid-cols-1 gap-4 p-6 sm:grid-cols-2"
           >
-            <Field
-              label="หัวข้อข่าว"
-              name="title"
-              required
-              placeholder="เปิดรับสมัครอบรมผู้ฝึกสอน C License รุ่นที่ 13"
-            />
-            <Field label="แท็ก" name="tag" placeholder="อบรม / ประกาศผล / ระบบ" />
-
-            <label className="flex flex-col gap-1.5 sm:col-span-2">
-              <span className="text-sm font-medium text-slate-700">ลิงก์ (ถ้ามี)</span>
-              <input
-                name="linkUrl"
-                type="url"
-                placeholder="https://www.facebook.com/ชื่อเพจ/posts/... — ถ้าเป็นลิงก์โพสต์เฟซบุ๊ก ระบบจะแสดงโพสต์นั้นให้อัตโนมัติ"
-                className="rounded-lg border border-slate-200 px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100"
-              />
-              <span className="text-xs text-slate-400">
-                ใช้ลิงก์โพสต์จริง (เปิดโพสต์บนคอมพิวเตอร์แล้วคัดลอกลิงก์จากวันที่ใต้โพสต์) — ลิงก์แบบ
-                facebook.com/share/... ที่คัดลอกจากมือถือมักฝังโพสต์ไม่ได้
-              </span>
-            </label>
-
-            <label className="flex flex-col gap-1.5 sm:col-span-2">
-              <span className="text-sm font-medium text-slate-700">
-                รูปภาพประกอบข่าว
-              </span>
-              <input
-                name="image"
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                className="rounded-lg border border-slate-200 px-3.5 py-2.5 text-sm text-slate-600 file:mr-3 file:rounded-md file:border-0 file:bg-indigo-50 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-indigo-600"
-              />
-            </label>
-
-            <label className="flex flex-col gap-1.5 sm:col-span-2">
-              <span className="text-sm font-medium text-slate-700">
-                รายละเอียดย่อ (แสดงในการ์ดหน้าหลัก)
-                <span className="text-red-500"> *</span>
-              </span>
-              <textarea
-                name="excerpt"
-                required
-                rows={2}
-                className="rounded-lg border border-slate-200 px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100"
-              />
-            </label>
-
-            <label className="flex flex-col gap-1.5 sm:col-span-2">
-              <span className="text-sm font-medium text-slate-700">
-                เนื้อหาข่าวฉบับเต็ม (แสดงในหน้าอ่านข่าว)
-              </span>
-              <textarea
-                name="content"
-                rows={6}
-                placeholder="หากไม่กรอก จะใช้รายละเอียดย่อแสดงในหน้าอ่านข่าวแทน"
-                className="rounded-lg border border-slate-200 px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100"
-              />
-            </label>
+            <AnnouncementFormFields />
 
             <div className="sm:col-span-2">
               <button
@@ -210,6 +236,34 @@ export default async function AnnouncementsPage() {
                         <Link2 className="h-4 w-4" />
                       </a>
                     )}
+                    <ModalTrigger
+                      label={`แก้ไขข่าวประกาศ: ${item.title}`}
+                      buttonContent={<Pencil className="h-4 w-4" />}
+                      buttonClassName="inline-flex items-center justify-center rounded-lg p-2 text-slate-400 transition-colors hover:bg-indigo-50 hover:text-indigo-600"
+                    >
+                      <form
+                        action={updateAnnouncement}
+                        className="grid grid-cols-1 gap-4 sm:grid-cols-2"
+                      >
+                        <input type="hidden" name="id" value={item.id} />
+                        <AnnouncementFormFields
+                          defaultTitle={item.title}
+                          defaultTag={item.tag ?? ""}
+                          defaultLinkUrl={item.linkUrl ?? ""}
+                          defaultExcerpt={item.excerpt}
+                          defaultContent={item.content}
+                          hasImage={!!item.imageUrl}
+                        />
+                        <div className="sm:col-span-2">
+                          <button
+                            type="submit"
+                            className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-medium text-white shadow-sm shadow-indigo-200 transition-colors hover:bg-indigo-700"
+                          >
+                            บันทึกการแก้ไข
+                          </button>
+                        </div>
+                      </form>
+                    </ModalTrigger>
                     <form action={deleteAnnouncement}>
                       <input type="hidden" name="id" value={item.id} />
                       <button

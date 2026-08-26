@@ -6,18 +6,26 @@ import { X } from "lucide-react";
 export function ModalTrigger({
   label,
   buttonClassName,
+  buttonContent,
   children,
 }: {
   label: string;
   buttonClassName: string;
+  // ใช้แสดงไอคอนอย่างเดียวแทนข้อความบนปุ่ม (เช่น แถวไอคอนแก้ไข/ลบ) — label ยังใช้เป็นชื่อสำหรับ screen reader และหัวข้อโมดัลเหมือนเดิม
+  buttonContent?: ReactNode;
   children: ReactNode;
 }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
 
   return (
     <>
-      <button type="button" onClick={() => dialogRef.current?.showModal()} className={buttonClassName}>
-        {label}
+      <button
+        type="button"
+        onClick={() => dialogRef.current?.showModal()}
+        className={buttonClassName}
+        aria-label={buttonContent ? label : undefined}
+      >
+        {buttonContent ?? label}
       </button>
       <dialog
         ref={dialogRef}

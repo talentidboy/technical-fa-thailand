@@ -9,7 +9,7 @@ import { LOGO_URL } from "@/lib/brand";
 import { toDateTimeLocalValue } from "@/lib/g15";
 import { REGION_ORDER, REGION_STYLE, DEFAULT_REGION_STYLE, parseRegionGroup } from "@/lib/g15-region";
 import { ManageTabs } from "@/components/g15/ManageTabs";
-import { ModalTrigger } from "@/components/g15/Modal";
+import { ModalTrigger } from "@/components/Modal";
 import { MatchStatusBoard } from "@/components/g15/MatchStatusBoard";
 import { TeamBadge } from "@/components/g15/TeamBadge";
 import { LogoPasteField } from "@/components/g15/LogoPasteField";
