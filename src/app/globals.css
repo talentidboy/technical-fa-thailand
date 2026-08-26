@@ -46,3 +46,12 @@ body {
   scrollbar-width: thin;
   scrollbar-color: #cbd5e1 transparent;
 }
+
+/* ซ่อนแถบเลื่อนแนวนอน (รวมปุ่มลูกศรของสกรอลบาร์แบบ Windows/Chrome) แต่ยังเลื่อนด้วยนิ้ว/ล้อเมาส์ได้ตามปกติ */
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}

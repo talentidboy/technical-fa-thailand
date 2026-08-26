@@ -22,7 +22,8 @@ export function G15Chrome({ user }: { user: { role: string } | null }) {
 
   return (
     <header className="sticky top-0 z-20 border-b border-white/10 bg-rose-950/90 backdrop-blur">
-      <div className="mx-auto flex h-16 max-w-6xl items-center gap-2 px-4 sm:h-20 sm:gap-4 sm:px-6">
+      {/* ไม่ใส่ max-w-6xl ตรงนี้ (ต่างจากส่วนเนื้อหาอื่นของหน้า) ให้โลโก้/ปุ่มชิดขอบซ้าย-ขวาสุดของจอจริงๆ */}
+      <div className="flex h-16 w-full items-center gap-2 px-3 sm:h-20 sm:gap-4 sm:px-5">
         {/* โลโก้ใหญ่กว่าความสูงของแถบเอง ตั้งใจให้ล้นเส้นขอบบน-ล่างของแถบออกมา */}
         <Link href="/g15-womens-series" className="flex flex-none items-center gap-2">
           <Image
@@ -37,7 +38,7 @@ export function G15Chrome({ user }: { user: { role: string } | null }) {
           </span>
         </Link>
 
-        <nav className="flex min-w-0 flex-1 items-center gap-0.5 overflow-x-auto">
+        <nav className="no-scrollbar flex min-w-0 flex-1 items-center gap-0.5 overflow-x-auto">
           {NAV_LINKS.map((link) => {
             const active = link.href === "/g15-womens-series" ? pathname === link.href : pathname.startsWith(link.href);
             return (
