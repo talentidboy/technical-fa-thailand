@@ -53,7 +53,10 @@ export default async function G15StandingsPage() {
                     <div className="divide-y divide-slate-100">
                       {letters.map((letter) => (
                         <div key={letter}>
-                          <p className={`px-5 pt-3 text-xs font-bold ${style.text}`}>กลุ่ม {letter}</p>
+                          {/* ไม่โชว์ป้ายกลุ่มถ้าภาคนั้นมีกลุ่มเดียว (ไม่ได้แบ่ง A/B) — ป้าย "กลุ่ม A" เดี่ยวๆ ไม่มีประโยชน์ */}
+                          {letters.length > 1 && (
+                            <p className={`px-5 pt-3 text-xs font-bold ${style.text}`}>กลุ่ม {letter}</p>
+                          )}
                           <StandingTable group={groupMap.get(letter)!} />
                         </div>
                       ))}

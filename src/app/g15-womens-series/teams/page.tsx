@@ -41,6 +41,8 @@ export default async function G15TeamsPage() {
               const groupMap = teamsByRegion.get(region)!;
               const letters = Array.from(groupMap.keys()).sort();
               const regionTotal = letters.reduce((s, l) => s + groupMap.get(l)!.length, 0);
+              // ภาคที่ไม่ได้แบ่งกลุ่ม A/B (มีกลุ่มเดียว) ไม่ต้องโชว์ป้ายกลุ่ม และให้รายชื่อทีมเต็มความกว้าง
+              const singleGroup = letters.length === 1;
 
               return (
                 <div
@@ -54,12 +56,14 @@ export default async function G15TeamsPage() {
                     </h3>
                     <span className="ml-auto text-xs font-medium text-white/80">{regionTotal} ทีม / teams</span>
                   </div>
-                  <div className="grid grid-cols-1 gap-5 p-5 sm:grid-cols-2">
+                  <div className={`grid grid-cols-1 gap-5 p-5 ${singleGroup ? "" : "sm:grid-cols-2"}`}>
                     {letters.map((letter) => (
                       <div key={letter}>
-                        <p className={`mb-2 inline-flex rounded-full px-2.5 py-0.5 text-xs font-bold ${style.light} ${style.text}`}>
-                          Group / กลุ่ม {letter}
-                        </p>
+                        {!singleGroup && (
+                          <p className={`mb-2 inline-flex rounded-full px-2.5 py-0.5 text-xs font-bold ${style.light} ${style.text}`}>
+                            Group / กลุ่ม {letter}
+                          </p>
+                        )}
                         <ul className="space-y-1">
                           {groupMap.get(letter)!.map((team) => {
                             const playerCount = playerCountByTeam.get(team.id) ?? 0;

@@ -265,7 +265,9 @@ export default async function G15WomensSeriesPage() {
                       <div className="divide-y divide-slate-100">
                         {letters.map((letter) => (
                           <div key={letter}>
-                            <p className={`px-5 pt-3 text-xs font-bold ${style.text}`}>กลุ่ม {letter}</p>
+                            {letters.length > 1 && (
+                              <p className={`px-5 pt-3 text-xs font-bold ${style.text}`}>กลุ่ม {letter}</p>
+                            )}
                             <StandingTable group={groupMap.get(letter)!} />
                           </div>
                         ))}
