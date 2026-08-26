@@ -71,7 +71,7 @@ export default async function G15WomensSeriesPage() {
       <G15Chrome user={user} />
 
       {/* Hero — แบนเนอร์ทางการมีชื่อรายการ/สโลแกน/โลโก้ในภาพอยู่แล้ว จึงโชว์เต็มความกว้างไปเลยโดยไม่มีข้อความทับ */}
-      <section className="relative overflow-hidden bg-linear-to-br from-rose-950 via-rose-900 to-fuchsia-800 pb-16 sm:pb-20">
+      <section className="relative overflow-hidden bg-linear-to-br from-rose-950 via-rose-900 to-fuchsia-800 pb-6 sm:pb-8">
         <div className="absolute inset-x-0 top-0 h-1.5 bg-linear-to-r from-amber-600 via-amber-300 to-amber-600" />
         <Image
           src={G15_HERO_BANNER_URL}
@@ -81,13 +81,13 @@ export default async function G15WomensSeriesPage() {
           className="h-auto w-full"
           priority
         />
-        {/* ไล่สีให้ขอบล่างของภาพกลืนเข้ากับพื้นหลัง แทนที่จะตัดขอบภาพห้วนๆ ชนกับแถบสีทึบด้านล่าง */}
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-28 bg-linear-to-t from-rose-950 to-transparent sm:h-36" />
+        {/* ไล่สีให้ขอบล่างของภาพกลืนเข้ากับพื้นหลัง เผื่อพื้นที่ให้การ์ดด้านล่างลอยทับภาพได้เลย ไม่ต้องมีช่องว่างสีทึบคั่น */}
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-40 bg-linear-to-t from-rose-950 to-transparent sm:h-56" />
       </section>
 
       <div className="mx-auto max-w-6xl px-6 pb-20">
-        {/* จุดเด่นของรายการ — ลอยทับรอยต่อ hero กับพื้นหลัง */}
-        <div className="relative z-10 -mt-16 grid grid-cols-1 gap-6 sm:-mt-20 sm:grid-cols-3">
+        {/* จุดเด่นของรายการ — ลอยทับภาพแบนเนอร์โดยตรง แทนที่จะลอยทับแค่ช่องว่างสีทึบด้านล่างภาพ */}
+        <div className="relative z-10 -mt-24 grid grid-cols-1 gap-6 sm:-mt-32 sm:grid-cols-3">
           {highlights.map(({ icon: Icon, title, titleEn, description, descriptionEn }) => (
             <div
               key={title}
