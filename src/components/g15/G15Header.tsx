@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { LOGO_URL } from "@/lib/brand";
+import { G15_IMAGE_URL } from "@/lib/brand";
 import { ArrowLeft, Settings, LogIn } from "lucide-react";
 
 export function G15Header({ user }: { user: { role: string } | null }) {
@@ -8,18 +8,19 @@ export function G15Header({ user }: { user: { role: string } | null }) {
 
   return (
     <header className="sticky top-0 z-20 border-b border-white/10 bg-rose-950/90 backdrop-blur">
-      <div className="mx-auto flex max-w-6xl items-center justify-between gap-2 px-4 py-3 sm:gap-3 sm:px-6 sm:py-4">
-        <Link href="/g15-womens-series" className="flex min-w-0 items-center gap-2">
+      <div className="mx-auto flex max-w-6xl items-center justify-between gap-2 px-4 py-2.5 sm:gap-3 sm:px-6 sm:py-3">
+        {/* ตราสัญลักษณ์ของทัวร์นาเมนต์เอง (ไม่ใช่โลโก้ FA Thailand เฉยๆ) วางไว้เด่นชัดซ้ายสุด เหมือนเว็บทัวร์นาเมนต์ทั่วไป */}
+        <Link href="/g15-womens-series" className="flex min-w-0 items-center gap-2.5">
           <Image
-            src={LOGO_URL}
-            alt="FA Thailand"
-            width={36}
-            height={36}
-            className="h-9 w-9 flex-none rounded-lg object-cover"
+            src={G15_IMAGE_URL}
+            alt="G15 Women's Football Series"
+            width={52}
+            height={52}
+            className="h-11 w-11 flex-none rounded-xl object-cover ring-1 ring-white/20 sm:h-13 sm:w-13"
           />
           <div className="min-w-0">
-            <p className="truncate text-sm font-bold text-white">FA Thailand Technical</p>
-            <p className="truncate text-[11px] text-rose-300">หมวด: G15 Women&apos;s Football Series</p>
+            <p className="truncate text-sm font-bold text-white sm:text-base">G15 Women&apos;s Football Series</p>
+            <p className="truncate text-[11px] text-rose-300">FA Thailand Technical</p>
           </div>
         </Link>
         <div className="flex flex-none items-center gap-1.5 sm:gap-2">
