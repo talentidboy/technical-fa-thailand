@@ -6,11 +6,21 @@ const PUBLIC_PATHS = ["/", "/login", "/register", "/setup", "/courses"];
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // หน้าย่อยสาธารณะของ G15 (ไม่รวม /g15-womens-series/manage ซึ่งต้องล็อกอิน)
+  const G15_PUBLIC_PATHS = [
+    "/g15-womens-series",
+    "/g15-womens-series/matches",
+    "/g15-womens-series/standings",
+    "/g15-womens-series/stats",
+    "/g15-womens-series/teams",
+    "/g15-womens-series/stadium",
+  ];
+
   const isPublic =
     PUBLIC_PATHS.includes(pathname) ||
     pathname.startsWith("/verify/") ||
     pathname.startsWith("/news/") ||
-    pathname === "/g15-womens-series" ||
+    G15_PUBLIC_PATHS.includes(pathname) ||
     pathname.startsWith("/g15-womens-series/teams/");
 
   if (isPublic) return NextResponse.next();
