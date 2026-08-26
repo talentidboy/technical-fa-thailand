@@ -9,3 +9,6 @@ export const COACH_CENTRE_IMAGE_URL =
 
 export const G15_IMAGE_URL =
   "https://rgqahrqwxwhaechiodzf.supabase.co/storage/v1/object/public/uploads/g15-logo-ca34690c-b68c-480d-8fd9-25fb50b2dcf5.png";
+
+export const G15_HERO_BANNER_URL =
+  "https://rgqahrqwxwhaechiodzf.supabase.co/storage/v1/object/public/uploads/g15-hero-banner-36f7b13b-15bc-4131-926f-2aa4aa82f2a4.jpg";

@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { getStandings, formatMatchDateShort, formatMatchTimeShort } from "@/lib/g15";
 import { REGION_STYLE, DEFAULT_REGION_STYLE, regionEn, groupTeamsByRegion, groupStandingsByRegion } from "@/lib/g15-region";
-import { G15_IMAGE_URL } from "@/lib/brand";
+import { G15_HERO_BANNER_URL } from "@/lib/brand";
 import { G15Header } from "@/components/g15/G15Header";
 import { G15Nav } from "@/components/g15/G15Nav";
 import { TeamBadge } from "@/components/g15/TeamBadge";
@@ -72,9 +72,20 @@ export default async function G15WomensSeriesPage() {
       <G15Header user={user} />
       <G15Nav />
 
-      {/* Hero */}
+      {/* Hero — แบนเนอร์ทางการมีชื่อรายการ/สโลแกน/โลโก้ในภาพอยู่แล้ว จึงไม่ซ้ำหัวข้อด้วยตัวอักษรทับอีกชั้น */}
       <section className="relative overflow-hidden bg-linear-to-br from-rose-950 via-rose-900 to-fuchsia-800">
         <div className="absolute inset-x-0 top-0 h-1.5 bg-linear-to-r from-amber-600 via-amber-300 to-amber-600" />
+
+        <div className="relative mx-auto max-w-5xl px-4 pt-4 sm:px-6 sm:pt-6">
+          <Image
+            src={G15_HERO_BANNER_URL}
+            alt="G15 Women's Football Series 2026 — Beautiful Game, Bright Future"
+            width={2752}
+            height={1536}
+            className="h-auto w-full rounded-2xl shadow-2xl"
+            priority
+          />
+        </div>
 
         {/* จุดไฟหลายชั้นเพิ่มมิติความหรูหรา */}
         <div className="absolute -left-24 -top-24 h-96 w-96 rounded-full bg-rose-400/25 blur-3xl" />
@@ -90,39 +101,8 @@ export default async function G15WomensSeriesPage() {
           }}
         />
 
-        {/* โลโก้ถ้วยรางวัลจางๆ เป็นลายน้ำด้านหลัง เพิ่มความยิ่งใหญ่ */}
-        <Trophy className="pointer-events-none absolute -right-10 -top-10 h-72 w-72 rotate-12 text-white/4" />
-
-        <div className="relative mx-auto max-w-4xl px-6 pb-28 pt-16 text-center sm:pb-32 sm:pt-20">
-          <div className="mx-auto inline-flex items-center gap-1.5 rounded-full bg-amber-400/15 px-3.5 py-1.5 text-xs font-bold uppercase tracking-widest text-amber-300 ring-1 ring-amber-400/30">
-            <Trophy className="h-3.5 w-3.5" />
-            FA Thailand
-          </div>
-
-          <div className="relative mx-auto mt-6 flex h-32 w-32 items-center justify-center">
-            <div className="absolute inset-0 rounded-3xl bg-white/10 blur-xl" />
-            <div className="relative flex h-32 w-32 items-center justify-center overflow-hidden rounded-3xl bg-white/10 p-3 shadow-2xl ring-1 ring-white/25">
-              <Image
-                src={G15_IMAGE_URL}
-                alt="G15 Women's Football Series"
-                width={128}
-                height={128}
-                className="h-full w-full object-contain"
-                priority
-              />
-            </div>
-          </div>
-
-          <h1 className="mt-6 text-4xl font-extrabold tracking-tight text-white drop-shadow-sm sm:text-5xl">
-            G15 Women&apos;s Football Series 2026
-          </h1>
-          <p className="mx-auto mt-4 max-w-2xl text-lg font-semibold text-amber-200">
-            เปิดรับสมัครทีมฟุตบอลหญิง รุ่นอายุไม่เกิน 15 ปี จากทั่วประเทศ เข้าร่วมการแข่งขัน
-          </p>
-          <p className="mx-auto mt-1 max-w-2xl text-sm font-medium text-amber-200/70">
-            Open call for U15 women&apos;s football teams nationwide
-          </p>
-          <p className="mx-auto mt-3 max-w-2xl text-rose-100">
+        <div className="relative mx-auto max-w-2xl px-6 pb-28 pt-8 text-center sm:pb-32">
+          <p className="mx-auto max-w-2xl text-rose-100">
             เวทีการแข่งขันที่เปิดโอกาสให้น้องๆ นักกีฬาฟุตบอลหญิงอายุไม่เกิน 15 ปี ได้แสดงศักยภาพ พัฒนาฝีเท้า
             และเก็บเกี่ยวประสบการณ์การแข่งขันอย่างเต็มที่ ภายใต้การสนับสนุนและการกำกับดูแลจากผู้เชี่ยวชาญของ FIFA
           </p>
