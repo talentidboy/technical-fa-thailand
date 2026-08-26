@@ -72,45 +72,17 @@ export default async function G15WomensSeriesPage() {
       <G15Header user={user} />
       <G15Nav />
 
-      {/* Hero — แบนเนอร์ทางการมีชื่อรายการ/สโลแกน/โลโก้ในภาพอยู่แล้ว จึงไม่ซ้ำหัวข้อด้วยตัวอักษรทับอีกชั้น */}
-      <section className="relative overflow-hidden bg-linear-to-br from-rose-950 via-rose-900 to-fuchsia-800">
+      {/* Hero — แบนเนอร์ทางการมีชื่อรายการ/สโลแกน/โลโก้ในภาพอยู่แล้ว จึงโชว์เต็มความกว้างไปเลยโดยไม่มีข้อความทับ */}
+      <section className="relative overflow-hidden bg-linear-to-br from-rose-950 via-rose-900 to-fuchsia-800 pb-16 sm:pb-20">
         <div className="absolute inset-x-0 top-0 h-1.5 bg-linear-to-r from-amber-600 via-amber-300 to-amber-600" />
-
-        <div className="relative mx-auto max-w-5xl px-4 pt-4 sm:px-6 sm:pt-6">
-          <Image
-            src={G15_HERO_BANNER_URL}
-            alt="G15 Women's Football Series 2026 — Beautiful Game, Bright Future"
-            width={2752}
-            height={1536}
-            className="h-auto w-full rounded-2xl shadow-2xl"
-            priority
-          />
-        </div>
-
-        {/* จุดไฟหลายชั้นเพิ่มมิติความหรูหรา */}
-        <div className="absolute -left-24 -top-24 h-96 w-96 rounded-full bg-rose-400/25 blur-3xl" />
-        <div className="absolute -right-20 top-1/4 h-112 w-md rounded-full bg-fuchsia-400/20 blur-3xl" />
-        <div className="absolute bottom-0 left-1/3 h-72 w-72 rounded-full bg-amber-400/10 blur-3xl" />
-
-        {/* ลายจุดแบบละเอียด เพิ่มพื้นผิวให้พื้นหลังไม่โล่งจนเกินไป */}
-        <div
-          className="absolute inset-0 opacity-[0.15]"
-          style={{
-            backgroundImage: "radial-gradient(rgba(255,255,255,0.6) 1px, transparent 1px)",
-            backgroundSize: "28px 28px",
-          }}
+        <Image
+          src={G15_HERO_BANNER_URL}
+          alt="G15 Women's Football Series 2026 — Beautiful Game, Bright Future"
+          width={2752}
+          height={1536}
+          className="h-auto w-full"
+          priority
         />
-
-        <div className="relative mx-auto max-w-2xl px-6 pb-28 pt-8 text-center sm:pb-32">
-          <p className="mx-auto max-w-2xl text-rose-100">
-            เวทีการแข่งขันที่เปิดโอกาสให้น้องๆ นักกีฬาฟุตบอลหญิงอายุไม่เกิน 15 ปี ได้แสดงศักยภาพ พัฒนาฝีเท้า
-            และเก็บเกี่ยวประสบการณ์การแข่งขันอย่างเต็มที่ ภายใต้การสนับสนุนและการกำกับดูแลจากผู้เชี่ยวชาญของ FIFA
-          </p>
-          <p className="mx-auto mt-2 max-w-2xl text-sm text-rose-100/70">
-            A tournament for U15 women footballers to showcase their skills, develop as players, and gain real
-            match experience, supported and overseen by FIFA experts.
-          </p>
-        </div>
       </section>
 
       <div className="mx-auto max-w-6xl px-6 pb-20">
