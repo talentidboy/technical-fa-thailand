@@ -83,6 +83,8 @@ export default async function G15WomensSeriesPage() {
           className="h-auto w-full"
           priority
         />
+        {/* ไล่สีให้ขอบล่างของภาพกลืนเข้ากับพื้นหลัง แทนที่จะตัดขอบภาพห้วนๆ ชนกับแถบสีทึบด้านล่าง */}
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-28 bg-linear-to-t from-rose-950 to-transparent sm:h-36" />
       </section>
 
       <div className="mx-auto max-w-6xl px-6 pb-20">
