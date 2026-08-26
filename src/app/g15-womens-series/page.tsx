@@ -713,39 +713,111 @@ export default async function G15WomensSeriesPage() {
                 <h2 className="text-lg font-bold text-slate-900">ผลการแข่งขันล่าสุด</h2>
                 <p className="text-xs text-slate-400">Recent Results</p>
               </div>
-              <span className="text-xs text-slate-400">เลื่อนดู / Scroll →</span>
+              <Link
+                href="/g15-womens-series?tab=matches#tournament-tabs"
+                className="flex items-center gap-1 text-xs font-medium text-rose-600 hover:text-rose-700"
+              >
+                ดูทั้งหมด / View all
+                <ChevronRight className="h-3.5 w-3.5" />
+              </Link>
             </div>
             <div className="-mx-6 flex gap-3 overflow-x-auto px-6 pb-2">
-              {recentResults.map((match) => (
+              {recentResults.map((match) => {
+                const style = REGION_STYLE[match.round] ?? DEFAULT_REGION_STYLE;
+                return (
+                  <div
+                    key={match.id}
+                    className="w-64 flex-none overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm sm:w-72"
+                  >
+                    <div className="flex items-center justify-between gap-2 border-b border-slate-100 px-4 py-2">
+                      <span className={`truncate rounded-full px-2 py-0.5 text-[10px] font-bold text-white ${style.bg}`}>
+                        {match.round}
+                      </span>
+                      <span className="flex-none rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-500">
+                        จบการแข่งขัน / Full time
+                      </span>
+                    </div>
+                    <div className="p-4">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex min-w-0 items-center gap-2">
+                          <TeamBadge team={match.homeTeam} size="sm" />
+                          <span className="min-w-0 truncate text-sm font-medium text-slate-700">
+                            {match.homeTeam.name}
+                          </span>
+                        </div>
+                        <span className="flex-none font-bold tabular-nums text-slate-900">{match.homeScore}</span>
+                      </div>
+                      <div className="mt-2 flex items-center justify-between gap-2">
+                        <div className="flex min-w-0 items-center gap-2">
+                          <TeamBadge team={match.awayTeam} size="sm" />
+                          <span className="min-w-0 truncate text-sm font-medium text-slate-700">
+                            {match.awayTeam.name}
+                          </span>
+                        </div>
+                        <span className="flex-none font-bold tabular-nums text-slate-900">{match.awayScore}</span>
+                      </div>
+                      <div className="mt-3 flex flex-col gap-1 border-t border-slate-100 pt-2.5 text-[11px] text-slate-400">
+                        <span className="flex items-center gap-1">
+                          <Calendar className="h-3 w-3" />
+                          {formatMatchDateTime(match.matchDate)}
+                        </span>
+                        {match.venue && (
+                          <span className="flex items-center gap-1 truncate">
+                            <MapPin className="h-3 w-3 flex-none" />
+                            {match.venue}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* ตัวอย่างตารางคะแนน — เอาภาคแรกมาโชว์ตรงนี้เลยแทนที่จะซ่อนไว้หลังแท็บ ให้เห็นข้อมูลจริงทันทีแบบเดียวกับเว็บทัวร์นาเมนต์ทั่วไป */}
+        {standingsRegionOrder.length > 0 && (
+          <div className="mt-10">
+            <div className="mb-4 flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-bold text-slate-900">ตารางคะแนน</h2>
+                <p className="text-xs text-slate-400">Current Standings</p>
+              </div>
+              <Link
+                href="/g15-womens-series?tab=table#tournament-tabs"
+                className="flex items-center gap-1 text-xs font-medium text-rose-600 hover:text-rose-700"
+              >
+                ดูทั้งหมด / View all
+                <ChevronRight className="h-3.5 w-3.5" />
+              </Link>
+            </div>
+            {(() => {
+              const previewRegion = standingsRegionOrder[0];
+              const style = REGION_STYLE[previewRegion] ?? DEFAULT_REGION_STYLE;
+              const groupMap = standingsByRegion.get(previewRegion)!;
+              const letters = Array.from(groupMap.keys()).sort();
+              return (
                 <div
-                  key={match.id}
-                  className="w-52 flex-none rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
+                  className={`overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm ring-1 ${style.ring}`}
                 >
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex min-w-0 items-center gap-2">
-                      <TeamBadge team={match.homeTeam} size="sm" />
-                      <span className="min-w-0 truncate text-sm font-medium text-slate-700">
-                        {match.homeTeam.name}
-                      </span>
-                    </div>
-                    <span className="flex-none font-bold tabular-nums text-slate-900">{match.homeScore}</span>
+                  <div className={`flex items-center gap-2.5 px-5 py-3 ${style.bg}`}>
+                    <MapPin className="h-4 w-4 text-white" />
+                    <h3 className="font-bold text-white">
+                      {previewRegion} <span className="font-normal text-white/70">/ {regionEn(previewRegion)}</span>
+                    </h3>
                   </div>
-                  <div className="mt-2 flex items-center justify-between gap-2">
-                    <div className="flex min-w-0 items-center gap-2">
-                      <TeamBadge team={match.awayTeam} size="sm" />
-                      <span className="min-w-0 truncate text-sm font-medium text-slate-700">
-                        {match.awayTeam.name}
-                      </span>
-                    </div>
-                    <span className="flex-none font-bold tabular-nums text-slate-900">{match.awayScore}</span>
-                  </div>
-                  <div className="mt-3 flex items-center gap-1 border-t border-slate-100 pt-2.5 text-[11px] text-slate-400">
-                    <Calendar className="h-3 w-3" />
-                    {formatMatchDateTime(match.matchDate)}
+                  <div className="grid grid-cols-1 divide-y divide-slate-100 lg:grid-cols-2 lg:divide-x lg:divide-y-0">
+                    {letters.map((letter) => (
+                      <div key={letter}>
+                        <p className={`px-5 pt-3 text-xs font-bold ${style.text}`}>กลุ่ม {letter}</p>
+                        <StandingTable group={groupMap.get(letter)!} />
+                      </div>
+                    ))}
                   </div>
                 </div>
-              ))}
-            </div>
+              );
+            })()}
           </div>
         )}
 

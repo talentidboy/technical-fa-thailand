@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
+import { useSearchParams } from "next/navigation";
 import { CalendarClock, ListOrdered, BarChart3, Users } from "lucide-react";
 
 const TABS = [
@@ -11,6 +12,7 @@ const TABS = [
 ] as const;
 
 type TabKey = (typeof TABS)[number]["key"];
+const TAB_KEYS = TABS.map((t) => t.key) as readonly string[];
 
 export function G15Tabs({
   matches,
@@ -23,11 +25,15 @@ export function G15Tabs({
   stats: ReactNode;
   clubs: ReactNode;
 }) {
-  const [active, setActive] = useState<TabKey>("matches");
+  // อ่าน ?tab=... จาก URL เพื่อให้ลิงก์ "ดูทั้งหมด" จากส่วนอื่นของหน้าพาผู้ใช้มาเปิดแท็บที่ถูกต้องได้เลย
+  const searchParams = useSearchParams();
+  const requestedTab = searchParams.get("tab");
+  const initialTab = requestedTab && TAB_KEYS.includes(requestedTab) ? (requestedTab as TabKey) : "matches";
+  const [active, setActive] = useState<TabKey>(initialTab);
   const content: Record<TabKey, ReactNode> = { matches, table, stats, clubs };
 
   return (
-    <div>
+    <div id="tournament-tabs" className="scroll-mt-20">
       <div className="mb-8 flex gap-1 overflow-x-auto border-b border-slate-200">
         {TABS.map(({ key, label, en, icon: Icon }) => (
           <button
