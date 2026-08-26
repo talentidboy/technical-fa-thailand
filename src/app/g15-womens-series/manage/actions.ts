@@ -16,6 +16,11 @@ async function requireAdminOrStaff() {
 
 function revalidateG15(teamId?: number) {
   revalidatePath("/g15-womens-series");
+  revalidatePath("/g15-womens-series/matches");
+  revalidatePath("/g15-womens-series/standings");
+  revalidatePath("/g15-womens-series/stats");
+  revalidatePath("/g15-womens-series/teams");
+  revalidatePath("/g15-womens-series/stadium");
   revalidatePath("/g15-womens-series/manage");
   if (teamId) {
     revalidatePath(`/g15-womens-series/teams/${teamId}`);

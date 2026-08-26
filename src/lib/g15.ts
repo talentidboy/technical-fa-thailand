@@ -17,6 +17,22 @@ export function formatMatchDateTime(date: Date | null) {
   });
 }
 
+// วันที่/เวลาแบบสั้น แยกกัน — ใช้ในรายการผลแข่งแบบแถวเดียว (วันที่ซ้าย เวลาอยู่บรรทัดล่าง)
+export function formatMatchDateShort(date: Date | null) {
+  if (!date) return "TBD";
+  return date.toLocaleDateString("en-GB", { timeZone: BANGKOK_TZ, day: "numeric", month: "short" });
+}
+
+export function formatMatchTimeShort(date: Date | null) {
+  if (!date) return "";
+  return date.toLocaleTimeString("en-GB", {
+    timeZone: BANGKOK_TZ,
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+}
+
 // แปลง Date -> ค่าเริ่มต้นของ <input type="datetime-local"> โดยยึดเวลาไทยเสมอ ไม่ใช่ timezone ของเซิร์ฟเวอร์
 export function toDateTimeLocalValue(date: Date | null) {
   if (!date) return "";

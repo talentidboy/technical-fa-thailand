@@ -36,3 +36,45 @@ export function parseRegionGroup(groupName: string | null): { region: string; le
   if (!m) return null;
   return { region: m[1].trim(), letter: m[2].trim() };
 }
+
+// จัดทีมเป็นกลุ่มตามภูมิภาค → กลุ่มย่อย (A/B) — ใช้ซ้ำในหลายหน้า (หน้าแรก/ทีมที่เข้าร่วม) แทนที่จะเขียนลูปเดิมซ้ำทุกที่
+export function groupTeamsByRegion<T extends { groupName: string | null }>(teams: T[]) {
+  const byRegion = new Map<string, Map<string, T[]>>();
+  const ungrouped: T[] = [];
+  for (const team of teams) {
+    const parsed = parseRegionGroup(team.groupName);
+    if (!parsed) {
+      ungrouped.push(team);
+      continue;
+    }
+    if (!byRegion.has(parsed.region)) byRegion.set(parsed.region, new Map());
+    const groupMap = byRegion.get(parsed.region)!;
+    if (!groupMap.has(parsed.letter)) groupMap.set(parsed.letter, []);
+    groupMap.get(parsed.letter)!.push(team);
+  }
+  const regionOrder = [
+    ...REGION_ORDER.filter((r) => byRegion.has(r)),
+    ...Array.from(byRegion.keys()).filter((r) => !REGION_ORDER.includes(r)),
+  ];
+  return { regionOrder, byRegion, ungrouped };
+}
+
+// เหมือน groupTeamsByRegion แต่ทำงานกับผลลัพธ์ตารางคะแนน (StandingGroup) — groupName ของแต่ละกลุ่มใช้รูปแบบเดียวกัน
+export function groupStandingsByRegion<T extends { groupName: string }>(groups: T[]) {
+  const byRegion = new Map<string, Map<string, T>>();
+  const ungrouped: T[] = [];
+  for (const group of groups) {
+    const parsed = parseRegionGroup(group.groupName);
+    if (!parsed) {
+      ungrouped.push(group);
+      continue;
+    }
+    if (!byRegion.has(parsed.region)) byRegion.set(parsed.region, new Map());
+    byRegion.get(parsed.region)!.set(parsed.letter, group);
+  }
+  const regionOrder = [
+    ...REGION_ORDER.filter((r) => byRegion.has(r)),
+    ...Array.from(byRegion.keys()).filter((r) => !REGION_ORDER.includes(r)),
+  ];
+  return { regionOrder, byRegion, ungrouped };
+}
