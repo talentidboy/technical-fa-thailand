@@ -5,7 +5,14 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { logout } from "@/app/login/actions";
 import { NewsSection } from "@/components/NewsSection";
-import { LOGO_URL, COVER_URL, COACH_CENTRE_IMAGE_URL } from "@/lib/brand";
+import {
+  LOGO_URL,
+  COVER_URL,
+  COACH_CENTRE_IMAGE_URL,
+  G15_IMAGE_URL,
+  GRASSROOTS_LOGO_URL,
+  TALENT_ID_LOGO_URL,
+} from "@/lib/brand";
 import {
   FileBadge,
   GraduationCap,
@@ -42,6 +49,7 @@ const categories = [
     subtitle: "ระบบจัดการข้อมูลผู้ฝึกสอนฟุตบอล ใบอนุญาต AFC และวิทยากร",
     href: "/dashboard",
     image: COACH_CENTRE_IMAGE_URL as string | null,
+    badgeImage: null as string | null,
     icon: GraduationCap,
     features: [
       { icon: FileBadge, label: "ใบอนุญาตผู้ฝึกสอน AFC" },
@@ -55,6 +63,7 @@ const categories = [
     subtitle: "ศูนย์รวบรวมข้อมูลด้านการฝึกอบรมและเทคนิคของสมาคม",
     href: "/training-centre" as string | null,
     image: null as string | null,
+    badgeImage: null as string | null,
     icon: Database,
     features: [] as { icon: typeof FileBadge; label: string }[],
     comingSoon: false,
@@ -64,6 +73,7 @@ const categories = [
     subtitle: "ศูนย์สืบค้นและคัดกรองนักฟุตบอลผู้มีความสามารถโดดเด่น",
     href: "/talent-id" as string | null,
     image: null as string | null,
+    badgeImage: TALENT_ID_LOGO_URL as string | null,
     icon: Target,
     features: [] as { icon: typeof FileBadge; label: string }[],
     comingSoon: false,
@@ -73,6 +83,7 @@ const categories = [
     subtitle: "โครงการฟุตบอลรากหญ้า ปลูกฝังและพัฒนาเยาวชนตั้งแต่ระดับพื้นฐาน",
     href: "/grassroots-football" as string | null,
     image: null as string | null,
+    badgeImage: GRASSROOTS_LOGO_URL as string | null,
     icon: Sprout,
     features: [] as { icon: typeof FileBadge; label: string }[],
     comingSoon: false,
@@ -81,9 +92,9 @@ const categories = [
     title: "G15 Women's Football Series 2026",
     subtitle: "เวทีการแข่งขันฟุตบอลหญิงรุ่นอายุไม่เกิน 15 ปี",
     href: "/g15-womens-series" as string | null,
-    // ไม่ใช้ G15_IMAGE_URL เป็นภาพพื้นหลังการ์ด — ตอนนี้เป็นโลโก้พื้นโปร่งใส ไม่ใช่ภาพถ่าย
-    // ใช้ object-cover แล้วจะครอปเบี้ยว จึงปล่อยให้ใช้พื้นไล่สีเดียวกับหมวดอื่นที่ไม่มีภาพแทน
+    // ไม่ใช้ภาพโลโก้เป็นพื้นหลังการ์ด (object-cover จะครอปเบี้ยว) — ใช้เป็นตราสัญลักษณ์ในกล่องไอคอนแทน
     image: null as string | null,
+    badgeImage: G15_IMAGE_URL as string | null,
     icon: Trophy,
     features: [] as { icon: typeof FileBadge; label: string }[],
     comingSoon: false,
@@ -391,8 +402,16 @@ export default async function HomePage() {
                     <div className="absolute inset-0 bg-linear-to-br from-indigo-700 via-indigo-800 to-indigo-950" />
                   )}
                   <div className="absolute inset-0 bg-linear-to-br from-indigo-950/85 via-indigo-900/55 to-indigo-950/30" />
-                  <div className="relative flex h-16 w-16 items-center justify-center rounded-2xl bg-white/10 ring-1 ring-white/30 backdrop-blur-sm transition-transform duration-300 group-hover:scale-110">
-                    <CategoryIcon className="h-8 w-8 text-amber-300" />
+                  <div
+                    className={`relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl shadow-lg transition-transform duration-300 group-hover:scale-110 ${
+                      category.badgeImage ? "bg-white p-2" : "bg-white/10 ring-1 ring-white/30 backdrop-blur-sm"
+                    }`}
+                  >
+                    {category.badgeImage ? (
+                      <Image src={category.badgeImage} alt={category.title} fill sizes="64px" className="object-contain" />
+                    ) : (
+                      <CategoryIcon className="h-8 w-8 text-amber-300" />
+                    )}
                   </div>
                   {category.comingSoon && (
                     <span className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-white/15 px-2.5 py-1 text-xs font-medium text-white ring-1 ring-white/30 backdrop-blur-sm">

@@ -12,3 +12,9 @@ export const G15_IMAGE_URL =
 
 export const G15_HERO_BANNER_URL =
   "https://rgqahrqwxwhaechiodzf.supabase.co/storage/v1/object/public/uploads/g15-hero-banner-36f7b13b-15bc-4131-926f-2aa4aa82f2a4.jpg";
+
+export const GRASSROOTS_LOGO_URL =
+  "https://rgqahrqwxwhaechiodzf.supabase.co/storage/v1/object/public/uploads/grassroots-logo-4d4e5f10-5372-44a4-99c0-7938539d85b8.png";
+
+export const TALENT_ID_LOGO_URL =
+  "https://rgqahrqwxwhaechiodzf.supabase.co/storage/v1/object/public/uploads/talent-id-logo-1b509a52-62e8-4e9f-a88d-57195e2bdf5a.png";
