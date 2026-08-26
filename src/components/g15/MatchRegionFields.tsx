@@ -14,11 +14,15 @@ export function MatchRegionFields({
   defaultRound,
   defaultHomeTeamId,
   defaultAwayTeamId,
+  regionRowSpansFull = false,
 }: {
   teams: TeamOption[];
   defaultRound?: string;
   defaultHomeTeamId?: number;
   defaultAwayTeamId?: number;
+  // ให้ช่อง "รอบการแข่งขัน / ภาค" กินเต็มแถวของตัวเอง แล้วดันทีมเหย้า/ทีมเยือนไปจับคู่กันแถวถัดไป
+  // ใช้เฉพาะฟอร์มเพิ่มนัดที่เป็นกริด 2 คอลัมน์ — ฟอร์มแก้ไขนัด (กริด 6 คอลัมน์) ไม่ต้องการพฤติกรรมนี้
+  regionRowSpansFull?: boolean;
 }) {
   const regionOrder = useMemo(() => {
     const present = new Set(
@@ -42,7 +46,7 @@ export function MatchRegionFields({
 
   return (
     <>
-      <label className="flex flex-col gap-1.5">
+      <label className={`flex flex-col gap-1.5 ${regionRowSpansFull ? "sm:col-span-2" : ""}`}>
         <span className="text-sm font-medium text-slate-700">
           รอบการแข่งขัน / ภาค<span className="text-red-500"> *</span>
         </span>

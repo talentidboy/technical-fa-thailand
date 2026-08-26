@@ -84,7 +84,7 @@ export default async function G15ManagePage() {
       <p className="text-sm text-slate-400">ต้องมีทีมอย่างน้อย 2 ทีมก่อนจึงจะเพิ่มนัดการแข่งขันได้</p>
     ) : (
       <form action={createMatch} className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <MatchRegionFields teams={teams} />
+        <MatchRegionFields teams={teams} regionRowSpansFull />
         <Field label="วันเวลาแข่งขัน" name="matchDate" type="datetime-local" />
         <Field label="สนาม" name="venue" placeholder="สนามกีฬาแห่งชาติ" />
         <div className="flex items-end sm:col-span-2">
