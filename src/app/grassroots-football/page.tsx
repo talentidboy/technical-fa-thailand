@@ -10,7 +10,133 @@ import {
   Users,
   Smile,
   Trophy,
+  UserCog,
+  MapPin,
 } from "lucide-react";
+
+// ข้อมูลสถิติปี 2025 จากรายงานสรุปโครงการฟุตบอลรากหญ้า (ข้อมูลนิ่ง กรอกด้วยมือ ไม่ได้ดึงจากฐานข้อมูล)
+const coachStats = {
+  total: 518,
+  male: 446,
+  malePercent: 86.1,
+  female: 72,
+  femalePercent: 13.9,
+  provinces: 18,
+  topProvinces: [
+    { name: "สุราษฎร์ธานี", count: 107 },
+    { name: "ชลบุรี", count: 88 },
+    { name: "สงขลา", count: 65 },
+    { name: "ภูเก็ต", count: 62 },
+    { name: "น่าน", count: 48 },
+  ],
+  noLicense: 387,
+  licenses: [
+    { label: "G-Diploma", count: 80 },
+    { label: "C-Diploma", count: 27 },
+    { label: "T-License", count: 10 },
+  ],
+};
+
+const playerStats = {
+  total: 2888,
+  male: 2414,
+  malePercent: 83.6,
+  female: 474,
+  femalePercent: 16.4,
+  provinces: 18,
+  topProvinces: [
+    { name: "สุราษฎร์ธานี", count: 799 },
+    { name: "ชลบุรี", count: 487 },
+    { name: "สงขลา", count: 267 },
+    { name: "ร้อยเอ็ด", count: 148 },
+    { name: "น่าน", count: 134 },
+  ],
+  ageRanges: [
+    { label: "2–7 ปี", count: 93 },
+    { label: "8–10 ปี", count: 1006 },
+    { label: "11–12 ปี", count: 1496 },
+    { label: "13–15 ปี", count: 293 },
+  ],
+};
+
+function GenderSplitBar({
+  male,
+  malePercent,
+  female,
+  femalePercent,
+}: {
+  male: number;
+  malePercent: number;
+  female: number;
+  femalePercent: number;
+}) {
+  return (
+    <div>
+      <div className="flex h-2.5 overflow-hidden rounded-full bg-slate-100">
+        <div className="bg-indigo-500" style={{ width: `${malePercent}%` }} />
+        <div className="bg-rose-400" style={{ width: `${femalePercent}%` }} />
+      </div>
+      <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
+        <span className="flex items-center gap-1.5 font-medium text-indigo-700">
+          <span className="h-2 w-2 flex-none rounded-full bg-indigo-500" />
+          ชาย {male.toLocaleString()} คน ({malePercent}%)
+        </span>
+        <span className="flex items-center gap-1.5 font-medium text-rose-600">
+          <span className="h-2 w-2 flex-none rounded-full bg-rose-400" />
+          หญิง {female.toLocaleString()} คน ({femalePercent}%)
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function ProvinceLeaderboard({ items }: { items: { name: string; count: number }[] }) {
+  return (
+    <ul className="space-y-2">
+      {items.map((item, i) => (
+        <li key={item.name} className="flex items-center gap-2.5">
+          <span
+            className={`flex h-6 w-6 flex-none items-center justify-center rounded-full text-[11px] font-bold ${
+              i === 0
+                ? "bg-amber-400 text-amber-950"
+                : i === 1
+                  ? "bg-slate-300 text-slate-900"
+                  : i === 2
+                    ? "bg-orange-300 text-orange-950"
+                    : "bg-slate-100 text-slate-400"
+            }`}
+          >
+            {i + 1}
+          </span>
+          <span className="min-w-0 flex-1 truncate text-sm text-slate-700">{item.name}</span>
+          <span className="flex-none text-sm font-bold text-emerald-600">{item.count.toLocaleString()} คน</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function RankedBarList({ items }: { items: { label: string; count: number }[] }) {
+  const max = Math.max(...items.map((i) => i.count));
+  return (
+    <div className="space-y-2.5">
+      {items.map((item) => (
+        <div key={item.label}>
+          <div className="mb-1 flex items-center justify-between text-xs">
+            <span className="font-medium text-slate-700">{item.label}</span>
+            <span className="font-bold text-slate-900">{item.count.toLocaleString()} คน</span>
+          </div>
+          <div className="h-2 overflow-hidden rounded-full bg-slate-100">
+            <div
+              className="h-full rounded-full bg-emerald-500"
+              style={{ width: `${(item.count / max) * 100}%` }}
+            />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 const pillars = [
   {
@@ -114,14 +240,99 @@ export default async function GrassrootsFootballPage() {
           ))}
         </div>
 
-        <div className="flex flex-col items-center justify-center gap-3 rounded-3xl border border-dashed border-slate-300 bg-white px-6 py-16 text-center">
-          <Sprout className="h-8 w-8 text-slate-300" />
-          <p className="font-medium text-slate-500">
-            รายละเอียดโครงการและกิจกรรมฟุตบอลรากหญ้า
-          </p>
-          <p className="text-sm text-slate-400">
-            อยู่ระหว่างการพัฒนา เร็วๆ นี้จะมีข้อมูลโครงการและกิจกรรมเพิ่มเติม
-          </p>
+        <div className="mb-6">
+          <h2 className="text-xl font-bold text-slate-900">สถิติโครงการฟุตบอลรากหญ้า ปี 2025</h2>
+          <p className="mt-1 text-sm text-slate-500">สรุปข้อมูลผู้ฝึกสอนและนักฟุตบอลที่เข้าร่วมโครงการทั่วประเทศ</p>
+        </div>
+
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          {/* ผู้ฝึกสอน */}
+          <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+            <div className="flex items-center gap-2.5 bg-emerald-600 px-6 py-4">
+              <UserCog className="h-5 w-5 text-white" />
+              <h3 className="text-lg font-bold text-white">ผู้ฝึกสอน (โค้ช) 2025</h3>
+            </div>
+            <div className="space-y-6 p-6">
+              <div>
+                <p className="text-3xl font-extrabold text-slate-900">
+                  {coachStats.total.toLocaleString()} <span className="text-base font-medium text-slate-400">คน</span>
+                </p>
+                <p className="text-sm text-slate-500">ผู้เข้าร่วมทั้งหมด</p>
+                <div className="mt-3">
+                  <GenderSplitBar
+                    male={coachStats.male}
+                    malePercent={coachStats.malePercent}
+                    female={coachStats.female}
+                    femalePercent={coachStats.femalePercent}
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 rounded-2xl bg-slate-50 p-4">
+                <MapPin className="h-8 w-8 flex-none text-emerald-600" />
+                <div>
+                  <p className="text-2xl font-bold text-slate-900">{coachStats.provinces} จังหวัด</p>
+                  <p className="text-xs text-slate-500">จังหวัดที่มีกิจกรรม</p>
+                </div>
+              </div>
+
+              <div>
+                <h4 className="mb-3 text-sm font-semibold text-slate-700">5 อันดับจังหวัดที่มีผู้เข้าร่วมมากที่สุด</h4>
+                <ProvinceLeaderboard items={coachStats.topProvinces} />
+              </div>
+
+              <div>
+                <h4 className="mb-3 text-sm font-semibold text-slate-700">ระดับใบอนุญาตผู้ฝึกสอน</h4>
+                <RankedBarList items={coachStats.licenses} />
+                <p className="mt-3 text-xs text-slate-400">
+                  ยังไม่มีใบอนุญาตผู้ฝึกสอน {coachStats.noLicense.toLocaleString()} คน
+                  (รวมระดับ A/B Diploma และอื่นๆ จำนวนเล็กน้อย)
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* นักฟุตบอล */}
+          <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+            <div className="flex items-center gap-2.5 bg-emerald-600 px-6 py-4">
+              <Users className="h-5 w-5 text-white" />
+              <h3 className="text-lg font-bold text-white">นักฟุตบอล 2025</h3>
+            </div>
+            <div className="space-y-6 p-6">
+              <div>
+                <p className="text-3xl font-extrabold text-slate-900">
+                  {playerStats.total.toLocaleString()} <span className="text-base font-medium text-slate-400">คน</span>
+                </p>
+                <p className="text-sm text-slate-500">ผู้เข้าร่วมทั้งหมด</p>
+                <div className="mt-3">
+                  <GenderSplitBar
+                    male={playerStats.male}
+                    malePercent={playerStats.malePercent}
+                    female={playerStats.female}
+                    femalePercent={playerStats.femalePercent}
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 rounded-2xl bg-slate-50 p-4">
+                <MapPin className="h-8 w-8 flex-none text-emerald-600" />
+                <div>
+                  <p className="text-2xl font-bold text-slate-900">{playerStats.provinces} จังหวัด</p>
+                  <p className="text-xs text-slate-500">จังหวัดที่มีกิจกรรม</p>
+                </div>
+              </div>
+
+              <div>
+                <h4 className="mb-3 text-sm font-semibold text-slate-700">5 อันดับจังหวัดที่มีผู้เข้าร่วมมากที่สุด</h4>
+                <ProvinceLeaderboard items={playerStats.topProvinces} />
+              </div>
+
+              <div>
+                <h4 className="mb-3 text-sm font-semibold text-slate-700">ช่วงอายุผู้เข้าร่วม</h4>
+                <RankedBarList items={playerStats.ageRanges} />
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
