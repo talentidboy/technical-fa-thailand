@@ -59,7 +59,7 @@ const categories = [
     comingSoon: false,
   },
   {
-    title: "Training Centre",
+    title: "FA Thailand Data Center",
     subtitle: "ศูนย์รวบรวมข้อมูลด้านการฝึกอบรมและเทคนิคของสมาคม",
     href: "/training-centre" as string | null,
     image: null as string | null,

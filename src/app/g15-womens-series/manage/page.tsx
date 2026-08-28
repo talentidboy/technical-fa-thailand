@@ -332,13 +332,21 @@ export default async function G15ManagePage() {
                             ลบนัดนี้
                           </button>
                         </form>
-                        <button
-                          type="submit"
-                          form={`match-form-${match.id}`}
-                          className="rounded-lg bg-emerald-600 px-5 py-2.5 text-xs font-medium text-white shadow-sm shadow-emerald-200 transition-colors hover:bg-emerald-700"
-                        >
-                          บันทึก
-                        </button>
+                        <div className="flex items-center gap-2">
+                          <Link
+                            href={`/g15-womens-series/manage/matches/${match.id}`}
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3.5 py-2.5 text-xs font-medium text-slate-600 transition-colors hover:bg-slate-50"
+                          >
+                            ผู้ตัดสิน / ผู้ทำประตู / สถิติ
+                          </Link>
+                          <button
+                            type="submit"
+                            form={`match-form-${match.id}`}
+                            className="rounded-lg bg-emerald-600 px-5 py-2.5 text-xs font-medium text-white shadow-sm shadow-emerald-200 transition-colors hover:bg-emerald-700"
+                          >
+                            บันทึก
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </details>

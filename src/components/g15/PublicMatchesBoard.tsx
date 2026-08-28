@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { MapPin } from "lucide-react";
 import { TeamBadge } from "./TeamBadge";
 import { REGION_STYLE, DEFAULT_REGION_STYLE, regionEn } from "@/lib/g15-region";
@@ -48,7 +49,10 @@ function MatchRow({ match }: { match: Match }) {
   const awayWon = isFinished && match.awayScore! > match.homeScore!;
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+    <Link
+      href={`/g15-womens-series/matches/${match.id}`}
+      className="block rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-colors hover:border-rose-200 hover:shadow-md sm:p-5"
+    >
       <div className="flex items-center gap-3 sm:gap-4">
         <div className="w-12 flex-none text-sm font-bold text-slate-900 sm:w-14">
           {match.matchDate ? bangkokTimeLabel(match.matchDate) : "TBD"}
@@ -86,7 +90,7 @@ function MatchRow({ match }: { match: Match }) {
           {match.venue}
         </div>
       )}
-    </div>
+    </Link>
   );
 }
 

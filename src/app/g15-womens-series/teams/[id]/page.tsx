@@ -367,7 +367,11 @@ export default async function G15TeamDetailPage({
                           ? "bg-red-500"
                           : "bg-rose-600";
                   return (
-                    <li key={match.id} className="flex flex-wrap items-center justify-between gap-3 px-5 py-3.5">
+                    <li key={match.id}>
+                    <Link
+                      href={`/g15-womens-series/matches/${match.id}`}
+                      className="flex flex-wrap items-center justify-between gap-3 px-5 py-3.5 transition-colors hover:bg-slate-50"
+                    >
                       <div className="flex items-center gap-3">
                         {outcome && (
                           <span
@@ -400,6 +404,7 @@ export default async function G15TeamDetailPage({
                           </span>
                         )}
                       </div>
+                    </Link>
                     </li>
                   );
                 })}

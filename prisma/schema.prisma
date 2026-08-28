@@ -252,10 +252,13 @@ model G15Team {
   groupName String?  @map("group_name")
   createdAt DateTime @default(now()) @map("created_at")
 
-  homeMatches G15Match[] @relation("G15HomeTeam")
-  awayMatches G15Match[] @relation("G15AwayTeam")
-  players     G15Player[]
-  officials   G15Official[]
+  homeMatches   G15Match[] @relation("G15HomeTeam")
+  awayMatches   G15Match[] @relation("G15AwayTeam")
+  players       G15Player[]
+  officials     G15Official[]
+  goals         G15Goal[]
+  substitutions G15Substitution[]
+  cards         G15Card[]
 
   @@map("g15_teams")
 }
@@ -282,6 +285,8 @@ model G15Player {
   idCardNumber   String?   @map("id_card_number")
   passportNumber String?   @map("passport_number")
   createdAt      DateTime  @default(now()) @map("created_at")
+
+  goals G15Goal[]
 
   @@map("g15_players")
 }
@@ -324,5 +329,78 @@ model G15Match {
   status     String    @default("SCHEDULED")
   createdAt  DateTime  @default(now()) @map("created_at")
 
+  // ทีมงานผู้ตัดสิน — จากใบรายงานผู้ตัดสิน/Starting List ของแต่ละนัด (มีเฉพาะนัดที่ได้รับเอกสารแล้ว)
+  referee            String? @map("referee")
+  assistantReferee1  String? @map("assistant_referee_1")
+  assistantReferee2  String? @map("assistant_referee_2")
+  fourthOfficial     String? @map("fourth_official")
+  matchCommissioner  String? @map("match_commissioner")
+  refereeAssessor    String? @map("referee_assessor")
+  generalCoordinator String? @map("general_coordinator")
+
+  // สกอร์แยกครึ่งเวลาตามที่ระบุในใบรายงานผู้ตัดสิน — เก็บไว้อ้างอิงเฉยๆ ไม่ใช่ค่าที่ใช้คำนวณตารางคะแนน
+  // (homeScore/awayScore ด้านบนคือค่าทางการที่ใช้จริง อาจไม่ตรงกับผลรวมครึ่งแรก+ครึ่งหลังในเอกสารเสมอไป)
+  firstHalfHomeScore  Int? @map("first_half_home_score")
+  firstHalfAwayScore  Int? @map("first_half_away_score")
+  secondHalfHomeScore Int? @map("second_half_home_score")
+  secondHalfAwayScore Int? @map("second_half_away_score")
+
+  goals         G15Goal[]
+  substitutions G15Substitution[]
+  cards         G15Card[]
+
   @@map("g15_matches")
+}
+
+// ผู้ทำประตูในแต่ละนัด (จากใบรายงานผู้ตัดสิน หัวข้อ "7. ผู้ทำประตู")
+model G15Goal {
+  id           Int      @id @default(autoincrement())
+  matchId      Int      @map("match_id")
+  match        G15Match @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  teamId       Int      @map("team_id")
+  team         G15Team  @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  playerId     Int?     @map("player_id")
+  player       G15Player? @relation(fields: [playerId], references: [id], onDelete: SetNull)
+  playerName   String   @map("player_name")
+  jerseyNumber Int?     @map("jersey_number")
+  minute       Int?
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@map("g15_goals")
+}
+
+// การเปลี่ยนตัวผู้เล่นในแต่ละนัด (จากใบรายงานผู้ตัดสิน หัวข้อ "8. การเปลี่ยนตัวผู้เล่น")
+model G15Substitution {
+  id              Int      @id @default(autoincrement())
+  matchId         Int      @map("match_id")
+  match           G15Match @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  teamId          Int      @map("team_id")
+  team            G15Team  @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  minute          Int?
+  playerInName    String   @map("player_in_name")
+  playerInNumber  Int?     @map("player_in_number")
+  playerOutName   String   @map("player_out_name")
+  playerOutNumber Int?     @map("player_out_number")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  @@map("g15_substitutions")
+}
+
+// ใบเหลือง/ใบแดง ของนักกีฬาและเจ้าหน้าที่ทีมในแต่ละนัด (จากใบรายงานผู้ตัดสิน หัวข้อ 9-12)
+// holderRole: PLAYER, OFFICIAL — cardType: YELLOW, RED
+model G15Card {
+  id           Int      @id @default(autoincrement())
+  matchId      Int      @map("match_id")
+  match        G15Match @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  teamId       Int      @map("team_id")
+  team         G15Team  @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  holderName   String   @map("holder_name")
+  holderNumber Int?     @map("holder_number")
+  holderRole   String   @default("PLAYER") @map("holder_role")
+  cardType     String   @map("card_type")
+  minute       Int?
+  reason       String?
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@map("g15_cards")
 }

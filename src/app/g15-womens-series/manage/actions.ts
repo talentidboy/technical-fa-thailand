@@ -14,7 +14,7 @@ async function requireAdminOrStaff() {
   return user;
 }
 
-function revalidateG15(teamId?: number) {
+function revalidateG15(teamId?: number, matchId?: number) {
   revalidatePath("/g15-womens-series");
   revalidatePath("/g15-womens-series/matches");
   revalidatePath("/g15-womens-series/standings");
@@ -25,6 +25,10 @@ function revalidateG15(teamId?: number) {
   if (teamId) {
     revalidatePath(`/g15-womens-series/teams/${teamId}`);
     revalidatePath(`/g15-womens-series/manage/teams/${teamId}`);
+  }
+  if (matchId) {
+    revalidatePath(`/g15-womens-series/matches/${matchId}`);
+    revalidatePath(`/g15-womens-series/manage/matches/${matchId}`);
   }
 }
 
@@ -350,4 +354,218 @@ export async function deleteOfficial(formData: FormData) {
   await prisma.g15Official.delete({ where: { id } });
 
   revalidateG15(teamId);
+}
+
+// ===== รายละเอียดนัดการแข่งขัน (ทีมงานผู้ตัดสิน / ผู้ทำประตู / เปลี่ยนตัว / ใบเหลือง-ใบแดง) =====
+// จากใบรายงานผู้ตัดสินของแต่ละนัด — เก็บแยกจาก homeScore/awayScore ที่ใช้คำนวณตารางคะแนน
+
+export async function updateMatchOfficials(formData: FormData) {
+  await requireAdminOrStaff();
+  const id = Number(formData.get("id"));
+
+  await prisma.g15Match.update({
+    where: { id },
+    data: {
+      referee: str(formData, "referee"),
+      assistantReferee1: str(formData, "assistantReferee1"),
+      assistantReferee2: str(formData, "assistantReferee2"),
+      fourthOfficial: str(formData, "fourthOfficial"),
+      matchCommissioner: str(formData, "matchCommissioner"),
+      refereeAssessor: str(formData, "refereeAssessor"),
+      generalCoordinator: str(formData, "generalCoordinator"),
+      firstHalfHomeScore: int(formData, "firstHalfHomeScore"),
+      firstHalfAwayScore: int(formData, "firstHalfAwayScore"),
+      secondHalfHomeScore: int(formData, "secondHalfHomeScore"),
+      secondHalfAwayScore: int(formData, "secondHalfAwayScore"),
+    },
+  });
+
+  revalidateG15(undefined, id);
+}
+
+// เลือกได้ 2 ทาง: เลือกนักกีฬาจากทะเบียน (ผูก player_id ให้อัตโนมัติ) หรือกรอกทีม/ชื่อเอง — ถ้าเลือกจากทะเบียน ค่าที่เลือกเป็นหลัก
+async function resolveGoalData(formData: FormData) {
+  const playerId = int(formData, "playerId");
+  if (playerId) {
+    const player = await prisma.g15Player.findUnique({ where: { id: playerId } });
+    if (!player) throw new Error("ไม่พบนักกีฬาที่เลือกในทะเบียน");
+    return {
+      teamId: player.teamId,
+      playerId: player.id,
+      playerName: `${player.firstNameTh} ${player.lastNameTh}`,
+      jerseyNumber: player.jerseyNumber,
+    };
+  }
+
+  const teamId = Number(formData.get("teamId"));
+  const playerName = String(formData.get("playerName") ?? "").trim();
+  if (!teamId || !playerName) {
+    throw new Error("กรุณาเลือกนักกีฬาจากทะเบียน หรือเลือกทีมและกรอกชื่อผู้ทำประตูเอง");
+  }
+  return { teamId, playerId: null, playerName, jerseyNumber: int(formData, "jerseyNumber") };
+}
+
+export async function createGoal(formData: FormData) {
+  await requireAdminOrStaff();
+  const matchId = Number(formData.get("matchId"));
+  if (!matchId) throw new Error("ไม่พบนัดการแข่งขัน");
+  const goalData = await resolveGoalData(formData);
+
+  await prisma.g15Goal.create({
+    data: { matchId, ...goalData, minute: int(formData, "minute") },
+  });
+
+  revalidateG15(undefined, matchId);
+}
+
+export async function updateGoal(formData: FormData) {
+  await requireAdminOrStaff();
+  const id = Number(formData.get("id"));
+  const matchId = Number(formData.get("matchId"));
+  const goalData = await resolveGoalData(formData);
+
+  await prisma.g15Goal.update({
+    where: { id },
+    data: { ...goalData, minute: int(formData, "minute") },
+  });
+
+  revalidateG15(undefined, matchId);
+}
+
+export async function deleteGoal(formData: FormData) {
+  await requireAdminOrStaff();
+  const id = Number(formData.get("id"));
+  const matchId = Number(formData.get("matchId"));
+
+  await prisma.g15Goal.delete({ where: { id } });
+
+  revalidateG15(undefined, matchId);
+}
+
+export async function createSubstitution(formData: FormData) {
+  await requireAdminOrStaff();
+  const matchId = Number(formData.get("matchId"));
+  const teamId = Number(formData.get("teamId"));
+  const playerInName = String(formData.get("playerInName") ?? "").trim();
+  const playerOutName = String(formData.get("playerOutName") ?? "").trim();
+
+  if (!matchId || !teamId || !playerInName || !playerOutName) {
+    throw new Error("กรุณาเลือกทีมและกรอกชื่อผู้เล่นที่เปลี่ยนตัวเข้า-ออก");
+  }
+
+  await prisma.g15Substitution.create({
+    data: {
+      matchId,
+      teamId,
+      minute: int(formData, "minute"),
+      playerInName,
+      playerInNumber: int(formData, "playerInNumber"),
+      playerOutName,
+      playerOutNumber: int(formData, "playerOutNumber"),
+    },
+  });
+
+  revalidateG15(undefined, matchId);
+}
+
+export async function updateSubstitution(formData: FormData) {
+  await requireAdminOrStaff();
+  const id = Number(formData.get("id"));
+  const matchId = Number(formData.get("matchId"));
+  const teamId = Number(formData.get("teamId"));
+  const playerInName = String(formData.get("playerInName") ?? "").trim();
+  const playerOutName = String(formData.get("playerOutName") ?? "").trim();
+
+  if (!teamId || !playerInName || !playerOutName) {
+    throw new Error("กรุณาเลือกทีมและกรอกชื่อผู้เล่นที่เปลี่ยนตัวเข้า-ออก");
+  }
+
+  await prisma.g15Substitution.update({
+    where: { id },
+    data: {
+      teamId,
+      minute: int(formData, "minute"),
+      playerInName,
+      playerInNumber: int(formData, "playerInNumber"),
+      playerOutName,
+      playerOutNumber: int(formData, "playerOutNumber"),
+    },
+  });
+
+  revalidateG15(undefined, matchId);
+}
+
+export async function deleteSubstitution(formData: FormData) {
+  await requireAdminOrStaff();
+  const id = Number(formData.get("id"));
+  const matchId = Number(formData.get("matchId"));
+
+  await prisma.g15Substitution.delete({ where: { id } });
+
+  revalidateG15(undefined, matchId);
+}
+
+export async function createCard(formData: FormData) {
+  await requireAdminOrStaff();
+  const matchId = Number(formData.get("matchId"));
+  const teamId = Number(formData.get("teamId"));
+  const holderName = String(formData.get("holderName") ?? "").trim();
+  const cardType = String(formData.get("cardType") ?? "").trim();
+
+  if (!matchId || !teamId || !holderName || !cardType) {
+    throw new Error("กรุณาเลือกทีม กรอกชื่อ และเลือกประเภทใบ");
+  }
+
+  await prisma.g15Card.create({
+    data: {
+      matchId,
+      teamId,
+      holderName,
+      holderNumber: int(formData, "holderNumber"),
+      holderRole: str(formData, "holderRole") ?? "PLAYER",
+      cardType,
+      minute: int(formData, "minute"),
+      reason: str(formData, "reason"),
+    },
+  });
+
+  revalidateG15(undefined, matchId);
+}
+
+export async function updateCard(formData: FormData) {
+  await requireAdminOrStaff();
+  const id = Number(formData.get("id"));
+  const matchId = Number(formData.get("matchId"));
+  const teamId = Number(formData.get("teamId"));
+  const holderName = String(formData.get("holderName") ?? "").trim();
+  const cardType = String(formData.get("cardType") ?? "").trim();
+
+  if (!teamId || !holderName || !cardType) {
+    throw new Error("กรุณาเลือกทีม กรอกชื่อ และเลือกประเภทใบ");
+  }
+
+  await prisma.g15Card.update({
+    where: { id },
+    data: {
+      teamId,
+      holderName,
+      holderNumber: int(formData, "holderNumber"),
+      holderRole: str(formData, "holderRole") ?? "PLAYER",
+      cardType,
+      minute: int(formData, "minute"),
+      reason: str(formData, "reason"),
+    },
+  });
+
+  revalidateG15(undefined, matchId);
+}
+
+export async function deleteCard(formData: FormData) {
+  await requireAdminOrStaff();
+  const id = Number(formData.get("id"));
+  const matchId = Number(formData.get("matchId"));
+
+  await prisma.g15Card.delete({ where: { id } });
+
+  revalidateG15(undefined, matchId);
 }

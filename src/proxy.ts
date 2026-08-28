@@ -21,7 +21,8 @@ export function proxy(request: NextRequest) {
     pathname.startsWith("/verify/") ||
     pathname.startsWith("/news/") ||
     G15_PUBLIC_PATHS.includes(pathname) ||
-    pathname.startsWith("/g15-womens-series/teams/");
+    pathname.startsWith("/g15-womens-series/teams/") ||
+    pathname.startsWith("/g15-womens-series/matches/");
 
   if (isPublic) return NextResponse.next();
 
