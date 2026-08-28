@@ -5,6 +5,8 @@ import { Plus, X } from "lucide-react";
 
 const compactFieldClass =
   "w-full rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-xs text-slate-900 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100";
+// select ต้องมี flex-1 + min-w-0 กำกับด้วย ไม่งั้นในแถว flex ที่มีช่องอื่นอยู่ด้วย เบราว์เซอร์จะบีบ <select> ให้เหลือแค่ความกว้าง content ขั้นต่ำ (แคบจนแทบไม่เห็นตัวเลือก)
+const selectFieldClass = `${compactFieldClass} flex-1 min-w-0`;
 
 type RosterPlayer = {
   id: number;
@@ -103,7 +105,7 @@ export function GoalsBulkForm({
           .filter((r) => r.side === side)
           .map((r) => (
             <div key={r.key} className="flex items-center gap-1.5">
-              <select name={`playerId_${indexOf(r.key)}`} defaultValue="" className={compactFieldClass}>
+              <select name={`playerId_${indexOf(r.key)}`} defaultValue="" className={selectFieldClass}>
                 <PlayerOptions players={players} />
               </select>
               <input type="number" name={`minute_${indexOf(r.key)}`} placeholder="นาที" className={`${compactFieldClass} w-16 flex-none`} />
@@ -118,7 +120,7 @@ export function GoalsBulkForm({
   return (
     <form action={action} className="p-6">
       <input type="hidden" name="matchId" value={matchId} />
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+      <div className="space-y-6">
         {column("home", homeTeam, homePlayers)}
         {column("away", awayTeam, awayPlayers)}
       </div>
@@ -161,10 +163,10 @@ export function SubstitutionsBulkForm({
             const i = indexOf(r.key);
             return (
               <div key={r.key} className="flex items-center gap-1.5">
-                <select name={`inPlayerId_${i}`} defaultValue="" className={compactFieldClass} title="เข้า">
+                <select name={`inPlayerId_${i}`} defaultValue="" className={selectFieldClass} title="เข้า">
                   <PlayerOptions players={players} />
                 </select>
-                <select name={`outPlayerId_${i}`} defaultValue="" className={compactFieldClass} title="ออก">
+                <select name={`outPlayerId_${i}`} defaultValue="" className={selectFieldClass} title="ออก">
                   <PlayerOptions players={players} />
                 </select>
                 <input type="number" name={`minute_${i}`} placeholder="นาที" className={`${compactFieldClass} w-16 flex-none`} />
@@ -181,7 +183,7 @@ export function SubstitutionsBulkForm({
     <form action={action} className="p-6">
       <input type="hidden" name="matchId" value={matchId} />
       <p className="mb-3 -mt-1 text-[11px] text-slate-400">แต่ละแถว: เข้า / ออก / นาที</p>
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+      <div className="space-y-6">
         {column("home", homeTeam, homePlayers)}
         {column("away", awayTeam, awayPlayers)}
       </div>
@@ -228,7 +230,7 @@ export function CardsBulkForm({
             const i = indexOf(r.key);
             return (
               <div key={r.key} className="flex flex-wrap items-center gap-1.5">
-                <select name={`holder_${i}`} defaultValue="" className={`${compactFieldClass} min-w-40 flex-1`}>
+                <select name={`holder_${i}`} defaultValue="" className={`${selectFieldClass} min-w-40`}>
                   <option value="">— เลือกผู้รับใบ —</option>
                   <optgroup label="นักกีฬา">
                     {players.map((p) => (
@@ -263,7 +265,7 @@ export function CardsBulkForm({
   return (
     <form action={action} className="p-6">
       <input type="hidden" name="matchId" value={matchId} />
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+      <div className="space-y-6">
         {column("home", homeTeam, homePlayers, homeOfficials)}
         {column("away", awayTeam, awayPlayers, awayOfficials)}
       </div>
