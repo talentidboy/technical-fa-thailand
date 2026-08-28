@@ -108,13 +108,17 @@ function PlayerSelect({
 // อยู่ในฟอร์มเดียวกับอีกทีม บันทึกครั้งเดียวทั้งคู่
 function LineupTeamTable({
   team,
+  teamId,
   players,
   lineupByPlayerId,
 }: {
   team: { name: string; logoUrl: string | null; groupName: string | null };
+  teamId: number;
   players: RosterPlayer[];
   lineupByPlayerId: Map<number, { status: string; isCaptain: boolean }>;
 }) {
+  const currentCaptainId = players.find((p) => lineupByPlayerId.get(p.id)?.isCaptain)?.id;
+
   return (
     <div>
       <div className="mb-2.5 flex items-center gap-2">
@@ -122,6 +126,25 @@ function LineupTeamTable({
         <p className="text-sm font-semibold text-slate-900">{team.name}</p>
         <span className="ml-auto flex-none text-[11px] text-slate-400">{players.length} คน</span>
       </div>
+
+      <label className="mb-3 flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2">
+        <Star className="h-3.5 w-3.5 flex-none text-amber-500" />
+        <span className="flex-none text-xs font-medium text-slate-600">กัปตัน</span>
+        <select
+          name={`captainPlayerId_${teamId}`}
+          defaultValue={currentCaptainId ? String(currentCaptainId) : ""}
+          className="min-w-0 flex-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-900 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100"
+        >
+          <option value="">— ไม่ระบุ —</option>
+          {players.map((p) => (
+            <option key={p.id} value={p.id}>
+              #{p.jerseyNumber ?? "-"} {p.firstNameTh} {p.lastNameTh}
+            </option>
+          ))}
+        </select>
+      </label>
+      <p className="mb-2 -mt-1 px-1 text-[10px] text-slate-400">ต้องเลือกคนที่ตั้งสถานะเป็น &quot;ตัวจริง&quot; ด้านล่างด้วย ไม่งั้นบันทึกไม่ผ่าน</p>
+
       <div className="overflow-hidden rounded-xl border border-slate-200">
         {players.length === 0 ? (
           <p className="px-4 py-6 text-center text-xs text-slate-400">ยังไม่มีนักกีฬาในทะเบียนของทีมนี้</p>
@@ -155,15 +178,6 @@ function LineupTeamTable({
                       </label>
                     ))}
                   </div>
-                  <label className="flex-none cursor-pointer rounded-full p-1" title="กัปตัน">
-                    <input
-                      type="checkbox"
-                      name={`captain_${p.id}`}
-                      defaultChecked={current?.isCaptain ?? false}
-                      className="peer sr-only"
-                    />
-                    <Star className="h-4 w-4 text-slate-300 transition-colors peer-checked:fill-amber-400 peer-checked:text-amber-500" />
-                  </label>
                 </li>
               );
             })}
@@ -288,8 +302,8 @@ export default async function G15ManageMatchPage({
           <form action={updateLineup} className="p-6">
             <input type="hidden" name="matchId" value={match.id} />
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-              <LineupTeamTable team={match.homeTeam} players={homePlayers} lineupByPlayerId={lineupByPlayerId} />
-              <LineupTeamTable team={match.awayTeam} players={awayPlayers} lineupByPlayerId={lineupByPlayerId} />
+              <LineupTeamTable team={match.homeTeam} teamId={match.homeTeamId} players={homePlayers} lineupByPlayerId={lineupByPlayerId} />
+              <LineupTeamTable team={match.awayTeam} teamId={match.awayTeamId} players={awayPlayers} lineupByPlayerId={lineupByPlayerId} />
             </div>
             <button
               type="submit"

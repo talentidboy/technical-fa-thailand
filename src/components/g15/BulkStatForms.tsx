@@ -165,15 +165,23 @@ export function SubstitutionsBulkForm({
           .map((r) => {
             const i = indexOf(r.key);
             return (
-              <div key={r.key} className="flex items-center gap-1.5">
-                <select name={`inPlayerId_${i}`} defaultValue="" className={selectFieldClass} title="เข้า">
-                  <PlayerOptions players={players} />
-                </select>
-                <select name={`outPlayerId_${i}`} defaultValue="" className={selectFieldClass} title="ออก">
-                  <PlayerOptions players={players} />
-                </select>
-                <input type="number" name={`minute_${i}`} placeholder="นาที" className={`${compactFieldClass} w-20 flex-none`} />
-                <RemoveRowButton onClick={() => removeRow(r.key)} />
+              <div key={r.key} className="flex flex-col gap-1.5 rounded-lg border border-slate-100 bg-slate-50/60 p-2 sm:flex-row sm:items-center sm:bg-transparent sm:border-0 sm:p-0">
+                <div className="flex flex-1 items-center gap-1.5">
+                  <span className="w-9 flex-none text-[10px] font-bold uppercase tracking-wide text-emerald-600">เข้า</span>
+                  <select name={`inPlayerId_${i}`} defaultValue="" className={selectFieldClass}>
+                    <PlayerOptions players={players} />
+                  </select>
+                </div>
+                <div className="flex flex-1 items-center gap-1.5">
+                  <span className="w-9 flex-none text-[10px] font-bold uppercase tracking-wide text-red-600">ออก</span>
+                  <select name={`outPlayerId_${i}`} defaultValue="" className={selectFieldClass}>
+                    <PlayerOptions players={players} />
+                  </select>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <input type="number" name={`minute_${i}`} placeholder="นาที" className={`${compactFieldClass} w-20 flex-none`} />
+                  <RemoveRowButton onClick={() => removeRow(r.key)} />
+                </div>
               </div>
             );
           })}

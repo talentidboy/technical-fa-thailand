@@ -671,16 +671,34 @@ export async function updateLineup(formData: FormData) {
     select: { id: true, teamId: true },
   });
 
-  const rows = players.flatMap((p) => {
+  const statusByPlayerId = new Map<number, string>();
+  for (const p of players) {
     const status = String(formData.get(`status_${p.id}`) ?? "");
-    if (status !== "STARTING" && status !== "SUBSTITUTE") return [];
+    if (status === "STARTING" || status === "SUBSTITUTE") statusByPlayerId.set(p.id, status);
+  }
+
+  // กัปตันเลือกทีละคนต่อทีม (select เดียว ไม่ใช่ checkbox แยกต่อผู้เล่น) — บังคับว่าต้องเป็นคนที่ตั้งสถานะตัวจริงไว้ในฟอร์มเดียวกันนี้เท่านั้น
+  const captainByTeamId = new Map<number, number>();
+  for (const teamId of [match.homeTeamId, match.awayTeamId]) {
+    const raw = String(formData.get(`captainPlayerId_${teamId}`) ?? "");
+    if (!raw) continue;
+    const captainId = Number(raw);
+    if (statusByPlayerId.get(captainId) !== "STARTING") {
+      throw new Error("กัปตันต้องเป็นผู้เล่นตัวจริงเท่านั้น กรุณาตั้งสถานะ \"ตัวจริง\" ให้ผู้เล่นคนนั้นก่อนบันทึก");
+    }
+    captainByTeamId.set(teamId, captainId);
+  }
+
+  const rows = players.flatMap((p) => {
+    const status = statusByPlayerId.get(p.id);
+    if (!status) return [];
     return [
       {
         matchId,
         teamId: p.teamId,
         playerId: p.id,
         status,
-        isCaptain: formData.get(`captain_${p.id}`) === "on",
+        isCaptain: captainByTeamId.get(p.teamId) === p.id,
       },
     ];
   });
