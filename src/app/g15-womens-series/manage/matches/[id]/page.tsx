@@ -20,7 +20,13 @@ import { Field, SelectField } from "@/components/FormField";
 import { TeamBadge } from "@/components/g15/TeamBadge";
 import { GoalsBulkForm, SubstitutionsBulkForm, CardsBulkForm } from "@/components/g15/BulkStatForms";
 import { LOGO_URL } from "@/lib/brand";
-import { ArrowLeft, ClipboardList, Target, LogIn, Trash2, ChevronDown, ExternalLink, Users } from "lucide-react";
+import { ArrowLeft, ClipboardList, Target, LogIn, Trash2, ChevronDown, ExternalLink, Users, Star } from "lucide-react";
+
+const LINEUP_STATUS_OPTIONS = [
+  { value: "", label: "ไม่ลง", activeClass: "peer-checked:bg-slate-700 peer-checked:text-white" },
+  { value: "STARTING", label: "ตัวจริง", activeClass: "peer-checked:bg-emerald-500 peer-checked:text-white" },
+  { value: "SUBSTITUTE", label: "สำรอง", activeClass: "peer-checked:bg-sky-500 peer-checked:text-white" },
+] as const;
 
 const fieldClass =
   "w-full flex-1 rounded-lg border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100";
@@ -98,73 +104,71 @@ function PlayerSelect({
   );
 }
 
-// ตารางไลน์อัพของทีมเดียว — ตัวจริง/ตัวสำรอง/กัปตัน เป็น radio/checkbox ในฟอร์มเดียวกับอีกทีม บันทึกครั้งเดียวทั้งคู่
+// ตารางไลน์อัพของทีมเดียว — ตัวจริง/ตัวสำรอง เป็นปุ่มเลือกแบบ segmented (radio ที่ซ่อนไว้ + label สไตล์ปุ่ม) กัปตันเป็นไอคอนดาวกดติด/ดับ
+// อยู่ในฟอร์มเดียวกับอีกทีม บันทึกครั้งเดียวทั้งคู่
 function LineupTeamTable({
   team,
   players,
   lineupByPlayerId,
 }: {
-  team: { id: number; name: string };
+  team: { name: string; logoUrl: string | null; groupName: string | null };
   players: RosterPlayer[];
   lineupByPlayerId: Map<number, { status: string; isCaptain: boolean }>;
 }) {
   return (
     <div>
-      <p className="mb-2 text-xs font-semibold text-slate-500">{team.name}</p>
+      <div className="mb-2.5 flex items-center gap-2">
+        <TeamBadge team={team} size="sm" />
+        <p className="text-sm font-semibold text-slate-900">{team.name}</p>
+        <span className="ml-auto flex-none text-[11px] text-slate-400">{players.length} คน</span>
+      </div>
       <div className="overflow-hidden rounded-xl border border-slate-200">
-        <table className="w-full text-xs">
-          <thead className="bg-slate-50 text-[10px] uppercase tracking-wide text-slate-400">
-            <tr>
-              <th className="px-2 py-1.5 text-left">ผู้เล่น</th>
-              <th className="px-2 py-1.5 text-center">ไม่ลง</th>
-              <th className="px-2 py-1.5 text-center">ตัวจริง</th>
-              <th className="px-2 py-1.5 text-center">สำรอง</th>
-              <th className="px-2 py-1.5 text-center">กัปตัน</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100">
-            {players.length === 0 ? (
-              <tr>
-                <td colSpan={5} className="px-2 py-4 text-center text-slate-400">
-                  ยังไม่มีนักกีฬาในทะเบียนของทีมนี้
-                </td>
-              </tr>
-            ) : (
-              players.map((p) => {
-                const current = lineupByPlayerId.get(p.id);
-                return (
-                  <tr key={p.id}>
-                    <td className="max-w-32 truncate px-2 py-1.5 text-slate-700 sm:max-w-none">
-                      #{p.jerseyNumber ?? "-"} {p.firstNameTh} {p.lastNameTh}
-                    </td>
-                    <td className="px-2 py-1.5 text-center">
-                      <input type="radio" name={`status_${p.id}`} value="" defaultChecked={!current} />
-                    </td>
-                    <td className="px-2 py-1.5 text-center">
-                      <input
-                        type="radio"
-                        name={`status_${p.id}`}
-                        value="STARTING"
-                        defaultChecked={current?.status === "STARTING"}
-                      />
-                    </td>
-                    <td className="px-2 py-1.5 text-center">
-                      <input
-                        type="radio"
-                        name={`status_${p.id}`}
-                        value="SUBSTITUTE"
-                        defaultChecked={current?.status === "SUBSTITUTE"}
-                      />
-                    </td>
-                    <td className="px-2 py-1.5 text-center">
-                      <input type="checkbox" name={`captain_${p.id}`} defaultChecked={current?.isCaptain ?? false} />
-                    </td>
-                  </tr>
-                );
-              })
-            )}
-          </tbody>
-        </table>
+        {players.length === 0 ? (
+          <p className="px-4 py-6 text-center text-xs text-slate-400">ยังไม่มีนักกีฬาในทะเบียนของทีมนี้</p>
+        ) : (
+          <ul className="divide-y divide-slate-100">
+            {players.map((p) => {
+              const current = lineupByPlayerId.get(p.id);
+              return (
+                <li key={p.id} className="flex flex-wrap items-center gap-2.5 px-3 py-2 transition-colors hover:bg-slate-50">
+                  <span className="flex h-6 w-8 flex-none items-center justify-center rounded-md bg-slate-100 text-[11px] font-bold text-slate-500">
+                    #{p.jerseyNumber ?? "-"}
+                  </span>
+                  <span className="min-w-24 flex-1 truncate text-xs font-medium text-slate-700">
+                    {p.firstNameTh} {p.lastNameTh}
+                  </span>
+                  <div className="flex flex-none overflow-hidden rounded-full border border-slate-200">
+                    {LINEUP_STATUS_OPTIONS.map((opt) => (
+                      <label key={opt.value || "none"} className="cursor-pointer">
+                        <input
+                          type="radio"
+                          name={`status_${p.id}`}
+                          value={opt.value}
+                          defaultChecked={opt.value === "" ? !current : current?.status === opt.value}
+                          className="peer sr-only"
+                        />
+                        <span
+                          className={`block px-2.5 py-1 text-[11px] font-medium text-slate-400 transition-colors ${opt.activeClass}`}
+                        >
+                          {opt.label}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                  <label className="flex-none cursor-pointer rounded-full p-1" title="กัปตัน">
+                    <input
+                      type="checkbox"
+                      name={`captain_${p.id}`}
+                      defaultChecked={current?.isCaptain ?? false}
+                      className="peer sr-only"
+                    />
+                    <Star className="h-4 w-4 text-slate-300 transition-colors peer-checked:fill-amber-400 peer-checked:text-amber-500" />
+                  </label>
+                </li>
+              );
+            })}
+          </ul>
+        )}
       </div>
     </div>
   );

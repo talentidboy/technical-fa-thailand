@@ -3,9 +3,12 @@
 import { useRef, useState } from "react";
 import { Plus, X } from "lucide-react";
 
+// ไม่ใส่ความกว้าง (w-*) ไว้ในนี้โดยตรง — ปล่อยให้แต่ละช่องกำหนดเอง (flex-1/w-16/ฯลฯ) เพราะ Tailwind ไม่ได้ generate CSS
+// ตามลำดับ className ที่เขียนในโค้ด ถ้าใส่ w-full ไว้ในนี้แล้วช่องไหนพยายาม override ด้วย w-16/flex-none ทีหลัง
+// อาจจะแพ้ w-full ในลำดับ stylesheet จริง กลายเป็นช่อง select ถูกบีบเหลือแค่ความกว้าง content ขั้นต่ำ (ปัญหาที่เจอไปก่อนหน้านี้)
 const compactFieldClass =
-  "w-full rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-xs text-slate-900 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100";
-// select ต้องมี flex-1 + min-w-0 กำกับด้วย ไม่งั้นในแถว flex ที่มีช่องอื่นอยู่ด้วย เบราว์เซอร์จะบีบ <select> ให้เหลือแค่ความกว้าง content ขั้นต่ำ (แคบจนแทบไม่เห็นตัวเลือก)
+  "rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-xs text-slate-900 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100";
+// select ผู้เล่นทั่วไปในแถว — ต้องขยายเต็มพื้นที่ที่เหลือในแถว flex เสมอ
 const selectFieldClass = `${compactFieldClass} flex-1 min-w-0`;
 
 type RosterPlayer = {
@@ -108,7 +111,7 @@ export function GoalsBulkForm({
               <select name={`playerId_${indexOf(r.key)}`} defaultValue="" className={selectFieldClass}>
                 <PlayerOptions players={players} />
               </select>
-              <input type="number" name={`minute_${indexOf(r.key)}`} placeholder="นาที" className={`${compactFieldClass} w-16 flex-none`} />
+              <input type="number" name={`minute_${indexOf(r.key)}`} placeholder="นาที" className={`${compactFieldClass} w-20 flex-none`} />
               <RemoveRowButton onClick={() => removeRow(r.key)} />
             </div>
           ))}
@@ -169,7 +172,7 @@ export function SubstitutionsBulkForm({
                 <select name={`outPlayerId_${i}`} defaultValue="" className={selectFieldClass} title="ออก">
                   <PlayerOptions players={players} />
                 </select>
-                <input type="number" name={`minute_${i}`} placeholder="นาที" className={`${compactFieldClass} w-16 flex-none`} />
+                <input type="number" name={`minute_${i}`} placeholder="นาที" className={`${compactFieldClass} w-20 flex-none`} />
                 <RemoveRowButton onClick={() => removeRow(r.key)} />
               </div>
             );
@@ -230,7 +233,7 @@ export function CardsBulkForm({
             const i = indexOf(r.key);
             return (
               <div key={r.key} className="flex flex-wrap items-center gap-1.5">
-                <select name={`holder_${i}`} defaultValue="" className={`${selectFieldClass} min-w-40`}>
+                <select name={`holder_${i}`} defaultValue="" className={`${compactFieldClass} flex-1 min-w-40`}>
                   <option value="">— เลือกผู้รับใบ —</option>
                   <optgroup label="นักกีฬา">
                     {players.map((p) => (
@@ -251,7 +254,7 @@ export function CardsBulkForm({
                   <option value="YELLOW">เหลือง</option>
                   <option value="RED">แดง</option>
                 </select>
-                <input type="number" name={`minute_${i}`} placeholder="นาที" className={`${compactFieldClass} w-16 flex-none`} />
+                <input type="number" name={`minute_${i}`} placeholder="นาที" className={`${compactFieldClass} w-20 flex-none`} />
                 <input type="text" name={`reason_${i}`} placeholder="เหตุผล" className={`${compactFieldClass} min-w-24 flex-1`} />
                 <RemoveRowButton onClick={() => removeRow(r.key)} />
               </div>
