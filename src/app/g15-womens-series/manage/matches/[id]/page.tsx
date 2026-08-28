@@ -18,13 +18,12 @@ import {
 } from "../../actions";
 import { Field, SelectField } from "@/components/FormField";
 import { TeamBadge } from "@/components/g15/TeamBadge";
+import { GoalsBulkForm, SubstitutionsBulkForm, CardsBulkForm } from "@/components/g15/BulkStatForms";
 import { LOGO_URL } from "@/lib/brand";
 import { ArrowLeft, ClipboardList, Target, LogIn, Trash2, ChevronDown, ExternalLink, Users } from "lucide-react";
 
 const fieldClass =
   "w-full flex-1 rounded-lg border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100";
-const compactFieldClass =
-  "w-full rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-xs text-slate-900 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100";
 
 function TeamSelect({
   name,
@@ -58,13 +57,6 @@ type RosterPlayer = {
   firstNameTh: string;
   lastNameTh: string;
   jerseyNumber: number | null;
-};
-
-type RosterOfficial = {
-  id: number;
-  firstNameTh: string;
-  lastNameTh: string;
-  role: string | null;
 };
 
 // เลือกผู้ทำประตูจากทะเบียนนักกีฬาของทั้งสองทีม — เลือกแล้วจะผูก player_id ให้อัตโนมัติ
@@ -103,94 +95,6 @@ function PlayerSelect({
         </optgroup>
       </select>
     </label>
-  );
-}
-
-// ตัวเลือกผู้เล่นแบบกะทัดรัดสำหรับตารางเพิ่มหลายแถว — เหลือเฉพาะคนที่อยู่ในไลน์อัพของนัดนี้ (หรือทั้งทีมถ้ายังไม่ได้บันทึกไลน์อัพ)
-function RowPlayerSelect({
-  name,
-  homeTeam,
-  awayTeam,
-  homePlayers,
-  awayPlayers,
-}: {
-  name: string;
-  homeTeam: { id: number; name: string };
-  awayTeam: { id: number; name: string };
-  homePlayers: RosterPlayer[];
-  awayPlayers: RosterPlayer[];
-}) {
-  return (
-    <select name={name} defaultValue="" className={compactFieldClass}>
-      <option value="">— เลือกผู้เล่น —</option>
-      <optgroup label={homeTeam.name}>
-        {homePlayers.map((p) => (
-          <option key={p.id} value={p.id}>
-            #{p.jerseyNumber ?? "-"} {p.firstNameTh} {p.lastNameTh}
-          </option>
-        ))}
-      </optgroup>
-      <optgroup label={awayTeam.name}>
-        {awayPlayers.map((p) => (
-          <option key={p.id} value={p.id}>
-            #{p.jerseyNumber ?? "-"} {p.firstNameTh} {p.lastNameTh}
-          </option>
-        ))}
-      </optgroup>
-    </select>
-  );
-}
-
-// ผู้รับใบเหลือง/ใบแดง เลือกได้ทั้งนักกีฬา (ในไลน์อัพ) และเจ้าหน้าที่ทีม — ค่าที่ส่งเข้ารหัสเป็น player:<id> / official:<id>
-function RowHolderSelect({
-  name,
-  homeTeam,
-  awayTeam,
-  homePlayers,
-  awayPlayers,
-  homeOfficials,
-  awayOfficials,
-}: {
-  name: string;
-  homeTeam: { id: number; name: string };
-  awayTeam: { id: number; name: string };
-  homePlayers: RosterPlayer[];
-  awayPlayers: RosterPlayer[];
-  homeOfficials: RosterOfficial[];
-  awayOfficials: RosterOfficial[];
-}) {
-  return (
-    <select name={name} defaultValue="" className={compactFieldClass}>
-      <option value="">— เลือกผู้รับใบ —</option>
-      <optgroup label={`${homeTeam.name} · นักกีฬา`}>
-        {homePlayers.map((p) => (
-          <option key={`hp${p.id}`} value={`player:${p.id}`}>
-            #{p.jerseyNumber ?? "-"} {p.firstNameTh} {p.lastNameTh}
-          </option>
-        ))}
-      </optgroup>
-      <optgroup label={`${homeTeam.name} · เจ้าหน้าที่ทีม`}>
-        {homeOfficials.map((o) => (
-          <option key={`ho${o.id}`} value={`official:${o.id}`}>
-            {o.firstNameTh} {o.lastNameTh} ({o.role ?? "เจ้าหน้าที่"})
-          </option>
-        ))}
-      </optgroup>
-      <optgroup label={`${awayTeam.name} · นักกีฬา`}>
-        {awayPlayers.map((p) => (
-          <option key={`ap${p.id}`} value={`player:${p.id}`}>
-            #{p.jerseyNumber ?? "-"} {p.firstNameTh} {p.lastNameTh}
-          </option>
-        ))}
-      </optgroup>
-      <optgroup label={`${awayTeam.name} · เจ้าหน้าที่ทีม`}>
-        {awayOfficials.map((o) => (
-          <option key={`ao${o.id}`} value={`official:${o.id}`}>
-            {o.firstNameTh} {o.lastNameTh} ({o.role ?? "เจ้าหน้าที่"})
-          </option>
-        ))}
-      </optgroup>
-    </select>
   );
 }
 
@@ -320,10 +224,6 @@ export default async function G15ManageMatchPage({
   const awayInLineup = new Set(match.lineups.filter((l) => l.teamId === match.awayTeamId).map((l) => l.playerId));
   const eligibleHomePlayers = homeInLineup.size > 0 ? homePlayers.filter((p) => homeInLineup.has(p.id)) : homePlayers;
   const eligibleAwayPlayers = awayInLineup.size > 0 ? awayPlayers.filter((p) => awayInLineup.has(p.id)) : awayPlayers;
-
-  const GOAL_ROWS = 8;
-  const SUB_ROWS = 4;
-  const CARD_ROWS = 6;
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -528,44 +428,17 @@ export default async function G15ManageMatchPage({
             </ul>
           )}
 
-          <form action={createGoalsBulk} className="p-6">
-            <input type="hidden" name="matchId" value={match.id} />
-            <p className="mb-3 text-xs text-slate-400">เพิ่มได้หลายคนพร้อมกัน — เลือกจากไลน์อัพของนัดนี้ แถวไหนไม่เลือกผู้เล่นจะถูกข้ามไป</p>
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-80 text-xs">
-                <thead className="text-[10px] uppercase tracking-wide text-slate-400">
-                  <tr>
-                    <th className="px-1 pb-1.5 text-left">ผู้เล่น</th>
-                    <th className="w-20 px-1 pb-1.5 text-left">นาที</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {Array.from({ length: GOAL_ROWS }).map((_, i) => (
-                    <tr key={i}>
-                      <td className="px-1 py-1">
-                        <RowPlayerSelect
-                          name={`playerId_${i}`}
-                          homeTeam={match.homeTeam}
-                          awayTeam={match.awayTeam}
-                          homePlayers={eligibleHomePlayers}
-                          awayPlayers={eligibleAwayPlayers}
-                        />
-                      </td>
-                      <td className="px-1 py-1">
-                        <input type="number" name={`minute_${i}`} className={compactFieldClass} />
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            <button
-              type="submit"
-              className="mt-4 inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-5 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-emerald-700"
-            >
-              บันทึกผู้ทำประตู
-            </button>
-          </form>
+          <div className="border-b border-slate-100 px-6 pt-4">
+            <p className="text-xs text-slate-400">แยกตามทีม กดเพิ่มแถวเองตามจำนวนที่ต้องการ — เลือกจากไลน์อัพของนัดนี้</p>
+          </div>
+          <GoalsBulkForm
+            matchId={match.id}
+            action={createGoalsBulk}
+            homeTeam={match.homeTeam}
+            awayTeam={match.awayTeam}
+            homePlayers={eligibleHomePlayers}
+            awayPlayers={eligibleAwayPlayers}
+          />
         </div>
 
         {/* การเปลี่ยนตัวผู้เล่น */}
@@ -647,54 +520,17 @@ export default async function G15ManageMatchPage({
             </ul>
           )}
 
-          <form action={createSubstitutionsBulk} className="p-6">
-            <input type="hidden" name="matchId" value={match.id} />
-            <p className="mb-3 text-xs text-slate-400">เพิ่มได้หลายรายการพร้อมกัน — เลือกทั้งผู้เล่นเข้าและออกจากไลน์อัพของนัดนี้</p>
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-96 text-xs">
-                <thead className="text-[10px] uppercase tracking-wide text-slate-400">
-                  <tr>
-                    <th className="px-1 pb-1.5 text-left">เข้า</th>
-                    <th className="px-1 pb-1.5 text-left">ออก</th>
-                    <th className="w-20 px-1 pb-1.5 text-left">นาที</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {Array.from({ length: SUB_ROWS }).map((_, i) => (
-                    <tr key={i}>
-                      <td className="px-1 py-1">
-                        <RowPlayerSelect
-                          name={`inPlayerId_${i}`}
-                          homeTeam={match.homeTeam}
-                          awayTeam={match.awayTeam}
-                          homePlayers={eligibleHomePlayers}
-                          awayPlayers={eligibleAwayPlayers}
-                        />
-                      </td>
-                      <td className="px-1 py-1">
-                        <RowPlayerSelect
-                          name={`outPlayerId_${i}`}
-                          homeTeam={match.homeTeam}
-                          awayTeam={match.awayTeam}
-                          homePlayers={eligibleHomePlayers}
-                          awayPlayers={eligibleAwayPlayers}
-                        />
-                      </td>
-                      <td className="px-1 py-1">
-                        <input type="number" name={`minute_${i}`} className={compactFieldClass} />
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            <button
-              type="submit"
-              className="mt-4 inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-indigo-700"
-            >
-              บันทึกการเปลี่ยนตัว
-            </button>
-          </form>
+          <div className="border-b border-slate-100 px-6 pt-4">
+            <p className="text-xs text-slate-400">แยกตามทีม กดเพิ่มแถวเองตามจำนวนที่ต้องการ — แต่ละแถวเลือกทั้งผู้เล่นเข้าและออก</p>
+          </div>
+          <SubstitutionsBulkForm
+            matchId={match.id}
+            action={createSubstitutionsBulk}
+            homeTeam={match.homeTeam}
+            awayTeam={match.awayTeam}
+            homePlayers={eligibleHomePlayers}
+            awayPlayers={eligibleAwayPlayers}
+          />
         </div>
 
         {/* ใบเหลือง / ใบแดง */}
@@ -777,57 +613,19 @@ export default async function G15ManageMatchPage({
             </ul>
           )}
 
-          <form action={createCardsBulk} className="p-6">
-            <input type="hidden" name="matchId" value={match.id} />
-            <p className="mb-3 text-xs text-slate-400">เพิ่มได้หลายใบพร้อมกัน — เลือกผู้รับได้ทั้งนักกีฬาในไลน์อัพและเจ้าหน้าที่ทีม</p>
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-120 text-xs">
-                <thead className="text-[10px] uppercase tracking-wide text-slate-400">
-                  <tr>
-                    <th className="px-1 pb-1.5 text-left">ผู้รับใบ</th>
-                    <th className="w-24 px-1 pb-1.5 text-left">ประเภท</th>
-                    <th className="w-16 px-1 pb-1.5 text-left">นาที</th>
-                    <th className="px-1 pb-1.5 text-left">เหตุผล</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {Array.from({ length: CARD_ROWS }).map((_, i) => (
-                    <tr key={i}>
-                      <td className="px-1 py-1">
-                        <RowHolderSelect
-                          name={`holder_${i}`}
-                          homeTeam={match.homeTeam}
-                          awayTeam={match.awayTeam}
-                          homePlayers={eligibleHomePlayers}
-                          awayPlayers={eligibleAwayPlayers}
-                          homeOfficials={homeOfficials}
-                          awayOfficials={awayOfficials}
-                        />
-                      </td>
-                      <td className="px-1 py-1">
-                        <select name={`cardType_${i}`} defaultValue="YELLOW" className={compactFieldClass}>
-                          <option value="YELLOW">เหลือง</option>
-                          <option value="RED">แดง</option>
-                        </select>
-                      </td>
-                      <td className="px-1 py-1">
-                        <input type="number" name={`minute_${i}`} className={compactFieldClass} />
-                      </td>
-                      <td className="px-1 py-1">
-                        <input type="text" name={`reason_${i}`} className={compactFieldClass} />
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            <button
-              type="submit"
-              className="mt-4 inline-flex items-center gap-2 rounded-lg bg-amber-500 px-5 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-amber-600"
-            >
-              บันทึกใบเหลือง/ใบแดง
-            </button>
-          </form>
+          <div className="border-b border-slate-100 px-6 pt-4">
+            <p className="text-xs text-slate-400">แยกตามทีม กดเพิ่มแถวเองตามจำนวนที่ต้องการ — เลือกผู้รับได้ทั้งนักกีฬาในไลน์อัพและเจ้าหน้าที่ทีม</p>
+          </div>
+          <CardsBulkForm
+            matchId={match.id}
+            action={createCardsBulk}
+            homeTeam={match.homeTeam}
+            awayTeam={match.awayTeam}
+            homePlayers={eligibleHomePlayers}
+            awayPlayers={eligibleAwayPlayers}
+            homeOfficials={homeOfficials}
+            awayOfficials={awayOfficials}
+          />
         </div>
       </div>
     </div>
