@@ -259,6 +259,7 @@ model G15Team {
   goals         G15Goal[]
   substitutions G15Substitution[]
   cards         G15Card[]
+  lineups       G15Lineup[]
 
   @@map("g15_teams")
 }
@@ -286,7 +287,8 @@ model G15Player {
   passportNumber String?   @map("passport_number")
   createdAt      DateTime  @default(now()) @map("created_at")
 
-  goals G15Goal[]
+  goals   G15Goal[]
+  lineups G15Lineup[]
 
   @@map("g15_players")
 }
@@ -348,8 +350,26 @@ model G15Match {
   goals         G15Goal[]
   substitutions G15Substitution[]
   cards         G15Card[]
+  lineups       G15Lineup[]
 
   @@map("g15_matches")
+}
+
+// ไลน์อัพผู้เล่นของแต่ละนัด (จาก Starting List) — status: STARTING, SUBSTITUTE
+model G15Lineup {
+  id        Int       @id @default(autoincrement())
+  matchId   Int       @map("match_id")
+  match     G15Match  @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  teamId    Int       @map("team_id")
+  team      G15Team   @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  playerId  Int       @map("player_id")
+  player    G15Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  status    String    @default("STARTING") @map("status")
+  isCaptain Boolean   @default(false) @map("is_captain")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  @@unique([matchId, playerId])
+  @@map("g15_lineups")
 }
 
 // ผู้ทำประตูในแต่ละนัด (จากใบรายงานผู้ตัดสิน หัวข้อ "7. ผู้ทำประตู")

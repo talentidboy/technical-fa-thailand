@@ -405,15 +405,40 @@ async function resolveGoalData(formData: FormData) {
   return { teamId, playerId: null, playerName, jerseyNumber: int(formData, "jerseyNumber") };
 }
 
-export async function createGoal(formData: FormData) {
+// เพิ่มผู้ทำประตูหลายคนพร้อมกันจากแถวในหน้าเดียว (ไม่ต้องเปิด modal ทีละคน) — แต่ละแถวต้องเลือกนักกีฬาจากทะเบียน
+// (ไลน์อัพของนัดนั้นถ้ามี ไม่งั้นทั้งทีม) แถวไหนไม่ได้เลือกนักกีฬาจะถูกข้ามไปเฉยๆ ไม่ error
+export async function createGoalsBulk(formData: FormData) {
   await requireAdminOrStaff();
   const matchId = Number(formData.get("matchId"));
   if (!matchId) throw new Error("ไม่พบนัดการแข่งขัน");
-  const goalData = await resolveGoalData(formData);
 
-  await prisma.g15Goal.create({
-    data: { matchId, ...goalData, minute: int(formData, "minute") },
-  });
+  const rows: { playerId: number; minute: number | null }[] = [];
+  let i = 0;
+  while (formData.has(`playerId_${i}`)) {
+    const playerId = int(formData, `playerId_${i}`);
+    if (playerId) rows.push({ playerId, minute: int(formData, `minute_${i}`) });
+    i++;
+  }
+
+  if (rows.length > 0) {
+    const players = await prisma.g15Player.findMany({ where: { id: { in: rows.map((r) => r.playerId) } } });
+    const playerById = new Map(players.map((p) => [p.id, p]));
+    const data = rows.flatMap((r) => {
+      const p = playerById.get(r.playerId);
+      if (!p) return [];
+      return [
+        {
+          matchId,
+          teamId: p.teamId,
+          playerId: p.id,
+          playerName: `${p.firstNameTh} ${p.lastNameTh}`,
+          jerseyNumber: p.jerseyNumber,
+          minute: r.minute,
+        },
+      ];
+    });
+    if (data.length > 0) await prisma.g15Goal.createMany({ data });
+  }
 
   revalidateG15(undefined, matchId);
 }
@@ -442,28 +467,43 @@ export async function deleteGoal(formData: FormData) {
   revalidateG15(undefined, matchId);
 }
 
-export async function createSubstitution(formData: FormData) {
+// เพิ่มการเปลี่ยนตัวหลายรายการพร้อมกัน — เข้า/ออก เลือกจากทะเบียนนักกีฬาทั้งคู่ ไม่ใช่กรอกชื่อเอง
+export async function createSubstitutionsBulk(formData: FormData) {
   await requireAdminOrStaff();
   const matchId = Number(formData.get("matchId"));
-  const teamId = Number(formData.get("teamId"));
-  const playerInName = String(formData.get("playerInName") ?? "").trim();
-  const playerOutName = String(formData.get("playerOutName") ?? "").trim();
+  if (!matchId) throw new Error("ไม่พบนัดการแข่งขัน");
 
-  if (!matchId || !teamId || !playerInName || !playerOutName) {
-    throw new Error("กรุณาเลือกทีมและกรอกชื่อผู้เล่นที่เปลี่ยนตัวเข้า-ออก");
+  const rows: { inId: number; outId: number; minute: number | null }[] = [];
+  let i = 0;
+  while (formData.has(`inPlayerId_${i}`)) {
+    const inId = int(formData, `inPlayerId_${i}`);
+    const outId = int(formData, `outPlayerId_${i}`);
+    if (inId && outId) rows.push({ inId, outId, minute: int(formData, `minute_${i}`) });
+    i++;
   }
 
-  await prisma.g15Substitution.create({
-    data: {
-      matchId,
-      teamId,
-      minute: int(formData, "minute"),
-      playerInName,
-      playerInNumber: int(formData, "playerInNumber"),
-      playerOutName,
-      playerOutNumber: int(formData, "playerOutNumber"),
-    },
-  });
+  if (rows.length > 0) {
+    const ids = Array.from(new Set(rows.flatMap((r) => [r.inId, r.outId])));
+    const players = await prisma.g15Player.findMany({ where: { id: { in: ids } } });
+    const playerById = new Map(players.map((p) => [p.id, p]));
+    const data = rows.flatMap((r) => {
+      const pin = playerById.get(r.inId);
+      const pout = playerById.get(r.outId);
+      if (!pin || !pout) return [];
+      return [
+        {
+          matchId,
+          teamId: pin.teamId,
+          minute: r.minute,
+          playerInName: `${pin.firstNameTh} ${pin.lastNameTh}`,
+          playerInNumber: pin.jerseyNumber,
+          playerOutName: `${pout.firstNameTh} ${pout.lastNameTh}`,
+          playerOutNumber: pout.jerseyNumber,
+        },
+      ];
+    });
+    if (data.length > 0) await prisma.g15Substitution.createMany({ data });
+  }
 
   revalidateG15(undefined, matchId);
 }
@@ -505,29 +545,71 @@ export async function deleteSubstitution(formData: FormData) {
   revalidateG15(undefined, matchId);
 }
 
-export async function createCard(formData: FormData) {
+// เพิ่มใบเหลือง/ใบแดงหลายใบพร้อมกัน — เลือกผู้รับจากทะเบียนนักกีฬาหรือเจ้าหน้าที่ทีม
+// ค่า holder_i เข้ารหัสเป็น "player:<id>" หรือ "official:<id>" เพื่อรู้ว่าจะ query ตารางไหน
+export async function createCardsBulk(formData: FormData) {
   await requireAdminOrStaff();
   const matchId = Number(formData.get("matchId"));
-  const teamId = Number(formData.get("teamId"));
-  const holderName = String(formData.get("holderName") ?? "").trim();
-  const cardType = String(formData.get("cardType") ?? "").trim();
+  if (!matchId) throw new Error("ไม่พบนัดการแข่งขัน");
 
-  if (!matchId || !teamId || !holderName || !cardType) {
-    throw new Error("กรุณาเลือกทีม กรอกชื่อ และเลือกประเภทใบ");
+  const rows: { holder: string; cardType: string; minute: number | null; reason: string | null }[] = [];
+  let i = 0;
+  while (formData.has(`holder_${i}`)) {
+    const holder = String(formData.get(`holder_${i}`) ?? "").trim();
+    const cardType = String(formData.get(`cardType_${i}`) ?? "").trim();
+    if (holder && cardType) {
+      rows.push({ holder, cardType, minute: int(formData, `minute_${i}`), reason: str(formData, `reason_${i}`) });
+    }
+    i++;
   }
 
-  await prisma.g15Card.create({
-    data: {
-      matchId,
-      teamId,
-      holderName,
-      holderNumber: int(formData, "holderNumber"),
-      holderRole: str(formData, "holderRole") ?? "PLAYER",
-      cardType,
-      minute: int(formData, "minute"),
-      reason: str(formData, "reason"),
-    },
-  });
+  if (rows.length > 0) {
+    const playerIds = rows.filter((r) => r.holder.startsWith("player:")).map((r) => Number(r.holder.slice(7)));
+    const officialIds = rows.filter((r) => r.holder.startsWith("official:")).map((r) => Number(r.holder.slice(9)));
+    const [players, officials] = await Promise.all([
+      playerIds.length ? prisma.g15Player.findMany({ where: { id: { in: playerIds } } }) : Promise.resolve([]),
+      officialIds.length ? prisma.g15Official.findMany({ where: { id: { in: officialIds } } }) : Promise.resolve([]),
+    ]);
+    const playerById = new Map(players.map((p) => [p.id, p]));
+    const officialById = new Map(officials.map((o) => [o.id, o]));
+
+    const data = rows.flatMap((r) => {
+      if (r.holder.startsWith("player:")) {
+        const p = playerById.get(Number(r.holder.slice(7)));
+        if (!p) return [];
+        return [
+          {
+            matchId,
+            teamId: p.teamId,
+            holderName: `${p.firstNameTh} ${p.lastNameTh}`,
+            holderNumber: p.jerseyNumber,
+            holderRole: "PLAYER",
+            cardType: r.cardType,
+            minute: r.minute,
+            reason: r.reason,
+          },
+        ];
+      }
+      if (r.holder.startsWith("official:")) {
+        const o = officialById.get(Number(r.holder.slice(9)));
+        if (!o) return [];
+        return [
+          {
+            matchId,
+            teamId: o.teamId,
+            holderName: `${o.firstNameTh} ${o.lastNameTh}`,
+            holderNumber: null,
+            holderRole: "OFFICIAL",
+            cardType: r.cardType,
+            minute: r.minute,
+            reason: r.reason,
+          },
+        ];
+      }
+      return [];
+    });
+    if (data.length > 0) await prisma.g15Card.createMany({ data });
+  }
 
   revalidateG15(undefined, matchId);
 }
@@ -566,6 +648,47 @@ export async function deleteCard(formData: FormData) {
   const matchId = Number(formData.get("matchId"));
 
   await prisma.g15Card.delete({ where: { id } });
+
+  revalidateG15(undefined, matchId);
+}
+
+// ===== ไลน์อัพ =====
+// เช็กบ็อกซ์เดียวครอบคลุมนักกีฬาทั้งสองทีม บันทึกครั้งเดียว — แทนที่ไลน์อัพเดิมของนัดนี้ทั้งหมดด้วยค่าที่ส่งมา
+export async function updateLineup(formData: FormData) {
+  await requireAdminOrStaff();
+  const matchId = Number(formData.get("matchId"));
+  if (!matchId) throw new Error("ไม่พบนัดการแข่งขัน");
+
+  const match = await prisma.g15Match.findUnique({
+    where: { id: matchId },
+    select: { homeTeamId: true, awayTeamId: true },
+  });
+  if (!match) throw new Error("ไม่พบนัดการแข่งขัน");
+
+  // ดึงรายชื่อนักกีฬาของทั้งสองทีมจากฐานข้อมูลเอง ไม่เชื่อ playerId ที่ส่งมาจากฟอร์ม
+  const players = await prisma.g15Player.findMany({
+    where: { teamId: { in: [match.homeTeamId, match.awayTeamId] } },
+    select: { id: true, teamId: true },
+  });
+
+  const rows = players.flatMap((p) => {
+    const status = String(formData.get(`status_${p.id}`) ?? "");
+    if (status !== "STARTING" && status !== "SUBSTITUTE") return [];
+    return [
+      {
+        matchId,
+        teamId: p.teamId,
+        playerId: p.id,
+        status,
+        isCaptain: formData.get(`captain_${p.id}`) === "on",
+      },
+    ];
+  });
+
+  await prisma.$transaction([
+    prisma.g15Lineup.deleteMany({ where: { matchId } }),
+    ...(rows.length > 0 ? [prisma.g15Lineup.createMany({ data: rows })] : []),
+  ]);
 
   revalidateG15(undefined, matchId);
 }

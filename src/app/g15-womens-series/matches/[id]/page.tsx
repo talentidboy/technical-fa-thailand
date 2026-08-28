@@ -7,7 +7,7 @@ import { formatMatchDateTime } from "@/lib/g15";
 import { regionStyle } from "@/lib/g15-region";
 import { LOGO_URL } from "@/lib/brand";
 import { TeamBadge } from "@/components/g15/TeamBadge";
-import { ArrowLeft, MapPin, Calendar, Target, LogIn, LogOut, Settings, ClipboardList } from "lucide-react";
+import { ArrowLeft, MapPin, Calendar, Target, LogIn, LogOut, Settings, ClipboardList, Users } from "lucide-react";
 
 const OFFICIAL_ROLES = [
   { key: "referee", label: "ผู้ตัดสิน", en: "Referee" },
@@ -39,6 +39,10 @@ export default async function G15MatchDetailPage({
         goals: { orderBy: [{ minute: "asc" }, { id: "asc" }] },
         substitutions: { orderBy: [{ minute: "asc" }, { id: "asc" }] },
         cards: { orderBy: [{ minute: "asc" }, { id: "asc" }] },
+        lineups: {
+          include: { player: { select: { firstNameTh: true, lastNameTh: true, jerseyNumber: true } } },
+          orderBy: [{ player: { jerseyNumber: { sort: "asc", nulls: "last" } } }],
+        },
       },
     }),
   ]);
@@ -54,7 +58,12 @@ export default async function G15MatchDetailPage({
     match.firstHalfAwayScore != null ||
     match.secondHalfHomeScore != null ||
     match.secondHalfAwayScore != null;
-  const hasDetails = hasOfficials || match.goals.length > 0 || match.substitutions.length > 0 || match.cards.length > 0;
+  const hasDetails =
+    hasOfficials ||
+    match.goals.length > 0 ||
+    match.substitutions.length > 0 ||
+    match.cards.length > 0 ||
+    match.lineups.length > 0;
 
   const teamById = (teamId: number) => (teamId === match.homeTeamId ? match.homeTeam : match.awayTeam);
 
@@ -176,6 +185,80 @@ export default async function G15MatchDetailPage({
           </div>
         ) : (
           <div className="mt-8 space-y-8">
+            {/* ไลน์อัพ */}
+            {match.lineups.length > 0 && (
+              <section>
+                <div className="mb-4 flex items-center gap-2 text-sm font-medium text-slate-500">
+                  <Users className="h-4 w-4" />
+                  ไลน์อัพ / Lineups
+                </div>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  {[match.homeTeam, match.awayTeam].map((team) => {
+                    const teamLineups = match.lineups.filter((l) => l.teamId === team.id);
+                    const starting = teamLineups.filter((l) => l.status === "STARTING");
+                    const subs = teamLineups.filter((l) => l.status === "SUBSTITUTE");
+                    return (
+                      <div key={team.id} className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                        <div className="flex items-center gap-2 border-b border-slate-100 px-4 py-3">
+                          <TeamBadge team={team} size="sm" />
+                          <span className="min-w-0 flex-1 truncate text-sm font-semibold text-slate-900">{team.name}</span>
+                        </div>
+                        {starting.length === 0 && subs.length === 0 ? (
+                          <p className="px-4 py-4 text-xs text-slate-400">ยังไม่มีไลน์อัพของทีมนี้</p>
+                        ) : (
+                          <>
+                            {starting.length > 0 && (
+                              <div className="px-4 py-3">
+                                <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+                                  ตัวจริง
+                                </p>
+                                <ul className="space-y-1">
+                                  {starting.map((l) => (
+                                    <li key={l.id} className="flex items-center gap-2 text-sm text-slate-700">
+                                      <span className="w-7 flex-none text-center text-xs font-bold text-slate-400">
+                                        #{l.player.jerseyNumber ?? "-"}
+                                      </span>
+                                      <span className="min-w-0 flex-1 truncate">
+                                        {l.player.firstNameTh} {l.player.lastNameTh}
+                                      </span>
+                                      {l.isCaptain && (
+                                        <span className="flex-none rounded-full bg-rose-50 px-1.5 py-0.5 text-[10px] font-bold text-rose-600">
+                                          C
+                                        </span>
+                                      )}
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+                            {subs.length > 0 && (
+                              <div className="border-t border-slate-100 px-4 py-3">
+                                <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+                                  ตัวสำรอง
+                                </p>
+                                <ul className="space-y-1">
+                                  {subs.map((l) => (
+                                    <li key={l.id} className="flex items-center gap-2 text-sm text-slate-500">
+                                      <span className="w-7 flex-none text-center text-xs font-bold text-slate-400">
+                                        #{l.player.jerseyNumber ?? "-"}
+                                      </span>
+                                      <span className="min-w-0 flex-1 truncate">
+                                        {l.player.firstNameTh} {l.player.lastNameTh}
+                                      </span>
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+                          </>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </section>
+            )}
+
             {/* ผู้ทำประตู */}
             {match.goals.length > 0 && (
               <section>

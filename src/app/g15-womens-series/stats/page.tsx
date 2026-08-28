@@ -3,13 +3,15 @@ import { getCurrentUser } from "@/lib/auth";
 import { getStandings } from "@/lib/g15";
 import { G15Chrome } from "@/components/g15/G15Chrome";
 import { MiniLeaderboard } from "@/components/g15/MiniLeaderboard";
-import { Target, ShieldCheck } from "lucide-react";
+import { PlayerLeaderboard, type PlayerLeaderboardRow } from "@/components/g15/PlayerLeaderboard";
+import { Target, ShieldCheck, Trophy } from "lucide-react";
 
 export default async function G15StatsPage() {
-  const [user, teams, matches] = await Promise.all([
+  const [user, teams, matches, goals] = await Promise.all([
     getCurrentUser(),
     prisma.g15Team.findMany({ orderBy: [{ groupName: "asc" }, { name: "asc" }] }),
     prisma.g15Match.findMany(),
+    prisma.g15Goal.findMany({ include: { team: true } }),
   ]);
 
   const standingGroups = getStandings(teams, matches);
@@ -21,6 +23,29 @@ export default async function G15StatsPage() {
   const bestDefense = [...playedRows]
     .sort((a, b) => a.goalsAgainst - b.goalsAgainst || b.played - a.played)
     .slice(0, 5);
+
+  // ดาวซัลโว — รวมประตูรายคน คีย์ด้วย playerId ถ้าผูกทะเบียนไว้ ไม่งั้นคีย์ด้วยทีม+ชื่อ (กันปะปนกันข้ามทีม)
+  const scorerMap = new Map<string, PlayerLeaderboardRow>();
+  for (const goal of goals) {
+    const key = goal.playerId != null ? `p${goal.playerId}` : `n${goal.teamId}:${goal.playerName}`;
+    const existing = scorerMap.get(key);
+    if (existing) {
+      existing.goals += 1;
+    } else {
+      scorerMap.set(key, {
+        key,
+        playerName: goal.playerName,
+        jerseyNumber: goal.jerseyNumber,
+        teamName: goal.team.name,
+        teamLogoUrl: goal.team.logoUrl,
+        teamGroupName: goal.team.groupName,
+        goals: 1,
+      });
+    }
+  }
+  const topIndividualScorers = Array.from(scorerMap.values())
+    .sort((a, b) => b.goals - a.goals)
+    .slice(0, 10);
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -53,9 +78,10 @@ export default async function G15StatsPage() {
                 </div>
               ))}
             </div>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <PlayerLeaderboard title="ดาวซัลโว / Top Scorers" icon={Trophy} rows={topIndividualScorers} />
               <MiniLeaderboard
-                title="ทีมทำประตูสูงสุด / Top Scorers"
+                title="ทีมทำประตูสูงสุด / Top Scoring Teams"
                 icon={Target}
                 rows={topScorers}
                 valueOf={(r) => r.goalsFor}
