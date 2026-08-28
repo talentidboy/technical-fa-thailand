@@ -19,6 +19,7 @@ import {
 import { Field, SelectField } from "@/components/FormField";
 import { TeamBadge } from "@/components/g15/TeamBadge";
 import { GoalsBulkForm, SubstitutionsBulkForm, CardsBulkForm } from "@/components/g15/BulkStatForms";
+import { FormWithToast } from "@/components/g15/FormWithToast";
 import { LOGO_URL } from "@/lib/brand";
 import { ArrowLeft, ClipboardList, Target, LogIn, Trash2, ChevronDown, ExternalLink, Users, Star } from "lucide-react";
 
@@ -243,6 +244,18 @@ export default async function G15ManageMatchPage({
   const eligibleHomePlayers = homeInLineup.size > 0 ? homePlayers.filter((p) => homeInLineup.has(p.id)) : homePlayers;
   const eligibleAwayPlayers = awayInLineup.size > 0 ? awayPlayers.filter((p) => awayInLineup.has(p.id)) : awayPlayers;
 
+  // สำหรับฟอร์มเปลี่ยนตัว: "ออก" ควรเลือกได้แค่ตัวจริง (คนที่อยู่ในสนาม) "เข้า" ควรเลือกได้แค่ตัวสำรอง — กันเลือกผิดฝั่ง/ซ้ำกันเอง
+  // ถ้าทีมนั้นยังไม่ได้บันทึกสถานะไลน์อัพเลย ใช้รายชื่อทั้งหมดของทีมสำหรับทั้งสองช่องไปก่อน (ไม่รู้ใครเป็นตัวจริง/สำรอง จะแยกไม่ได้)
+  const splitByLineupStatus = (players: RosterPlayer[], hasLineup: boolean) =>
+    hasLineup
+      ? {
+          starters: players.filter((p) => lineupByPlayerId.get(p.id)?.status === "STARTING"),
+          subs: players.filter((p) => lineupByPlayerId.get(p.id)?.status === "SUBSTITUTE"),
+        }
+      : { starters: players, subs: players };
+  const homeSplit = splitByLineupStatus(eligibleHomePlayers, homeInLineup.size > 0);
+  const awaySplit = splitByLineupStatus(eligibleAwayPlayers, awayInLineup.size > 0);
+
   return (
     <div className="min-h-screen bg-slate-50">
       <header className="sticky top-0 z-20 border-b border-white/10 bg-indigo-950/80 backdrop-blur">
@@ -299,7 +312,7 @@ export default async function G15ManageMatchPage({
             </div>
             <h2 className="font-semibold text-slate-900">ไลน์อัพ ({match.lineups.length})</h2>
           </div>
-          <form action={updateLineup} className="p-6">
+          <FormWithToast action={updateLineup} className="p-6">
             <input type="hidden" name="matchId" value={match.id} />
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
               <LineupTeamTable team={match.homeTeam} teamId={match.homeTeamId} players={homePlayers} lineupByPlayerId={lineupByPlayerId} />
@@ -311,7 +324,7 @@ export default async function G15ManageMatchPage({
             >
               บันทึกไลน์อัพ
             </button>
-          </form>
+          </FormWithToast>
         </div>
 
         {/* ทีมงานผู้ตัดสิน + สกอร์แยกครึ่งเวลา */}
@@ -322,7 +335,7 @@ export default async function G15ManageMatchPage({
             </div>
             <h2 className="font-semibold text-slate-900">ทีมงานผู้ตัดสิน &amp; สกอร์ตามใบรายงาน</h2>
           </div>
-          <form action={updateMatchOfficials} className="grid grid-cols-1 gap-4 p-6 sm:grid-cols-2 lg:grid-cols-4">
+          <FormWithToast action={updateMatchOfficials} className="grid grid-cols-1 gap-4 p-6 sm:grid-cols-2 lg:grid-cols-4">
             <input type="hidden" name="id" value={match.id} />
             <div className="sm:col-span-2 lg:col-span-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Field label="ผู้ตัดสิน" name="referee" defaultValue={match.referee ?? ""} />
@@ -368,7 +381,7 @@ export default async function G15ManageMatchPage({
                 บันทึก
               </button>
             </div>
-          </form>
+          </FormWithToast>
         </div>
 
         {/* ผู้ทำประตู */}
@@ -539,15 +552,19 @@ export default async function G15ManageMatchPage({
           )}
 
           <div className="border-b border-slate-100 px-6 pt-4">
-            <p className="text-xs text-slate-400">แยกตามทีม กดเพิ่มแถวเองตามจำนวนที่ต้องการ — แต่ละแถวเลือกทั้งผู้เล่นเข้าและออก</p>
+            <p className="text-xs text-slate-400">
+              แยกตามทีม กดเพิ่มแถวเองตามจำนวนที่ต้องการ — &quot;เข้า&quot; เลือกได้เฉพาะตัวสำรอง &quot;ออก&quot; เลือกได้เฉพาะตัวจริง
+            </p>
           </div>
           <SubstitutionsBulkForm
             matchId={match.id}
             action={createSubstitutionsBulk}
             homeTeam={match.homeTeam}
             awayTeam={match.awayTeam}
-            homePlayers={eligibleHomePlayers}
-            awayPlayers={eligibleAwayPlayers}
+            homeInPlayers={homeSplit.subs}
+            homeOutPlayers={homeSplit.starters}
+            awayInPlayers={awaySplit.subs}
+            awayOutPlayers={awaySplit.starters}
           />
         </div>
 
