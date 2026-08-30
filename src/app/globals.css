@@ -55,3 +55,31 @@ body {
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
+
+/* ใช้กับหน้าแรก G15 — เส้นไล่สีทองด้านบนของ hero ที่ "วิ่ง" ไปเรื่อยๆ แทนที่จะนิ่ง */
+@keyframes shimmer-slide {
+  0% {
+    background-position: 0% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+.animate-shimmer-slide {
+  background-size: 200% 100%;
+  animation: shimmer-slide 3s linear infinite;
+}
+
+/* ลอยขึ้น-ลงเบาๆ ใช้กับไอคอน/ป้ายตกแต่งบนหน้าแรก */
+@keyframes float-y {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+.animate-float-y {
+  animation: float-y 3.5s ease-in-out infinite;
+}
