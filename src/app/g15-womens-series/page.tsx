@@ -2,13 +2,14 @@ import Link from "next/link";
 import Image from "next/image";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
-import { getStandings, formatMatchDateShort, formatMatchTimeShort } from "@/lib/g15";
+import { getStandings, getRecentForm, formatMatchDateShort, formatMatchTimeShort } from "@/lib/g15";
 import { REGION_STYLE, DEFAULT_REGION_STYLE, regionEn, groupTeamsByRegion, groupStandingsByRegion } from "@/lib/g15-region";
 import { G15_HERO_BANNER_URL } from "@/lib/brand";
 import { G15Chrome } from "@/components/g15/G15Chrome";
 import { TeamBadge } from "@/components/g15/TeamBadge";
 import { StandingTable } from "@/components/g15/StandingTable";
 import { MatchSpotlight } from "@/components/g15/MatchSpotlight";
+import { PlayerLeaderboard, type PlayerLeaderboardRow } from "@/components/g15/PlayerLeaderboard";
 import { Trophy, Calendar, MapPin, ChevronRight, Globe2, Award, Rocket, Users, CheckCircle2 } from "lucide-react";
 
 const highlights = [
@@ -39,19 +40,42 @@ export default async function G15WomensSeriesPage() {
   // หน้านี้เปิดให้ดูได้แบบสาธารณะไม่ต้องล็อกอิน — ต้องล็อกอินเฉพาะตอนจะ "จัดการข้อมูล" เท่านั้น
   const user = await getCurrentUser();
 
-  const [teams, matches] = await Promise.all([
+  const [teams, matches, goals] = await Promise.all([
     prisma.g15Team.findMany({ orderBy: [{ groupName: "asc" }, { name: "asc" }] }),
     prisma.g15Match.findMany({
       orderBy: [{ matchDate: "asc" }, { createdAt: "asc" }],
       include: { homeTeam: true, awayTeam: true },
     }),
+    prisma.g15Goal.findMany({ include: { team: true } }),
   ]);
 
   const standingGroups = getStandings(teams, matches);
   const { regionOrder } = groupTeamsByRegion(teams);
   const { regionOrder: standingsRegionOrder, byRegion: standingsByRegion } = groupStandingsByRegion(standingGroups);
+  const formByTeamId = new Map(teams.map((t) => [t.id, getRecentForm(t.id, matches)]));
 
   const finishedMatches = matches.filter((m) => m.status === "FINISHED");
+
+  // ดาวซัลโว (ตัวย่อ top 5) — เกณฑ์คีย์เดียวกับหน้าสถิติเต็ม
+  const scorerMap = new Map<string, PlayerLeaderboardRow>();
+  for (const goal of goals) {
+    const key = goal.playerId != null ? `p${goal.playerId}` : `n${goal.teamId}:${goal.playerName}`;
+    const existing = scorerMap.get(key);
+    if (existing) existing.goals += 1;
+    else
+      scorerMap.set(key, {
+        key,
+        playerName: goal.playerName,
+        jerseyNumber: goal.jerseyNumber,
+        teamName: goal.team.name,
+        teamLogoUrl: goal.team.logoUrl,
+        teamGroupName: goal.team.groupName,
+        goals: 1,
+      });
+  }
+  const topScorersPreview = Array.from(scorerMap.values())
+    .sort((a, b) => b.goals - a.goals)
+    .slice(0, 5);
 
   // ผลการแข่งขันล่าสุด — ทุกนัดในระบบตอนนี้แข่งจบไปแล้ว (ไม่มีนัดที่ยังไม่ถึงวันแข่ง) จึงโชว์ผลล่าสุดแทน "นัดถัดไป"
   const recentResults = [...finishedMatches]
@@ -268,7 +292,7 @@ export default async function G15WomensSeriesPage() {
                             {letters.length > 1 && (
                               <p className={`px-5 pt-3 text-xs font-bold ${style.text}`}>กลุ่ม {letter}</p>
                             )}
-                            <StandingTable group={groupMap.get(letter)!} />
+                            <StandingTable group={groupMap.get(letter)!} formByTeamId={formByTeamId} />
                           </div>
                         ))}
                       </div>
@@ -277,6 +301,22 @@ export default async function G15WomensSeriesPage() {
                 })()
               )}
             </div>
+          </div>
+        )}
+
+        {/* ดาวซัลโว — โชว์ที่หน้าแรกเลย เพราะเป็นข้อมูลที่คนสนใจดูเร็วๆ (การ์ดมีหัวข้อในตัวเองอยู่แล้ว จึงมีแค่ลิงก์ "ดูทั้งหมด" กำกับด้านบนพอ) */}
+        {topScorersPreview.length > 0 && (
+          <div className="mt-8">
+            <div className="mb-4 flex justify-end">
+              <Link
+                href="/g15-womens-series/stats"
+                className="flex items-center gap-1 text-xs font-medium text-rose-600 hover:text-rose-700"
+              >
+                ดูทั้งหมด / View all
+                <ChevronRight className="h-3.5 w-3.5" />
+              </Link>
+            </div>
+            <PlayerLeaderboard title="ดาวซัลโว / Top Scorers" icon={Trophy} rows={topScorersPreview} />
           </div>
         )}
       </div>

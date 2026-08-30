@@ -2,11 +2,13 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { MapPin } from "lucide-react";
+import { MapPin, Goal } from "lucide-react";
 import { TeamBadge } from "./TeamBadge";
 import { REGION_STYLE, DEFAULT_REGION_STYLE, regionEn } from "@/lib/g15-region";
 
 type Team = { id: number; name: string; logoUrl: string | null; groupName: string | null };
+
+type MatchGoal = { teamId: number; playerName: string; minute: number | null };
 
 type Match = {
   id: number;
@@ -18,7 +20,22 @@ type Match = {
   homeScore: number | null;
   awayScore: number | null;
   status: string;
+  goals: MatchGoal[];
 };
+
+// รวมผู้ทำประตูของทีมเดียวกันเป็นบรรทัดเดียว เช่น "ชิชา 9', 33' · อัญชฎา 20'"
+function scorerSummary(goals: MatchGoal[], teamId: number) {
+  const byPlayer = new Map<string, number[]>();
+  for (const g of goals) {
+    if (g.teamId !== teamId) continue;
+    if (!byPlayer.has(g.playerName)) byPlayer.set(g.playerName, []);
+    if (g.minute != null) byPlayer.get(g.playerName)!.push(g.minute);
+  }
+  if (byPlayer.size === 0) return null;
+  return Array.from(byPlayer.entries())
+    .map(([name, minutes]) => `${name} ${minutes.sort((a, b) => a - b).map((m) => `${m}'`).join(", ")}`)
+    .join(" · ");
+}
 
 const BANGKOK_TZ = "Asia/Bangkok";
 const TBD_KEY = "tbd";
@@ -27,9 +44,22 @@ function bangkokDayKey(date: Date) {
   return new Intl.DateTimeFormat("en-CA", { timeZone: BANGKOK_TZ }).format(date);
 }
 
+// ชื่อวันแบบย่อภาษาไทย ("ส." ฯลฯ) ต่อให้เขียนจาก en-US weekday name ก่อนเสมอ ไม่ใช้ th-TH weekday:"short" ตรงๆ
+// เพราะ ICU ฝั่ง Node (SSR) กับฝั่งเบราว์เซอร์ย่อวันภาษาไทยไม่เหมือนกัน ("เสาร์" vs "ส.") ทำให้ hydration mismatch
+const THAI_WEEKDAY_SHORT: Record<string, string> = {
+  Sun: "อา.",
+  Mon: "จ.",
+  Tue: "อ.",
+  Wed: "พ.",
+  Thu: "พฤ.",
+  Fri: "ศ.",
+  Sat: "ส.",
+};
+
 function pillDateLabel(date: Date) {
+  const enWeekday = date.toLocaleDateString("en-US", { timeZone: BANGKOK_TZ, weekday: "short" });
   return {
-    weekday: date.toLocaleDateString("th-TH", { timeZone: BANGKOK_TZ, weekday: "short" }),
+    weekday: THAI_WEEKDAY_SHORT[enWeekday] ?? enWeekday,
     day: date.toLocaleDateString("en-GB", { timeZone: BANGKOK_TZ, day: "numeric", month: "short" }),
   };
 }
@@ -47,6 +77,8 @@ function MatchRow({ match }: { match: Match }) {
   const isFinished = match.status === "FINISHED" && match.homeScore != null && match.awayScore != null;
   const homeWon = isFinished && match.homeScore! > match.awayScore!;
   const awayWon = isFinished && match.awayScore! > match.homeScore!;
+  const homeScorers = isFinished ? scorerSummary(match.goals, match.homeTeam.id) : null;
+  const awayScorers = isFinished ? scorerSummary(match.goals, match.awayTeam.id) : null;
 
   return (
     <Link
@@ -84,6 +116,18 @@ function MatchRow({ match }: { match: Match }) {
           </span>
         </div>
       </div>
+      {(homeScorers || awayScorers) && (
+        <div className="mt-3 flex flex-col gap-1 border-t border-slate-100 pt-2.5 text-xs text-slate-500 sm:flex-row sm:items-center sm:justify-between">
+          <span className="flex min-w-0 items-start justify-end gap-1 text-right">
+            <span className="min-w-0 truncate">{homeScorers}</span>
+            {homeScorers && <Goal className="mt-0.5 h-3 w-3 flex-none text-slate-300" />}
+          </span>
+          <span className="flex min-w-0 items-start gap-1">
+            {awayScorers && <Goal className="mt-0.5 h-3 w-3 flex-none text-slate-300" />}
+            <span className="min-w-0 truncate">{awayScorers}</span>
+          </span>
+        </div>
+      )}
       {match.venue && (
         <div className="mt-3 flex items-center gap-1.5 border-t border-slate-100 pt-2.5 text-xs text-slate-400">
           <MapPin className="h-3.5 w-3.5 flex-none" />
@@ -118,15 +162,23 @@ export function PublicMatchesBoard({ matches, regionOrder }: { matches: Match[];
   }, [dateKeys, todayKey, undatedMatches.length]);
 
   const [selectedDateKey, setSelectedDateKey] = useState<string | null>(defaultDateKey);
+  const [selectedRegion, setSelectedRegion] = useState<string | null>(null);
 
   const selectedMatches = useMemo(() => {
     if (selectedDateKey === TBD_KEY) return undatedMatches;
     return datedMatches.filter((m) => bangkokDayKey(m.matchDate) === selectedDateKey);
   }, [datedMatches, undatedMatches, selectedDateKey]);
 
+  // ภาคที่มีนัดจริงในระบบ (ไม่ใช่ regionOrder ทั้งหมดเสมอไป) — ใช้ทำแถบตัวกรอง
+  const availableRegions = useMemo(() => {
+    const present = new Set(matches.map((m) => m.round));
+    return [...regionOrder.filter((r) => present.has(r)), ...Array.from(present).filter((r) => !regionOrder.includes(r))];
+  }, [matches, regionOrder]);
+
   const grouped = useMemo(() => {
     const byRegion = new Map<string, Match[]>();
     for (const m of selectedMatches) {
+      if (selectedRegion && m.round !== selectedRegion) continue;
       if (!byRegion.has(m.round)) byRegion.set(m.round, []);
       byRegion.get(m.round)!.push(m);
     }
@@ -138,7 +190,7 @@ export function PublicMatchesBoard({ matches, regionOrder }: { matches: Match[];
       round,
       items: [...byRegion.get(round)!].sort((a, b) => (a.matchDate?.getTime() ?? 0) - (b.matchDate?.getTime() ?? 0)),
     }));
-  }, [selectedMatches, regionOrder]);
+  }, [selectedMatches, regionOrder, selectedRegion]);
 
   return (
     <div>
@@ -180,6 +232,39 @@ export function PublicMatchesBoard({ matches, regionOrder }: { matches: Match[];
           </button>
         )}
       </div>
+
+      {/* แถบกรองภาค — เฉพาะเวลามีมากกว่า 1 ภาคให้กรอง ไม่งั้นก็ไม่มีประโยชน์ */}
+      {availableRegions.length > 1 && (
+        <div className="no-scrollbar mb-5 flex gap-1.5 overflow-x-auto pb-1">
+          <button
+            type="button"
+            onClick={() => setSelectedRegion(null)}
+            className={`flex-none rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${
+              selectedRegion === null
+                ? "bg-slate-900 text-white"
+                : "border border-slate-200 bg-white text-slate-500 hover:bg-slate-50"
+            }`}
+          >
+            ทั้งหมด
+          </button>
+          {availableRegions.map((region) => {
+            const style = REGION_STYLE[region] ?? DEFAULT_REGION_STYLE;
+            const active = selectedRegion === region;
+            return (
+              <button
+                key={region}
+                type="button"
+                onClick={() => setSelectedRegion(region)}
+                className={`flex-none rounded-full px-3 py-1.5 text-xs font-semibold text-white transition-opacity ${style.bg} ${
+                  active ? "opacity-100 ring-2 ring-offset-1" : "opacity-40 hover:opacity-70"
+                }`}
+              >
+                {region}
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       {grouped.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-10 text-center">

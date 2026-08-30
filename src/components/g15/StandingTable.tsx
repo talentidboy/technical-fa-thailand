@@ -1,7 +1,35 @@
 import { TeamBadge } from "./TeamBadge";
 import type { StandingGroup } from "@/lib/g15";
 
-export function StandingTable({ group }: { group: StandingGroup }) {
+const FORM_STYLE: Record<"W" | "D" | "L", string> = {
+  W: "bg-emerald-500",
+  D: "bg-amber-400",
+  L: "bg-red-400",
+};
+
+function FormPills({ results }: { results: ("W" | "D" | "L")[] }) {
+  if (results.length === 0) return <span className="text-xs text-slate-300">—</span>;
+  return (
+    <div className="flex items-center justify-center gap-1">
+      {results.map((r, i) => (
+        <span
+          key={i}
+          className={`flex h-4 w-4 items-center justify-center rounded-full text-[8px] font-bold text-white ${FORM_STYLE[r]}`}
+        >
+          {r}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+export function StandingTable({
+  group,
+  formByTeamId,
+}: {
+  group: StandingGroup;
+  formByTeamId?: Map<number, ("W" | "D" | "L")[]>;
+}) {
   return (
     <div className="overflow-x-auto">
       <table className="w-full min-w-90 text-left text-sm">
@@ -29,6 +57,11 @@ export function StandingTable({ group }: { group: StandingGroup }) {
             <th className="px-4 py-2.5 text-center" title="คะแนน">
               Pts
             </th>
+            {formByTeamId && (
+              <th className="hidden px-2 py-2.5 text-center md:table-cell" title="ฟอร์ม 5 นัดล่าสุด">
+                Form
+              </th>
+            )}
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-100">
@@ -51,10 +84,10 @@ export function StandingTable({ group }: { group: StandingGroup }) {
                     {rank}
                   </span>
                 </td>
-                <td className="max-w-30 px-2 py-2.5 sm:max-w-none">
+                <td className="max-w-30 px-2 py-2.5 md:max-w-44">
                   <div className="flex items-center gap-2">
                     <TeamBadge team={{ name: row.teamName, logoUrl: row.logoUrl, groupName: row.groupName }} size="sm" />
-                    <span className="truncate font-medium text-slate-900 sm:whitespace-nowrap">{row.teamName}</span>
+                    <span className="truncate font-medium text-slate-900">{row.teamName}</span>
                   </div>
                 </td>
                 <td className="px-2 py-2.5 text-center text-slate-500">{row.played}</td>
@@ -65,6 +98,11 @@ export function StandingTable({ group }: { group: StandingGroup }) {
                   {row.goalDiff > 0 ? `+${row.goalDiff}` : row.goalDiff}
                 </td>
                 <td className="px-4 py-2.5 text-center font-bold text-rose-600">{row.points}</td>
+                {formByTeamId && (
+                  <td className="hidden px-2 py-2.5 md:table-cell">
+                    <FormPills results={formByTeamId.get(row.teamId) ?? []} />
+                  </td>
+                )}
               </tr>
             );
           })}

@@ -177,3 +177,34 @@ export function getStandings(
     })
     .map(([groupName, rows]) => ({ groupName, rows: sortRows(rows) }));
 }
+
+export type FormMatchInput = {
+  homeTeamId: number;
+  awayTeamId: number;
+  homeScore: number | null;
+  awayScore: number | null;
+  status: string;
+  matchDate: Date | null;
+};
+
+// ฟอร์มการแข่งขัน 5 นัดล่าสุดของทีม (W/D/L เรียงเก่า→ใหม่ อ่านซ้ายไปขวา) — ดึงมาจากหน้าโปรไฟล์ทีมเดิม
+// เพื่อใช้ร่วมกันกับตารางคะแนน แทนที่จะเขียน logic เดิมซ้ำอีกที่
+export function getRecentForm(teamId: number, matches: FormMatchInput[], limit = 5): ("W" | "D" | "L")[] {
+  return matches
+    .filter(
+      (m) =>
+        (m.homeTeamId === teamId || m.awayTeamId === teamId) &&
+        m.status === "FINISHED" &&
+        m.homeScore != null &&
+        m.awayScore != null,
+    )
+    .sort((a, b) => (b.matchDate?.getTime() ?? 0) - (a.matchDate?.getTime() ?? 0))
+    .slice(0, limit)
+    .reverse()
+    .map((m) => {
+      const isHome = m.homeTeamId === teamId;
+      const gf = isHome ? m.homeScore! : m.awayScore!;
+      const ga = isHome ? m.awayScore! : m.homeScore!;
+      return gf > ga ? "W" : gf < ga ? "L" : "D";
+    });
+}

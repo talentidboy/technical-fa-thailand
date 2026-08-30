@@ -1,7 +1,7 @@
 import { TeamBadge } from "./TeamBadge";
 import type { StandingRow } from "@/lib/g15";
 
-export function MiniLeaderboard({
+export function MiniLeaderboard<T extends StandingRow>({
   title,
   icon: Icon,
   rows,
@@ -9,8 +9,8 @@ export function MiniLeaderboard({
 }: {
   title: string;
   icon: React.ComponentType<{ className?: string }>;
-  rows: StandingRow[];
-  valueOf: (row: StandingRow) => number;
+  rows: T[];
+  valueOf: (row: T) => number;
 }) {
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">

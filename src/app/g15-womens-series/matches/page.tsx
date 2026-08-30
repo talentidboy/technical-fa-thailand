@@ -9,7 +9,11 @@ export default async function G15MatchesPage() {
     getCurrentUser(),
     prisma.g15Match.findMany({
       orderBy: [{ matchDate: "asc" }, { createdAt: "asc" }],
-      include: { homeTeam: true, awayTeam: true },
+      include: {
+        homeTeam: true,
+        awayTeam: true,
+        goals: { orderBy: [{ minute: "asc" }, { id: "asc" }] },
+      },
     }),
   ]);
 

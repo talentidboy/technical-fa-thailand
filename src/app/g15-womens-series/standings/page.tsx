@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
-import { getStandings } from "@/lib/g15";
+import { getStandings, getRecentForm } from "@/lib/g15";
 import { REGION_STYLE, DEFAULT_REGION_STYLE, regionEn, groupStandingsByRegion } from "@/lib/g15-region";
 import { G15Chrome } from "@/components/g15/G15Chrome";
 import { StandingTable } from "@/components/g15/StandingTable";
@@ -15,6 +15,7 @@ export default async function G15StandingsPage() {
 
   const standingGroups = getStandings(teams, matches);
   const { regionOrder, byRegion, ungrouped } = groupStandingsByRegion(standingGroups);
+  const formByTeamId = new Map(teams.map((t) => [t.id, getRecentForm(t.id, matches)]));
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -57,7 +58,7 @@ export default async function G15StandingsPage() {
                           {letters.length > 1 && (
                             <p className={`px-5 pt-3 text-xs font-bold ${style.text}`}>กลุ่ม {letter}</p>
                           )}
-                          <StandingTable group={groupMap.get(letter)!} />
+                          <StandingTable group={groupMap.get(letter)!} formByTeamId={formByTeamId} />
                         </div>
                       ))}
                     </div>
@@ -76,7 +77,7 @@ export default async function G15StandingsPage() {
                     <div className="border-b border-slate-100 px-5 py-3">
                       <h3 className="font-semibold text-slate-900">{group.groupName}</h3>
                     </div>
-                    <StandingTable group={group} />
+                    <StandingTable group={group} formByTeamId={formByTeamId} />
                   </div>
                 ))}
               </div>
