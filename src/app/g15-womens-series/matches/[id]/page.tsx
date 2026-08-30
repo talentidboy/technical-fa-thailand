@@ -3,11 +3,12 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
-import { formatMatchDateTime } from "@/lib/g15";
+import { formatMatchDateTime, formatMatchDateShort, getStandings, getRecentForm } from "@/lib/g15";
 import { regionStyle } from "@/lib/g15-region";
 import { LOGO_URL } from "@/lib/brand";
 import { TeamBadge } from "@/components/g15/TeamBadge";
-import { ArrowLeft, MapPin, Calendar, Target, LogIn, LogOut, Settings, ClipboardList, Users } from "lucide-react";
+import { FormPills } from "@/components/g15/StandingTable";
+import { ArrowLeft, MapPin, Calendar, Target, LogIn, LogOut, Settings, ClipboardList, Users, Swords, ListOrdered } from "lucide-react";
 
 const OFFICIAL_ROLES = [
   { key: "referee", label: "ผู้ตัดสิน", en: "Referee" },
@@ -29,7 +30,7 @@ export default async function G15MatchDetailPage({
   const id = Number(idParam);
   if (!Number.isInteger(id)) notFound();
 
-  const [user, match] = await Promise.all([
+  const [user, match, allTeams, allMatches] = await Promise.all([
     getCurrentUser(),
     prisma.g15Match.findUnique({
       where: { id },
@@ -45,6 +46,8 @@ export default async function G15MatchDetailPage({
         },
       },
     }),
+    prisma.g15Team.findMany(),
+    prisma.g15Match.findMany(),
   ]);
   if (!match) notFound();
 
@@ -66,6 +69,26 @@ export default async function G15MatchDetailPage({
     match.lineups.length > 0;
 
   const teamById = (teamId: number) => (teamId === match.homeTeamId ? match.homeTeam : match.awayTeam);
+
+  // ข้อมูลก่อนแข่ง — ตำแหน่งตารางคะแนน + ฟอร์มล่าสุด ของทั้งสองทีม แสดงได้เสมอไม่ว่าจะมีใบรายงานผู้ตัดสินหรือยัง
+  const standingRows = getStandings(allTeams, allMatches).flatMap((g) => g.rows);
+  const homeStanding = standingRows.find((r) => r.teamId === match.homeTeamId);
+  const awayStanding = standingRows.find((r) => r.teamId === match.awayTeamId);
+  const homeForm = getRecentForm(match.homeTeamId, allMatches);
+  const awayForm = getRecentForm(match.awayTeamId, allMatches);
+
+  // พบกันล่าสุด — นัดอื่นๆ ระหว่างสองทีมนี้ (ไม่รวมนัดนี้เอง) ที่แข่งจบแล้ว เรียงล่าสุดก่อน
+  const headToHead = allMatches
+    .filter(
+      (m) =>
+        m.id !== match.id &&
+        m.status === "FINISHED" &&
+        m.homeScore != null &&
+        m.awayScore != null &&
+        ((m.homeTeamId === match.homeTeamId && m.awayTeamId === match.awayTeamId) ||
+          (m.homeTeamId === match.awayTeamId && m.awayTeamId === match.homeTeamId)),
+    )
+    .sort((a, b) => (b.matchDate?.getTime() ?? 0) - (a.matchDate?.getTime() ?? 0));
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -177,13 +200,89 @@ export default async function G15MatchDetailPage({
           </div>
         </div>
 
-        {!hasDetails ? (
-          <div className="mt-8 rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-10 text-center">
-            <ClipboardList className="mx-auto h-6 w-6 text-slate-300" />
-            <p className="mt-2 text-sm text-slate-500">ยังไม่มีรายละเอียดใบรายงานผู้ตัดสินสำหรับนัดนี้</p>
-            <p className="mt-0.5 text-xs text-slate-400">Match report details not available yet — more will be added soon.</p>
+        {/* ข้อมูลก่อนแข่ง — โชว์ได้เสมอจากตารางคะแนน/ผลย้อนหลังในระบบ ไม่ต้องรอใบรายงานผู้ตัดสิน */}
+        <section className="mt-8">
+          <div className="mb-4 flex items-center gap-2 text-sm font-medium text-slate-500">
+            <ListOrdered className="h-4 w-4" />
+            ข้อมูลก่อนแข่ง / Match Facts
           </div>
-        ) : (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            {[
+              { team: match.homeTeam, standing: homeStanding, form: homeForm },
+              { team: match.awayTeam, standing: awayStanding, form: awayForm },
+            ].map(({ team, standing, form }) => (
+              <Link
+                key={team.id}
+                href={`/g15-womens-series/teams/${team.id}`}
+                className="block rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-colors hover:border-slate-300 hover:shadow-md"
+              >
+                <div className="flex items-center gap-3">
+                  <TeamBadge team={team} size="md" />
+                  <span className="min-w-0 flex-1 truncate text-sm font-bold text-slate-900">{team.name}</span>
+                </div>
+                {standing ? (
+                  <div className="mt-4 grid grid-cols-4 gap-2 text-center">
+                    {[
+                      { label: "P", value: standing.played },
+                      { label: "W", value: standing.won },
+                      { label: "GD", value: standing.goalDiff > 0 ? `+${standing.goalDiff}` : standing.goalDiff },
+                      { label: "Pts", value: standing.points },
+                    ].map((s) => (
+                      <div key={s.label}>
+                        <p className={`text-base font-bold ${s.label === "Pts" ? "text-rose-600" : "text-slate-900"}`}>{s.value}</p>
+                        <p className="text-[10px] uppercase tracking-wide text-slate-400">{s.label}</p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="mt-4 text-xs text-slate-400">ยังไม่มีสถิติในตารางคะแนน</p>
+                )}
+                {form.length > 0 && (
+                  <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3">
+                    <span className="text-[11px] text-slate-400">ฟอร์มล่าสุด / Form</span>
+                    <FormPills results={form} size="md" />
+                  </div>
+                )}
+              </Link>
+            ))}
+          </div>
+
+          {headToHead.length > 0 && (
+            <div className="mt-4 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+              <div className="flex items-center gap-2 border-b border-slate-100 px-5 py-3 text-sm font-medium text-slate-500">
+                <Swords className="h-4 w-4" />
+                พบกันล่าสุด / Head to Head
+              </div>
+              <ul className="divide-y divide-slate-100">
+                {headToHead.slice(0, 5).map((m) => {
+                  const sameOrientation = m.homeTeamId === match.homeTeamId;
+                  const leftTeam = sameOrientation ? match.homeTeam : match.awayTeam;
+                  const rightTeam = sameOrientation ? match.awayTeam : match.homeTeam;
+                  const leftScore = sameOrientation ? m.homeScore : m.awayScore;
+                  const rightScore = sameOrientation ? m.awayScore : m.homeScore;
+                  return (
+                    <li key={m.id} className="flex items-center justify-between gap-3 px-5 py-3">
+                      <span className="flex-none text-xs text-slate-400">{formatMatchDateShort(m.matchDate)}</span>
+                      <div className="flex flex-1 items-center justify-end gap-2 text-right">
+                        <span className="min-w-0 truncate text-sm text-slate-700">{leftTeam.name}</span>
+                        <TeamBadge team={leftTeam} size="sm" />
+                      </div>
+                      <span className="flex-none rounded-lg bg-slate-900 px-2.5 py-1 text-xs font-bold tabular-nums text-white">
+                        {leftScore} - {rightScore}
+                      </span>
+                      <div className="flex flex-1 items-center gap-2">
+                        <TeamBadge team={rightTeam} size="sm" />
+                        <span className="min-w-0 truncate text-sm text-slate-700">{rightTeam.name}</span>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          )}
+        </section>
+
+        {hasDetails && (
           <div className="mt-8 space-y-8">
             {/* ไลน์อัพ */}
             {match.lineups.length > 0 && (

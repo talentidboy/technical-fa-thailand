@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { formatMatchDateTime, formatMatchDateShort } from "@/lib/g15";
@@ -69,13 +70,19 @@ export default async function G15StadiumPage() {
               const dayKeys = Array.from(byDay.keys()).sort();
 
               return (
-                <div key={venue} className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-                  <div className="bg-slate-900 px-5 py-4">
-                    <div className="flex items-center gap-2.5">
-                      <MapPin className="h-4 w-4 flex-none text-amber-300" />
-                      <h3 className="min-w-0 truncate font-bold text-white">{venue}</h3>
+                <div
+                  key={venue}
+                  className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-shadow hover:shadow-md"
+                >
+                  <div className="relative overflow-hidden bg-linear-to-br from-slate-900 via-slate-900 to-slate-800 px-5 py-5">
+                    <div className="absolute inset-x-0 top-0 h-1 bg-linear-to-r from-amber-500 via-amber-300 to-amber-500" />
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 flex-none items-center justify-center rounded-xl bg-white/10 ring-1 ring-white/20">
+                        <MapPin className="h-5 w-5 text-amber-300" />
+                      </div>
+                      <h3 className="min-w-0 truncate text-base font-bold text-white">{venue}</h3>
                     </div>
-                    <div className="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-white/70">
+                    <div className="mt-3.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-white/70">
                       <span className="flex items-center gap-1">
                         <Calendar className="h-3.5 w-3.5" />
                         {venueMatches.length} นัด / matches
@@ -147,31 +154,36 @@ function VenueMatchRow({
   const isFinished = match.status === "FINISHED" && match.homeScore != null && match.awayScore != null;
   const style = REGION_STYLE[match.round] ?? DEFAULT_REGION_STYLE;
   return (
-    <li className="flex flex-wrap items-center justify-between gap-3 px-5 py-3.5">
-      <div className="flex flex-wrap items-center gap-3">
-        <span className={`flex-none rounded-full px-2 py-0.5 text-[10px] font-bold text-white ${style.bg}`}>
-          {match.round}
-        </span>
-        <div className="flex items-center gap-2">
-          <TeamBadge team={match.homeTeam} size="sm" />
-          <span className="text-sm font-medium text-slate-900">{match.homeTeam.name}</span>
-        </div>
-        {isFinished ? (
-          <span className="rounded-lg bg-slate-900 px-2.5 py-1 text-xs font-bold text-white">
-            {match.homeScore} - {match.awayScore}
+    <li>
+      <Link
+        href={`/g15-womens-series/matches/${match.id}`}
+        className="flex flex-wrap items-center justify-between gap-3 px-5 py-3.5 transition-colors hover:bg-slate-50"
+      >
+        <div className="flex flex-wrap items-center gap-3">
+          <span className={`flex-none rounded-full px-2 py-0.5 text-[10px] font-bold text-white ${style.bg}`}>
+            {match.round}
           </span>
-        ) : (
-          <span className="rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-400">VS</span>
-        )}
-        <div className="flex items-center gap-2">
-          <TeamBadge team={match.awayTeam} size="sm" />
-          <span className="text-sm font-medium text-slate-900">{match.awayTeam.name}</span>
+          <div className="flex items-center gap-2">
+            <TeamBadge team={match.homeTeam} size="sm" />
+            <span className="text-sm font-medium text-slate-900">{match.homeTeam.name}</span>
+          </div>
+          {isFinished ? (
+            <span className="rounded-lg bg-slate-900 px-2.5 py-1 text-xs font-bold tabular-nums text-white">
+              {match.homeScore} - {match.awayScore}
+            </span>
+          ) : (
+            <span className="rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-400">VS</span>
+          )}
+          <div className="flex items-center gap-2">
+            <TeamBadge team={match.awayTeam} size="sm" />
+            <span className="text-sm font-medium text-slate-900">{match.awayTeam.name}</span>
+          </div>
         </div>
-      </div>
-      <span className="flex items-center gap-1 text-xs text-slate-400">
-        <Calendar className="h-3.5 w-3.5" />
-        {formatMatchDateTime(match.matchDate)}
-      </span>
+        <span className="flex items-center gap-1 text-xs text-slate-400">
+          <Calendar className="h-3.5 w-3.5" />
+          {formatMatchDateTime(match.matchDate)}
+        </span>
+      </Link>
     </li>
   );
 }
