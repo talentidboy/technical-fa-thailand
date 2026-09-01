@@ -10,7 +10,24 @@ import {
   PLAY_AND_LEARN_ELEMENTS,
 } from "@/lib/brand";
 import { InfoPopups } from "@/components/play-and-learn/InfoPopups";
-import { ArrowLeft, Phone, Download, MapPin, Users, BookOpen, Settings, UserRound, Clock } from "lucide-react";
+import {
+  ArrowLeft,
+  Phone,
+  Download,
+  MapPin,
+  Users,
+  Settings,
+  UserRound,
+  Clock,
+  Waves,
+  Fish,
+  TreePalm,
+  Mountain,
+  Landmark,
+  Compass,
+  Droplets,
+  Moon,
+} from "lucide-react";
 
 // สีพาสเทล (โทนอ่อนกว่ารุ่นสดจัด แต่ยังคงโครงสร้าง/ลำดับสีเดิม)
 const badgeAccents = [
@@ -22,6 +39,18 @@ const badgeAccents = [
   "from-sky-300 to-cyan-300",
   "from-rose-300 to-pink-300",
   "from-violet-300 to-fuchsia-300",
+];
+
+// พาสปอร์ตแห่งความสนุก 8 บท — ชื่อตอนจริงจากคู่มือกุ๋งกิ๋ง แต่ละบทจับคู่กับไอคอนที่สื่อถึงเนื้อเรื่อง ให้ดูเป็นแผนที่การผจญภัยจริงๆ
+const passportChapters = [
+  { title: "กุ๋งกิ๋งไปทะเล", icon: Waves },
+  { title: "กุ๋งกิ๋งเที่ยวพิพิธภัณฑ์สัตว์น้ำ", icon: Fish },
+  { title: "กุ๋งกิ๋งเที่ยวภาคใต้", icon: TreePalm },
+  { title: "กุ๋งกิ๋งเที่ยวภาคเหนือ", icon: Mountain },
+  { title: "กุ๋งกิ๋งเที่ยวภาคอีสาน", icon: Landmark },
+  { title: "กุ๋งกิ๋งเที่ยวภาคกลาง", icon: Compass },
+  { title: "กุ๋งกิ๋ง สุขสันต์วันสงกรานต์", icon: Droplets },
+  { title: "กุ๋งกิ๋ง สุขสันต์วันลอยกระทง", icon: Moon },
 ];
 
 // ลายจุดสีม่วงพาสเทลบนพื้นชมพูพาสเทล — ใช้เป็นพื้นหลังลายของทั้งหน้า (โทนสีหลักตามที่ขอ: ชมพูพาสเทล + ลายม่วงพาสเทล)
@@ -127,32 +156,44 @@ export default async function PlayAndLearnPage() {
           <h1 className="mt-1 text-2xl font-bold text-slate-900">PLAY AND LEARN เพลินให้สุดกับฟุตบอล</h1>
         </div>
 
-        <div className="space-y-4 text-sm leading-relaxed text-slate-600 sm:text-[15px]">
-          <p>
-            PLAY AND LEARN เพลินให้สุดกับฟุตบอล คือโครงการที่สมาคมกีฬาฟุตบอลแห่งประเทศไทย ในพระบรมราชูปถัมภ์
-            ได้รับแรงบันดาลใจมาจาก UEFA Playmakers ซึ่งเป็นหนึ่งในความมุ่งมั่นของ UEFA (สหภาพสมาคมฟุตบอลยุโรป)
-            ที่อยากเปิดโอกาสให้เด็กผู้หญิงได้สัมผัสความสนุกสนาน และเสน่ห์ของกีฬาฟุตบอล พร้อมทั้งสร้างแรงบันดาลใจให้หันมาเล่นฟุตบอลมากขึ้น
-          </p>
-          <p>
-            สมาคมกีฬาฟุตบอลแห่งประเทศไทยฯ จึงริเริ่มโครงการ PLAY AND LEARN เพลินให้สุดกับฟุตบอล ขึ้น โดยเลือก
-            <strong className="text-slate-900"> &ldquo;กุ๋งกิ๋ง&rdquo;</strong> ตัวละครเด็กผู้หญิงตัวกลม อารมณ์ดี วัย 5 ขวบ
-            จากหนังสือนิทานชุด &ldquo;กุ๋งกิ๋ง&rdquo; ของบริษัท แปลน ฟอร์ คิดส์ จำกัด ซึ่งมียอดตีพิมพ์กว่า 5
-            ล้านเล่มและเป็นเพื่อนรักของเด็กไทยมายาวนานกว่า 20 ปี เป็นผู้นำทีมเด็กผู้หญิงก้าวสู่สนามฟุตบอลเป็นครั้งแรก
-          </p>
-          <p>
-            PLAY AND LEARN เพลินให้สุดกับฟุตบอล ไม่ใช่เป็นเพียงโครงการที่ส่งเสริมกีฬาฟุตบอลสำหรับเด็กผู้หญิง
-            แต่ยังช่วยปลุกพลังและสร้างความมั่นใจให้เด็กผู้หญิงได้แสดงศักยภาพในฐานะนักกีฬา
-            เพื่อเติบโตสู่การเป็นนักฟุตบอลมืออาชีพในอนาคต
-          </p>
-          <p>
-            สมาคมกีฬาฟุตบอลแห่งประเทศไทย มีความตั้งใจที่จะสนับสนุนฟุตบอลเด็กผู้หญิงผ่านการจัดกิจกรรม
-            เพื่อให้เด็กผู้หญิงได้รู้จักกีฬาฟุตบอลสร้างพื้นที่ให้ได้แสดงออกและมีส่วนร่วมในกิจกรรมฟุตบอล
-            ภายใต้สภาพแวดล้อมที่เป็นมิตร ปลอดภัย และสนุกสนาน มุ่งเสริมสร้างความมั่นใจ เปิดโอกาสให้ได้ทำความรู้จักเพื่อนใหม่
-            เรียนรู้ทักษะชีวิต และเปลี่ยนภาพจำของกีฬาฟุตบอลว่าเป็นกีฬาสำหรับทุกคน ไม่ใช่เฉพาะผู้ชายเท่านั้น และที่สำคัญ คือ
-            <strong className="text-slate-900"> &ldquo;เด็กผู้หญิง ไม่ว่าอยู่ที่ไหนก็สามารถเล่นฟุตบอลได้&rdquo;</strong>{" "}
-            PLAY AND LEARN เพลินให้สุดกับฟุตบอลจึงเป็นอีกก้าวสำคัญในการสร้างแรงบันดาลใจและต่อยอดการพัฒนาฟุตบอลหญิงไทยอย่างยั่งยืน
-          </p>
-          <p className="text-center italic text-purple-700">
+        {/* ห่อเป็นการ์ดพื้นขาวให้ตัดกับพื้นหลังลายจุด ไม่ให้ข้อความกลืนไปกับพื้น */}
+        <div className="relative overflow-hidden rounded-3xl border border-pink-100 bg-white p-6 shadow-lg shadow-pink-200/50 sm:p-8">
+          <Image
+            src={PLAY_AND_LEARN_ELEMENTS.flowerYellow}
+            alt=""
+            width={72}
+            height={72}
+            className="pointer-events-none absolute -right-3 -top-3 h-16 w-16 rotate-12 opacity-90 sm:h-20 sm:w-20"
+          />
+          <div className="relative space-y-5 text-sm leading-relaxed text-slate-600 sm:text-[15px]">
+            <p>
+              PLAY AND LEARN เพลินให้สุดกับฟุตบอล คือโครงการที่สมาคมกีฬาฟุตบอลแห่งประเทศไทย ในพระบรมราชูปถัมภ์
+              ได้รับแรงบันดาลใจมาจาก UEFA Playmakers ซึ่งเป็นหนึ่งในความมุ่งมั่นของ UEFA (สหภาพสมาคมฟุตบอลยุโรป)
+              ที่อยากเปิดโอกาสให้เด็กผู้หญิงได้สัมผัสความสนุกสนาน และเสน่ห์ของกีฬาฟุตบอล พร้อมทั้งสร้างแรงบันดาลใจให้หันมาเล่นฟุตบอลมากขึ้น
+            </p>
+            <p>
+              สมาคมกีฬาฟุตบอลแห่งประเทศไทยฯ จึงริเริ่มโครงการ PLAY AND LEARN เพลินให้สุดกับฟุตบอล ขึ้น โดยเลือก
+              <strong className="text-slate-900"> &ldquo;กุ๋งกิ๋ง&rdquo;</strong> ตัวละครเด็กผู้หญิงตัวกลม อารมณ์ดี วัย 5 ขวบ
+              จากหนังสือนิทานชุด &ldquo;กุ๋งกิ๋ง&rdquo; ของบริษัท แปลน ฟอร์ คิดส์ จำกัด ซึ่งมียอดตีพิมพ์กว่า 5
+              ล้านเล่มและเป็นเพื่อนรักของเด็กไทยมายาวนานกว่า 20 ปี เป็นผู้นำทีมเด็กผู้หญิงก้าวสู่สนามฟุตบอลเป็นครั้งแรก
+            </p>
+            <p>
+              PLAY AND LEARN เพลินให้สุดกับฟุตบอล ไม่ใช่เป็นเพียงโครงการที่ส่งเสริมกีฬาฟุตบอลสำหรับเด็กผู้หญิง
+              แต่ยังช่วยปลุกพลังและสร้างความมั่นใจให้เด็กผู้หญิงได้แสดงศักยภาพในฐานะนักกีฬา
+              เพื่อเติบโตสู่การเป็นนักฟุตบอลมืออาชีพในอนาคต
+            </p>
+            <p>
+              สมาคมกีฬาฟุตบอลแห่งประเทศไทย มีความตั้งใจที่จะสนับสนุนฟุตบอลเด็กผู้หญิงผ่านการจัดกิจกรรม
+              เพื่อให้เด็กผู้หญิงได้รู้จักกีฬาฟุตบอลสร้างพื้นที่ให้ได้แสดงออกและมีส่วนร่วมในกิจกรรมฟุตบอล
+              ภายใต้สภาพแวดล้อมที่เป็นมิตร ปลอดภัย และสนุกสนาน มุ่งเสริมสร้างความมั่นใจ เปิดโอกาสให้ได้ทำความรู้จักเพื่อนใหม่
+              เรียนรู้ทักษะชีวิต และเปลี่ยนภาพจำของกีฬาฟุตบอลว่าเป็นกีฬาสำหรับทุกคน ไม่ใช่เฉพาะผู้ชายเท่านั้น และที่สำคัญ คือ
+              <strong className="text-slate-900"> &ldquo;เด็กผู้หญิง ไม่ว่าอยู่ที่ไหนก็สามารถเล่นฟุตบอลได้&rdquo;</strong>
+            </p>
+            <p>
+              PLAY AND LEARN เพลินให้สุดกับฟุตบอลจึงเป็นอีกก้าวสำคัญในการสร้างแรงบันดาลใจและต่อยอดการพัฒนาฟุตบอลหญิงไทยอย่างยั่งยืน
+            </p>
+          </div>
+          <p className="relative mt-6 border-t border-pink-100 pt-5 text-center italic text-purple-700">
             PLAY AND LEARN เพลินให้สุดกับฟุตบอล &ldquo;Where Thai girls grow, play and shine&rdquo;
           </p>
         </div>
@@ -175,6 +216,7 @@ export default async function PlayAndLearnPage() {
         <div className="mb-8 text-center">
           <p className="text-xs font-bold uppercase tracking-widest text-purple-400">Adventure Passport</p>
           <h2 className="mt-1 text-2xl font-bold text-slate-900">พาสปอร์ตแห่งความสนุก</h2>
+          <p className="mt-1 text-sm font-bold text-pink-500">🗺️ แผนที่การผจญภัยของกุ๋งกิ๋ง 8 บท</p>
           <p className="mx-auto mt-2 max-w-xl text-sm text-slate-500">
             เด็กๆ จะได้รับพาสปอร์ตแห่งความสนุกในแต่ละบท บันทึกการผจญภัยของกุ๋งกิ๋งและการฝึกทักษะการเคลื่อนไหวพื้นฐาน
             ให้กลับไปทำกิจกรรมที่บ้านร่วมกับครอบครัว
@@ -182,29 +224,33 @@ export default async function PlayAndLearnPage() {
         </div>
 
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-          {PLAY_AND_LEARN_PASSPORT_URLS.map((url, i) => (
-            <a
-              key={url}
-              href={url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="group flex flex-col items-center gap-3 rounded-2xl border border-pink-100 bg-white p-5 text-center shadow-sm transition-all hover:-translate-y-1 hover:shadow-lg"
-            >
-              <div
-                className={`flex h-16 w-16 items-center justify-center rounded-full bg-linear-to-br text-white shadow-md transition-transform group-hover:scale-110 ${badgeAccents[i % badgeAccents.length]}`}
+          {passportChapters.map((chapter, i) => {
+            const Icon = chapter.icon;
+            const tilt = i % 2 === 0 ? "-rotate-1" : "rotate-1";
+            return (
+              <a
+                key={chapter.title}
+                href={PLAY_AND_LEARN_PASSPORT_URLS[i]}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`group flex flex-col items-center gap-2.5 rounded-2xl border border-pink-100 bg-white p-4 text-center shadow-sm transition-all hover:-translate-y-1 hover:rotate-0 hover:shadow-lg ${tilt}`}
               >
-                <BookOpen className="h-7 w-7" />
-              </div>
-              <div>
-                <p className="text-xs font-medium text-slate-400">บทที่</p>
-                <p className="text-lg font-extrabold text-slate-900">{i + 1}</p>
-              </div>
-              <span className="flex items-center gap-1 text-xs font-medium text-purple-600 group-hover:text-purple-700">
-                <Download className="h-3.5 w-3.5" />
-                ดาวน์โหลด
-              </span>
-            </a>
-          ))}
+                <div
+                  className={`relative flex h-16 w-16 items-center justify-center rounded-full bg-linear-to-br text-white shadow-md transition-transform group-hover:scale-110 ${badgeAccents[i % badgeAccents.length]}`}
+                >
+                  <Icon className="h-7 w-7" />
+                  <span className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-white text-[10px] font-extrabold text-purple-600 shadow ring-1 ring-pink-100">
+                    {i + 1}
+                  </span>
+                </div>
+                <p className="min-h-8 text-xs font-bold leading-snug text-slate-900">{chapter.title}</p>
+                <span className="flex items-center gap-1 text-[11px] font-medium text-purple-600 group-hover:text-purple-700">
+                  <Download className="h-3 w-3" />
+                  ดาวน์โหลด
+                </span>
+              </a>
+            );
+          })}
         </div>
       </section>
 
