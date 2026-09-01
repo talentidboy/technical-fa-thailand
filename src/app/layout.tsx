@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Noto_Sans_Thai } from "next/font/google";
-import { LOGO_URL } from "@/lib/brand";
 import "./globals.css";
 
 const notoSansThai = Noto_Sans_Thai({
@@ -12,9 +11,6 @@ const notoSansThai = Noto_Sans_Thai({
 export const metadata: Metadata = {
   title: "FA Thailand Technical",
   description: "ระบบงานเทคนิคของสมาคมกีฬาฟุตบอลแห่งประเทศไทย",
-  icons: {
-    icon: LOGO_URL,
-  },
 };
 
 export default function RootLayout({
