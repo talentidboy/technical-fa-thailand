@@ -1,113 +1,16 @@
 import Link from "next/link";
 import Image from "next/image";
-import { LOGO_URL, PLAY_AND_LEARN_LOGO_URL, PLAY_AND_LEARN_PASSPORT_URLS } from "@/lib/brand";
+import { prisma } from "@/lib/prisma";
+import { getCurrentUser } from "@/lib/auth";
 import {
-  ArrowLeft,
-  Sparkles,
-  Star,
-  Heart,
-  Goal,
-  Phone,
-  Download,
-  MapPin,
-  Users,
-  Footprints,
-  BookOpen,
-  UserRound,
-  Flower2,
-} from "lucide-react";
-
-// ข้อมูลศูนย์ฝึกกิจกรรม — คัดลอกจากไฟล์ "Play and Learn เพลินให้สุดกับฟุตบอล.xlsx" ชีต Sheet1 (ข้อมูลนิ่ง กรอกด้วยมือ)
-// registerUrl เป็น null ไว้ก่อน เพราะยังไม่มีลิงก์ Google Form จริง — ตอนนี้ใช้เบอร์โทรผู้ประสานงานเป็นช่องทางสมัครแทน
-// เมื่อได้ลิงก์ฟอร์มจริงมาแล้ว ใส่ลิงก์ตรงนี้ได้เลย ปุ่ม "สมัครเรียน" จะเปลี่ยนมาใช้ลิงก์นั้นให้อัตโนมัติ
-const activityCenters: {
-  name: string;
-  province: string;
-  provinceEn: string;
-  address: string;
-  coaches: string[];
-  coordinator: string;
-  tel: string;
-  schedule: string | null;
-  registerUrl: string | null;
-}[] = [
-  {
-    name: "CHR Football Academy",
-    province: "กรุงเทพมหานคร",
-    provinceEn: "Bangkok",
-    address: "Jas Green Village Kubon เลขที่ 54/3 ถนนคู้บอน แขวงบางชัน เขตคลองสามวา กรุงเทพมหานคร 10510",
-    coaches: ["นายณัฐอนันตชัย สาระสิทธิ์ (แบงค์)", "นายวัชรินทร์ ทองมนต์ (เบียร์)"],
-    coordinator: "คุณบอลลูน",
-    tel: "098-426-3341",
-    schedule: "สัปดาห์ที่ 1 เสาร์ 10:00–11:00 น. · สัปดาห์ที่ 2–10 อาทิตย์ 14:00–15:00 น.",
-    registerUrl: null,
-  },
-  {
-    name: "Pinpat Kindergarten School",
-    province: "สุราษฎร์ธานี",
-    provinceEn: "Surat Thani",
-    address: "โรงเรียนอนุบาลภิญพัฒน์ 16/2 หมู่ 2 ตำบลบ้านส้อง อำเภอเวียงสระ สุราษฎร์ธานี 84190",
-    coaches: ["นางสาวอรวรรณ อินทร์คีรี (โม)", "นางสาวบุษยมาศ คำแก้ว (แคท)"],
-    coordinator: "คุณโม",
-    tel: "091-825-1610",
-    schedule: null,
-    registerUrl: null,
-  },
-  {
-    name: "Chanthaburi FC Academy",
-    province: "จันทบุรี",
-    provinceEn: "Chanthaburi",
-    address: "โรงเรียนเทศบาลเมืองจันทบุรี ๒ เลขที่ 4 ถ.มหาราช ต.ตลาด อ.เมือง จ.จันทบุรี 22000",
-    coaches: ["นางสาวมีนา เร่งขวนขวาย (มีนา)", "นางสาววาลุกา ศรีสันต์ (วา)"],
-    coordinator: "คุณมีนา",
-    tel: "098-420-7530",
-    schedule: null,
-    registerUrl: null,
-  },
-  {
-    name: "JT Football Academy",
-    province: "หนองบัวลำภู",
-    provinceEn: "Nong Bua Lamphu",
-    address: "เลขที่ 158 หมู่ 9 บ้านศรีทองพัฒนา ตำบลกุดดินจี่ อำเภอนากลาง จังหวัดหนองบัวลำภู 39350",
-    coaches: ["นางสาวณภัทรธนัตถ์ ชาวงษ์ (จอย)", "นางสาวนันทิกาญจน์ บัวสระ (หล่อ)"],
-    coordinator: "คุณจอย",
-    tel: "065-417-9193",
-    schedule: null,
-    registerUrl: null,
-  },
-  {
-    name: "Sports Friends Thailand & Agape Academy",
-    province: "เชียงใหม่",
-    provinceEn: "Chiang Mai",
-    address: "มูลนิธิช่วยไทย 120 ม.2 ต.แม่โป่ง อ.ดอยสะเก็ด จ.เชียงใหม่ 50220",
-    coaches: ["นายสุพัฒน์ จันทร์แก้วมูล (ต้น)", "นายดนัย ปอด๋อ (ต่าย)"],
-    coordinator: "คุณต้น",
-    tel: "083-766-3737",
-    schedule: null,
-    registerUrl: null,
-  },
-];
-
-const learningPillars = [
-  {
-    icon: Heart,
-    title: "ทักษะชีวิตและคุณค่า",
-    titleEn: "Life Skills and Values",
-    description: "เรียนรู้การอยู่ร่วมกับผู้อื่น การเล่นเป็นทีม การเคารพ และการแก้ไขปัญหา",
-  },
-  {
-    icon: Footprints,
-    title: "ทักษะการเคลื่อนไหวพื้นฐาน",
-    titleEn: "Fundamental Movement Skills",
-    description: "ฝึกการเคลื่อนที่ (Locomotion) การทรงตัว (Stability) และการควบคุมวัตถุ (Object Control)",
-  },
-  {
-    icon: Goal,
-    title: "ทักษะฟุตบอลขั้นพื้นฐาน",
-    titleEn: "Basic Football Skills",
-    description: "การควบคุมลูกบอล การเลี้ยงบอล การส่ง-เตะบอล และเกม 1 ต่อ 1 และ 3 ต่อ 3",
-  },
-];
+  PLAY_AND_LEARN_NAV_LOGO_URL,
+  PLAY_AND_LEARN_HERO_URL,
+  PLAY_AND_LEARN_PASSPORT_URLS,
+  PLAY_AND_LEARN_MASCOT,
+  PLAY_AND_LEARN_ELEMENTS,
+} from "@/lib/brand";
+import { InfoPopups } from "@/components/play-and-learn/InfoPopups";
+import { ArrowLeft, Phone, Download, MapPin, Users, BookOpen, Settings, UserRound, Clock } from "lucide-react";
 
 // สีพาสเทล (โทนอ่อนกว่ารุ่นสดจัด แต่ยังคงโครงสร้าง/ลำดับสีเดิม)
 const badgeAccents = [
@@ -127,143 +30,148 @@ const dotPatternStyle = {
   backgroundSize: "26px 26px",
 };
 
-// ปุ่ม CTA พาสเทล ใช้ร่วมกันทั้งหน้า
-const pastelButtonClass =
-  "inline-flex flex-none items-center gap-1.5 rounded-full bg-linear-to-r from-pink-300 to-purple-300 px-4 py-2 text-xs font-bold text-white shadow-sm transition-transform hover:scale-105";
-
 // หน้านี้เปิดสาธารณะไม่ต้องล็อกอิน — เป็นแคมเปญให้ผู้ปกครอง/บุคคลทั่วไปเข้าดูข้อมูลและสมัครเรียนได้เลย
-export default function PlayAndLearnPage() {
+export default async function PlayAndLearnPage() {
+  const [user, centers] = await Promise.all([
+    getCurrentUser(),
+    prisma.playAndLearnCenter.findMany({ orderBy: [{ sortOrder: "asc" }, { id: "asc" }] }),
+  ]);
+  const canManage = user?.role === "ADMIN" || user?.role === "STAFF";
+
   return (
     <div className="min-h-screen bg-pink-50" style={dotPatternStyle}>
-      <header className="sticky top-0 z-20 border-b border-white/10 bg-indigo-950/80 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-6 py-4">
-          <Link href="/" className="flex items-center gap-2">
+      {/* แถบบนสุด — ใช้โลโก้ Play and Learn แทนโลโก้ FA Thailand ทั่วไป ให้เข้ากับธีมของหน้านี้โดยเฉพาะ */}
+      <header className="sticky top-0 z-20 border-b border-pink-100 bg-white/90 backdrop-blur">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-6 py-2.5">
+          <Link href="/play-and-learn" className="flex items-center">
             <Image
-              src={LOGO_URL}
-              alt="FA Thailand"
-              width={36}
-              height={36}
-              className="h-9 w-9 rounded-lg object-cover"
+              src={PLAY_AND_LEARN_NAV_LOGO_URL}
+              alt="Play and Learn เพลินให้สุดกับฟุตบอล"
+              width={220}
+              height={80}
+              className="h-11 w-auto sm:h-12"
+              priority
             />
-            <div>
-              <p className="text-sm font-bold text-white">FA Thailand Technical</p>
-              <p className="text-[11px] text-indigo-300">หมวด: Play and Learn</p>
-            </div>
           </Link>
-          <Link
-            href="/"
-            className="inline-flex items-center gap-1.5 rounded-lg border border-white/15 px-3 py-2 text-sm font-medium text-indigo-200 transition-colors hover:bg-white/10 hover:text-white"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            กลับหน้าแรก
-          </Link>
+          <div className="flex flex-none items-center gap-2">
+            {canManage && (
+              <Link
+                href="/play-and-learn/manage"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-linear-to-r from-pink-300 to-purple-300 px-3 py-2 text-sm font-medium text-white shadow-sm transition-transform hover:scale-105"
+              >
+                <Settings className="h-4 w-4" />
+                <span className="hidden sm:inline">จัดการข้อมูล</span>
+              </Link>
+            )}
+            <Link
+              href="/"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-purple-200 px-3 py-2 text-sm font-medium text-purple-600 transition-colors hover:bg-purple-50"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              <span className="hidden sm:inline">กลับหน้าแรก</span>
+            </Link>
+          </div>
         </div>
       </header>
 
-      {/* 1. Hero Section */}
-      <section className="relative overflow-hidden bg-linear-to-b from-pink-100 via-pink-50 to-purple-50">
-        <div className="absolute -left-20 -top-20 h-72 w-72 rounded-full bg-pink-300/30 blur-3xl" />
-        <div className="absolute -right-16 top-10 h-80 w-80 rounded-full bg-purple-300/30 blur-3xl" />
-        <div className="absolute bottom-0 left-1/3 h-64 w-64 rounded-full bg-fuchsia-200/40 blur-3xl" />
-
-        <Star className="animate-float-y absolute left-8 top-16 hidden h-6 w-6 text-amber-400/70 sm:block" />
-        <Heart className="animate-float-y absolute right-12 top-24 hidden h-6 w-6 text-pink-400/70 sm:block" style={{ animationDelay: "1s" }} />
-        <Sparkles className="animate-float-y absolute left-1/4 bottom-16 hidden h-5 w-5 text-purple-400/70 sm:block" style={{ animationDelay: "0.5s" }} />
-        <Flower2 className="animate-float-y absolute right-1/4 bottom-10 hidden h-6 w-6 text-fuchsia-400/70 sm:block" style={{ animationDelay: "1.5s" }} />
-
-        <div className="relative mx-auto max-w-3xl px-6 py-16 text-center sm:py-20">
-          <h1 className="sr-only">PLAY AND LEARN เพลินให้สุดกับฟุตบอล</h1>
-          <Image
-            src={PLAY_AND_LEARN_LOGO_URL}
-            alt="PLAY AND LEARN เพลินให้สุดกับฟุตบอล"
-            width={480}
-            height={480}
-            className="mx-auto h-auto w-52 sm:w-64"
-            priority
-          />
-          <p className="mx-auto mt-4 max-w-xl text-sm text-purple-900/70 sm:text-base">
-            โครงการฟุตบอลสำหรับเด็กผู้หญิงวัย 5–8 ปี ภายใต้สมาคมกีฬาฟุตบอลแห่งประเทศไทย ในพระบรมราชูปถัมภ์
-          </p>
-          <p className="mx-auto mt-1 max-w-xl text-xs italic text-purple-900/50 sm:text-sm">
-            &ldquo;Where Thai girls grow, play and shine&rdquo;
-          </p>
-
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-            <a
-              href="#centers"
-              className="rounded-full bg-linear-to-r from-pink-300 to-purple-300 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-pink-300/40 transition-transform hover:scale-105"
-            >
-              ดูศูนย์ฝึกใกล้บ้าน
-            </a>
-            <a
-              href="#passport"
-              className="rounded-full border border-purple-300 bg-white/70 px-6 py-3 text-sm font-bold text-purple-700 backdrop-blur-sm transition-colors hover:bg-white"
-            >
-              ดาวน์โหลด Adventure Passport
-            </a>
-          </div>
-        </div>
-
-        <svg className="relative block w-full text-pink-50" viewBox="0 0 1440 60" preserveAspectRatio="none">
-          <path fill="currentColor" d="M0,32 C480,72 960,0 1440,32 L1440,60 L0,60 Z" />
-        </svg>
+      {/* 1. Hero Section — ภาพแบนเนอร์ที่มีโลโก้และเด็กๆ เล่นฟุตบอลอยู่ในภาพแล้ว จึงโชว์เต็มความกว้างไปเลยโดยไม่ทับข้อความซ้ำ */}
+      <section className="relative overflow-hidden">
+        <Image
+          src={PLAY_AND_LEARN_HERO_URL}
+          alt="PLAY AND LEARN เพลินให้สุดกับฟุตบอล — Where Thai girls grow, play and shine"
+          width={2750}
+          height={1536}
+          className="h-auto w-full"
+          priority
+        />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-linear-to-t from-pink-50 to-transparent" />
       </section>
 
+      <div className="relative mx-auto max-w-3xl px-6 pt-8 text-center">
+        <Image
+          src={PLAY_AND_LEARN_ELEMENTS.star}
+          alt=""
+          width={64}
+          height={64}
+          className="animate-float-y absolute -left-2 top-2 hidden h-10 w-10 opacity-80 sm:block"
+        />
+        <Image
+          src={PLAY_AND_LEARN_ELEMENTS.flowerPink}
+          alt=""
+          width={64}
+          height={64}
+          className="animate-float-y absolute -right-2 top-6 hidden h-12 w-12 opacity-80 sm:block"
+          style={{ animationDelay: "1s" }}
+        />
+        <p className="text-xs italic text-purple-900/50 sm:text-sm">&ldquo;Where Thai girls grow, play and shine&rdquo;</p>
+        <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+          <a
+            href="#centers"
+            className="rounded-full bg-linear-to-r from-pink-300 to-purple-300 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-pink-300/40 transition-transform hover:scale-105"
+          >
+            ดูศูนย์ฝึกใกล้บ้าน
+          </a>
+          <a
+            href="#passport"
+            className="rounded-full border border-purple-300 bg-white/70 px-6 py-3 text-sm font-bold text-purple-700 backdrop-blur-sm transition-colors hover:bg-white"
+          >
+            ดาวน์โหลด Adventure Passport
+          </a>
+        </div>
+      </div>
+
       {/* 2. Introduction Section */}
-      <section className="relative mx-auto max-w-4xl px-6 py-4">
+      <section className="relative mx-auto max-w-4xl px-6 py-10">
         <div className="mb-6 text-center">
           <p className="text-xs font-bold uppercase tracking-widest text-purple-400">Introduction</p>
-          <h2 className="mt-1 text-2xl font-bold text-slate-900">เกี่ยวกับโครงการ</h2>
+          <h1 className="mt-1 text-2xl font-bold text-slate-900">PLAY AND LEARN เพลินให้สุดกับฟุตบอล</h1>
         </div>
 
         <div className="space-y-4 text-sm leading-relaxed text-slate-600 sm:text-[15px]">
           <p>
-            <strong className="text-slate-900">PLAY AND LEARN เพลินให้สุดกับฟุตบอล</strong> คือโครงการที่สมาคมกีฬาฟุตบอลแห่งประเทศไทย
-            ในพระบรมราชูปถัมภ์ ได้รับแรงบันดาลใจมาจาก UEFA Playmakers ซึ่งเป็นหนึ่งในความมุ่งมั่นของ UEFA
-            ที่อยากเปิดโอกาสให้เด็กผู้หญิงได้สัมผัสความสนุกสนานและเสน่ห์ของกีฬาฟุตบอล
-            พร้อมทั้งสร้างแรงบันดาลใจให้หันมาเล่นฟุตบอลมากขึ้น
+            PLAY AND LEARN เพลินให้สุดกับฟุตบอล คือโครงการที่สมาคมกีฬาฟุตบอลแห่งประเทศไทย ในพระบรมราชูปถัมภ์
+            ได้รับแรงบันดาลใจมาจาก UEFA Playmakers ซึ่งเป็นหนึ่งในความมุ่งมั่นของ UEFA (สหภาพสมาคมฟุตบอลยุโรป)
+            ที่อยากเปิดโอกาสให้เด็กผู้หญิงได้สัมผัสความสนุกสนาน และเสน่ห์ของกีฬาฟุตบอล พร้อมทั้งสร้างแรงบันดาลใจให้หันมาเล่นฟุตบอลมากขึ้น
           </p>
           <p>
-            โดยเลือก <strong className="text-slate-900">&ldquo;กุ๋งกิ๋ง&rdquo;</strong>{" "}
-            ตัวละครเด็กผู้หญิงตัวกลม อารมณ์ดี วัย 5 ขวบ จากหนังสือนิทานชุด &ldquo;กุ๋งกิ๋ง&rdquo; ของบริษัท แปลน ฟอร์ คิดส์ จำกัด
-            ซึ่งมียอดตีพิมพ์กว่า 5 ล้านเล่มและเป็นเพื่อนรักของเด็กไทยมายาวนานกว่า 20 ปี
-            เป็นผู้นำทีมเด็กผู้หญิงก้าวสู่สนามฟุตบอลเป็นครั้งแรก
+            สมาคมกีฬาฟุตบอลแห่งประเทศไทยฯ จึงริเริ่มโครงการ PLAY AND LEARN เพลินให้สุดกับฟุตบอล ขึ้น โดยเลือก
+            <strong className="text-slate-900"> &ldquo;กุ๋งกิ๋ง&rdquo;</strong> ตัวละครเด็กผู้หญิงตัวกลม อารมณ์ดี วัย 5 ขวบ
+            จากหนังสือนิทานชุด &ldquo;กุ๋งกิ๋ง&rdquo; ของบริษัท แปลน ฟอร์ คิดส์ จำกัด ซึ่งมียอดตีพิมพ์กว่า 5
+            ล้านเล่มและเป็นเพื่อนรักของเด็กไทยมายาวนานกว่า 20 ปี เป็นผู้นำทีมเด็กผู้หญิงก้าวสู่สนามฟุตบอลเป็นครั้งแรก
           </p>
           <p>
-            โครงการนี้ไม่ใช่เพียงการส่งเสริมกีฬาฟุตบอลสำหรับเด็กผู้หญิง
+            PLAY AND LEARN เพลินให้สุดกับฟุตบอล ไม่ใช่เป็นเพียงโครงการที่ส่งเสริมกีฬาฟุตบอลสำหรับเด็กผู้หญิง
             แต่ยังช่วยปลุกพลังและสร้างความมั่นใจให้เด็กผู้หญิงได้แสดงศักยภาพในฐานะนักกีฬา
-            ภายใต้สภาพแวดล้อมที่เป็นมิตร ปลอดภัย และสนุกสนาน เพราะ{" "}
-            <strong className="text-slate-900">&ldquo;เด็กผู้หญิง ไม่ว่าอยู่ที่ไหนก็สามารถเล่นฟุตบอลได้&rdquo;</strong>
+            เพื่อเติบโตสู่การเป็นนักฟุตบอลมืออาชีพในอนาคต
           </p>
-        </div>
-
-        <div className="mt-8 rounded-2xl border border-purple-100 bg-purple-50/60 p-5 text-sm text-purple-900">
           <p>
-            คู่มือการสอนฟุตบอลขั้นพื้นฐานมีกุ๋งกิ๋งเป็นผู้ช่วยโค้ช ชวนเด็กๆ เดินทางในจินตนาการผ่านเรื่องราว{" "}
-            <strong>8 บท</strong> ต่อเนื่อง <strong>10 สัปดาห์</strong> สัปดาห์ละ 1 ครั้ง ครั้งละ 45 นาที
-            ภายใต้การดูแลของโค้ชที่ได้รับการรับรองจากสมาคมกีฬาฟุตบอลแห่งประเทศไทยฯ
+            สมาคมกีฬาฟุตบอลแห่งประเทศไทย มีความตั้งใจที่จะสนับสนุนฟุตบอลเด็กผู้หญิงผ่านการจัดกิจกรรม
+            เพื่อให้เด็กผู้หญิงได้รู้จักกีฬาฟุตบอลสร้างพื้นที่ให้ได้แสดงออกและมีส่วนร่วมในกิจกรรมฟุตบอล
+            ภายใต้สภาพแวดล้อมที่เป็นมิตร ปลอดภัย และสนุกสนาน มุ่งเสริมสร้างความมั่นใจ เปิดโอกาสให้ได้ทำความรู้จักเพื่อนใหม่
+            เรียนรู้ทักษะชีวิต และเปลี่ยนภาพจำของกีฬาฟุตบอลว่าเป็นกีฬาสำหรับทุกคน ไม่ใช่เฉพาะผู้ชายเท่านั้น และที่สำคัญ คือ
+            <strong className="text-slate-900"> &ldquo;เด็กผู้หญิง ไม่ว่าอยู่ที่ไหนก็สามารถเล่นฟุตบอลได้&rdquo;</strong>{" "}
+            PLAY AND LEARN เพลินให้สุดกับฟุตบอลจึงเป็นอีกก้าวสำคัญในการสร้างแรงบันดาลใจและต่อยอดการพัฒนาฟุตบอลหญิงไทยอย่างยั่งยืน
+          </p>
+          <p className="text-center italic text-purple-700">
+            PLAY AND LEARN เพลินให้สุดกับฟุตบอล &ldquo;Where Thai girls grow, play and shine&rdquo;
           </p>
         </div>
 
-        {/* 3 เสาหลักของการเรียนรู้ */}
-        <div className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-3">
-          {learningPillars.map(({ icon: Icon, title, titleEn, description }) => (
-            <div key={title} className="flex flex-col gap-3 rounded-2xl border border-pink-100 bg-white p-5 shadow-sm">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-pink-50 text-pink-600">
-                <Icon className="h-5 w-5" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-slate-900">{title}</h3>
-                <p className="text-xs text-purple-400">{titleEn}</p>
-              </div>
-              <p className="text-sm text-slate-500">{description}</p>
-            </div>
-          ))}
+        {/* 3 ปุ่มป๊อปอัพอ่านรายละเอียดเพิ่มเติม */}
+        <div className="mt-8">
+          <InfoPopups />
         </div>
       </section>
 
       {/* 3. Adventure Passport */}
       <section id="passport" className="relative mx-auto max-w-5xl px-6 py-14">
+        <Image
+          src={PLAY_AND_LEARN_MASCOT.kicking}
+          alt=""
+          width={300}
+          height={340}
+          className="pointer-events-none absolute -left-4 bottom-0 hidden w-32 opacity-90 lg:block xl:-left-16 xl:w-44"
+        />
         <div className="mb-8 text-center">
           <p className="text-xs font-bold uppercase tracking-widest text-purple-400">Adventure Passport</p>
           <h2 className="mt-1 text-2xl font-bold text-slate-900">พาสปอร์ตแห่งความสนุก</h2>
@@ -301,7 +209,14 @@ export default function PlayAndLearnPage() {
       </section>
 
       {/* 4. Activity Centers & Registration */}
-      <section id="centers" className="bg-white py-14">
+      <section id="centers" className="relative bg-white py-14">
+        <Image
+          src={PLAY_AND_LEARN_MASCOT.thumbsUp}
+          alt=""
+          width={260}
+          height={320}
+          className="pointer-events-none absolute -right-2 top-6 hidden w-28 opacity-90 lg:block xl:-right-10 xl:w-40"
+        />
         <div className="mx-auto max-w-5xl px-6">
           <div className="mb-8 text-center">
             <p className="text-xs font-bold uppercase tracking-widest text-purple-400">Activity Centers</p>
@@ -311,66 +226,100 @@ export default function PlayAndLearnPage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-            {activityCenters.map((center) => (
-              <div
-                key={center.name}
-                className="flex flex-col overflow-hidden rounded-2xl border border-pink-100 bg-white shadow-sm"
-              >
-                <div className="flex items-center gap-2.5 bg-linear-to-r from-pink-300 to-purple-300 px-5 py-3.5">
-                  <MapPin className="h-4 w-4 flex-none text-white" />
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-bold text-white">{center.name}</p>
-                    <p className="text-xs text-white/80">
-                      {center.province} <span className="text-white/60">/ {center.provinceEn}</span>
-                    </p>
-                  </div>
-                </div>
-                <div className="flex flex-1 flex-col gap-3 bg-white p-5">
-                  <p className="text-xs text-slate-500">{center.address}</p>
-
-                  <div className="flex items-start gap-2">
-                    <UserRound className="mt-0.5 h-3.5 w-3.5 flex-none text-purple-400" />
-                    <p className="text-xs text-slate-600">{center.coaches.join(" · ")}</p>
-                  </div>
-
-                  {center.schedule && (
-                    <div className="rounded-lg bg-pink-50 px-3 py-2 text-xs font-medium text-pink-700">
-                      {center.schedule}
+          {centers.length === 0 ? (
+            <p className="rounded-2xl border border-dashed border-purple-200 bg-purple-50/40 px-6 py-16 text-center text-sm text-purple-400">
+              ยังไม่มีข้อมูลศูนย์ฝึก
+            </p>
+          ) : (
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+              {centers.map((center) => (
+                <div
+                  key={center.id}
+                  className="flex flex-col overflow-hidden rounded-2xl border border-pink-100 bg-white shadow-sm"
+                >
+                  <div className="flex items-center gap-2.5 bg-linear-to-r from-pink-300 to-purple-300 px-5 py-3.5">
+                    <MapPin className="h-4 w-4 flex-none text-white" />
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-bold text-white">{center.name}</p>
+                      <p className="text-xs text-white/80">
+                        {center.province} <span className="text-white/60">/ {center.provinceEn}</span>
+                      </p>
                     </div>
-                  )}
+                  </div>
+                  <div className="flex flex-1 flex-col gap-3 bg-white p-5">
+                    <p className="text-xs text-slate-500">{center.address}</p>
 
-                  <div className="mt-auto flex items-center justify-between gap-3 border-t border-pink-100 pt-3.5">
-                    <p className="text-xs text-slate-400">
-                      ผู้ประสานงาน: <span className="font-medium text-slate-600">{center.coordinator}</span>
-                    </p>
-                    {center.registerUrl ? (
-                      <a href={center.registerUrl} target="_blank" rel="noopener noreferrer" className={pastelButtonClass}>
-                        สมัครเรียน
-                      </a>
-                    ) : (
-                      <a href={`tel:${center.tel.replace(/-/g, "")}`} className={pastelButtonClass}>
-                        <Phone className="h-3 w-3" />
-                        ติดต่อสมัคร
-                      </a>
+                    <a
+                      href={`tel:${center.tel.replace(/-/g, "")}`}
+                      className="flex w-fit items-center gap-1.5 rounded-full bg-pink-50 px-2.5 py-1 text-xs font-semibold text-pink-700 transition-colors hover:bg-pink-100"
+                    >
+                      <Phone className="h-3 w-3" />
+                      {center.tel}
+                    </a>
+
+                    {center.coaches && (
+                      <div className="flex items-start gap-2">
+                        <UserRound className="mt-0.5 h-3.5 w-3.5 flex-none text-purple-400" />
+                        <p className="text-xs text-slate-600">
+                          {center.coaches
+                            .split("\n")
+                            .map((c) => c.trim())
+                            .filter(Boolean)
+                            .join(" · ")}
+                        </p>
+                      </div>
                     )}
+
+                    {center.schedule && (
+                      <div className="flex items-start gap-2 rounded-lg bg-purple-50 px-3 py-2 text-xs font-medium text-purple-700">
+                        <Clock className="mt-0.5 h-3.5 w-3.5 flex-none" />
+                        {center.schedule}
+                      </div>
+                    )}
+
+                    <div className="mt-auto flex items-center justify-between gap-3 border-t border-pink-100 pt-3.5">
+                      <p className="text-xs text-slate-400">
+                        ผู้ประสานงาน: <span className="font-medium text-slate-600">{center.coordinator}</span>
+                      </p>
+                      {center.registerUrl ? (
+                        <a
+                          href={center.registerUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex flex-none items-center gap-1.5 rounded-full bg-linear-to-r from-pink-300 to-purple-300 px-4 py-2 text-xs font-bold text-white shadow-sm transition-transform hover:scale-105"
+                        >
+                          รับสมัคร
+                        </a>
+                      ) : (
+                        <span className="inline-flex flex-none items-center gap-1.5 rounded-full bg-slate-100 px-4 py-2 text-xs font-bold text-slate-400">
+                          เร็วๆ นี้
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))}
 
-            {/* placeholder — เผื่อขยายศูนย์ฝึกเพิ่มในอนาคต */}
-            <div className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-purple-200 bg-purple-50/40 p-6 text-center">
-              <Users className="h-7 w-7 text-purple-300" />
-              <p className="text-sm font-medium text-purple-400">ศูนย์ฝึกเพิ่มเติมเร็วๆ นี้</p>
+              {/* placeholder — เผื่อขยายศูนย์ฝึกเพิ่มในอนาคต */}
+              <div className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-purple-200 bg-purple-50/40 p-6 text-center">
+                <Users className="h-7 w-7 text-purple-300" />
+                <p className="text-sm font-medium text-purple-400">ศูนย์ฝึกเพิ่มเติมเร็วๆ นี้</p>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </section>
 
       {/* Footer / closing note */}
       <footer className="relative overflow-hidden bg-linear-to-br from-purple-100 via-fuchsia-50 to-pink-100 py-10 text-center">
-        <div className="mx-auto max-w-2xl px-6">
+        <div className="relative mx-auto max-w-2xl px-6">
+          <Image
+            src={PLAY_AND_LEARN_ELEMENTS.hashtag}
+            alt="#wherethaigirlsgrowplayandshine"
+            width={800}
+            height={90}
+            className="mx-auto mb-4 h-auto w-full max-w-sm opacity-90"
+          />
           <p className="text-sm text-purple-700">กิจกรรมดำเนินภายใต้โครงการ</p>
           <p className="mt-1 text-base font-bold text-purple-900">
             AFC-UEFA Women&apos;s Football Programme (Girls Participation Programme)

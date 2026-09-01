@@ -424,3 +424,23 @@ model G15Card {
 
   @@map("g15_cards")
 }
+
+// ศูนย์ฝึกกิจกรรมของโครงการ Play and Learn เพลินให้สุดกับฟุตบอล
+// coaches เก็บเป็นข้อความหลายบรรทัด (1 ชื่อต่อบรรทัด) เพื่อให้แก้ไขง่ายในฟอร์มเดียว ไม่ต้องทำตารางย่อย
+model PlayAndLearnCenter {
+  id          Int      @id @default(autoincrement())
+  name        String
+  province    String
+  provinceEn  String   @map("province_en")
+  address     String
+  coaches     String
+  coordinator String
+  tel         String
+  schedule    String?
+  registerUrl String?  @map("register_url")
+  sortOrder   Int      @default(0) @map("sort_order")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("play_and_learn_centers")
+}
