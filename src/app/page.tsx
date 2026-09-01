@@ -12,6 +12,7 @@ import {
   G15_IMAGE_URL,
   GRASSROOTS_LOGO_URL,
   TALENT_ID_LOGO_URL,
+  PLAY_AND_LEARN_LOGO_URL,
 } from "@/lib/brand";
 import {
   FileBadge,
@@ -33,6 +34,7 @@ import {
   Calendar,
   Sprout,
   Trophy,
+  Sparkles,
 } from "lucide-react";
 
 const menuLinks = [
@@ -57,6 +59,7 @@ const categories = [
       { icon: IdCard, label: "บัตรประจำตัวดิจิทัล" },
     ],
     comingSoon: false,
+    public: false,
   },
   {
     title: "FA Thailand Data Center",
@@ -67,6 +70,7 @@ const categories = [
     icon: Database,
     features: [] as { icon: typeof FileBadge; label: string }[],
     comingSoon: false,
+    public: false,
   },
   {
     title: "Talent ID",
@@ -77,6 +81,7 @@ const categories = [
     icon: Target,
     features: [] as { icon: typeof FileBadge; label: string }[],
     comingSoon: false,
+    public: false,
   },
   {
     title: "Grassroots Football",
@@ -87,6 +92,7 @@ const categories = [
     icon: Sprout,
     features: [] as { icon: typeof FileBadge; label: string }[],
     comingSoon: false,
+    public: false,
   },
   {
     title: "G15 Women's Football Series 2026",
@@ -98,6 +104,20 @@ const categories = [
     icon: Trophy,
     features: [] as { icon: typeof FileBadge; label: string }[],
     comingSoon: false,
+    // หน้า G15 เปิดสาธารณะไม่ต้องล็อกอิน (ดู src/proxy.ts) การ์ดนี้จึงต้องลิงก์ตรงเสมอ ไม่ใช่เด้งไป /login ก่อน
+    public: true,
+  },
+  {
+    title: "Play and Learn เพลินให้สุดกับฟุตบอล",
+    subtitle: "โครงการฟุตบอลสำหรับเด็กผู้หญิงวัย 5–8 ปี นำโดย “กุ๋งกิ๋ง”",
+    href: "/play-and-learn" as string | null,
+    image: null as string | null,
+    badgeImage: PLAY_AND_LEARN_LOGO_URL as string | null,
+    icon: Sparkles,
+    features: [] as { icon: typeof FileBadge; label: string }[],
+    comingSoon: false,
+    // แคมเปญสำหรับผู้ปกครอง/บุคคลทั่วไป เปิดสาธารณะไม่ต้องล็อกอินเช่นกัน (ดู src/proxy.ts)
+    public: true,
   },
 ];
 
@@ -450,7 +470,7 @@ export default async function HomePage() {
                     </span>
                   ) : (
                     <span className="mt-5 inline-flex items-center gap-1.5 border-t border-slate-100 pt-4 text-sm font-medium text-indigo-600 group-hover:gap-2.5">
-                      {user ? "เข้าใช้งาน" : "เข้าสู่ระบบเพื่อใช้งาน"}
+                      {category.public || user ? "เข้าใช้งาน" : "เข้าสู่ระบบเพื่อใช้งาน"}
                       <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
                     </span>
                   )}
@@ -472,7 +492,7 @@ export default async function HomePage() {
             return (
               <Link
                 key={category.title}
-                href={user ? category.href : "/login"}
+                href={category.public || user ? category.href : "/login"}
                 className="group relative flex flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl shadow-indigo-900/10 transition-all duration-300 hover:-translate-y-1 hover:border-indigo-200 hover:shadow-2xl hover:shadow-indigo-900/15"
               >
                 {cardContent}
