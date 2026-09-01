@@ -370,7 +370,7 @@ export default async function G15WomensSeriesPage() {
                   <ChevronRight className="h-3.5 w-3.5" />
                 </Link>
               </div>
-              <PlayerLeaderboard title="ดาวซัลโว / Top Scorers" icon={Trophy} rows={topScorersPreview} />
+              <PlayerLeaderboard title="ดาวซัลโว / Top Scorers" icon={<Trophy className="h-4 w-4" />} rows={topScorersPreview} />
             </div>
           </Reveal>
         )}
