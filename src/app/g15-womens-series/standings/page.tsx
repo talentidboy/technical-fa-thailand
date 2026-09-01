@@ -4,6 +4,7 @@ import { getStandings, getRecentForm } from "@/lib/g15";
 import { REGION_STYLE, DEFAULT_REGION_STYLE, regionEn, groupStandingsByRegion } from "@/lib/g15-region";
 import { G15Chrome } from "@/components/g15/G15Chrome";
 import { StandingTable } from "@/components/g15/StandingTable";
+import { Reveal } from "@/components/g15/Reveal";
 import { MapPin, Trophy } from "lucide-react";
 
 export default async function G15StandingsPage() {
@@ -20,20 +21,31 @@ export default async function G15StandingsPage() {
   return (
     <div className="min-h-screen bg-slate-50">
       <G15Chrome user={user} />
-      <div className="mx-auto max-w-6xl px-6 py-10">
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-slate-900">ตารางคะแนน</h1>
-          <p className="text-sm text-slate-400">Standings</p>
-        </div>
 
+      {/* ฮีโร่ไล่สีชุดเดียวกับหน้าอื่นๆ ของ G15 — เนื้อหาหลักลอยทับขอบล่างให้ภาษาภาพเป็นชุดเดียวกันทั้งเว็บ */}
+      <section className="relative overflow-hidden bg-linear-to-br from-rose-950 via-rose-900 to-fuchsia-800 pb-20 pt-8 sm:pb-24">
+        <div className="absolute inset-x-0 top-0 h-1.5 animate-shimmer-slide bg-linear-to-r from-amber-600 via-amber-200 via-50% to-amber-600 bg-size-[200%_100%]" />
+        <div className="mx-auto max-w-6xl px-6">
+          <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-rose-200">
+            <Trophy className="h-3.5 w-3.5" />
+            Standings
+          </div>
+          <h1 className="mt-1 text-2xl font-extrabold text-white sm:text-3xl">
+            ตารางคะแนน <span className="text-base font-normal text-rose-200">/ Standings</span>
+          </h1>
+        </div>
+      </section>
+
+      <div className="mx-auto max-w-6xl px-6 pb-20">
         {regionOrder.length === 0 && ungrouped.length === 0 ? (
-          <div className="flex flex-col items-center justify-center gap-3 rounded-3xl border border-dashed border-slate-300 bg-white px-6 py-16 text-center">
+          <div className="relative z-10 -mt-10 flex flex-col items-center justify-center gap-3 rounded-3xl border border-dashed border-slate-300 bg-white px-6 py-16 text-center shadow-xl shadow-rose-950/10 sm:-mt-14">
             <Trophy className="h-8 w-8 text-slate-400" />
             <p className="text-sm text-slate-500">ยังไม่มีตารางคะแนน</p>
             <p className="text-xs text-slate-400">No standings yet</p>
           </div>
         ) : (
-          <>
+          <div className="relative z-10 -mt-10 space-y-6 sm:-mt-14">
+            <Reveal>
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
               {regionOrder.map((region) => {
                 const style = REGION_STYLE[region] ?? DEFAULT_REGION_STYLE;
@@ -66,9 +78,10 @@ export default async function G15StandingsPage() {
                 );
               })}
             </div>
+            </Reveal>
 
             {ungrouped.length > 0 && (
-              <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
+              <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
                 {ungrouped.map((group) => (
                   <div
                     key={group.groupName}
@@ -82,7 +95,7 @@ export default async function G15StandingsPage() {
                 ))}
               </div>
             )}
-          </>
+          </div>
         )}
       </div>
     </div>

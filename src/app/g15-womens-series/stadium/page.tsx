@@ -5,6 +5,7 @@ import { formatMatchDateTime, formatMatchDateShort } from "@/lib/g15";
 import { REGION_STYLE, DEFAULT_REGION_STYLE } from "@/lib/g15-region";
 import { G15Chrome } from "@/components/g15/G15Chrome";
 import { TeamBadge } from "@/components/g15/TeamBadge";
+import { Reveal } from "@/components/g15/Reveal";
 import { MapPin, Calendar, Trophy, Goal } from "lucide-react";
 
 const BANGKOK_TZ = "Asia/Bangkok";
@@ -37,21 +38,31 @@ export default async function G15StadiumPage() {
   return (
     <div className="min-h-screen bg-slate-50">
       <G15Chrome user={user} />
-      <div className="mx-auto max-w-6xl px-6 py-10">
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-slate-900">สนามแข่งขัน</h1>
-          <p className="text-sm text-slate-400">Stadium</p>
-        </div>
 
+      {/* ฮีโร่ไล่สีชุดเดียวกับหน้าอื่นๆ ของ G15 — เนื้อหาหลักลอยทับขอบล่างให้ภาษาภาพเป็นชุดเดียวกันทั้งเว็บ */}
+      <section className="relative overflow-hidden bg-linear-to-br from-rose-950 via-rose-900 to-fuchsia-800 pb-20 pt-8 sm:pb-24">
+        <div className="absolute inset-x-0 top-0 h-1.5 animate-shimmer-slide bg-linear-to-r from-amber-600 via-amber-200 via-50% to-amber-600 bg-size-[200%_100%]" />
+        <div className="mx-auto max-w-6xl px-6">
+          <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-rose-200">
+            <MapPin className="h-3.5 w-3.5" />
+            Stadium
+          </div>
+          <h1 className="mt-1 text-2xl font-extrabold text-white sm:text-3xl">
+            สนามแข่งขัน <span className="text-base font-normal text-rose-200">/ Stadium</span>
+          </h1>
+        </div>
+      </section>
+
+      <div className="mx-auto max-w-6xl px-6 pb-20">
         {venues.length === 0 ? (
-          <div className="flex flex-col items-center justify-center gap-3 rounded-3xl border border-dashed border-slate-300 bg-white px-6 py-16 text-center">
+          <div className="relative z-10 -mt-10 flex flex-col items-center justify-center gap-3 rounded-3xl border border-dashed border-slate-300 bg-white px-6 py-16 text-center shadow-xl shadow-rose-950/10 sm:-mt-14">
             <MapPin className="h-8 w-8 text-slate-400" />
             <p className="text-sm text-slate-500">ยังไม่มีข้อมูลสนามแข่งขัน</p>
             <p className="text-xs text-slate-400">No stadium information yet</p>
           </div>
         ) : (
-          <div className="space-y-6">
-            {venues.map(([venue, venueMatches]) => {
+          <div className="relative z-10 -mt-10 space-y-6 sm:-mt-14">
+            {venues.map(([venue, venueMatches], venueIndex) => {
               const finished = venueMatches.filter((m) => m.status === "FINISHED" && m.homeScore != null && m.awayScore != null);
               const totalGoals = finished.reduce((s, m) => s + m.homeScore! + m.awayScore!, 0);
 
@@ -70,8 +81,8 @@ export default async function G15StadiumPage() {
               const dayKeys = Array.from(byDay.keys()).sort();
 
               return (
+                <Reveal key={venue} delay={Math.min(venueIndex * 60, 300)}>
                 <div
-                  key={venue}
                   className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-shadow hover:shadow-md"
                 >
                   <div className="relative overflow-hidden bg-linear-to-br from-slate-900 via-slate-900 to-slate-800 px-5 py-5">
@@ -128,6 +139,7 @@ export default async function G15StadiumPage() {
                     </div>
                   )}
                 </div>
+                </Reveal>
               );
             })}
           </div>
