@@ -14,7 +14,6 @@ export async function registerCoach(formData: FormData) {
   const nameTh = String(formData.get("nameTh") ?? "").trim();
   const surnameTh = String(formData.get("surnameTh") ?? "").trim();
   const idNumber = String(formData.get("idNumber") ?? "").trim();
-  const afcId = String(formData.get("afcId") ?? "").trim();
   const telNo = String(formData.get("telNo") ?? "").trim();
   const dobRaw = String(formData.get("dob") ?? "").trim();
   const email = String(formData.get("email") ?? "")
@@ -22,13 +21,10 @@ export async function registerCoach(formData: FormData) {
     .toLowerCase();
   const password = String(formData.get("password") ?? "");
 
-  if (!nameTh || !surnameTh || !telNo || !dobRaw || !email || password.length < 8) {
+  if (!nameTh || !surnameTh || !idNumber || !telNo || !dobRaw || !email || password.length < 8) {
     err("/register", "กรุณากรอกข้อมูลให้ครบทุกช่อง และรหัสผ่านอย่างน้อย 8 ตัวอักษร");
   }
-  if (!idNumber && !afcId) {
-    err("/register", "กรุณากรอกเลขบัตรประชาชนหรือ AFC ID อย่างน้อย 1 อย่าง เพื่อยืนยันตัวตนกับข้อมูลที่มีอยู่ในระบบ");
-  }
-  if (idNumber && !isValidThaiIdNumber(idNumber)) {
+  if (!isValidThaiIdNumber(idNumber)) {
     err("/register", "เลขบัตรประชาชนไม่ถูกต้อง กรุณาตรวจสอบอีกครั้ง");
   }
   const dob = new Date(dobRaw);
@@ -43,17 +39,12 @@ export async function registerCoach(formData: FormData) {
 
   // ต้องพบข้อมูลโค้ชที่มีอยู่จริงในระบบเท่านั้น (นำเข้าไว้ล่วงหน้าโดยเจ้าหน้าที่) — ไม่สร้างประวัติโค้ชใหม่จากฟอร์มสมัครอีกต่อไป
   const match = await prisma.coach.findFirst({
-    where: {
-      systemUser: null,
-      OR: [idNumber ? { idNumber } : undefined, afcId ? { afcId } : undefined].filter(
-        (c): c is { idNumber: string } | { afcId: string } => Boolean(c),
-      ),
-    },
+    where: { systemUser: null, idNumber },
   });
   if (!match) {
     err(
       "/register",
-      "ไม่พบข้อมูลโค้ชที่ตรงกับเลขบัตรประชาชน/AFC ID นี้ในระบบ กรุณาติดต่อผู้ดูแลระบบให้นำเข้าข้อมูลก่อนสมัครสมาชิก",
+      "ไม่พบข้อมูลโค้ชที่ตรงกับเลขบัตรประชาชนนี้ในระบบ กรุณาติดต่อผู้ดูแลระบบให้นำเข้าข้อมูลก่อนสมัครสมาชิก",
     );
   }
   // ถ้าข้อมูลเบอร์โทร/วันเกิดมีอยู่แล้วในระบบ ต้องตรงกันเพื่อยืนยันตัวตนอีกชั้น (กันเดาแค่เลขบัตร/AFC ID มั่วๆ)

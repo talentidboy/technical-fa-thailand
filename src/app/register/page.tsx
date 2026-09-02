@@ -58,8 +58,8 @@ export default async function RegisterPage({
               สมัครสมาชิกผู้ฝึกสอน
             </p>
             <p className="text-sm text-slate-500">
-              ระบบจะยืนยันตัวตนกับข้อมูลผู้ฝึกสอนที่มีอยู่ในระบบอยู่แล้ว (นำเข้าโดยเจ้าหน้าที่) กรุณากรอกเลขบัตรประชาชนหรือ
-              AFC ID พร้อมเบอร์โทรและวันเกิดให้ตรงกับข้อมูลเดิม
+              ระบบจะยืนยันตัวตนกับข้อมูลผู้ฝึกสอนที่มีอยู่ในระบบอยู่แล้ว (นำเข้าโดยเจ้าหน้าที่) กรุณากรอกเลขบัตรประชาชน
+              พร้อมเบอร์โทรและวันเกิดให้ตรงกับข้อมูลเดิม
             </p>
           </div>
 
@@ -88,29 +88,17 @@ export default async function RegisterPage({
                 />
               </label>
             </div>
-            <p className="text-xs text-slate-400">
-              กรอกอย่างน้อย 1 ช่อง (เลขบัตรประชาชน หรือ AFC ID) เพื่อยืนยันตัวตนกับข้อมูลที่มีอยู่ในระบบ
-            </p>
-            <div className="grid grid-cols-2 gap-3">
-              <label className="flex flex-col gap-1.5">
-                <span className="text-sm font-medium text-slate-700">เลขบัตรประชาชน</span>
-                <input
-                  name="idNumber"
-                  inputMode="numeric"
-                  maxLength={13}
-                  placeholder="13 หลัก"
-                  className="rounded-lg border border-slate-200 px-3.5 py-2.5 text-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100"
-                />
-              </label>
-              <label className="flex flex-col gap-1.5">
-                <span className="text-sm font-medium text-slate-700">AFC ID</span>
-                <input
-                  name="afcId"
-                  placeholder="ถ้ามี"
-                  className="rounded-lg border border-slate-200 px-3.5 py-2.5 text-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100"
-                />
-              </label>
-            </div>
+            <label className="flex flex-col gap-1.5">
+              <span className="text-sm font-medium text-slate-700">เลขบัตรประชาชน</span>
+              <input
+                name="idNumber"
+                required
+                inputMode="numeric"
+                maxLength={13}
+                placeholder="13 หลัก"
+                className="rounded-lg border border-slate-200 px-3.5 py-2.5 text-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100"
+              />
+            </label>
             <div className="grid grid-cols-2 gap-3">
               <label className="flex flex-col gap-1.5">
                 <span className="text-sm font-medium text-slate-700">เบอร์โทรศัพท์</span>
