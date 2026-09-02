@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { createSystemUser, deleteSystemUser } from "./actions";
 import { Field, SelectField } from "@/components/FormField";
-import { SYSTEM_USER_ROLES } from "@/lib/constants";
+import { ADMIN_STAFF_ROLES } from "@/lib/constants";
 import { LOGO_URL } from "@/lib/brand";
 import { UserPlus, Trash2, ShieldCheck, ArrowLeft } from "lucide-react";
 
@@ -18,24 +18,12 @@ export default async function UsersPage({
   if (currentUser?.role !== "ADMIN") redirect("/");
 
   const { error } = await searchParams;
-  const errorMessage =
-    error === "must_select_coach"
-      ? "กรุณาเลือกผู้ฝึกสอนที่จะผูกกับบัญชีนี้"
-      : error === "invalid_input"
-        ? "กรุณากรอกอีเมลและรหัสผ่านอย่างน้อย 8 ตัวอักษร"
-        : null;
+  const errorMessage = error === "invalid_input" ? "กรุณากรอกอีเมลและรหัสผ่านอย่างน้อย 8 ตัวอักษร" : null;
 
-  const [users, coachesWithoutLogin] = await Promise.all([
-    prisma.systemUser.findMany({
-      orderBy: { createdAt: "desc" },
-      include: { coach: true },
-    }),
-    prisma.coach.findMany({
-      where: { systemUser: null },
-      orderBy: { nameTh: "asc" },
-      select: { id: true, nameTh: true, surnameTh: true },
-    }),
-  ]);
+  const users = await prisma.systemUser.findMany({
+    where: { role: { in: ["ADMIN", "STAFF"] } },
+    orderBy: { createdAt: "desc" },
+  });
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -74,8 +62,12 @@ export default async function UsersPage({
             ผู้ใช้งานระบบ
           </h1>
           <p className="mt-1 text-sm text-slate-500">
-            จัดการสิทธิ์การเข้าใช้งานระดับองค์กร — Admin, เจ้าหน้าที่, และบัญชี
-            ล็อกอินของผู้ฝึกสอน ครอบคลุมทุกหมวดงานของ FA Thailand Technical
+            จัดการสิทธิ์การเข้าใช้งานระดับองค์กร — เฉพาะบัญชีผู้ดูแลระบบและเจ้าหน้าที่เท่านั้น
+            (บัญชีผู้ฝึกสอนจัดการแยกที่{" "}
+            <Link href="/coaches/accounts" className="font-medium text-indigo-600 hover:text-indigo-700">
+              หมวดศูนย์อบรมผู้ฝึกสอนฟุตบอล
+            </Link>
+            )
           </p>
         </div>
 
@@ -88,7 +80,7 @@ export default async function UsersPage({
           </div>
           <form
             action={createSystemUser}
-            className="grid grid-cols-1 gap-4 p-6 sm:grid-cols-2 lg:grid-cols-4"
+            className="grid grid-cols-1 gap-4 p-6 sm:grid-cols-2 lg:grid-cols-3"
           >
             <Field label="อีเมล" name="email" type="email" required />
             <Field
@@ -100,23 +92,15 @@ export default async function UsersPage({
             <SelectField
               label="สิทธิ์การใช้งาน"
               name="role"
-              options={SYSTEM_USER_ROLES}
+              options={ADMIN_STAFF_ROLES}
               required
             />
-            <SelectField
-              label="ผูกกับผู้ฝึกสอน (เฉพาะ role = ผู้ฝึกสอน)"
-              name="coachId"
-              options={coachesWithoutLogin.map((c) => ({
-                value: String(c.id),
-                label: `${c.nameTh} ${c.surnameTh}`,
-              }))}
-            />
             {errorMessage && (
-              <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 sm:col-span-2 lg:col-span-4">
+              <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 sm:col-span-2 lg:col-span-3">
                 {errorMessage}
               </div>
             )}
-            <div className="sm:col-span-2 lg:col-span-4">
+            <div className="sm:col-span-2 lg:col-span-3">
               <button
                 type="submit"
                 className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-medium text-white shadow-sm shadow-indigo-200 transition-colors hover:bg-indigo-700"
@@ -135,7 +119,6 @@ export default async function UsersPage({
                 <tr>
                   <th className="px-6 py-3.5">อีเมล</th>
                   <th className="px-6 py-3.5">สิทธิ์</th>
-                  <th className="px-6 py-3.5">ผูกกับผู้ฝึกสอน</th>
                   <th className="px-6 py-3.5" />
                 </tr>
               </thead>
@@ -151,14 +134,7 @@ export default async function UsersPage({
                       </div>
                     </td>
                     <td className="px-6 py-3.5 text-slate-600">
-                      {u.role === "ADMIN"
-                        ? "ผู้ดูแลระบบ"
-                        : u.role === "STAFF"
-                          ? "เจ้าหน้าที่"
-                          : "ผู้ฝึกสอน"}
-                    </td>
-                    <td className="px-6 py-3.5 text-slate-600">
-                      {u.coach ? `${u.coach.nameTh} ${u.coach.surnameTh}` : "-"}
+                      {u.role === "ADMIN" ? "ผู้ดูแลระบบ" : "เจ้าหน้าที่"}
                     </td>
                     <td className="px-6 py-3.5 text-right">
                       {u.id !== currentUser.id && (

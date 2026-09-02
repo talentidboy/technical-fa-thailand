@@ -17,14 +17,21 @@ function optionalDate(formData: FormData, key: string) {
 export async function createCourse(formData: FormData) {
   await requireAdmin();
 
-  const licenseType = String(formData.get("licenseType") ?? "").trim();
+  const courseTypeRaw = String(formData.get("courseType") ?? "LICENSE").trim();
+  const courseType = courseTypeRaw === "GENERAL" ? "GENERAL" : "LICENSE";
   const title = String(formData.get("title") ?? "").trim();
-  if (!licenseType || !title) {
-    throw new Error("กรุณากรอกระดับใบอนุญาตและชื่อหลักสูตร");
+  const licenseType = courseType === "LICENSE" ? String(formData.get("licenseType") ?? "").trim() : null;
+
+  if (!title) {
+    throw new Error("กรุณากรอกชื่อหลักสูตร");
+  }
+  if (courseType === "LICENSE" && !licenseType) {
+    throw new Error("กรุณาเลือกระดับใบอนุญาต");
   }
 
   await prisma.course.create({
     data: {
+      courseType,
       licenseType,
       title,
       description: optionalString(formData, "description"),

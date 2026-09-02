@@ -14,7 +14,11 @@ export async function login(formData: FormData) {
   if (!user || !(await verifyPassword(password, user.passwordHash))) {
     redirect("/login?error=1");
   }
+  if (!user.isActive) {
+    redirect("/login?error=disabled");
+  }
 
+  await prisma.systemUser.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } });
   await createSession(user.id);
   redirect(user.role === "COACH" ? "/me" : "/");
 }

@@ -53,6 +53,11 @@ export async function getCurrentUser() {
     return null;
   }
 
+  // บัญชีที่ถูกระงับ (isActive = false) ให้ล็อกเอาต์ทันทีตั้งแต่ request ถัดไป ไม่ต้องรอ session หมดอายุ
+  if (!session.user.isActive) {
+    return null;
+  }
+
   return session.user;
 }
 

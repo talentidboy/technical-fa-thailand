@@ -13,24 +13,17 @@ export async function createSystemUser(formData: FormData) {
     .trim()
     .toLowerCase();
   const password = String(formData.get("password") ?? "");
-  const role = String(formData.get("role") ?? "STAFF");
-  const coachIdRaw = String(formData.get("coachId") ?? "").trim();
+  const roleRaw = String(formData.get("role") ?? "STAFF");
+  // หน้านี้จัดการเฉพาะบัญชี Admin/เจ้าหน้าที่ — กันไว้อีกชั้นเผื่อมีการยิงฟอร์มที่ถูกแก้ไข values มา
+  const role = roleRaw === "ADMIN" ? "ADMIN" : "STAFF";
 
   if (!email || password.length < 8) {
     redirect("/users?error=invalid_input");
   }
-  if (role === "COACH" && !coachIdRaw) {
-    redirect("/users?error=must_select_coach");
-  }
 
   const passwordHash = await hashPassword(password);
   await prisma.systemUser.create({
-    data: {
-      email,
-      passwordHash,
-      role,
-      coachId: role === "COACH" ? Number(coachIdRaw) : null,
-    },
+    data: { email, passwordHash, role, coachId: null },
   });
 
   revalidatePath("/users");
@@ -44,6 +37,7 @@ export async function deleteSystemUser(formData: FormData) {
     throw new Error("ไม่สามารถลบบัญชีของตัวเองได้");
   }
 
-  await prisma.systemUser.delete({ where: { id } });
+  // จำกัดขอบเขตไว้เฉพาะบัญชี Admin/เจ้าหน้าที่ — บัญชีผู้ฝึกสอนต้องลบผ่าน /coaches/accounts เท่านั้น
+  await prisma.systemUser.deleteMany({ where: { id, role: { in: ["ADMIN", "STAFF"] } } });
   revalidatePath("/users");
 }

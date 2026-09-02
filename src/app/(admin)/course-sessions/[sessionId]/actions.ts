@@ -14,20 +14,27 @@ export async function approveApplication(formData: FormData) {
   });
   if (!application || application.status !== "PENDING") return;
 
+  const licenseType = application.courseSession.course.licenseType;
+
   await prisma.$transaction([
     prisma.application.update({
       where: { id },
       data: { status: "APPROVED", reviewedAt: new Date(), reviewedBy: admin.email },
     }),
-    prisma.licenseRecord.create({
-      data: {
-        coachId: application.coachId,
-        licenseType: application.courseSession.course.licenseType,
-        recordType: "TRAINING",
-        issueDate: new Date(),
-        confirmedBy: admin.email,
-      },
-    }),
+    // หลักสูตร "อบรมทั่วไป" (GENERAL) ไม่มี licenseType จึงไม่ออกใบอนุญาตให้ — สร้าง LicenseRecord เฉพาะหลักสูตรตามระดับใบอนุญาตเท่านั้น
+    ...(licenseType
+      ? [
+          prisma.licenseRecord.create({
+            data: {
+              coachId: application.coachId,
+              licenseType,
+              recordType: "TRAINING",
+              issueDate: new Date(),
+              confirmedBy: admin.email,
+            },
+          }),
+        ]
+      : []),
   ]);
 
   revalidatePath(`/course-sessions/${application.courseSessionId}`);

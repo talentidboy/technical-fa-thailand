@@ -99,13 +99,15 @@ model Employment {
 // ระบบจัดการสิทธิ์ผู้ใช้งาน
 // role: ADMIN, STAFF, COACH
 model SystemUser {
-  id           Int      @id @default(autoincrement()) @map("user_id")
-  coachId      Int?     @unique @map("coach_id")
-  coach        Coach?   @relation(fields: [coachId], references: [id])
-  email        String   @unique
-  role         String   @default("STAFF")
-  passwordHash String   @map("password_hash")
-  createdAt    DateTime @default(now()) @map("created_at")
+  id           Int       @id @default(autoincrement()) @map("user_id")
+  coachId      Int?      @unique @map("coach_id")
+  coach        Coach?    @relation(fields: [coachId], references: [id])
+  email        String    @unique
+  role         String    @default("STAFF")
+  passwordHash String    @map("password_hash")
+  isActive     Boolean   @default(true) @map("is_active")
+  lastLoginAt  DateTime? @map("last_login_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
 
   sessions         Session[]
   announcements    Announcement[]
@@ -175,9 +177,11 @@ model ProfileEditRequest {
 }
 
 // หลักสูตร (ผูกกับระดับใบอนุญาตหลัก 1 ระดับ — G, C, B, A, PRO)
+// หลักสูตร — courseType: LICENSE (ผูกกับระดับใบอนุญาตหลัก 1 ระดับ G/C/B/A/PRO) หรือ GENERAL (อบรมทั่วไป เปิดรับทุกระดับ ไม่มี licenseType)
 model Course {
   id          Int      @id @default(autoincrement())
-  licenseType String   @unique @map("license_type")
+  courseType  String   @default("LICENSE") @map("course_type")
+  licenseType String?  @unique @map("license_type")
   title       String
   description String?
   requirement String?

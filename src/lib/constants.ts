@@ -39,10 +39,15 @@ export const LICENSE_STATUS_OPTIONS = [
   { value: "EXPIRED", label: "หมดอายุแล้ว" },
 ];
 
-export const SYSTEM_USER_ROLES = [
+// ใช้ในหน้า /users — จัดการเฉพาะบัญชี Admin/เจ้าหน้าที่เท่านั้น บัญชีผู้ฝึกสอนจัดการแยกที่ /coaches/accounts
+export const ADMIN_STAFF_ROLES = [
   { value: "ADMIN", label: "ผู้ดูแลระบบ" },
   { value: "STAFF", label: "เจ้าหน้าที่" },
-  { value: "COACH", label: "ผู้ฝึกสอน" },
+];
+
+export const COURSE_TYPES = [
+  { value: "LICENSE", label: "หลักสูตรตามระดับใบอนุญาต" },
+  { value: "GENERAL", label: "อบรมทั่วไป" },
 ];
 
 export const TRAINING_CENTRE_AREAS = [

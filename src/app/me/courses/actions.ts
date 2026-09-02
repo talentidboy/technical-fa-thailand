@@ -28,16 +28,19 @@ export async function applyToSession(formData: FormData) {
     redirect("/me/courses?error=" + encodeURIComponent("รุ่นอบรมนี้เต็มแล้ว"));
   }
 
-  const licenseRecords = await prisma.licenseRecord.findMany({
-    where: { coachId },
-    select: { licenseType: true, expireDate: true, issueDate: true },
-  });
-  const nextLevel = getNextCoreLevel(getHighestCoreLevel(licenseRecords));
-  if (session.course.licenseType !== nextLevel) {
-    redirect(
-      "/me/courses?error=" +
-        encodeURIComponent("คุณยังไม่มีคุณสมบัติสมัครหลักสูตรนี้ ต้องเรียงตามลำดับขั้น"),
-    );
+  // หลักสูตรอบรมทั่วไป (GENERAL) เปิดรับทุกระดับ ไม่ต้องตรวจสอบลำดับขั้นใบอนุญาต
+  if (session.course.courseType !== "GENERAL") {
+    const licenseRecords = await prisma.licenseRecord.findMany({
+      where: { coachId },
+      select: { licenseType: true, expireDate: true, issueDate: true },
+    });
+    const nextLevel = getNextCoreLevel(getHighestCoreLevel(licenseRecords));
+    if (session.course.licenseType !== nextLevel) {
+      redirect(
+        "/me/courses?error=" +
+          encodeURIComponent("คุณยังไม่มีคุณสมบัติสมัครหลักสูตรนี้ ต้องเรียงตามลำดับขั้น"),
+      );
+    }
   }
 
   const existing = await prisma.application.findUnique({

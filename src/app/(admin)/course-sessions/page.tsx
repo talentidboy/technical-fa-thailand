@@ -2,7 +2,8 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { createCourse, createCourseSession, setCourseSessionStatus } from "./actions";
 import { CORE_LICENSE_PROGRESSION } from "@/lib/constants";
-import { Field, SelectField } from "@/components/FormField";
+import { Field } from "@/components/FormField";
+import { CourseTypeFields } from "@/components/CourseTypeFields";
 import { BookOpen, Plus, Users } from "lucide-react";
 
 const STATUS_LABEL: Record<string, string> = {
@@ -39,7 +40,7 @@ export default async function AdminCoursesPage() {
       <div>
         <h1 className="text-2xl font-bold text-slate-900">จัดการหลักสูตรอบรม</h1>
         <p className="mt-1 text-sm text-slate-500">
-          สร้างหลักสูตรตามระดับใบอนุญาต (G, C, B, A, PRO) แล้วเปิดรุ่นอบรมให้โค้ชสมัคร
+          สร้างหลักสูตรตามระดับใบอนุญาต (G, C, B, A, PRO) หรือหลักสูตรอบรมทั่วไป แล้วเปิดรุ่นอบรมให้โค้ชสมัคร
         </p>
       </div>
 
@@ -51,7 +52,7 @@ export default async function AdminCoursesPage() {
           <h2 className="font-semibold text-slate-900">สร้างหลักสูตรใหม่</h2>
         </div>
         <form action={createCourse} className="grid grid-cols-1 gap-4 p-6 sm:grid-cols-2">
-          <SelectField label="ระดับใบอนุญาต" name="licenseType" options={licenseOptions} />
+          <CourseTypeFields licenseOptions={licenseOptions} />
           <Field label="ชื่อหลักสูตร" name="title" required placeholder="AFC C Diploma" />
           <Field label="คำอธิบาย" name="description" />
           <Field label="คุณสมบัติผู้สมัคร" name="requirement" />
@@ -76,7 +77,9 @@ export default async function AdminCoursesPage() {
               <div>
                 <h2 className="font-semibold text-slate-900">
                   {course.title}{" "}
-                  <span className="text-xs font-normal text-slate-400">({course.licenseType})</span>
+                  <span className="text-xs font-normal text-slate-400">
+                    ({course.courseType === "GENERAL" ? "อบรมทั่วไป" : course.licenseType})
+                  </span>
                 </h2>
                 {course.description && (
                   <p className="mt-0.5 text-xs text-slate-500">{course.description}</p>

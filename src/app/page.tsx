@@ -60,6 +60,10 @@ const categories = [
     ],
     comingSoon: false,
     public: false,
+    // ผู้ฝึกสอนที่ยังไม่ล็อกอินให้ไปหน้าทางเข้าเฉพาะโค้ชก่อน (เลือกเข้าสู่ระบบ/สมัครสมาชิก) แทนที่จะเด้งไป /login ตรงๆ
+    // แอดมิน/เจ้าหน้าที่ที่ล็อกอินแล้วยังคงเข้า href ปกติ (/dashboard) เหมือนเดิม ไม่กระทบ
+    loggedOutHref: "/coach-center",
+    loggedOutLabel: "เข้าสู่ระบบ / สมัครสมาชิก",
   },
   {
     title: "FA Thailand Data Center",
@@ -470,7 +474,9 @@ export default async function HomePage() {
                     </span>
                   ) : (
                     <span className="mt-5 inline-flex items-center gap-1.5 border-t border-slate-100 pt-4 text-sm font-medium text-indigo-600 group-hover:gap-2.5">
-                      {category.public || user ? "เข้าใช้งาน" : "เข้าสู่ระบบเพื่อใช้งาน"}
+                      {category.public || user
+                        ? "เข้าใช้งาน"
+                        : (category.loggedOutLabel ?? "เข้าสู่ระบบเพื่อใช้งาน")}
                       <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
                     </span>
                   )}
@@ -492,7 +498,7 @@ export default async function HomePage() {
             return (
               <Link
                 key={category.title}
-                href={category.public || user ? category.href : "/login"}
+                href={category.public || user ? category.href : (category.loggedOutHref ?? "/login")}
                 className="group relative flex flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl shadow-indigo-900/10 transition-all duration-300 hover:-translate-y-1 hover:border-indigo-200 hover:shadow-2xl hover:shadow-indigo-900/15"
               >
                 {cardContent}

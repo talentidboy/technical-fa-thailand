@@ -11,6 +11,7 @@ import {
   GraduationCap,
   BookOpen,
   ArrowLeft,
+  KeyRound,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { logout } from "@/app/login/actions";
@@ -48,6 +49,7 @@ export function Sidebar({
       ? [
           ...navItems,
           { href: "/course-sessions", label: "หลักสูตรอบรม", icon: BookOpen },
+          { href: "/coaches/accounts", label: "บัญชีผู้ฝึกสอน", icon: KeyRound },
           {
             href: "/requests",
             label: "คำขอแก้ไขข้อมูล",

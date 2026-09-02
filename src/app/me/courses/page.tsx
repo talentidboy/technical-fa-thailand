@@ -17,6 +17,107 @@ const APP_STATUS_LABEL: Record<string, { label: string; className: string }> = {
   CANCELLED: { label: "ยกเลิก", className: "bg-slate-100 text-slate-500" },
 };
 
+type SessionRowData = {
+  id: number;
+  name: string;
+  venue: string | null;
+  startDate: Date | null;
+  endDate: Date | null;
+  applicationOpenDate: Date | null;
+  applicationDeadline: Date | null;
+  capacity: number | null;
+  course: { title: string; licenseType: string | null; courseType: string };
+  _count: { applications: number };
+};
+
+// แถวรายการรุ่นอบรม 1 แถว ใช้ร่วมกันทั้งหมวด "ตามระดับใบอนุญาต" และ "อบรมทั่วไป"
+// อบรมทั่วไปเปิดรับทุกระดับ (eligible = true เสมอ) ส่วนหลักสูตรตามระดับต้องตรงกับ nextLevel เป๊ะๆ เท่านั้น
+function SessionRow({
+  session,
+  nextLevel,
+  appliedSessionIds,
+}: {
+  session: SessionRowData;
+  nextLevel: string | null;
+  appliedSessionIds: Set<number>;
+}) {
+  const isGeneral = session.course.courseType === "GENERAL";
+  const eligible = isGeneral || session.course.licenseType === nextLevel;
+  const alreadyApplied = appliedSessionIds.has(session.id);
+  const full = session.capacity != null && session._count.applications >= session.capacity;
+  const deadlinePassed = session.applicationDeadline != null && session.applicationDeadline < new Date();
+  const notYetOpen = session.applicationOpenDate != null && session.applicationOpenDate > new Date();
+  const canApply = eligible && !alreadyApplied && !full && !deadlinePassed && !notYetOpen;
+
+  return (
+    <li className="flex flex-wrap items-center justify-between gap-4 px-6 py-4">
+      <div>
+        <p className="font-medium text-slate-900">
+          {session.course.title}{" "}
+          <span className="text-xs font-normal text-slate-400">
+            ({isGeneral ? "อบรมทั่วไป" : session.course.licenseType}) · {session.name}
+          </span>
+        </p>
+        <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500">
+          {(session.startDate || session.endDate) && (
+            <span className="inline-flex items-center gap-1">
+              <CalendarDays className="h-3.5 w-3.5" />
+              {formatDate(session.startDate)} - {formatDate(session.endDate)}
+            </span>
+          )}
+          {session.venue && (
+            <span className="inline-flex items-center gap-1">
+              <MapPin className="h-3.5 w-3.5" />
+              {session.venue}
+            </span>
+          )}
+          {session.capacity != null && (
+            <span>
+              รับ {session._count.applications}/{session.capacity} คน
+            </span>
+          )}
+        </div>
+        {(session.applicationOpenDate || session.applicationDeadline) && (
+          <p className="mt-1 text-xs text-slate-400">
+            รับสมัคร {formatDate(session.applicationOpenDate) ?? "วันนี้"} -{" "}
+            {formatDate(session.applicationDeadline) ?? "ไม่กำหนด"}
+          </p>
+        )}
+      </div>
+
+      {alreadyApplied ? (
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-50 px-3 py-1.5 text-xs font-medium text-indigo-600">
+          <CheckCircle2 className="h-3.5 w-3.5" />
+          สมัครแล้ว
+        </span>
+      ) : canApply ? (
+        <form action={applyToSession}>
+          <input type="hidden" name="courseSessionId" value={session.id} />
+          <button
+            type="submit"
+            className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm shadow-indigo-200 hover:bg-indigo-700"
+          >
+            สมัคร
+          </button>
+        </form>
+      ) : (
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-500">
+          {!eligible && <Lock className="h-3.5 w-3.5" />}
+          {!eligible
+            ? `ต้องผ่านระดับก่อนหน้าก่อน`
+            : full
+              ? "เต็มแล้ว"
+              : notYetOpen
+                ? "ยังไม่เปิดรับสมัคร"
+                : deadlinePassed
+                  ? "หมดเขตสมัคร"
+                  : "สมัครไม่ได้"}
+        </span>
+      )}
+    </li>
+  );
+}
+
 export default async function MyCoursesPage({
   searchParams,
 }: {
@@ -51,6 +152,9 @@ export default async function MyCoursesPage({
       .map((a) => a.courseSessionId),
   );
 
+  const licenseSessions = sessions.filter((s) => s.course.courseType !== "GENERAL");
+  const generalSessions = sessions.filter((s) => s.course.courseType === "GENERAL");
+
   return (
     <div className="space-y-8">
       <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -74,97 +178,35 @@ export default async function MyCoursesPage({
 
       <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
         <div className="border-b border-slate-100 px-6 py-4">
-          <h2 className="font-semibold text-slate-900">รุ่นอบรมที่เปิดรับสมัคร</h2>
+          <h2 className="font-semibold text-slate-900">หลักสูตรตามระดับใบอนุญาต</h2>
         </div>
-        {sessions.length === 0 ? (
+        {licenseSessions.length === 0 ? (
           <p className="px-6 py-10 text-center text-sm text-slate-400">
             ยังไม่มีรุ่นอบรมที่เปิดรับสมัครในขณะนี้
           </p>
         ) : (
           <ul className="divide-y divide-slate-100">
-            {sessions.map((session) => {
-              const eligible = session.course.licenseType === nextLevel;
-              const alreadyApplied = appliedSessionIds.has(session.id);
-              const full =
-                session.capacity != null &&
-                session._count.applications >= session.capacity;
-              const deadlinePassed =
-                session.applicationDeadline != null &&
-                session.applicationDeadline < new Date();
-              const notYetOpen =
-                session.applicationOpenDate != null &&
-                session.applicationOpenDate > new Date();
-              const canApply =
-                eligible && !alreadyApplied && !full && !deadlinePassed && !notYetOpen;
+            {licenseSessions.map((session) => (
+              <SessionRow key={session.id} session={session} nextLevel={nextLevel} appliedSessionIds={appliedSessionIds} />
+            ))}
+          </ul>
+        )}
+      </div>
 
-              return (
-                <li key={session.id} className="flex flex-wrap items-center justify-between gap-4 px-6 py-4">
-                  <div>
-                    <p className="font-medium text-slate-900">
-                      {session.course.title}{" "}
-                      <span className="text-xs font-normal text-slate-400">
-                        ({session.course.licenseType}) · {session.name}
-                      </span>
-                    </p>
-                    <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500">
-                      {(session.startDate || session.endDate) && (
-                        <span className="inline-flex items-center gap-1">
-                          <CalendarDays className="h-3.5 w-3.5" />
-                          {formatDate(session.startDate)} - {formatDate(session.endDate)}
-                        </span>
-                      )}
-                      {session.venue && (
-                        <span className="inline-flex items-center gap-1">
-                          <MapPin className="h-3.5 w-3.5" />
-                          {session.venue}
-                        </span>
-                      )}
-                      {session.capacity != null && (
-                        <span>
-                          รับ {session._count.applications}/{session.capacity} คน
-                        </span>
-                      )}
-                    </div>
-                    {(session.applicationOpenDate || session.applicationDeadline) && (
-                      <p className="mt-1 text-xs text-slate-400">
-                        รับสมัคร {formatDate(session.applicationOpenDate) ?? "วันนี้"} -{" "}
-                        {formatDate(session.applicationDeadline) ?? "ไม่กำหนด"}
-                      </p>
-                    )}
-                  </div>
-
-                  {alreadyApplied ? (
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-50 px-3 py-1.5 text-xs font-medium text-indigo-600">
-                      <CheckCircle2 className="h-3.5 w-3.5" />
-                      สมัครแล้ว
-                    </span>
-                  ) : canApply ? (
-                    <form action={applyToSession}>
-                      <input type="hidden" name="courseSessionId" value={session.id} />
-                      <button
-                        type="submit"
-                        className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm shadow-indigo-200 hover:bg-indigo-700"
-                      >
-                        สมัคร
-                      </button>
-                    </form>
-                  ) : (
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-500">
-                      {!eligible && <Lock className="h-3.5 w-3.5" />}
-                      {!eligible
-                        ? `ต้องผ่านระดับก่อนหน้าก่อน`
-                        : full
-                          ? "เต็มแล้ว"
-                          : notYetOpen
-                            ? "ยังไม่เปิดรับสมัคร"
-                            : deadlinePassed
-                              ? "หมดเขตสมัคร"
-                              : "สมัครไม่ได้"}
-                    </span>
-                  )}
-                </li>
-              );
-            })}
+      <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <div className="border-b border-slate-100 px-6 py-4">
+          <h2 className="font-semibold text-slate-900">อบรมทั่วไป</h2>
+          <p className="mt-0.5 text-xs text-slate-400">เปิดรับสมัครทุกระดับ ไม่จำกัดใบอนุญาต</p>
+        </div>
+        {generalSessions.length === 0 ? (
+          <p className="px-6 py-10 text-center text-sm text-slate-400">
+            ยังไม่มีรุ่นอบรมทั่วไปที่เปิดรับสมัครในขณะนี้
+          </p>
+        ) : (
+          <ul className="divide-y divide-slate-100">
+            {generalSessions.map((session) => (
+              <SessionRow key={session.id} session={session} nextLevel={nextLevel} appliedSessionIds={appliedSessionIds} />
+            ))}
           </ul>
         )}
       </div>

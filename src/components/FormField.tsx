@@ -37,12 +37,14 @@ export function SelectField({
   options,
   required = false,
   defaultValue,
+  onChange,
 }: {
   label: string;
   name: string;
   options: { value: string; label: string }[];
   required?: boolean;
   defaultValue?: string;
+  onChange?: React.ChangeEventHandler<HTMLSelectElement>;
 }) {
   return (
     <label className="flex flex-col gap-1.5">
@@ -54,6 +56,7 @@ export function SelectField({
         name={name}
         required={required}
         defaultValue={defaultValue}
+        onChange={onChange}
         className="rounded-lg border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100"
       >
         <option value="">เลือก...</option>

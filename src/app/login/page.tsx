@@ -10,7 +10,7 @@ import { ArrowLeft } from "lucide-react";
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: "1" | "disabled" }>;
 }) {
   const currentUser = await getCurrentUser();
   if (currentUser) {
@@ -71,7 +71,9 @@ export default async function LoginPage({
           <form action={login} className="mt-6 space-y-4">
             {error && (
               <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">
-                อีเมลหรือรหัสผ่านไม่ถูกต้อง
+                {error === "disabled"
+                  ? "บัญชีนี้ถูกระงับการใช้งาน กรุณาติดต่อผู้ดูแลระบบ"
+                  : "อีเมลหรือรหัสผ่านไม่ถูกต้อง"}
               </p>
             )}
             <label className="flex flex-col gap-1.5">

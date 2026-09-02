@@ -56,7 +56,8 @@ export default async function CourseSessionApplicationsPage({
           {session.course.title} · {session.name}
         </h1>
         <p className="mt-1 text-sm text-slate-500">
-          ระดับ {session.course.licenseType} · ผู้สมัคร {session.applications.length} คน
+          {session.course.licenseType ? `ระดับ ${session.course.licenseType}` : "อบรมทั่วไป"} · ผู้สมัคร{" "}
+          {session.applications.length} คน
         </p>
       </div>
 
