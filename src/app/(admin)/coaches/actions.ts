@@ -27,8 +27,10 @@ function coachFieldsFromForm(formData: FormData) {
     passportNumber: optionalString(formData, "passportNumber"),
     email: optionalString(formData, "email"),
     telNo: optionalString(formData, "telNo"),
-    nationality: optionalString(formData, "nationality"),
-    residence: optionalString(formData, "residence"),
+    nationalityCode: optionalString(formData, "nationalityCode"),
+    provinceCode: optionalString(formData, "provinceCode"),
+    districtCode: optionalString(formData, "districtCode"),
+    subdistrictCode: optionalString(formData, "subdistrictCode"),
   };
 }
 

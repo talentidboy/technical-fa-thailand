@@ -4,7 +4,10 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { updateCoach } from "../../actions";
 import { Field, SelectField } from "@/components/FormField";
+import { ThaiAddressFields } from "@/components/ThaiAddressFields";
 import { GENDER_OPTIONS } from "@/lib/constants";
+import { getCountryOptions, getFlagEmoji } from "@/lib/countries";
+import { getProvinceOptions, getDistrictOptions, getSubdistrictOptions } from "@/lib/thai-address";
 import { ArrowLeft, Save } from "lucide-react";
 
 function toDateInput(date: Date | null) {
@@ -27,6 +30,14 @@ export default async function EditCoachPage({
 
   if (!coach) notFound();
   if (user?.role !== "ADMIN") redirect(`/coaches/${coachId}`);
+
+  const countryOptions = getCountryOptions().map((c) => ({
+    value: c.code,
+    label: `${getFlagEmoji(c.code) ?? ""} ${c.nameTh}`.trim(),
+  }));
+  const provinces = getProvinceOptions();
+  const initialDistricts = coach.provinceCode ? getDistrictOptions(coach.provinceCode) : [];
+  const initialSubdistricts = coach.districtCode ? getSubdistrictOptions(coach.districtCode) : [];
 
   return (
     <div className="space-y-6">
@@ -105,15 +116,27 @@ export default async function EditCoachPage({
               type="date"
               defaultValue={toDateInput(coach.dob)}
             />
-            <Field
-              label="สัญชาติ"
-              name="nationality"
-              defaultValue={coach.nationality ?? undefined}
-            />
-            <Field
-              label="จังหวัดที่พำนัก"
-              name="residence"
-              defaultValue={coach.residence ?? undefined}
+            <div className="flex flex-col gap-1.5">
+              <SelectField
+                label="สัญชาติ"
+                name="nationalityCode"
+                options={countryOptions}
+                defaultValue={coach.nationalityCode ?? undefined}
+              />
+              {!coach.nationalityCode && coach.nationality && (
+                <span className="text-xs text-slate-400">
+                  ข้อมูลเดิม: {coach.nationality} (ยังไม่ได้ระบุในรูปแบบใหม่)
+                </span>
+              )}
+            </div>
+            <ThaiAddressFields
+              provinces={provinces}
+              initialProvinceCode={coach.provinceCode ?? ""}
+              initialDistrictCode={coach.districtCode ?? ""}
+              initialSubdistrictCode={coach.subdistrictCode ?? ""}
+              initialDistricts={initialDistricts}
+              initialSubdistricts={initialSubdistricts}
+              legacyResidence={coach.residence}
             />
             <Field
               label="AFC ID"

@@ -2,14 +2,31 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { approveProfileEditRequest, rejectProfileEditRequest } from "./actions";
+import { getCountryByCode, getFlagEmoji } from "@/lib/countries";
+import { getProvinceNameByCode, getDistrictNameByCode, getSubdistrictNameByCode } from "@/lib/thai-address";
 import { Check, X, Inbox } from "lucide-react";
 
 const FIELD_LABEL: Record<string, string> = {
   email: "อีเมล",
   telNo: "เบอร์โทร",
-  residence: "จังหวัดที่พำนัก",
-  nationality: "สัญชาติ",
+  nationalityCode: "สัญชาติ",
+  provinceCode: "จังหวัด",
+  districtCode: "อำเภอ/เขต",
+  subdistrictCode: "ตำบล/แขวง",
 };
+
+// แปลงค่ารหัส (สัญชาติ/ที่อยู่) ที่โค้ชส่งมาให้อ่านง่ายในหน้าตรวจสอบของแอดมิน
+function formatChangeValue(field: string, value: string) {
+  if (!value) return "(ลบค่าเดิม)";
+  if (field === "nationalityCode") {
+    const country = getCountryByCode(value);
+    return country ? `${getFlagEmoji(value) ?? ""} ${country.nameTh}`.trim() : value;
+  }
+  if (field === "provinceCode") return getProvinceNameByCode(value) ?? value;
+  if (field === "districtCode") return getDistrictNameByCode(value) ?? value;
+  if (field === "subdistrictCode") return getSubdistrictNameByCode(value) ?? value;
+  return value;
+}
 
 export default async function RequestsPage() {
   const user = await getCurrentUser();
@@ -64,7 +81,7 @@ export default async function RequestsPage() {
                               <span className="text-slate-400">
                                 {FIELD_LABEL[field] ?? field}:
                               </span>{" "}
-                              {value || "(ลบค่าเดิม)"}
+                              {formatChangeValue(field, value)}
                             </li>
                           ))}
                         </ul>

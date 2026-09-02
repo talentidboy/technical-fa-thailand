@@ -19,6 +19,8 @@ import {
 } from "@/lib/constants";
 import { getLicenseStatus, LICENSE_STATUS_STYLES } from "@/lib/license-status";
 import { getHighestCoreLevel, getNextCoreLevel } from "@/lib/license-rank";
+import { getCountryByCode, getFlagEmoji } from "@/lib/countries";
+import { formatThaiAddress } from "@/lib/thai-address";
 import {
   ArrowLeft,
   Trash2,
@@ -165,7 +167,9 @@ export default async function CoachDetailPage({
           </div>
           <div className="flex items-center gap-2.5 text-sm">
             <MapPin className="h-4 w-4 text-slate-400" />
-            <span className="text-slate-600">{coach.residence ?? "-"}</span>
+            <span className="text-slate-600">
+              {formatThaiAddress(coach) ?? coach.residence ?? "-"}
+            </span>
           </div>
           <div className="flex items-center gap-2.5 text-sm">
             <Cake className="h-4 w-4 text-slate-400" />
@@ -174,7 +178,10 @@ export default async function CoachDetailPage({
           <div className="flex items-center gap-2.5 text-sm">
             <Flag className="h-4 w-4 text-slate-400" />
             <span className="text-slate-600">
-              {coach.nationality ?? "-"} ·{" "}
+              {coach.nationalityCode
+                ? `${getFlagEmoji(coach.nationalityCode) ?? ""} ${getCountryByCode(coach.nationalityCode)?.nameTh ?? coach.nationalityCode}`.trim()
+                : (coach.nationality ?? "-")}{" "}
+              ·{" "}
               {labelFor(GENDER_OPTIONS, coach.gender) ?? "-"}
             </span>
           </div>

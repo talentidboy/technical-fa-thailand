@@ -20,6 +20,8 @@ import {
   LICENSE_STATUS_OPTIONS,
 } from "@/lib/constants";
 import { buildCoachWhere, getDistinctResidences } from "@/lib/coach-filters";
+import { getCountryOptions, getFlagEmoji } from "@/lib/countries";
+import { getProvinceOptions } from "@/lib/thai-address";
 
 const PAGE_SIZE = 50;
 
@@ -98,7 +100,15 @@ export default async function CoachesPage({
           </p>
         </div>
         {isAdmin && (
-          <AddCoachModal action={createCoach} autoOpen={params.new !== undefined} />
+          <AddCoachModal
+            action={createCoach}
+            autoOpen={params.new !== undefined}
+            countryOptions={getCountryOptions().map((c) => ({
+              value: c.code,
+              label: `${getFlagEmoji(c.code) ?? ""} ${c.nameTh}`.trim(),
+            }))}
+            provinces={getProvinceOptions()}
+          />
         )}
       </div>
 

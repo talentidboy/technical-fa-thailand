@@ -4,6 +4,10 @@ import { prisma } from "@/lib/prisma";
 import { requestProfileEdit } from "./actions";
 import { LICENSE_TYPES, RECORD_TYPES, labelFor } from "@/lib/constants";
 import { getLicenseStatus, LICENSE_STATUS_STYLES } from "@/lib/license-status";
+import { SelectField } from "@/components/FormField";
+import { ThaiAddressFields } from "@/components/ThaiAddressFields";
+import { getCountryOptions, getFlagEmoji } from "@/lib/countries";
+import { getProvinceOptions, getDistrictOptions, getSubdistrictOptions, formatThaiAddress } from "@/lib/thai-address";
 import {
   Mail,
   Phone,
@@ -90,6 +94,14 @@ export default async function MyProfilePage() {
     (r) => r.status === "PENDING"
   ).length;
 
+  const countryOptions = getCountryOptions().map((c) => ({
+    value: c.code,
+    label: `${getFlagEmoji(c.code) ?? ""} ${c.nameTh}`.trim(),
+  }));
+  const provinces = getProvinceOptions();
+  const initialDistricts = coach.provinceCode ? getDistrictOptions(coach.provinceCode) : [];
+  const initialSubdistricts = coach.districtCode ? getSubdistrictOptions(coach.districtCode) : [];
+
   return (
     <div className="space-y-6">
       {/* Profile header */}
@@ -156,7 +168,9 @@ export default async function MyProfilePage() {
           </div>
           <div className="flex items-center gap-2.5 text-sm">
             <MapPin className="h-4 w-4 flex-none text-slate-400" />
-            <span className="text-slate-600">{coach.residence ?? "-"}</span>
+            <span className="text-slate-600">
+              {formatThaiAddress(coach) ?? coach.residence ?? "-"}
+            </span>
           </div>
         </dl>
       </div>
@@ -283,26 +297,21 @@ export default async function MyProfilePage() {
                   className="rounded-lg border border-slate-200 px-3.5 py-2.5 text-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100"
                 />
               </label>
-              <label className="flex flex-col gap-1.5">
-                <span className="text-sm font-medium text-slate-700">
-                  จังหวัดที่พำนัก
-                </span>
-                <input
-                  name="residence"
-                  defaultValue={coach.residence ?? ""}
-                  className="rounded-lg border border-slate-200 px-3.5 py-2.5 text-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100"
-                />
-              </label>
-              <label className="flex flex-col gap-1.5">
-                <span className="text-sm font-medium text-slate-700">
-                  สัญชาติ
-                </span>
-                <input
-                  name="nationality"
-                  defaultValue={coach.nationality ?? ""}
-                  className="rounded-lg border border-slate-200 px-3.5 py-2.5 text-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100"
-                />
-              </label>
+              <SelectField
+                label="สัญชาติ"
+                name="nationalityCode"
+                options={countryOptions}
+                defaultValue={coach.nationalityCode ?? undefined}
+              />
+              <ThaiAddressFields
+                provinces={provinces}
+                initialProvinceCode={coach.provinceCode ?? ""}
+                initialDistrictCode={coach.districtCode ?? ""}
+                initialSubdistrictCode={coach.subdistrictCode ?? ""}
+                initialDistricts={initialDistricts}
+                initialSubdistricts={initialSubdistricts}
+                legacyResidence={coach.residence}
+              />
             </div>
             <label className="flex flex-col gap-1.5">
               <span className="text-sm font-medium text-slate-700">

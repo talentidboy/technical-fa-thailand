@@ -3,14 +3,20 @@
 import { useEffect, useRef } from "react";
 import { UserPlus, X } from "lucide-react";
 import { Field, SelectField } from "@/components/FormField";
+import { ThaiAddressFields } from "@/components/ThaiAddressFields";
 import { GENDER_OPTIONS } from "@/lib/constants";
+import type { AddressOption } from "@/lib/thai-address";
 
 export function AddCoachModal({
   action,
   autoOpen = false,
+  countryOptions,
+  provinces,
 }: {
   action: (formData: FormData) => void | Promise<void>;
   autoOpen?: boolean;
+  countryOptions: { value: string; label: string }[];
+  provinces: AddressOption[];
 }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
 
@@ -79,12 +85,8 @@ export function AddCoachModal({
             />
             <SelectField label="เพศ" name="gender" options={GENDER_OPTIONS} />
             <Field label="วันเกิด" name="dob" type="date" />
-            <Field label="สัญชาติ" name="nationality" placeholder="ไทย" />
-            <Field
-              label="จังหวัดที่พำนัก"
-              name="residence"
-              placeholder="เชียงใหม่"
-            />
+            <SelectField label="สัญชาติ" name="nationalityCode" options={countryOptions} />
+            <ThaiAddressFields provinces={provinces} />
             <Field label="AFC ID" name="afcId" placeholder="AFC/112170/THA" />
             <Field label="เลขบัตรประชาชน" name="idNumber" />
             <Field label="เลขพาสปอร์ต" name="passportNumber" />

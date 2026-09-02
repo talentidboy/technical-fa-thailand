@@ -24,8 +24,12 @@ model Coach {
   passportNumber String?   @map("passport_number")
   email          String?
   telNo          String?   @map("tel_no")
-  nationality    String?
-  residence      String?
+  nationality    String? // ข้อมูลเดิมเป็นข้อความอิสระ — ใช้ nationalityCode แทนสำหรับข้อมูลใหม่
+  residence      String? // ข้อมูลเดิมเป็นข้อความอิสระ — ใช้ provinceCode/districtCode/subdistrictCode แทนสำหรับข้อมูลใหม่
+  nationalityCode String?  @map("nationality_code") // ISO 3166-1 alpha-2 เช่น "TH"
+  provinceCode    String?  @map("province_code") // รหัสจังหวัดจาก geothai
+  districtCode    String?  @map("district_code") // รหัสอำเภอจาก geothai
+  subdistrictCode String?  @map("subdistrict_code") // รหัสตำบลจาก geothai
   photoUrl       String?   @map("photo_url")
   createdAt      DateTime  @default(now()) @map("created_at")
   updatedAt      DateTime  @updatedAt @map("updated_at")

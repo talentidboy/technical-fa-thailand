@@ -3,6 +3,7 @@ import { requireCoach } from "@/lib/auth";
 import { getCoachCardData } from "@/lib/coach-card-data";
 import { getOrigin } from "@/lib/origin";
 import { CoachCard } from "@/components/CoachCard";
+import { formatThaiAddress } from "@/lib/thai-address";
 import { ArrowLeft } from "lucide-react";
 
 export default async function MyCardPage() {
@@ -32,7 +33,7 @@ export default async function MyCardPage() {
           afcId={coach.afcId ?? ""}
           photoUrl={coach.photoUrl}
           licenseLabel={licenseLabel}
-          residence={coach.residence ?? "-"}
+          residence={formatThaiAddress(coach) ?? coach.residence ?? "-"}
           qrDataUrl={qrDataUrl}
         />
       </div>

@@ -4,7 +4,14 @@ import { prisma } from "@/lib/prisma";
 import { requireCoach } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 
-const EDITABLE_FIELDS = ["email", "telNo", "residence", "nationality"] as const;
+const EDITABLE_FIELDS = [
+  "email",
+  "telNo",
+  "nationalityCode",
+  "provinceCode",
+  "districtCode",
+  "subdistrictCode",
+] as const;
 
 export async function requestProfileEdit(formData: FormData) {
   const user = await requireCoach();
