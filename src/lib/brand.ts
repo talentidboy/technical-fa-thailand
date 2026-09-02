@@ -28,7 +28,7 @@ export const PLAY_AND_LEARN_NAV_LOGO_URL =
 
 // ภาพแบนเนอร์ฮีโร่หน้าแรก Play and Learn (มีโลโก้ + เด็กๆ เล่นฟุตบอลอยู่ในภาพแล้ว)
 export const PLAY_AND_LEARN_HERO_URL =
-  "https://rgqahrqwxwhaechiodzf.supabase.co/storage/v1/object/public/uploads/play-and-learn-0a03b31d-8654-44ff-a6e7-3b068cd196ec.jpg";
+  "https://rgqahrqwxwhaechiodzf.supabase.co/storage/v1/object/public/uploads/play-and-learn-7a51ab9f-04b1-4e07-b84a-537bd591fdd0.jpg";
 
 // ภาพวงแหวน 3 เสาหลักของการเรียนรู้ (ทักษะทางสังคม / การเคลื่อนไหว / ฟุตบอลขั้นพื้นฐาน)
 export const PLAY_AND_LEARN_PILLARS_DIAGRAM_URL =
