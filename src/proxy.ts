@@ -10,6 +10,7 @@ const PUBLIC_PATHS = [
   "/courses",
   "/play-and-learn",
   "/coach-center",
+  "/coach-center/login",
 ];
 
 export function proxy(request: NextRequest) {
@@ -36,7 +37,9 @@ export function proxy(request: NextRequest) {
   if (isPublic) return NextResponse.next();
 
   if (!request.cookies.has("session_token")) {
-    return NextResponse.redirect(new URL("/login", request.url));
+    // เส้นทางของผู้ฝึกสอน (/me และย่อยๆ) ให้เด้งไปหน้าเข้าสู่ระบบของผู้ฝึกสอนโดยเฉพาะ แยกจากผู้ดูแลระบบ/เจ้าหน้าที่
+    const loginPath = pathname === "/me" || pathname.startsWith("/me/") ? "/coach-center/login" : "/login";
+    return NextResponse.redirect(new URL(loginPath, request.url));
   }
 
   return NextResponse.next();

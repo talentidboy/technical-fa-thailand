@@ -1,25 +1,19 @@
 import Link from "next/link";
 import Image from "next/image";
 import { redirect } from "next/navigation";
-import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
-import { login } from "./actions";
+import { coachLogin } from "./actions";
 import { LOGO_URL, COVER_URL } from "@/lib/brand";
 import { ArrowLeft } from "lucide-react";
 
-export default async function LoginPage({
+export default async function CoachLoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: "1" | "disabled" | "coach" }>;
+  searchParams: Promise<{ error?: "1" | "disabled" | "staff" }>;
 }) {
   const currentUser = await getCurrentUser();
   if (currentUser) {
     redirect(currentUser.role === "COACH" ? "/me" : "/");
-  }
-
-  const userCount = await prisma.systemUser.count();
-  if (userCount === 0) {
-    redirect("/setup");
   }
 
   const { error } = await searchParams;
@@ -42,11 +36,11 @@ export default async function LoginPage({
         <div className="h-1.5 bg-linear-to-r from-amber-500 via-amber-300 to-amber-500" />
         <div className="p-8">
           <Link
-            href="/"
+            href="/coach-center"
             className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-400 hover:text-slate-600"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
-            กลับหน้าแรก
+            กลับหน้าศูนย์อบรมผู้ฝึกสอน
           </Link>
 
           <div className="mt-4 flex flex-col items-center gap-2 text-center">
@@ -58,27 +52,25 @@ export default async function LoginPage({
               className="h-12 w-12 rounded-xl shadow-sm ring-4 ring-amber-400/30"
             />
             <h2 className="mt-2 text-lg font-bold text-slate-900">
-              FA Thailand Technical
+              ศูนย์อบรมผู้ฝึกสอนฟุตบอล
             </h2>
             <p className="text-xs font-medium uppercase tracking-wide text-amber-600">
               เข้าสู่ระบบ
             </p>
-            <p className="text-sm text-slate-500">
-              สำหรับผู้ดูแลระบบและเจ้าหน้าที่
-            </p>
+            <p className="text-sm text-slate-500">สำหรับผู้ฝึกสอนเท่านั้น</p>
           </div>
 
-          <form action={login} className="mt-6 space-y-4">
+          <form action={coachLogin} className="mt-6 space-y-4">
             {error && (
               <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">
                 {error === "disabled"
                   ? "บัญชีนี้ถูกระงับการใช้งาน กรุณาติดต่อผู้ดูแลระบบ"
-                  : error === "coach"
+                  : error === "staff"
                     ? (
                         <>
-                          บัญชีนี้เป็นบัญชีผู้ฝึกสอน กรุณาเข้าสู่ระบบที่{" "}
-                          <Link href="/coach-center/login" className="font-medium underline">
-                            หน้าศูนย์อบรมผู้ฝึกสอน
+                          บัญชีนี้ไม่ใช่บัญชีผู้ฝึกสอน กรุณาเข้าสู่ระบบที่{" "}
+                          <Link href="/login" className="font-medium underline">
+                            หน้าเข้าสู่ระบบผู้ดูแลระบบ
                           </Link>
                         </>
                       )
@@ -86,9 +78,7 @@ export default async function LoginPage({
               </p>
             )}
             <label className="flex flex-col gap-1.5">
-              <span className="text-sm font-medium text-slate-700">
-                อีเมล
-              </span>
+              <span className="text-sm font-medium text-slate-700">อีเมล</span>
               <input
                 name="email"
                 type="email"
@@ -98,9 +88,7 @@ export default async function LoginPage({
               />
             </label>
             <label className="flex flex-col gap-1.5">
-              <span className="text-sm font-medium text-slate-700">
-                รหัสผ่าน
-              </span>
+              <span className="text-sm font-medium text-slate-700">รหัสผ่าน</span>
               <input
                 name="password"
                 type="password"
@@ -115,6 +103,13 @@ export default async function LoginPage({
               เข้าสู่ระบบ
             </button>
           </form>
+
+          <p className="mt-4 text-center text-sm text-slate-500">
+            ยังไม่มีบัญชี?{" "}
+            <Link href="/register" className="font-medium text-indigo-600 hover:text-indigo-700">
+              สมัครสมาชิกผู้ฝึกสอน
+            </Link>
+          </p>
         </div>
       </div>
     </div>

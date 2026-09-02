@@ -77,7 +77,7 @@ export default async function CoachCenterPage() {
 
           <div className="mx-auto mt-8 grid max-w-2xl grid-cols-1 gap-3 sm:grid-cols-2">
             <Link
-              href="/login"
+              href="/coach-center/login"
               className="group flex items-center gap-3 rounded-xl bg-white p-4 shadow-lg transition-transform hover:-translate-y-0.5"
             >
               <div className="flex h-10 w-10 flex-none items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">

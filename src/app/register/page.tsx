@@ -36,7 +36,7 @@ export default async function RegisterPage({
         <div className="h-1.5 bg-linear-to-r from-amber-500 via-amber-300 to-amber-500" />
         <div className="p-8">
           <Link
-            href="/login"
+            href="/coach-center/login"
             className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-400 hover:text-slate-600"
           >
             <ArrowLeft className="h-3.5 w-3.5" />

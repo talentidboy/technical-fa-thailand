@@ -80,7 +80,8 @@ export async function requireAdmin() {
 }
 
 export async function requireCoach() {
-  const user = await requireUser();
+  const user = await getCurrentUser();
+  if (!user) redirect("/coach-center/login");
   if (user.role !== "COACH" || !user.coachId) {
     redirect("/dashboard");
   }
