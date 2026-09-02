@@ -20,19 +20,21 @@ const ERROR_MESSAGE: Record<string, string> = {
   invalid_input: "กรุณาเลือกผู้ฝึกสอน กรอกอีเมล และรหัสผ่านอย่างน้อย 8 ตัวอักษร",
   coach_taken: "ผู้ฝึกสอนคนนี้มีบัญชีอยู่แล้ว",
   weak_password: "รหัสผ่านใหม่ต้องมีอย่างน้อย 8 ตัวอักษร",
+  coach_not_found: "ไม่พบบัญชีนี้",
   email_not_configured:
     "ยังไม่ได้ตั้งค่าระบบส่งอีเมลของเว็บไซต์นี้ (ต้องเชื่อมต่อผู้ให้บริการอย่าง Resend ก่อน) กรุณาส่งข้อมูลบัญชีให้ผู้ฝึกสอนด้วยตนเองไปก่อน",
+  email_send_failed: "ส่งอีเมลไม่สำเร็จ กรุณาลองใหม่อีกครั้ง",
 };
 
 export default async function CoachAccountsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; sent?: string }>;
 }) {
   const user = await getCurrentUser();
   if (user?.role !== "ADMIN") redirect("/coaches");
 
-  const { error } = await searchParams;
+  const { error, sent } = await searchParams;
   const errorMessage = error ? ERROR_MESSAGE[error] : null;
 
   const [accounts, coachesWithoutLogin] = await Promise.all([
@@ -60,6 +62,11 @@ export default async function CoachAccountsPage({
         </p>
       </div>
 
+      {sent && (
+        <p className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+          ส่งอีเมลแจ้งข้อมูลบัญชีแล้ว
+        </p>
+      )}
       {errorMessage && (
         <p className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{errorMessage}</p>
       )}

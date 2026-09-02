@@ -2,7 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
-import { register } from "./actions";
+import { requestRegistrationOtp } from "./actions";
 import { LOGO_URL, COVER_URL } from "@/lib/brand";
 import { ArrowLeft } from "lucide-react";
 
@@ -58,12 +58,12 @@ export default async function RegisterPage({
               สมัครสมาชิกผู้ฝึกสอน
             </p>
             <p className="text-sm text-slate-500">
-              ถ้าคุณมีข้อมูลอยู่ในระบบแล้ว (เคยผ่านการอบรม/มีเลข AFC ID) กรอกเลขบัตรประชาชนหรือ AFC ID
-              ให้ตรงเพื่อผูกกับข้อมูลเดิม
+              ระบบจะยืนยันตัวตนกับข้อมูลผู้ฝึกสอนที่มีอยู่ในระบบอยู่แล้ว (นำเข้าโดยเจ้าหน้าที่) กรุณากรอกเลขบัตรประชาชนหรือ
+              AFC ID พร้อมเบอร์โทรและวันเกิดให้ตรงกับข้อมูลเดิม แล้วยืนยันรหัส OTP ที่ส่งไปทางอีเมล
             </p>
           </div>
 
-          <form action={register} className="mt-6 space-y-4">
+          <form action={requestRegistrationOtp} className="mt-6 space-y-4">
             {error && (
               <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">
                 {error}
@@ -88,12 +88,17 @@ export default async function RegisterPage({
                 />
               </label>
             </div>
+            <p className="text-xs text-slate-400">
+              กรอกอย่างน้อย 1 ช่อง (เลขบัตรประชาชน หรือ AFC ID) เพื่อยืนยันตัวตนกับข้อมูลที่มีอยู่ในระบบ
+            </p>
             <div className="grid grid-cols-2 gap-3">
               <label className="flex flex-col gap-1.5">
                 <span className="text-sm font-medium text-slate-700">เลขบัตรประชาชน</span>
                 <input
                   name="idNumber"
-                  placeholder="ถ้ามี"
+                  inputMode="numeric"
+                  maxLength={13}
+                  placeholder="13 หลัก"
                   className="rounded-lg border border-slate-200 px-3.5 py-2.5 text-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100"
                 />
               </label>
@@ -102,6 +107,26 @@ export default async function RegisterPage({
                 <input
                   name="afcId"
                   placeholder="ถ้ามี"
+                  className="rounded-lg border border-slate-200 px-3.5 py-2.5 text-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100"
+                />
+              </label>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <label className="flex flex-col gap-1.5">
+                <span className="text-sm font-medium text-slate-700">เบอร์โทรศัพท์</span>
+                <input
+                  name="telNo"
+                  type="tel"
+                  required
+                  className="rounded-lg border border-slate-200 px-3.5 py-2.5 text-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100"
+                />
+              </label>
+              <label className="flex flex-col gap-1.5">
+                <span className="text-sm font-medium text-slate-700">วันเกิด</span>
+                <input
+                  name="dob"
+                  type="date"
+                  required
                   className="rounded-lg border border-slate-200 px-3.5 py-2.5 text-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100"
                 />
               </label>
@@ -129,7 +154,7 @@ export default async function RegisterPage({
               type="submit"
               className="w-full rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm shadow-indigo-200 transition-colors hover:bg-indigo-700"
             >
-              สมัครสมาชิก
+              ส่งรหัสยืนยันไปยังอีเมล
             </button>
           </form>
         </div>
