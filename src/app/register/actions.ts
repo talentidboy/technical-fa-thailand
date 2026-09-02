@@ -3,7 +3,13 @@
 import { prisma } from "@/lib/prisma";
 import { createSession, hashPassword } from "@/lib/auth";
 import { isValidThaiIdNumber } from "@/lib/validation";
+import { saveUploadedPhoto } from "@/lib/upload";
 import { redirect } from "next/navigation";
+
+function optionalString(formData: FormData, key: string) {
+  const value = String(formData.get(key) ?? "").trim();
+  return value || null;
+}
 
 function err(path: string, message: string): never {
   redirect(`${path}?error=${encodeURIComponent(message)}`);
@@ -47,7 +53,7 @@ export async function registerCoach(formData: FormData) {
       "ไม่พบข้อมูลโค้ชที่ตรงกับเลขบัตรประชาชนนี้ในระบบ กรุณาติดต่อผู้ดูแลระบบให้นำเข้าข้อมูลก่อนสมัครสมาชิก",
     );
   }
-  // ถ้าข้อมูลเบอร์โทร/วันเกิดมีอยู่แล้วในระบบ ต้องตรงกันเพื่อยืนยันตัวตนอีกชั้น (กันเดาแค่เลขบัตร/AFC ID มั่วๆ)
+  // ถ้าข้อมูลเบอร์โทร/วันเกิดมีอยู่แล้วในระบบ ต้องตรงกันเพื่อยืนยันตัวตนอีกชั้น (กันเดาแค่เลขบัตรมั่วๆ)
   if (match.telNo && match.telNo.replace(/\D/g, "") !== telNo.replace(/\D/g, "")) {
     err("/register", "เบอร์โทรศัพท์ไม่ตรงกับข้อมูลที่มีอยู่ในระบบ กรุณาตรวจสอบอีกครั้ง");
   }
@@ -57,10 +63,29 @@ export async function registerCoach(formData: FormData) {
 
   const passwordHash = await hashPassword(password);
 
+  let photoUrl: string | null = null;
+  try {
+    photoUrl = await saveUploadedPhoto(formData.get("photo") as File | null);
+  } catch (e) {
+    err("/register", e instanceof Error ? e.message : "อัปโหลดรูปถ่ายไม่สำเร็จ");
+  }
+
   const user = await prisma.$transaction(async (tx) => {
     await tx.coach.update({
       where: { id: match.id },
-      data: { telNo, dob, email },
+      data: {
+        telNo,
+        dob,
+        email,
+        nameEn: optionalString(formData, "nameEn"),
+        familyNameEn: optionalString(formData, "familyNameEn"),
+        gender: optionalString(formData, "gender"),
+        nationalityCode: optionalString(formData, "nationalityCode"),
+        provinceCode: optionalString(formData, "provinceCode"),
+        districtCode: optionalString(formData, "districtCode"),
+        subdistrictCode: optionalString(formData, "subdistrictCode"),
+        ...(photoUrl ? { photoUrl } : {}),
+      },
     });
     return tx.systemUser.create({
       data: { email, passwordHash, role: "COACH", coachId: match.id },

@@ -2,45 +2,46 @@
 
 import { prisma } from "@/lib/prisma";
 import { requireCoach } from "@/lib/auth";
+import { saveUploadedPhoto } from "@/lib/upload";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 
-const EDITABLE_FIELDS = [
-  "email",
-  "telNo",
-  "nationalityCode",
-  "provinceCode",
-  "districtCode",
-  "subdistrictCode",
-] as const;
+function optionalString(formData: FormData, key: string) {
+  const value = String(formData.get(key) ?? "").trim();
+  return value || null;
+}
 
-export async function requestProfileEdit(formData: FormData) {
+// โค้ชแก้ไขข้อมูลโปรไฟล์ของตัวเองได้ทันที ไม่ต้องรอแอดมินอนุมัติ
+// จำกัดเฉพาะข้อมูลติดต่อ/ข้อมูลทั่วไป — ชื่อไทย, เลขบัตรประชาชน, วันเกิด (ข้อมูลยืนยันตัวตน) แก้ไขได้เฉพาะแอดมินเท่านั้น
+export async function updateMyProfile(formData: FormData) {
   const user = await requireCoach();
   const coachId = user.coachId!;
 
-  const coach = await prisma.coach.findUnique({ where: { id: coachId } });
-  if (!coach) throw new Error("ไม่พบข้อมูลผู้ฝึกสอน");
+  const telNo = String(formData.get("telNo") ?? "").trim();
+  if (!telNo) throw new Error("กรุณากรอกเบอร์โทรศัพท์");
 
-  const message = String(formData.get("message") ?? "").trim();
-  const changes: Record<string, string> = {};
-
-  for (const field of EDITABLE_FIELDS) {
-    const value = String(formData.get(field) ?? "").trim();
-    if (value !== (coach[field] ?? "")) {
-      changes[field] = value;
-    }
+  let photoUrl: string | null = null;
+  try {
+    photoUrl = await saveUploadedPhoto(formData.get("photo") as File | null);
+  } catch (e) {
+    throw new Error(e instanceof Error ? e.message : "อัปโหลดรูปถ่ายไม่สำเร็จ");
   }
 
-  if (Object.keys(changes).length === 0 && !message) {
-    throw new Error("ไม่มีการเปลี่ยนแปลงข้อมูล");
-  }
-
-  await prisma.profileEditRequest.create({
+  await prisma.coach.update({
+    where: { id: coachId },
     data: {
-      coachId,
-      payload: JSON.stringify(changes),
-      message: message || null,
+      telNo,
+      nameEn: optionalString(formData, "nameEn"),
+      familyNameEn: optionalString(formData, "familyNameEn"),
+      gender: optionalString(formData, "gender"),
+      nationalityCode: optionalString(formData, "nationalityCode"),
+      provinceCode: optionalString(formData, "provinceCode"),
+      districtCode: optionalString(formData, "districtCode"),
+      subdistrictCode: optionalString(formData, "subdistrictCode"),
+      ...(photoUrl ? { photoUrl } : {}),
     },
   });
 
   revalidatePath("/me");
+  redirect("/me?saved=1");
 }

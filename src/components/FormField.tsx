@@ -5,6 +5,8 @@ export function Field({
   required = false,
   placeholder,
   defaultValue,
+  inputMode,
+  maxLength,
 }: {
   label: string;
   name: string;
@@ -12,6 +14,8 @@ export function Field({
   required?: boolean;
   placeholder?: string;
   defaultValue?: string;
+  inputMode?: React.HTMLAttributes<HTMLInputElement>["inputMode"];
+  maxLength?: number;
 }) {
   return (
     <label className="flex flex-col gap-1.5">
@@ -25,6 +29,8 @@ export function Field({
         required={required}
         placeholder={placeholder}
         defaultValue={defaultValue}
+        inputMode={inputMode}
+        maxLength={maxLength}
         className="rounded-lg border border-slate-200 px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100"
       />
     </label>

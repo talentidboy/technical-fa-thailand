@@ -1,12 +1,12 @@
 import Link from "next/link";
 import { requireCoach } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { requestProfileEdit } from "./actions";
-import { LICENSE_TYPES, RECORD_TYPES, labelFor } from "@/lib/constants";
+import { updateMyProfile } from "./actions";
+import { LICENSE_TYPES, RECORD_TYPES, GENDER_OPTIONS, labelFor } from "@/lib/constants";
 import { getLicenseStatus, LICENSE_STATUS_STYLES } from "@/lib/license-status";
-import { SelectField } from "@/components/FormField";
+import { Field, SelectField } from "@/components/FormField";
 import { ThaiAddressFields } from "@/components/ThaiAddressFields";
-import { getCountryOptions, getFlagEmoji } from "@/lib/countries";
+import { getCountryOptions, getCountryByCode, getFlagEmoji } from "@/lib/countries";
 import { getProvinceOptions, getDistrictOptions, getSubdistrictOptions, formatThaiAddress } from "@/lib/thai-address";
 import {
   Mail,
@@ -15,12 +15,14 @@ import {
   IdCard,
   Download,
   FileBadge,
-  Send,
+  Save,
   GraduationCap,
   ShieldCheck,
   Clock3,
   AlertTriangle,
   ChevronDown,
+  CheckCircle2,
+  UserCircle2,
 } from "lucide-react";
 
 function formatDate(date: Date | null) {
@@ -32,28 +34,20 @@ function formatDate(date: Date | null) {
   });
 }
 
-const STATUS_LABEL: Record<string, string> = {
-  PENDING: "รอตรวจสอบ",
-  APPROVED: "อนุมัติแล้ว",
-  REJECTED: "ปฏิเสธคำขอ",
-};
-
-const STATUS_STYLE: Record<string, string> = {
-  PENDING: "bg-amber-50 text-amber-600",
-  APPROVED: "bg-emerald-50 text-emerald-600",
-  REJECTED: "bg-red-50 text-red-600",
-};
-
-export default async function MyProfilePage() {
+export default async function MyProfilePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ saved?: string }>;
+}) {
   const user = await requireCoach();
   const coachId = user.coachId!;
+  const { saved } = await searchParams;
 
   const coach = await prisma.coach.findUnique({
     where: { id: coachId },
     include: {
       licenseRecords: { orderBy: { issueDate: "desc" } },
       employments: { orderBy: { createdAt: "desc" }, take: 1 },
-      profileEditRequests: { orderBy: { createdAt: "desc" }, take: 5 },
     },
   });
 
@@ -90,9 +84,6 @@ export default async function MyProfilePage() {
       className: "bg-red-50 text-red-600",
     },
   ];
-  const pendingRequests = coach.profileEditRequests.filter(
-    (r) => r.status === "PENDING"
-  ).length;
 
   const countryOptions = getCountryOptions().map((c) => ({
     value: c.code,
@@ -101,23 +92,27 @@ export default async function MyProfilePage() {
   const provinces = getProvinceOptions();
   const initialDistricts = coach.provinceCode ? getDistrictOptions(coach.provinceCode) : [];
   const initialSubdistricts = coach.districtCode ? getSubdistrictOptions(coach.districtCode) : [];
+  const country = getCountryByCode(coach.nationalityCode);
+  const fullNameEn = [coach.nameEn, coach.familyNameEn].filter(Boolean).join(" ");
 
   return (
     <div className="space-y-6">
       {/* Profile header */}
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <div className="h-16 bg-linear-to-r from-indigo-700 via-indigo-600 to-indigo-800" />
+        <div className="relative h-24 bg-linear-to-r from-indigo-700 via-indigo-600 to-indigo-800">
+          <div className="absolute inset-x-0 top-0 h-1 bg-linear-to-r from-amber-500 via-amber-300 to-amber-500" />
+        </div>
         <div className="flex flex-wrap items-start justify-between gap-4 px-6 pb-6">
-          <div className="-mt-10 flex items-end gap-4">
+          <div className="-mt-12 flex items-end gap-4">
             {coach.photoUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={coach.photoUrl}
                 alt=""
-                className="h-20 w-20 rounded-full object-cover ring-4 ring-white"
+                className="h-24 w-24 rounded-full object-cover ring-4 ring-white"
               />
             ) : (
-              <div className="flex h-20 w-20 items-center justify-center rounded-full bg-indigo-100 text-2xl font-semibold text-indigo-700 ring-4 ring-white">
+              <div className="flex h-24 w-24 items-center justify-center rounded-full bg-indigo-100 text-3xl font-semibold text-indigo-700 ring-4 ring-white">
                 {coach.nameTh.charAt(0)}
               </div>
             )}
@@ -125,7 +120,8 @@ export default async function MyProfilePage() {
               <h1 className="text-xl font-bold text-slate-900">
                 {coach.nameTh} {coach.surnameTh}
               </h1>
-              <p className="text-sm font-medium text-indigo-600">
+              {fullNameEn && <p className="text-sm text-slate-400">{fullNameEn}</p>}
+              <p className="mt-0.5 text-sm font-medium text-indigo-600">
                 {coach.afcId ?? "ไม่มี AFC ID"}
               </p>
               {coach.employments[0] && (
@@ -155,6 +151,22 @@ export default async function MyProfilePage() {
           </div>
         </div>
 
+        {(country || coach.gender) && (
+          <div className="flex flex-wrap items-center gap-2 border-t border-slate-100 px-6 py-3">
+            {country && (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-50 px-3 py-1 text-xs font-medium text-slate-600">
+                {getFlagEmoji(coach.nationalityCode)} {country.nameTh}
+              </span>
+            )}
+            {coach.gender && (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-50 px-3 py-1 text-xs font-medium text-slate-600">
+                <UserCircle2 className="h-3.5 w-3.5" />
+                {labelFor(GENDER_OPTIONS, coach.gender)}
+              </span>
+            )}
+          </div>
+        )}
+
         <dl className="grid grid-cols-1 gap-3 border-t border-slate-100 px-6 py-5 sm:grid-cols-3">
           <div className="flex items-center gap-2.5 text-sm">
             <Mail className="h-4 w-4 flex-none text-slate-400" />
@@ -174,6 +186,13 @@ export default async function MyProfilePage() {
           </div>
         </dl>
       </div>
+
+      {saved && (
+        <p className="flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+          <CheckCircle2 className="h-4 w-4 flex-none" />
+          บันทึกข้อมูลเรียบร้อยแล้ว
+        </p>
+      )}
 
       {/* Quick stats */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -252,111 +271,79 @@ export default async function MyProfilePage() {
         )}
       </div>
 
-      {/* Edit request — tucked away since it's used occasionally */}
-      <details className="group rounded-2xl border border-slate-200 bg-white shadow-sm">
+      {/* แก้ไขข้อมูลส่วนตัว — บันทึกได้ทันทีโดยไม่ต้องรอแอดมินอนุมัติ */}
+      <details className="group rounded-2xl border border-slate-200 bg-white shadow-sm" open>
         <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-6 py-4">
           <div className="flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
-              <Send className="h-4 w-4" />
+              <Save className="h-4 w-4" />
             </div>
-            <h2 className="font-semibold text-slate-900">ขอแก้ไขข้อมูล</h2>
-            {pendingRequests > 0 && (
-              <span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-600">
-                {pendingRequests} คำขอรอตรวจสอบ
-              </span>
-            )}
+            <h2 className="font-semibold text-slate-900">แก้ไขข้อมูลส่วนตัว</h2>
           </div>
           <ChevronDown className="h-4 w-4 flex-none text-slate-400 transition-transform group-open:rotate-180" />
         </summary>
 
         <div className="border-t border-slate-100">
-          <form action={requestProfileEdit} className="space-y-4 p-6">
+          <form action={updateMyProfile} className="space-y-6 p-6">
             <p className="text-sm text-slate-500">
-              หากข้อมูลด้านล่างผิด แก้ไขให้ถูกต้องแล้วกดส่งคำขอ
-              แอดมินจะตรวจสอบและอนุมัติ
+              แก้ไขข้อมูลด้านล่างแล้วกดบันทึก — มีผลทันที (ชื่อภาษาไทย เลขบัตรประชาชน และวันเกิด
+              เป็นข้อมูลยืนยันตัวตน หากผิดพลาดกรุณาติดต่อผู้ดูแลระบบ)
             </p>
+
+            <label className="flex flex-col gap-1.5 sm:w-64">
+              <span className="text-sm font-medium text-slate-700">
+                รูปถ่าย{" "}
+                {coach.photoUrl && <span className="text-slate-400">(อัปโหลดใหม่เพื่อแทนที่รูปเดิม)</span>}
+              </span>
+              <input
+                name="photo"
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                className="rounded-lg border border-slate-200 px-3.5 py-2.5 text-sm text-slate-600 file:mr-3 file:rounded-md file:border-0 file:bg-indigo-50 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-indigo-600"
+              />
+            </label>
+
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <label className="flex flex-col gap-1.5">
-                <span className="text-sm font-medium text-slate-700">
-                  อีเมล
-                </span>
-                <input
-                  name="email"
-                  type="email"
-                  defaultValue={coach.email ?? ""}
-                  className="rounded-lg border border-slate-200 px-3.5 py-2.5 text-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100"
-                />
-              </label>
-              <label className="flex flex-col gap-1.5">
-                <span className="text-sm font-medium text-slate-700">
-                  เบอร์โทร
-                </span>
-                <input
-                  name="telNo"
-                  defaultValue={coach.telNo ?? ""}
-                  className="rounded-lg border border-slate-200 px-3.5 py-2.5 text-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100"
-                />
-              </label>
+              <Field label="ชื่อ (อังกฤษ)" name="nameEn" defaultValue={coach.nameEn ?? undefined} placeholder="Somchai" />
+              <Field
+                label="นามสกุล (อังกฤษ)"
+                name="familyNameEn"
+                defaultValue={coach.familyNameEn ?? undefined}
+                placeholder="Jaidee"
+              />
+              <SelectField label="เพศ" name="gender" options={GENDER_OPTIONS} defaultValue={coach.gender ?? undefined} />
+              <Field label="เบอร์โทร" name="telNo" required defaultValue={coach.telNo ?? undefined} />
               <SelectField
                 label="สัญชาติ"
                 name="nationalityCode"
                 options={countryOptions}
                 defaultValue={coach.nationalityCode ?? undefined}
               />
-              <ThaiAddressFields
-                provinces={provinces}
-                initialProvinceCode={coach.provinceCode ?? ""}
-                initialDistrictCode={coach.districtCode ?? ""}
-                initialSubdistrictCode={coach.subdistrictCode ?? ""}
-                initialDistricts={initialDistricts}
-                initialSubdistricts={initialSubdistricts}
-                legacyResidence={coach.residence}
-              />
             </div>
-            <label className="flex flex-col gap-1.5">
-              <span className="text-sm font-medium text-slate-700">
-                ข้อความเพิ่มเติม (ถ้ามี)
-              </span>
-              <textarea
-                name="message"
-                rows={3}
-                className="rounded-lg border border-slate-200 px-3.5 py-2.5 text-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100"
-              />
-            </label>
+
+            <div>
+              <h3 className="mb-3 text-sm font-semibold text-slate-900">ที่อยู่ปัจจุบัน</h3>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <ThaiAddressFields
+                  provinces={provinces}
+                  initialProvinceCode={coach.provinceCode ?? ""}
+                  initialDistrictCode={coach.districtCode ?? ""}
+                  initialSubdistrictCode={coach.subdistrictCode ?? ""}
+                  initialDistricts={initialDistricts}
+                  initialSubdistricts={initialSubdistricts}
+                  legacyResidence={coach.residence}
+                />
+              </div>
+            </div>
+
             <button
               type="submit"
               className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-medium text-white shadow-sm shadow-indigo-200 transition-colors hover:bg-indigo-700"
             >
-              <Send className="h-4 w-4" />
-              ส่งคำขอแก้ไข
+              <Save className="h-4 w-4" />
+              บันทึกการเปลี่ยนแปลง
             </button>
           </form>
-
-          {coach.profileEditRequests.length > 0 && (
-            <div className="border-t border-slate-100 px-6 py-4">
-              <p className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-400">
-                ประวัติคำขอล่าสุด
-              </p>
-              <ul className="space-y-2">
-                {coach.profileEditRequests.map((req) => (
-                  <li
-                    key={req.id}
-                    className="flex items-center justify-between text-sm"
-                  >
-                    <span className="text-slate-500">
-                      {formatDate(req.createdAt)}
-                      {req.message && ` · ${req.message}`}
-                    </span>
-                    <span
-                      className={`rounded-full px-2.5 py-1 text-xs font-medium ${STATUS_STYLE[req.status]}`}
-                    >
-                      {STATUS_LABEL[req.status]}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
         </div>
       </details>
     </div>
