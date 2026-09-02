@@ -2,7 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
-import { requestRegistrationOtp } from "./actions";
+import { registerCoach } from "./actions";
 import { LOGO_URL, COVER_URL } from "@/lib/brand";
 import { ArrowLeft } from "lucide-react";
 
@@ -59,11 +59,11 @@ export default async function RegisterPage({
             </p>
             <p className="text-sm text-slate-500">
               ระบบจะยืนยันตัวตนกับข้อมูลผู้ฝึกสอนที่มีอยู่ในระบบอยู่แล้ว (นำเข้าโดยเจ้าหน้าที่) กรุณากรอกเลขบัตรประชาชนหรือ
-              AFC ID พร้อมเบอร์โทรและวันเกิดให้ตรงกับข้อมูลเดิม แล้วยืนยันรหัส OTP ที่ส่งไปทางอีเมล
+              AFC ID พร้อมเบอร์โทรและวันเกิดให้ตรงกับข้อมูลเดิม
             </p>
           </div>
 
-          <form action={requestRegistrationOtp} className="mt-6 space-y-4">
+          <form action={registerCoach} className="mt-6 space-y-4">
             {error && (
               <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">
                 {error}
@@ -154,7 +154,7 @@ export default async function RegisterPage({
               type="submit"
               className="w-full rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm shadow-indigo-200 transition-colors hover:bg-indigo-700"
             >
-              ส่งรหัสยืนยันไปยังอีเมล
+              สมัครสมาชิก
             </button>
           </form>
         </div>

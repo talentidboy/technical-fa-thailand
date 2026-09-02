@@ -453,23 +453,3 @@ model PlayAndLearnCenter {
   @@map("play_and_learn_centers")
 }
 
-// ที่พักข้อมูลสมัครสมาชิกโค้ชระหว่างรอยืนยัน OTP ทางอีเมล — ยังไม่สร้าง SystemUser จริงจนกว่าจะยืนยันสำเร็จ
-// otpHash เก็บ sha256 ของรหัส OTP 6 หลัก ไม่เก็บ plain text
-model RegistrationOtp {
-  id           Int      @id @default(autoincrement())
-  email        String   @unique
-  otpHash      String   @map("otp_hash")
-  coachId      Int      @map("coach_id")
-  nameTh       String   @map("name_th")
-  surnameTh    String   @map("surname_th")
-  idNumber     String?  @map("id_number")
-  afcId        String?  @map("afc_id")
-  telNo        String   @map("tel_no")
-  dob          DateTime
-  passwordHash String   @map("password_hash")
-  attempts     Int      @default(0)
-  expiresAt    DateTime @map("expires_at")
-  createdAt    DateTime @default(now()) @map("created_at")
-
-  @@map("registration_otps")
-}
