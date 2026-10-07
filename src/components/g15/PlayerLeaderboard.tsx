@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { TeamBadge } from "./TeamBadge";
 import { ACCENT_STYLE, type LeaderboardAccent } from "./MiniLeaderboard";
@@ -65,7 +66,14 @@ export function PlayerLeaderboard({
                 </span>
                 <TeamBadge team={{ name: row.teamName, logoUrl: row.teamLogoUrl, groupName: row.teamGroupName }} size="sm" />
                 <span className="min-w-0 flex-1 truncate text-sm text-slate-700">
-                  {row.playerName}
+                  {/* คีย์ p<id> = ผูกทะเบียนนักกีฬาแล้ว → ลิงก์ไปหน้าโปรไฟล์ได้ (ประตูที่กรอกชื่อเองไม่มีโปรไฟล์) */}
+                  {row.key.startsWith("p") ? (
+                    <Link href={`/g15-womens-series/players/${row.key.slice(1)}`} className="hover:text-g15-600 hover:underline">
+                      {row.playerName}
+                    </Link>
+                  ) : (
+                    row.playerName
+                  )}
                   {row.jerseyNumber != null && <span className="ml-1 text-slate-400">#{row.jerseyNumber}</span>}
                   <span className="block truncate text-xs text-slate-400">{row.teamName}</span>
                 </span>

@@ -8,6 +8,7 @@ import {
   NATIONAL_GROUPS,
   NATIONAL_SEEDS,
   NATIONAL_ROUNDS,
+  TEAM_OF_ROUND_SLOTS,
   isKnockoutRound,
   type G15Stage,
 } from "@/lib/g15-stage";
@@ -154,6 +155,7 @@ function stageOf(formData: FormData): G15Stage {
 }
 
 // สกอร์ + จุดโทษจากฟอร์ม — เว้นว่างทั้งสองช่อง = ยังไม่แข่ง (SCHEDULED), กรอกครบ = จบแล้ว (FINISHED)
+// ยกเว้นกดปุ่ม "อัปเดตสด" (ส่ง final=0) = กำลังแข่ง (LIVE) — โชว์สกอร์สดหน้าเว็บแต่ยังไม่นับในตารางคะแนน/สถิติ
 // จุดโทษเก็บเฉพาะนัดน็อกเอาต์ที่เสมอในเวลาเท่านั้น นัดอื่นล้างทิ้งเสมอ กันค่าค้างจากการแก้สกอร์ทีหลัง
 function parseResult(formData: FormData, round: string) {
   const homeScore = int(formData, "homeScore");
@@ -170,12 +172,13 @@ function parseResult(formData: FormData, round: string) {
   if (isDrawnKnockout && homePenalty != null && homePenalty === awayPenalty) {
     throw new Error("ผลดวลจุดโทษต้องมีผู้ชนะ");
   }
+  const isLiveUpdate = String(formData.get("final") ?? "") === "0";
   return {
     homeScore,
     awayScore,
     homePenalty: homePenalty != null && awayPenalty != null ? homePenalty : null,
     awayPenalty: homePenalty != null && awayPenalty != null ? awayPenalty : null,
-    status: homeScore != null && awayScore != null ? "FINISHED" : "SCHEDULED",
+    status: homeScore != null && awayScore != null ? (isLiveUpdate ? "LIVE" : "FINISHED") : "SCHEDULED",
   };
 }
 
@@ -845,4 +848,26 @@ export async function updateLineup(formData: FormData) {
   ]);
 
   revalidateG15(undefined, matchId);
+}
+
+// ===== ทีมยอดเยี่ยมประจำรอบ =====
+// ช่อง player_<slot> = playerId (เว้นว่างได้) — แทนที่ผังเดิมของรอบนั้นทั้งชุดในครั้งเดียว
+export async function saveTeamOfRound(formData: FormData): Promise<ActionResult> {
+  await requireAdminOrStaff();
+  return attempt(async () => {
+    const stage = stageOf(formData);
+    const rows = TEAM_OF_ROUND_SLOTS.flatMap(({ slot }) => {
+      const playerId = int(formData, `player_${slot}`);
+      return playerId ? [{ stage, slot, playerId }] : [];
+    });
+    const ids = rows.map((r) => r.playerId);
+    if (new Set(ids).size !== ids.length) throw new Error("เลือกนักกีฬาคนเดียวกันซ้ำหลายตำแหน่ง");
+
+    await prisma.$transaction([
+      prisma.g15AllStar.deleteMany({ where: { stage } }),
+      ...(rows.length > 0 ? [prisma.g15AllStar.createMany({ data: rows })] : []),
+    ]);
+
+    revalidateG15();
+  });
 }

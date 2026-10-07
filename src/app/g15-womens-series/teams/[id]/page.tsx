@@ -4,7 +4,8 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getStandings, getNationalStandings, formatMatchDateTime, type StandingRow } from "@/lib/g15";
 import { regionStyle, parseRegionGroup, regionEn } from "@/lib/g15-region";
-import { stageInfo, roundStyle, matchWinnerId, hasPenalties, type G15Stage } from "@/lib/g15-stage";
+import { stageInfo, roundStyle, matchWinnerId, hasPenalties, isLive, hasLiveScore, type G15Stage } from "@/lib/g15-stage";
+import { LivePill } from "@/components/g15/LivePill";
 import { LOGO_URL } from "@/lib/brand";
 import { ArrowLeft, MapPin, Calendar, Users, UserCog, ListOrdered, Trophy } from "lucide-react";
 
@@ -295,7 +296,9 @@ export default async function G15TeamDetailPage({
                           </span>
                         </td>
                         <td className="max-w-30 truncate px-3 py-2.5 font-medium text-slate-900 sm:max-w-none sm:whitespace-nowrap">
-                          {p.firstNameTh} {p.lastNameTh}
+                          <Link href={`/g15-womens-series/players/${p.id}`} className="hover:text-g15-600 hover:underline">
+                            {p.firstNameTh} {p.lastNameTh}
+                          </Link>
                         </td>
                         <td className="hidden whitespace-nowrap px-3 py-2.5 text-slate-500 sm:table-cell">
                           {[p.firstNameEn, p.lastNameEn].filter(Boolean).join(" ") || "-"}
@@ -441,6 +444,15 @@ export default async function G15TeamDetailPage({
                           <span className={`rounded-lg px-2.5 py-1 text-xs font-bold text-white ${scorePill}`}>
                             {match.homeScore} - {match.awayScore}
                             {hasPenalties(match) && ` (จุดโทษ ${match.homePenalty}-${match.awayPenalty})`}
+                          </span>
+                        ) : isLive(match) ? (
+                          <span className="flex items-center gap-1.5">
+                            {hasLiveScore(match) && (
+                              <span className="rounded-lg bg-red-600 px-2.5 py-1 text-xs font-bold text-white">
+                                {match.homeScore} - {match.awayScore}
+                              </span>
+                            )}
+                            <LivePill />
                           </span>
                         ) : (
                           <span className="text-xs font-medium text-slate-400">ยังไม่แข่ง / Not played</span>

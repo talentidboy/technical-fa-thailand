@@ -3,7 +3,9 @@ import { getCurrentUser } from "@/lib/auth";
 import { getStandings } from "@/lib/g15";
 import { parseStage, stageInfo } from "@/lib/g15-stage";
 import { G15Chrome } from "@/components/g15/G15Chrome";
+import { HeroArt } from "@/components/g15/HeroArt";
 import { StageSwitcher } from "@/components/g15/StageSwitcher";
+import { TeamOfRoundPitch } from "@/components/g15/TeamOfRoundPitch";
 import { MiniLeaderboard } from "@/components/g15/MiniLeaderboard";
 import { PlayerLeaderboard, type PlayerLeaderboardRow } from "@/components/g15/PlayerLeaderboard";
 import { TeamBadge } from "@/components/g15/TeamBadge";
@@ -19,11 +21,15 @@ export default async function G15StatsPage({
   const stage = parseStage((await searchParams).stage);
 
   // ทุกอย่างกรองตามรอบ — รอบชิงแชมป์ประเทศเริ่มนับประตู/คลีนชีต/ดาวซัลโวใหม่จากศูนย์ ไม่รวมผลรอบภูมิภาค
-  const [user, allTeams, matches, goals] = await Promise.all([
+  const [user, allTeams, matches, goals, allStars] = await Promise.all([
     getCurrentUser(),
     prisma.g15Team.findMany({ orderBy: [{ groupName: "asc" }, { name: "asc" }] }),
     prisma.g15Match.findMany({ where: { stage }, include: { homeTeam: true, awayTeam: true } }),
     prisma.g15Goal.findMany({ where: { match: { stage } }, include: { team: true } }),
+    prisma.g15AllStar.findMany({
+      where: { stage },
+      include: { player: { select: { id: true, firstNameTh: true, lastNameTh: true, jerseyNumber: true, team: true } } },
+    }),
   ]);
   const teams = stage === "NATIONAL" ? allTeams.filter((t) => t.nationalGroup) : allTeams;
 
@@ -83,8 +89,9 @@ export default async function G15StatsPage({
       <G15Chrome user={user} stage={stage} />
 
       {/* ฮีโร่ไล่สีชุดเดียวกับหน้าอื่นๆ ของ G15 — แถบสถิติลอยทับขอบล่างให้ภาษาภาพเป็นชุดเดียวกันทั้งเว็บ */}
-      <section className="relative overflow-hidden bg-linear-to-br from-g15-950 via-g15-800 to-g15-600 pb-20 pt-8 sm:pb-24">
+      <section className="relative isolate overflow-hidden bg-linear-to-br from-g15-950 via-g15-800 to-g15-600 pb-20 pt-8 sm:pb-24">
         <div className="absolute inset-x-0 top-0 h-1.5 animate-shimmer-slide bg-linear-to-r from-amber-600 via-amber-200 via-50% to-amber-600 bg-size-[200%_100%]" />
+        <HeroArt />
         <div className="mx-auto max-w-6xl px-6">
           <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-g15-200">
             <BarChart3 className="h-3.5 w-3.5" />
@@ -207,6 +214,14 @@ export default async function G15StatsPage({
                 </Reveal>
               )}
             </div>
+
+            {allStars.length > 0 && (
+              <Reveal>
+                <div className="mx-auto max-w-2xl">
+                  <TeamOfRoundPitch picks={allStars} title="ทีมยอดเยี่ยมประจำรอบ / Team of the Round" />
+                </div>
+              </Reveal>
+            )}
           </div>
         )}
       </div>

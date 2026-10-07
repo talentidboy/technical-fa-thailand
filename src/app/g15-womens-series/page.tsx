@@ -11,14 +11,29 @@ import {
   formatMatchTimeShort,
 } from "@/lib/g15";
 import { REGION_STYLE, DEFAULT_REGION_STYLE, regionEn, groupTeamsByRegion, groupStandingsByRegion } from "@/lib/g15-region";
-import { parseStage, stageInfo, withStage, roundStyle, isGroupRound, hasPenalties } from "@/lib/g15-stage";
+import {
+  parseStage,
+  stageInfo,
+  withStage,
+  roundStyle,
+  isGroupRound,
+  hasPenalties,
+  isLive,
+  hasLiveScore,
+  projectLive,
+} from "@/lib/g15-stage";
 import { G15_HERO_BANNER_URL } from "@/lib/brand";
 import { G15Chrome } from "@/components/g15/G15Chrome";
+import { HeroArt } from "@/components/g15/HeroArt";
 import { TeamBadge } from "@/components/g15/TeamBadge";
 import { StandingTable } from "@/components/g15/StandingTable";
 import { StageSwitcher } from "@/components/g15/StageSwitcher";
 import { NationalGroupTables } from "@/components/g15/NationalGroupTables";
 import { KnockoutBracket } from "@/components/g15/KnockoutBracket";
+import { TeamOfRoundPitch } from "@/components/g15/TeamOfRoundPitch";
+import { ChampionPodium } from "@/components/g15/ChampionPodium";
+import { LivePill } from "@/components/g15/LivePill";
+import { AutoRefresh } from "@/components/g15/AutoRefresh";
 import { MatchSpotlight } from "@/components/g15/MatchSpotlight";
 import { PlayerLeaderboard, type PlayerLeaderboardRow } from "@/components/g15/PlayerLeaderboard";
 import { Reveal } from "@/components/g15/Reveal";
@@ -86,7 +101,7 @@ export default async function G15WomensSeriesPage({
   const user = await getCurrentUser();
 
   // สถิติทุกตัวในหน้านี้นับเฉพาะรอบที่เลือก — รอบชิงแชมป์ประเทศเริ่มจากศูนย์ ไม่รวมผลรอบภูมิภาค
-  const [allTeams, matches, goals] = await Promise.all([
+  const [allTeams, matches, goals, allStars] = await Promise.all([
     prisma.g15Team.findMany({ orderBy: [{ groupName: "asc" }, { name: "asc" }] }),
     prisma.g15Match.findMany({
       where: { stage },
@@ -94,11 +109,17 @@ export default async function G15WomensSeriesPage({
       include: { homeTeam: true, awayTeam: true },
     }),
     prisma.g15Goal.findMany({ where: { match: { stage } }, include: { team: true } }),
+    prisma.g15AllStar.findMany({
+      where: { stage },
+      include: { player: { select: { id: true, firstNameTh: true, lastNameTh: true, jerseyNumber: true, team: true } } },
+    }),
   ]);
   const teams = isNational ? allTeams.filter((t) => t.nationalGroup) : allTeams;
 
   const standingGroups = getStandings(teams, matches);
-  const nationalGroups = isNational ? getNationalStandings(teams, matches) : [];
+  // มีนัดรอบแบ่งกลุ่มกำลังแข่ง (กรอกสกอร์สดแล้ว) → ตารางคะแนนสด นับนัดนั้นเหมือนจบตามสกอร์ปัจจุบัน
+  const liveGroupTable = isNational && matches.some((m) => isGroupRound(m.round) && hasLiveScore(m));
+  const nationalGroups = isNational ? getNationalStandings(teams, liveGroupTable ? projectLive(matches) : matches) : [];
   const bracket = isNational ? getNationalBracket(teams, matches) : [];
   const { regionOrder, byRegion: teamsByRegion } = groupTeamsByRegion(teams);
   const { regionOrder: standingsRegionOrder, byRegion: standingsByRegion } = groupStandingsByRegion(standingGroups);
@@ -147,13 +168,21 @@ export default async function G15WomensSeriesPage({
     .sort((a, b) => (b.matchDate?.getTime() ?? 0) - (a.matchDate?.getTime() ?? 0))
     .slice(0, 5);
 
-  // การ์ดพิเศษด้านบน — นัดถัดไปที่ใกล้ที่สุด ถ้าไม่มีนัดที่ยังไม่ถึงวันแข่งเลย ใช้ผลล่าสุดแทน
+  // การ์ดพิเศษด้านบน — กำลังแข่ง > นัดถัดไป (นับถอยหลัง) > ผลล่าสุด
   const now = new Date();
+  const liveMatches = matches.filter((m) => isLive(m, now));
   const nextMatch = matches
-    .filter((m) => m.status !== "FINISHED" && m.matchDate && m.matchDate.getTime() > now.getTime())
+    .filter((m) => m.status === "SCHEDULED" && m.matchDate && m.matchDate.getTime() > now.getTime())
     .sort((a, b) => a.matchDate!.getTime() - b.matchDate!.getTime())[0];
-  const spotlightMatch = nextMatch ?? recentResults[0] ?? null;
-  const spotlightIsUpcoming = !!nextMatch;
+  const spotlightMatches = liveMatches.length > 0 ? liveMatches : [nextMatch ?? recentResults[0]].filter((m) => m != null);
+  const spotlightMode = liveMatches.length > 0 ? "live" : nextMatch ? "upcoming" : "result";
+
+  // จบนัดชิงชนะเลิศแล้ว → ประกาศแชมป์บนสุดของหน้า
+  const finalTie = bracket.find((t) => t.key === "FINAL");
+  const thirdTie = bracket.find((t) => t.key === "THIRD");
+  const champion = finalTie?.home.isWinner ? finalTie.home.team : finalTie?.away.isWinner ? finalTie.away.team : null;
+  const runnerUp = champion ? (finalTie!.home.isWinner ? finalTie!.away.team : finalTie!.home.team) : null;
+  const thirdPlace = thirdTie?.home.isWinner ? thirdTie.home.team : thirdTie?.away.isWinner ? thirdTie.away.team : null;
 
   // ยังไม่มีผลเลย (เช่น วันแรกของรอบชิงแชมป์ประเทศ) — โชว์โปรแกรมนัดถัดไปแทนกล่องว่าง
   const upcomingMatches = matches
@@ -166,10 +195,12 @@ export default async function G15WomensSeriesPage({
   return (
     <div className="min-h-screen bg-slate-50">
       <G15Chrome user={user} stage={stage} />
+      <AutoRefresh active={liveMatches.length > 0} />
 
       {/* Hero — แบนเนอร์ทางการมีชื่อรายการ/สโลแกน/โลโก้ในภาพอยู่แล้ว จึงโชว์เต็มความกว้างไปเลยโดยไม่มีข้อความทับ */}
-      <section className="relative overflow-hidden bg-linear-to-br from-g15-950 via-g15-800 to-g15-600 pb-6 sm:pb-8">
+      <section className="relative isolate overflow-hidden bg-linear-to-br from-g15-950 via-g15-800 to-g15-600 pb-6 sm:pb-8">
         <div className="absolute inset-x-0 top-0 h-1.5 animate-shimmer-slide bg-linear-to-r from-amber-600 via-amber-200 via-50% to-amber-600 bg-size-[200%_100%]" />
+        <HeroArt />
         <Sparkles className="animate-float-y absolute right-6 top-10 hidden h-6 w-6 text-amber-300/70 sm:block" />
         <Sparkles className="animate-float-y absolute left-10 top-20 hidden h-4 w-4 text-white/40 sm:block" style={{ animationDelay: "1.2s" }} />
         <Image
@@ -257,10 +288,25 @@ export default async function G15WomensSeriesPage({
           </div>
         </Reveal>
 
-        {spotlightMatch && (
-          <Reveal delay={200}>
+        {champion && (
+          <Reveal delay={100}>
             <div className="mt-8">
-              <MatchSpotlight match={spotlightMatch} isUpcoming={spotlightIsUpcoming} />
+              <ChampionPodium
+                champion={champion}
+                runnerUp={runnerUp}
+                third={thirdPlace}
+                topScorer={topScorersPreview[0] ?? null}
+              />
+            </div>
+          </Reveal>
+        )}
+
+        {!champion && spotlightMatches.length > 0 && (
+          <Reveal delay={200}>
+            <div className={`mt-8 grid gap-6 ${spotlightMatches.length > 1 ? "lg:grid-cols-2" : ""}`}>
+              {spotlightMatches.map((m) => (
+                <MatchSpotlight key={m.id} match={m} mode={spotlightMode} serverNow={now.getTime()} />
+              ))}
             </div>
           </Reveal>
         )}
@@ -303,6 +349,8 @@ export default async function G15WomensSeriesPage({
                     {listMatches.map((match) => {
                       const style = roundStyle(match.round);
                       const isFinished = match.status === "FINISHED" && match.homeScore != null && match.awayScore != null;
+                      const liveScore = hasLiveScore(match);
+                      const live = isLive(match, now);
                       return (
                         <Link
                           key={match.id}
@@ -330,6 +378,15 @@ export default async function G15WomensSeriesPage({
                                     {hasPenalties(match) ? `Pens ${match.homePenalty}-${match.awayPenalty}` : "Full time"}
                                   </span>
                                 </>
+                              ) : liveScore ? (
+                                <>
+                                  <span className="text-base font-extrabold tabular-nums text-red-600">
+                                    {match.homeScore}-{match.awayScore}
+                                  </span>
+                                  <LivePill />
+                                </>
+                              ) : live ? (
+                                <LivePill />
                               ) : (
                                 <span className="flex items-center gap-1 rounded-lg bg-slate-100 px-2 py-1 text-[11px] font-semibold text-slate-400">
                                   <Clock className="h-3 w-3" />
@@ -376,7 +433,7 @@ export default async function G15WomensSeriesPage({
                 </div>
                 {isNational ? (
                   nationalGroups.length > 0 ? (
-                    <NationalGroupTables groups={nationalGroups} formByTeamId={formByTeamId} columns={1} />
+                    <NationalGroupTables groups={nationalGroups} formByTeamId={formByTeamId} columns={1} live={liveGroupTable} />
                   ) : (
                     <p className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-10 text-center text-sm text-slate-400">
                       ยังไม่ได้จัดกลุ่ม
@@ -451,6 +508,14 @@ export default async function G15WomensSeriesPage({
                 </Link>
               </div>
               <PlayerLeaderboard title="ดาวซัลโว / Top Scorers" icon={<Trophy className="h-4 w-4" />} rows={topScorersPreview} />
+            </div>
+          </Reveal>
+        )}
+
+        {allStars.length > 0 && (
+          <Reveal delay={0}>
+            <div className="mx-auto mt-8 max-w-2xl">
+              <TeamOfRoundPitch picks={allStars} title="ทีมยอดเยี่ยมประจำรอบ / Team of the Round" />
             </div>
           </Reveal>
         )}

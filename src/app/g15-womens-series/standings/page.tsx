@@ -2,8 +2,10 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { getStandings, getRecentForm, getNationalStandings, getNationalBracket } from "@/lib/g15";
 import { REGION_STYLE, DEFAULT_REGION_STYLE, regionEn, groupStandingsByRegion } from "@/lib/g15-region";
-import { parseStage, isGroupRound } from "@/lib/g15-stage";
+import { parseStage, isGroupRound, isLive, hasLiveScore, projectLive } from "@/lib/g15-stage";
+import { AutoRefresh } from "@/components/g15/AutoRefresh";
 import { G15Chrome } from "@/components/g15/G15Chrome";
+import { HeroArt } from "@/components/g15/HeroArt";
 import { StandingTable } from "@/components/g15/StandingTable";
 import { StageSwitcher } from "@/components/g15/StageSwitcher";
 import { NationalGroupTables } from "@/components/g15/NationalGroupTables";
@@ -27,10 +29,12 @@ export default async function G15StandingsPage({
   return (
     <div className="min-h-screen bg-slate-50">
       <G15Chrome user={user} stage={stage} />
+      <AutoRefresh active={matches.some((m) => isLive(m))} />
 
       {/* ฮีโร่ไล่สีชุดเดียวกับหน้าอื่นๆ ของ G15 — เนื้อหาหลักลอยทับขอบล่างให้ภาษาภาพเป็นชุดเดียวกันทั้งเว็บ */}
-      <section className="relative overflow-hidden bg-linear-to-br from-g15-950 via-g15-800 to-g15-600 pb-20 pt-8 sm:pb-24">
+      <section className="relative isolate overflow-hidden bg-linear-to-br from-g15-950 via-g15-800 to-g15-600 pb-20 pt-8 sm:pb-24">
         <div className="absolute inset-x-0 top-0 h-1.5 animate-shimmer-slide bg-linear-to-r from-amber-600 via-amber-200 via-50% to-amber-600 bg-size-[200%_100%]" />
+        <HeroArt />
         <div className="mx-auto max-w-6xl px-6">
           <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-g15-200">
             <Trophy className="h-3.5 w-3.5" />
@@ -58,7 +62,9 @@ type Teams = Awaited<ReturnType<typeof prisma.g15Team.findMany>>;
 type Matches = Awaited<ReturnType<typeof prisma.g15Match.findMany>>;
 
 function NationalStandings({ teams, matches }: { teams: Teams; matches: Matches }) {
-  const groups = getNationalStandings(teams, matches);
+  // มีนัดรอบแบ่งกลุ่มกำลังแข่ง → ตารางคะแนนสด (นับสกอร์ปัจจุบันเหมือนจบแล้ว) ส่วนสายน็อกเอาต์ยังใช้ผลจริงเท่านั้น
+  const liveTable = matches.some((m) => isGroupRound(m.round) && hasLiveScore(m));
+  const groups = getNationalStandings(teams, liveTable ? projectLive(matches) : matches);
   const groupMatches = matches.filter((m) => isGroupRound(m.round));
   const formByTeamId = new Map(teams.map((t) => [t.id, getRecentForm(t.id, groupMatches)]));
   const ties = getNationalBracket(teams, matches);
@@ -76,7 +82,7 @@ function NationalStandings({ teams, matches }: { teams: Teams; matches: Matches 
   return (
     <div className="relative z-10 -mt-10 space-y-10 sm:-mt-14">
       <Reveal>
-        <NationalGroupTables groups={groups} formByTeamId={formByTeamId} />
+        <NationalGroupTables groups={groups} formByTeamId={formByTeamId} live={liveTable} />
       </Reveal>
       <Reveal>
         <section>

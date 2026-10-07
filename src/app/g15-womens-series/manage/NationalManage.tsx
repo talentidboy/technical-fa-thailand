@@ -17,6 +17,8 @@ import {
   isGroupRound,
   roundStyle,
   matchWinnerId,
+  isLive,
+  TEAM_OF_ROUND_SLOTS,
 } from "@/lib/g15-stage";
 import {
   updateMatchScore,
@@ -25,6 +27,7 @@ import {
   createMatch,
   saveNationalGroups,
   generateKnockoutMatches,
+  saveTeamOfRound,
 } from "./actions";
 import { QuickScoreRow } from "@/components/g15/QuickScoreRow";
 import { ActionForm } from "@/components/g15/ActionForm";
@@ -33,7 +36,8 @@ import { ModalTrigger } from "@/components/Modal";
 import { KnockoutBracket } from "@/components/g15/KnockoutBracket";
 import { TeamBadge } from "@/components/g15/TeamBadge";
 import { Field } from "@/components/FormField";
-import { Pencil, Trash2, CalendarDays, GitBranch, Users, Check, Trophy, ChevronRight, Plus, Wand2 } from "lucide-react";
+import { TeamOfRoundPitch } from "@/components/g15/TeamOfRoundPitch";
+import { Pencil, Trash2, CalendarDays, GitBranch, Users, Check, Trophy, ChevronRight, Plus, Wand2, Star } from "lucide-react";
 
 const BANGKOK_TZ = "Asia/Bangkok";
 const JAIFA_VENUES = [
@@ -64,14 +68,29 @@ function dayLabel(date: Date) {
 }
 
 export async function NationalManage() {
-  const [teams, matches] = await Promise.all([
+  const [teams, matches, allStars, nationalPlayers] = await Promise.all([
     prisma.g15Team.findMany({ orderBy: [{ groupName: "asc" }, { name: "asc" }] }),
     prisma.g15Match.findMany({
       where: { stage: "NATIONAL" },
       orderBy: [{ matchDate: "asc" }, { matchNo: "asc" }, { createdAt: "asc" }],
       include: { homeTeam: true, awayTeam: true },
     }),
+    prisma.g15AllStar.findMany({
+      where: { stage: "NATIONAL" },
+      include: {
+        player: {
+          select: { id: true, firstNameTh: true, lastNameTh: true, jerseyNumber: true, team: true },
+        },
+      },
+    }),
+    // ตัวเลือกทีมยอดเยี่ยมฯ — เฉพาะนักกีฬาของ 8 ทีมที่เข้ารอบ
+    prisma.g15Player.findMany({
+      where: { team: { nationalGroup: { not: null } } },
+      orderBy: [{ teamId: "asc" }, { jerseyNumber: { sort: "asc", nulls: "last" } }],
+      select: { id: true, teamId: true, firstNameTh: true, lastNameTh: true, jerseyNumber: true, position: true },
+    }),
   ]);
+  const allStarBySlot = new Map(allStars.map((a) => [a.slot, a.playerId]));
 
   const nationalTeams = teams
     .filter((t) => t.nationalGroup)
@@ -202,6 +221,7 @@ export async function NationalManage() {
         awayPenalty: m.awayPenalty,
         timeLabel: m.matchDate ? `${formatMatchTimeShort(m.matchDate)} · ${m.round}` : m.round,
         venueLabel: shortVenue(m.venue),
+        liveNow: isLive(m),
         homeTeam: m.homeTeam,
         awayTeam: m.awayTeam,
       }}
@@ -438,6 +458,60 @@ export async function NationalManage() {
             semisDecided
               ? "ผู้ชนะรอบรองฯ ไปชิงชนะเลิศ ผู้แพ้ไปชิงที่ 3"
               : "บันทึกผลรอบรองฯ ให้ได้ผู้ชนะก่อน (เสมอให้กรอกจุดโทษ) แล้วจึงสร้างนัดชิงได้",
+          )}
+        </div>
+      </section>
+
+      {/* ทีมยอดเยี่ยมประจำรอบ */}
+      <section className="space-y-4">
+        <div className="flex items-center gap-2">
+          <Star className="h-5 w-5 text-amber-500" />
+          <h2 className="text-lg font-bold text-slate-900">ทีมยอดเยี่ยมประจำรอบ</h2>
+        </div>
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <ActionForm action={saveTeamOfRound} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <input type="hidden" name="stage" value="NATIONAL" />
+            <p className="mb-4 text-xs text-slate-500">
+              เลือกนักกีฬาลงผัง 4-3-3 (เว้นว่างตำแหน่งที่ยังไม่ประกาศได้) — แสดงที่หน้าแรกและหน้าสถิติเมื่อเลือกแล้ว
+            </p>
+            <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+              {TEAM_OF_ROUND_SLOTS.map(({ slot, label, en }) => (
+                <label key={slot} className="flex items-center gap-2">
+                  <span className="w-20 flex-none text-xs font-semibold text-slate-600">
+                    {label}
+                    <span className="block text-[10px] font-normal text-slate-400">{en}</span>
+                  </span>
+                  <select name={`player_${slot}`} defaultValue={allStarBySlot.get(slot)?.toString() ?? ""} className={selectClass}>
+                    <option value="">— ว่าง —</option>
+                    {nationalTeams.map((t) => (
+                      <optgroup key={t.id} label={t.name}>
+                        {nationalPlayers
+                          .filter((p) => p.teamId === t.id)
+                          .map((p) => (
+                            <option key={p.id} value={p.id}>
+                              #{p.jerseyNumber ?? "-"} {p.firstNameTh} {p.lastNameTh}
+                              {p.position ? ` (${p.position})` : ""}
+                            </option>
+                          ))}
+                      </optgroup>
+                    ))}
+                  </select>
+                </label>
+              ))}
+            </div>
+            <button
+              type="submit"
+              className="mt-5 rounded-lg bg-emerald-600 px-5 py-2.5 text-sm font-medium text-white shadow-sm shadow-emerald-200 transition-colors hover:bg-emerald-700"
+            >
+              บันทึกทีมยอดเยี่ยม
+            </button>
+          </ActionForm>
+          {allStars.length > 0 ? (
+            <TeamOfRoundPitch picks={allStars} title="ตัวอย่างที่แสดงบนหน้าเว็บ" />
+          ) : (
+            <p className="flex items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-10 text-center text-sm text-slate-400">
+              ยังไม่ได้เลือก — หน้าเว็บจะยังไม่แสดงส่วนนี้
+            </p>
           )}
         </div>
       </section>

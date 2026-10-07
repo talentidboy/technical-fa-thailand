@@ -1,4 +1,5 @@
 import { Trophy } from "lucide-react";
+import { LivePill } from "./LivePill";
 import { StandingTable } from "./StandingTable";
 import { roundStyle, roundEn } from "@/lib/g15-stage";
 import type { StandingGroup } from "@/lib/g15";
@@ -8,13 +9,22 @@ export function NationalGroupTables({
   groups,
   formByTeamId,
   columns = 2,
+  live = false,
 }: {
   groups: StandingGroup[];
   formByTeamId?: Map<number, ("W" | "D" | "L")[]>;
   columns?: 1 | 2;
+  // ตารางคะแนนสด — groups คำนวณโดยนับนัดที่กำลังแข่งเหมือนจบตามสกอร์ปัจจุบัน (projectLive)
+  live?: boolean;
 }) {
   return (
     <div className="space-y-3">
+      {live && (
+        <div className="flex items-center gap-2 rounded-xl bg-red-50 px-4 py-2.5 text-xs font-medium text-red-700 ring-1 ring-red-200">
+          <LivePill />
+          ตารางคะแนนสด — ถ้าจบตามสกอร์ตอนนี้ / Live table: as it stands
+        </div>
+      )}
       <div className={`grid grid-cols-1 gap-6 ${columns === 2 ? "lg:grid-cols-2" : ""}`}>
         {groups.map((group) => {
           const style = roundStyle(group.groupName);

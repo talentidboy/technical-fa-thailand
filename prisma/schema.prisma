@@ -299,10 +299,25 @@ model G15Player {
   passportNumber String?   @map("passport_number")
   createdAt      DateTime  @default(now()) @map("created_at")
 
-  goals   G15Goal[]
-  lineups G15Lineup[]
+  goals    G15Goal[]
+  lineups  G15Lineup[]
+  allStars G15AllStar[]
 
   @@map("g15_players")
+}
+
+// ทีมยอดเยี่ยมประจำรอบ (Team of the Round) — แอดมินเลือกเอง 11 คนในผัง 4-3-3 แยกตามรอบ (stage)
+// slot: GK, DF1-DF4, MF1-MF3, FW1-FW3
+model G15AllStar {
+  id        Int       @id @default(autoincrement())
+  stage     String
+  slot      String
+  playerId  Int       @map("player_id")
+  player    G15Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  @@unique([stage, slot])
+  @@map("g15_all_stars")
 }
 
 // เจ้าหน้าที่ทีม (โค้ช/ผู้จัดการทีม ฯลฯ) ที่ขึ้นทะเบียนของแต่ละทีม — โครงสร้างเดียวกับ G15Player
@@ -328,7 +343,7 @@ model G15Official {
 }
 
 // นัดการแข่งขัน G15 Women's Football Series
-// status: SCHEDULED, FINISHED
+// status: SCHEDULED, LIVE (กำลังแข่ง — สกอร์ระหว่างเกม ยังไม่นับในตารางคะแนน), FINISHED
 // stage: REGIONAL (รอบภูมิภาค — round = ชื่อภาค), NATIONAL (รอบชิงแชมป์ประเทศ — round = กลุ่ม A/B, รอบรองฯ, ชิงที่ 3, ชิงชนะเลิศ)
 // สถิติทุกอย่าง (ตารางคะแนน/ดาวซัลโว/คลีนชีต ฯลฯ) นับแยกตาม stage เสมอ ไม่รวมข้ามรอบ
 model G15Match {

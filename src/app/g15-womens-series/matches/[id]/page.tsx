@@ -3,8 +3,22 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { formatMatchDateTime, formatMatchDateShort, getStandings, getNationalStandings, getRecentForm } from "@/lib/g15";
-import { roundStyle, roundEn, isGroupRound, hasPenalties, stageInfo, withStage, type G15Stage } from "@/lib/g15-stage";
+import {
+  roundStyle,
+  roundEn,
+  isGroupRound,
+  hasPenalties,
+  stageInfo,
+  withStage,
+  isLive,
+  hasLiveScore,
+  type G15Stage,
+} from "@/lib/g15-stage";
+import { LivePill } from "@/components/g15/LivePill";
+import { AutoRefresh } from "@/components/g15/AutoRefresh";
+import { ResultShareCard } from "@/components/g15/ResultShareCard";
 import { G15Chrome } from "@/components/g15/G15Chrome";
+import { HeroArt } from "@/components/g15/HeroArt";
 import { TeamBadge } from "@/components/g15/TeamBadge";
 import { FormPills } from "@/components/g15/StandingTable";
 import { Reveal } from "@/components/g15/Reveal";
@@ -66,6 +80,19 @@ export default async function G15MatchDetailPage({
 
   const canManage = user?.role === "ADMIN" || user?.role === "STAFF";
   const isFinished = match.status === "FINISHED" && match.homeScore != null && match.awayScore != null;
+  const live = isLive(match);
+  const liveScore = hasLiveScore(match);
+
+  // ผู้ทำประตูแต่ละฝั่งสำหรับภาพสรุปผล — รวมเป็น "ชื่อ 12', 45'" ต่อคน
+  const scorerLines = (teamId: number) => {
+    const byName = new Map<string, number[]>();
+    for (const g of match.goals) {
+      if (g.teamId !== teamId) continue;
+      if (!byName.has(g.playerName)) byName.set(g.playerName, []);
+      if (g.minute != null) byName.get(g.playerName)!.push(g.minute);
+    }
+    return Array.from(byName.entries()).map(([name, mins]) => `${name}${mins.length ? ` ${mins.map((m) => `${m}'`).join(", ")}` : ""}`);
+  };
   const style = roundStyle(match.round);
   const stage = match.stage as G15Stage;
 
@@ -112,10 +139,12 @@ export default async function G15MatchDetailPage({
   return (
     <div className="min-h-screen bg-slate-50">
       <G15Chrome user={user} stage={stage} />
+      <AutoRefresh active={live} />
 
       {/* ฮีโร่ไล่สีชุดเดียวกับหน้าแรก G15 — การ์ดสรุปนัดลอยทับขอบล่าง ให้ภาษาภาพเป็นชุดเดียวกันทั้งเว็บ */}
-      <section className="relative overflow-hidden bg-linear-to-br from-g15-950 via-g15-800 to-g15-600 pb-24 pt-6 sm:pb-32 sm:pt-8">
+      <section className="relative isolate overflow-hidden bg-linear-to-br from-g15-950 via-g15-800 to-g15-600 pb-24 pt-6 sm:pb-32 sm:pt-8">
         <div className="absolute inset-x-0 top-0 h-1.5 animate-shimmer-slide bg-linear-to-r from-amber-600 via-amber-200 via-50% to-amber-600 bg-size-[200%_100%]" />
+        <HeroArt />
         <div className="mx-auto max-w-4xl px-6">
           <nav className="flex flex-wrap items-center gap-1.5 text-xs text-g15-200">
             <Link href="/g15-womens-series" className="transition-colors hover:text-white">
@@ -141,9 +170,14 @@ export default async function G15MatchDetailPage({
           <div
             className={`overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl shadow-g15-950/20 ring-1 ${style.ring}`}
           >
-            <div className={`flex flex-wrap items-center justify-between gap-2 px-6 py-3 ${style.bg}`}>
+            <div className={`flex flex-wrap items-center justify-between gap-2 px-6 py-3 ${live ? "bg-red-600" : style.bg}`}>
               <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-xs font-bold uppercase tracking-widest text-white ring-1 ring-white/30">
-                {isFinished ? (
+                {live ? (
+                  <>
+                    <span className="h-2 w-2 animate-pulse rounded-full bg-white" />
+                    กำลังแข่ง / Live
+                  </>
+                ) : isFinished ? (
                   <>
                     <Trophy className="h-3.5 w-3.5" />
                     ผลการแข่งขัน / Final Result
@@ -161,6 +195,28 @@ export default async function G15MatchDetailPage({
                   {match.round}
                   {roundEn(match.round) && <span className="opacity-80"> / {roundEn(match.round)}</span>}
                 </span>
+                {/* ภาพสำหรับโพสต์โซเชียล — จบแล้ว = สรุปผล, ยังไม่แข่ง = โปสเตอร์วันแข่ง */}
+                {!live && (
+                  <ResultShareCard
+                    fileName={`g15-${match.matchNo != null ? `match${match.matchNo}` : `match-${match.id}`}-${isFinished ? "result" : "matchday"}.png`}
+                    data={{
+                      kind: isFinished ? "result" : "matchday",
+                      round: match.round,
+                      roundEn: roundEn(match.round),
+                      matchNo: match.matchNo,
+                      dateLabel: formatMatchDateTime(match.matchDate),
+                      venue: match.venue,
+                      homeTeam: { name: match.homeTeam.name, logoUrl: match.homeTeam.logoUrl },
+                      awayTeam: { name: match.awayTeam.name, logoUrl: match.awayTeam.logoUrl },
+                      homeScore: match.homeScore,
+                      awayScore: match.awayScore,
+                      homePenalty: match.homePenalty,
+                      awayPenalty: match.awayPenalty,
+                      homeScorers: scorerLines(match.homeTeamId),
+                      awayScorers: scorerLines(match.awayTeamId),
+                    }}
+                  />
+                )}
                 {canManage && (
                   <Link
                     href={`/g15-womens-series/manage/matches/${match.id}`}
@@ -187,6 +243,15 @@ export default async function G15MatchDetailPage({
                   <span className="rounded-2xl bg-slate-900 px-4 py-3 text-3xl font-extrabold tabular-nums text-white sm:px-6 sm:text-4xl">
                     {match.homeScore} - {match.awayScore}
                   </span>
+                ) : liveScore ? (
+                  <>
+                    <span className="rounded-2xl bg-red-600 px-4 py-3 text-3xl font-extrabold tabular-nums text-white sm:px-6 sm:text-4xl">
+                      {match.homeScore} - {match.awayScore}
+                    </span>
+                    <LivePill />
+                  </>
+                ) : live ? (
+                  <LivePill size="md" />
                 ) : (
                   <span className="rounded-2xl bg-slate-100 px-4 py-3 text-lg font-bold text-slate-400 sm:px-6 sm:text-xl">
                     VS
@@ -368,9 +433,12 @@ export default async function G15MatchDetailPage({
                                         <span className="w-7 flex-none text-center text-xs font-bold text-slate-400">
                                           #{l.player.jerseyNumber ?? "-"}
                                         </span>
-                                        <span className="min-w-0 flex-1 truncate">
+                                        <Link
+                                          href={`/g15-womens-series/players/${l.playerId}`}
+                                          className="min-w-0 flex-1 truncate hover:text-g15-600 hover:underline"
+                                        >
                                           {l.player.firstNameTh} {l.player.lastNameTh}
-                                        </span>
+                                        </Link>
                                         {l.isCaptain && (
                                           <span className="flex-none rounded-full bg-g15-50 px-1.5 py-0.5 text-[10px] font-bold text-g15-600">
                                             C
@@ -392,9 +460,12 @@ export default async function G15MatchDetailPage({
                                         <span className="w-7 flex-none text-center text-xs font-bold text-slate-400">
                                           #{l.player.jerseyNumber ?? "-"}
                                         </span>
-                                        <span className="min-w-0 flex-1 truncate">
+                                        <Link
+                                          href={`/g15-womens-series/players/${l.playerId}`}
+                                          className="min-w-0 flex-1 truncate hover:text-g15-600 hover:underline"
+                                        >
                                           {l.player.firstNameTh} {l.player.lastNameTh}
-                                        </span>
+                                        </Link>
                                       </li>
                                     ))}
                                   </ul>

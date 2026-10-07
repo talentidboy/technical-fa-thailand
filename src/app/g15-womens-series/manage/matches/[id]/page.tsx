@@ -23,7 +23,7 @@ import { GoalsBulkForm, SubstitutionsBulkForm, CardsBulkForm } from "@/component
 import { FormWithToast } from "@/components/g15/FormWithToast";
 import { QuickScoreRow } from "@/components/g15/QuickScoreRow";
 import { formatMatchDateTime } from "@/lib/g15";
-import { withStage, stageInfo, type G15Stage } from "@/lib/g15-stage";
+import { withStage, stageInfo, isLive, type G15Stage } from "@/lib/g15-stage";
 import { LOGO_URL } from "@/lib/brand";
 import { ArrowLeft, ClipboardList, Target, LogIn, Trash2, ChevronDown, ExternalLink, Users, Star } from "lucide-react";
 
@@ -328,6 +328,7 @@ export default async function G15ManageMatchPage({
               awayPenalty: match.awayPenalty,
               timeLabel: formatMatchDateTime(match.matchDate),
               venueLabel: match.venue,
+              liveNow: isLive(match),
               homeTeam: match.homeTeam,
               awayTeam: match.awayTeam,
             }}

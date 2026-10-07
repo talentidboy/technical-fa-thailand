@@ -4,7 +4,8 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { MapPin, Goal } from "lucide-react";
 import { TeamBadge } from "./TeamBadge";
-import { roundStyle, roundEn, hasPenalties } from "@/lib/g15-stage";
+import { roundStyle, roundEn, hasPenalties, isLive, hasLiveScore } from "@/lib/g15-stage";
+import { LivePill } from "./LivePill";
 
 type Team = { id: number; name: string; logoUrl: string | null; groupName: string | null };
 
@@ -76,13 +77,15 @@ function bangkokTimeLabel(date: Date) {
   });
 }
 
-function MatchRow({ match }: { match: Match }) {
+function MatchRow({ match, now }: { match: Match; now: Date }) {
   const isFinished = match.status === "FINISHED" && match.homeScore != null && match.awayScore != null;
   const pens = isFinished && hasPenalties(match);
   const homeWon = isFinished && (match.homeScore! > match.awayScore! || (pens && match.homePenalty! > match.awayPenalty!));
   const awayWon = isFinished && (match.awayScore! > match.homeScore! || (pens && match.awayPenalty! > match.homePenalty!));
-  const homeScorers = isFinished ? scorerSummary(match.goals, match.homeTeam.id) : null;
-  const awayScorers = isFinished ? scorerSummary(match.goals, match.awayTeam.id) : null;
+  const live = isLive(match, now);
+  const liveScore = hasLiveScore(match);
+  const homeScorers = isFinished || liveScore ? scorerSummary(match.goals, match.homeTeam.id) : null;
+  const awayScorers = isFinished || liveScore ? scorerSummary(match.goals, match.awayTeam.id) : null;
 
   return (
     <Link
@@ -117,6 +120,15 @@ function MatchRow({ match }: { match: Match }) {
                 Full time
               </span>
             </>
+          ) : liveScore ? (
+            <>
+              <span className="text-xl font-extrabold tabular-nums text-red-600 sm:text-2xl">
+                {match.homeScore} - {match.awayScore}
+              </span>
+              <LivePill />
+            </>
+          ) : live ? (
+            <LivePill size="md" />
           ) : (
             <span className="rounded-lg bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-400">VS</span>
           )}
@@ -298,7 +310,7 @@ export function PublicMatchesBoard({ matches, regionOrder }: { matches: Match[];
                 </div>
                 <div className="space-y-3">
                   {items.map((match) => (
-                    <MatchRow key={match.id} match={match} />
+                    <MatchRow key={match.id} match={match} now={now} />
                   ))}
                 </div>
               </div>

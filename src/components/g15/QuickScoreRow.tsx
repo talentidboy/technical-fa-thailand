@@ -2,8 +2,9 @@
 
 import { useActionState, useState, type ReactNode } from "react";
 import Link from "next/link";
-import { Check, AlertCircle, ChevronRight, Loader2, MapPin } from "lucide-react";
+import { Check, AlertCircle, ChevronRight, Loader2, MapPin, Radio } from "lucide-react";
 import { TeamBadge } from "./TeamBadge";
+import { LivePill } from "./LivePill";
 import { isKnockoutRound } from "@/lib/g15-stage";
 import type { ActionResult } from "@/app/g15-womens-series/manage/actions";
 
@@ -20,6 +21,8 @@ export type QuickScoreMatch = {
   awayPenalty: number | null;
   timeLabel: string;
   venueLabel: string | null;
+  // อยู่ในช่วงเวลาแข่งตามโปรแกรม (คำนวณฝั่งเซิร์ฟเวอร์) — โชว์ปุ่ม "อัปเดตสด" ให้กรอกสกอร์ระหว่างเกม
+  liveNow?: boolean;
   homeTeam: TeamLite;
   awayTeam: TeamLite;
 };
@@ -62,6 +65,9 @@ export function QuickScoreRow({
     away !== toStr(match.awayScore) ||
     (showPens && (homePen !== toStr(match.homePenalty) || awayPen !== toStr(match.awayPenalty)));
   const isFinished = match.status === "FINISHED";
+  const isLiveStatus = match.status === "LIVE";
+  const showLiveButton = isLiveStatus || !!match.liveNow;
+  const bothFilled = home !== "" && away !== "";
   // ช่องกรอกผูกกับฟอร์มด้วย attribute form= แทนการห่อทั้งแถวด้วย <form> — เพราะ extra (โมดัลแก้ไขนัด) มีฟอร์มของตัวเอง ห้ามซ้อนฟอร์ม
   const formId = `score-form-${match.id}`;
 
@@ -163,7 +169,10 @@ export function QuickScoreRow({
               </span>
             ) : null
           ) : (
-            !dirty && (
+            !dirty &&
+            (isLiveStatus ? (
+              <LivePill />
+            ) : (
               <span
                 className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${
                   isFinished ? "bg-emerald-50 text-emerald-600" : "bg-slate-100 text-slate-500"
@@ -171,20 +180,39 @@ export function QuickScoreRow({
               >
                 {isFinished ? "จบแล้ว" : "ยังไม่แข่ง"}
               </span>
-            )
+            ))
+          )}
+          {/* อัปเดตสด = สกอร์ระหว่างเกม (LIVE) ยังไม่นับในตารางคะแนน / บันทึกผลจบเกม = ผลทางการ (FINISHED) */}
+          {showLiveButton && (
+            <button
+              type="submit"
+              form={formId}
+              name="final"
+              value="0"
+              disabled={pending || !dirty || !bothFilled}
+              title="โชว์สกอร์สดบนหน้าเว็บ ยังไม่นับในตารางคะแนน"
+              className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold transition-colors ${
+                dirty && bothFilled ? "bg-red-600 text-white hover:bg-red-700" : "bg-slate-100 text-slate-400"
+              }`}
+            >
+              <Radio className="h-3.5 w-3.5" />
+              อัปเดตสด
+            </button>
           )}
           <button
             type="submit"
             form={formId}
-            disabled={pending || !dirty}
+            name="final"
+            value="1"
+            disabled={pending || !(dirty || isLiveStatus)}
             className={`inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-semibold transition-colors ${
-              dirty
+              dirty || isLiveStatus
                 ? "bg-emerald-600 text-white shadow-sm shadow-emerald-200 hover:bg-emerald-700"
                 : "bg-slate-100 text-slate-400"
             }`}
           >
             {pending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-            บันทึกผล
+            {showLiveButton ? "จบเกม" : "บันทึกผล"}
           </button>
           <Link
             href={detailsHref}

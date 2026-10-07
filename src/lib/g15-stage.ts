@@ -120,3 +120,43 @@ export function matchLoserId(m: ResultInput): number | null {
 export function hasPenalties(m: { homePenalty?: number | null; awayPenalty?: number | null }) {
   return m.homePenalty != null && m.awayPenalty != null;
 }
+
+// ===== กำลังแข่ง (LIVE) =====
+// 90 นาที + พักครึ่ง 15 นาที + ทดเวลา ≈ 2 ชั่วโมงนับจากเวลาเตะ
+export const LIVE_WINDOW_MS = 120 * 60 * 1000;
+
+type LiveInput = { status: string; matchDate: Date | null };
+
+// กำลังแข่ง = แอดมินกดอัปเดตสกอร์สด (status LIVE) หรือยังไม่มีผลแต่อยู่ในช่วงเวลาแข่งตามโปรแกรม
+export function isLive(m: LiveInput, now: Date = new Date()) {
+  if (m.status === "LIVE") return true;
+  if (m.status !== "SCHEDULED" || !m.matchDate) return false;
+  const kickoff = m.matchDate.getTime();
+  return now.getTime() >= kickoff && now.getTime() < kickoff + LIVE_WINDOW_MS;
+}
+
+// มีสกอร์ระหว่างเกมให้โชว์ (status LIVE + กรอกสกอร์แล้ว)
+export function hasLiveScore(m: { status: string; homeScore: number | null; awayScore: number | null }) {
+  return m.status === "LIVE" && m.homeScore != null && m.awayScore != null;
+}
+
+// ตารางคะแนนสด — นับนัดที่กำลังแข่งเหมือนจบตามสกอร์ปัจจุบัน ("ถ้าจบแบบนี้ ใครเข้ารอบ")
+export function projectLive<M extends { status: string; homeScore: number | null; awayScore: number | null }>(matches: M[]): M[] {
+  return matches.map((m) => (hasLiveScore(m) ? { ...m, status: "FINISHED" } : m));
+}
+
+// ===== ทีมยอดเยี่ยมประจำรอบ (Team of the Round) — ผัง 4-3-3 =====
+// line: 0 = ผู้รักษาประตู (แถวล่างสุดของสนาม) ... 3 = กองหน้า (แถวบนสุด)
+export const TEAM_OF_ROUND_SLOTS = [
+  { slot: "GK", line: 0, label: "ผู้รักษาประตู", en: "GK" },
+  { slot: "DF1", line: 1, label: "กองหลัง 1", en: "DF" },
+  { slot: "DF2", line: 1, label: "กองหลัง 2", en: "DF" },
+  { slot: "DF3", line: 1, label: "กองหลัง 3", en: "DF" },
+  { slot: "DF4", line: 1, label: "กองหลัง 4", en: "DF" },
+  { slot: "MF1", line: 2, label: "กองกลาง 1", en: "MF" },
+  { slot: "MF2", line: 2, label: "กองกลาง 2", en: "MF" },
+  { slot: "MF3", line: 2, label: "กองกลาง 3", en: "MF" },
+  { slot: "FW1", line: 3, label: "กองหน้า 1", en: "FW" },
+  { slot: "FW2", line: 3, label: "กองหน้า 2", en: "FW" },
+  { slot: "FW3", line: 3, label: "กองหน้า 3", en: "FW" },
+] as const;

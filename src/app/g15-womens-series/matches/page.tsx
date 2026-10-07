@@ -1,8 +1,10 @@
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { REGION_ORDER } from "@/lib/g15-region";
-import { parseStage, NATIONAL_ROUNDS } from "@/lib/g15-stage";
+import { parseStage, NATIONAL_ROUNDS, isLive } from "@/lib/g15-stage";
+import { AutoRefresh } from "@/components/g15/AutoRefresh";
 import { G15Chrome } from "@/components/g15/G15Chrome";
+import { HeroArt } from "@/components/g15/HeroArt";
 import { StageSwitcher } from "@/components/g15/StageSwitcher";
 import { PublicMatchesBoard } from "@/components/g15/PublicMatchesBoard";
 import { Reveal } from "@/components/g15/Reveal";
@@ -31,10 +33,12 @@ export default async function G15MatchesPage({
   return (
     <div className="min-h-screen bg-slate-50">
       <G15Chrome user={user} stage={stage} />
+      <AutoRefresh active={matches.some((m) => isLive(m))} />
 
       {/* ฮีโร่ไล่สีชุดเดียวกับหน้าอื่นๆ ของ G15 — เนื้อหาหลักลอยทับขอบล่างให้ภาษาภาพเป็นชุดเดียวกันทั้งเว็บ */}
-      <section className="relative overflow-hidden bg-linear-to-br from-g15-950 via-g15-800 to-g15-600 pb-20 pt-8 sm:pb-24">
+      <section className="relative isolate overflow-hidden bg-linear-to-br from-g15-950 via-g15-800 to-g15-600 pb-20 pt-8 sm:pb-24">
         <div className="absolute inset-x-0 top-0 h-1.5 animate-shimmer-slide bg-linear-to-r from-amber-600 via-amber-200 via-50% to-amber-600 bg-size-[200%_100%]" />
+        <HeroArt />
         <div className="mx-auto max-w-6xl px-6">
           <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-g15-200">
             <Calendar className="h-3.5 w-3.5" />
