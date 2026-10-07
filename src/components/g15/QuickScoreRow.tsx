@@ -32,7 +32,7 @@ const toStr = (n: number | null) => (n == null ? "" : String(n));
 const scoreInput =
   "h-11 w-12 rounded-xl border border-slate-200 bg-white text-center text-lg font-bold tabular-nums text-slate-900 focus:border-g15-400 focus:outline-none focus:ring-2 focus:ring-g15-100 sm:w-14";
 const penInput =
-  "h-8 w-10 rounded-lg border border-slate-200 bg-white text-center text-sm font-semibold tabular-nums text-slate-700 focus:border-g15-400 focus:outline-none focus:ring-2 focus:ring-g15-100";
+  "h-11 w-14 rounded-xl border border-amber-300 bg-amber-50 text-center text-sm font-semibold tabular-nums text-slate-700 placeholder:text-[10px] placeholder:text-amber-600 focus:border-g15-400 focus:outline-none focus:ring-2 focus:ring-g15-100 lg:h-9";
 
 // แถวนัดการแข่งขันที่กรอกสกอร์ได้ทันที — ไม่ต้องกดขยาย/เปิดฟอร์มแก้ไขก่อน (วันแข่งจริงแอดมินกรอกผลทีละนัดเร็วๆ)
 // ช่องจุดโทษโผล่เฉพาะนัดน็อกเอาต์ที่สกอร์เสมอกัน, ปุ่มบันทึกเด่นขึ้นเมื่อมีการแก้ไขที่ยังไม่ได้บันทึก
@@ -91,72 +91,75 @@ export function QuickScoreRow({
           )}
         </div>
 
-        {/* ทีม + ช่องสกอร์ */}
-        <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
-          <div className="flex min-w-0 flex-1 items-center justify-end gap-2 text-right">
-            <span className="min-w-0 truncate text-sm font-semibold text-slate-800">{match.homeTeam.name}</span>
+        {/* ทีม + ช่องสกอร์ — กริดเดียวจัด 2 แบบ:
+            โทรศัพท์/iPad: ทีมเรียงบน-ล่าง ช่องสกอร์ (และจุดโทษ) ชิดขวาของแต่ละทีม ชื่อยาวขึ้นได้ 2 บรรทัด ไม่ถูกตัดจนแยกไม่ออก
+            จอใหญ่ (lg): เหย้า [สกอร์] : [สกอร์] เยือน ในแถวเดียว จุดโทษอยู่ใต้ช่องสกอร์
+            ช่อง input มีชุดเดียว (ย้ายตำแหน่งด้วย col/row-start) — ห้ามทำซ้ำสองชุด ไม่งั้นฟอร์มจะส่งค่าซ้ำ */}
+        <div className="grid min-w-0 flex-1 grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-x-2 gap-y-2 lg:grid-cols-[minmax(0,1fr)_auto_auto_auto_minmax(0,1fr)] lg:gap-x-2.5">
+          <div className="col-start-1 row-start-1 flex min-w-0 flex-row-reverse items-center justify-end gap-2 lg:flex-row lg:justify-end lg:text-right">
+            <span className="line-clamp-2 min-w-0 text-sm font-semibold leading-snug text-slate-800">{match.homeTeam.name}</span>
             <TeamBadge team={match.homeTeam} size="sm" />
           </div>
-          <div className="flex flex-none flex-col items-center gap-1.5">
-            <div className="flex items-center gap-1.5">
-              <input
-                name="homeScore"
-                form={formId}
-                type="number"
-                min={0}
-                inputMode="numeric"
-                value={home}
-                onChange={(e) => setHome(e.target.value)}
-                aria-label={`สกอร์ ${match.homeTeam.name}`}
-                placeholder="-"
-                className={scoreInput}
-              />
-              <span className="font-bold text-slate-300">:</span>
-              <input
-                name="awayScore"
-                form={formId}
-                type="number"
-                min={0}
-                inputMode="numeric"
-                value={away}
-                onChange={(e) => setAway(e.target.value)}
-                aria-label={`สกอร์ ${match.awayTeam.name}`}
-                placeholder="-"
-                className={scoreInput}
-              />
-            </div>
-            {showPens && (
-              <div className="flex items-center gap-1.5 rounded-lg bg-amber-50 px-2 py-1">
-                <input
-                  name="homePenalty"
-                  form={formId}
-                  type="number"
-                  min={0}
-                  inputMode="numeric"
-                  value={homePen}
-                  onChange={(e) => setHomePen(e.target.value)}
-                  aria-label={`จุดโทษ ${match.homeTeam.name}`}
-                  className={penInput}
-                />
-                <span className="text-[10px] font-bold text-amber-700">จุดโทษ</span>
-                <input
-                  name="awayPenalty"
-                  form={formId}
-                  type="number"
-                  min={0}
-                  inputMode="numeric"
-                  value={awayPen}
-                  onChange={(e) => setAwayPen(e.target.value)}
-                  aria-label={`จุดโทษ ${match.awayTeam.name}`}
-                  className={penInput}
-                />
-              </div>
-            )}
-          </div>
-          <div className="flex min-w-0 flex-1 items-center gap-2">
+          <input
+            name="homeScore"
+            form={formId}
+            type="number"
+            min={0}
+            inputMode="numeric"
+            value={home}
+            onChange={(e) => setHome(e.target.value)}
+            aria-label={`สกอร์ ${match.homeTeam.name}`}
+            placeholder="-"
+            className={`${scoreInput} col-start-2 row-start-1`}
+          />
+          <span className="hidden font-bold text-slate-300 lg:col-start-3 lg:row-start-1 lg:block">:</span>
+          <input
+            name="awayScore"
+            form={formId}
+            type="number"
+            min={0}
+            inputMode="numeric"
+            value={away}
+            onChange={(e) => setAway(e.target.value)}
+            aria-label={`สกอร์ ${match.awayTeam.name}`}
+            placeholder="-"
+            className={`${scoreInput} col-start-2 row-start-2 lg:col-start-4 lg:row-start-1`}
+          />
+          <div className="col-start-1 row-start-2 flex min-w-0 items-center gap-2 lg:col-start-5 lg:row-start-1">
             <TeamBadge team={match.awayTeam} size="sm" />
-            <span className="min-w-0 truncate text-sm font-semibold text-slate-800">{match.awayTeam.name}</span>
+            <span className="line-clamp-2 min-w-0 text-sm font-semibold leading-snug text-slate-800">{match.awayTeam.name}</span>
           </div>
+          {showPens && (
+            <>
+              <input
+                name="homePenalty"
+                form={formId}
+                type="number"
+                min={0}
+                inputMode="numeric"
+                value={homePen}
+                onChange={(e) => setHomePen(e.target.value)}
+                aria-label={`จุดโทษ ${match.homeTeam.name}`}
+                placeholder="จุดโทษ"
+                className={`${penInput} col-start-3 row-start-1 lg:col-start-2 lg:row-start-2`}
+              />
+              <span className="hidden text-center text-[10px] font-bold text-amber-700 lg:col-start-3 lg:row-start-2 lg:block">
+                จุดโทษ
+              </span>
+              <input
+                name="awayPenalty"
+                form={formId}
+                type="number"
+                min={0}
+                inputMode="numeric"
+                value={awayPen}
+                onChange={(e) => setAwayPen(e.target.value)}
+                aria-label={`จุดโทษ ${match.awayTeam.name}`}
+                placeholder="จุดโทษ"
+                className={`${penInput} col-start-3 row-start-2 lg:col-start-4 lg:row-start-2`}
+              />
+            </>
+          )}
         </div>
 
         {/* สถานะ + ปุ่ม */}

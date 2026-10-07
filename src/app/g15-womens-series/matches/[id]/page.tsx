@@ -224,7 +224,7 @@ export default async function G15MatchDetailPage({
                 {canManage && (
                   <Link
                     href={`/g15-womens-series/manage/matches/${match.id}`}
-                    className="inline-flex items-center gap-1 rounded-full bg-white/15 px-2.5 py-1 text-[11px] font-medium text-white transition-colors hover:bg-white/25"
+                    className="inline-flex min-h-9 items-center gap-1 rounded-full bg-white/15 px-3 py-2 text-[11px] font-medium text-white transition-colors hover:bg-white/25"
                   >
                     <Settings className="h-3 w-3" />
                     จัดการข้อมูลนัดนี้

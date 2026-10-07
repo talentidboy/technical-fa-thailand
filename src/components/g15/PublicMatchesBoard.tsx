@@ -6,6 +6,7 @@ import { MapPin, Goal } from "lucide-react";
 import { TeamBadge } from "./TeamBadge";
 import { roundStyle, roundEn, hasPenalties, isLive, hasLiveScore } from "@/lib/g15-stage";
 import { LivePill } from "./LivePill";
+import { StackedTeams } from "./StackedTeams";
 
 type Team = { id: number; name: string; logoUrl: string | null; groupName: string | null };
 
@@ -92,7 +93,27 @@ function MatchRow({ match, now }: { match: Match; now: Date }) {
       href={`/g15-womens-series/matches/${match.id}`}
       className="block rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-colors hover:border-g15-200 hover:shadow-md sm:p-5"
     >
-      <div className="flex items-center gap-3 sm:gap-4">
+      {/* โทรศัพท์: เวลา/สถานะอยู่แถวบน ทีมเรียงบน-ล่างได้ความกว้างเต็มการ์ด ชื่อเต็มไม่ถูกตัด */}
+      <div className="sm:hidden">
+        <div className="mb-2.5 flex items-center gap-2 text-xs">
+          <span className="font-bold text-slate-900">{match.matchDate ? bangkokTimeLabel(match.matchDate) : "TBD"}</span>
+          {match.matchNo != null && <span className="text-slate-400">· นัด {match.matchNo}</span>}
+          <span className="ml-auto">
+            {isFinished ? (
+              <span className="rounded bg-g15-600 px-1.5 py-0.5 text-[10px] font-bold uppercase text-white">Full time</span>
+            ) : live ? (
+              <LivePill />
+            ) : null}
+          </span>
+        </div>
+        <StackedTeams
+          live={liveScore}
+          home={{ team: match.homeTeam, score: isFinished || liveScore ? match.homeScore : null, penalty: pens ? match.homePenalty : null, won: homeWon }}
+          away={{ team: match.awayTeam, score: isFinished || liveScore ? match.awayScore : null, penalty: pens ? match.awayPenalty : null, won: awayWon }}
+        />
+      </div>
+
+      <div className="hidden items-center gap-3 sm:flex sm:gap-4">
         <div className="w-12 flex-none text-sm font-bold text-slate-900 sm:w-14">
           {match.matchDate ? bangkokTimeLabel(match.matchDate) : "TBD"}
           {match.matchNo != null && (
@@ -143,12 +164,12 @@ function MatchRow({ match, now }: { match: Match; now: Date }) {
       {(homeScorers || awayScorers) && (
         <div className="mt-3 flex flex-col gap-1 border-t border-slate-100 pt-2.5 text-xs text-slate-500 sm:flex-row sm:items-center sm:justify-between">
           <span className="flex min-w-0 items-start justify-end gap-1 text-right">
-            <span className="min-w-0 truncate">{homeScorers}</span>
+            <span className="min-w-0 sm:truncate">{homeScorers}</span>
             {homeScorers && <Goal className="mt-0.5 h-3 w-3 flex-none text-slate-300" />}
           </span>
           <span className="flex min-w-0 items-start gap-1">
             {awayScorers && <Goal className="mt-0.5 h-3 w-3 flex-none text-slate-300" />}
-            <span className="min-w-0 truncate">{awayScorers}</span>
+            <span className="min-w-0 sm:truncate">{awayScorers}</span>
           </span>
         </div>
       )}
@@ -263,7 +284,7 @@ export function PublicMatchesBoard({ matches, regionOrder }: { matches: Match[];
           <button
             type="button"
             onClick={() => setSelectedRegion(null)}
-            className={`flex-none rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${
+            className={`flex-none rounded-full px-3.5 py-2 text-xs font-semibold transition-colors ${
               selectedRegion === null
                 ? "bg-slate-900 text-white"
                 : "border border-slate-200 bg-white text-slate-500 hover:bg-slate-50"
@@ -279,7 +300,7 @@ export function PublicMatchesBoard({ matches, regionOrder }: { matches: Match[];
                 key={region}
                 type="button"
                 onClick={() => setSelectedRegion(region)}
-                className={`flex-none rounded-full px-3 py-1.5 text-xs font-semibold text-white transition-opacity ${style.bg} ${
+                className={`flex-none rounded-full px-3.5 py-2 text-xs font-semibold text-white transition-opacity ${style.bg} ${
                   active ? "opacity-100 ring-2 ring-offset-1" : "opacity-40 hover:opacity-70"
                 }`}
               >

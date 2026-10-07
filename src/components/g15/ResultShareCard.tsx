@@ -86,7 +86,7 @@ export function ResultShareCard({ data, fileName }: { data: ShareCardData; fileN
         type="button"
         onClick={handleDownload}
         disabled={busy}
-        className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1.5 text-[11px] font-semibold text-white ring-1 ring-white/30 transition-colors hover:bg-white/25 disabled:opacity-60"
+        className="inline-flex min-h-9 items-center gap-1.5 rounded-full bg-white/15 px-3 py-2 text-[11px] font-semibold text-white ring-1 ring-white/30 transition-colors hover:bg-white/25 disabled:opacity-60"
       >
         {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
         {isResult ? "ภาพสรุปผล" : "โปสเตอร์วันแข่ง"}

@@ -34,7 +34,7 @@ export function StandingTable({
 }) {
   return (
     <div className="overflow-x-auto">
-      <table className="w-full min-w-90 text-left text-sm">
+      <table className="w-full text-left text-sm">
         <thead className="bg-slate-50 text-[11px] font-medium uppercase tracking-wide text-slate-500">
           <tr>
             <th className="w-10 px-3 py-2.5"></th>
@@ -88,10 +88,11 @@ export function StandingTable({
                     {rank}
                   </span>
                 </td>
-                <td className="max-w-30 px-2 py-2.5 md:max-w-44">
+                <td className="px-2 py-2.5">
                   <div className="flex items-center gap-2">
                     <TeamBadge team={{ name: row.teamName, logoUrl: row.logoUrl, groupName: row.groupName }} size="sm" />
-                    <span className="truncate font-medium text-slate-900">{row.teamName}</span>
+                    {/* ขึ้นบรรทัดใหม่ได้ (สูงสุด 2 บรรทัด) แทนการตัดชื่อ — หลายทีมขึ้นต้น "โรงเรียนกีฬาจังหวัด..." เหมือนกัน */}
+                    <span className="line-clamp-2 text-[13px] font-medium leading-snug text-slate-900 sm:text-sm">{row.teamName}</span>
                   </div>
                 </td>
                 <td className="px-2 py-2.5 text-center text-slate-500">{row.played}</td>

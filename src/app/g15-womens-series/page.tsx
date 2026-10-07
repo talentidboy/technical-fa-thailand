@@ -21,6 +21,7 @@ import {
   isLive,
   hasLiveScore,
   projectLive,
+  matchWinnerId,
 } from "@/lib/g15-stage";
 import { G15_HERO_BANNER_URL } from "@/lib/brand";
 import { G15Chrome } from "@/components/g15/G15Chrome";
@@ -33,6 +34,7 @@ import { KnockoutBracket } from "@/components/g15/KnockoutBracket";
 import { TeamOfRoundPitch } from "@/components/g15/TeamOfRoundPitch";
 import { ChampionPodium } from "@/components/g15/ChampionPodium";
 import { LivePill } from "@/components/g15/LivePill";
+import { StackedTeams } from "@/components/g15/StackedTeams";
 import { AutoRefresh } from "@/components/g15/AutoRefresh";
 import { MatchSpotlight } from "@/components/g15/MatchSpotlight";
 import { PlayerLeaderboard, type PlayerLeaderboardRow } from "@/components/g15/PlayerLeaderboard";
@@ -53,7 +55,6 @@ import {
   BarChart3,
   Sparkles,
   GitBranch,
-  Clock,
 } from "lucide-react";
 
 const highlights = [
@@ -216,8 +217,8 @@ export default async function G15WomensSeriesPage({
       </section>
 
       <div className="mx-auto max-w-6xl px-6 pb-20">
-        {/* จุดเด่นของรายการ — ลอยทับแค่ขอบล่างสุดของภาพ (โซนที่ไล่สีจนเกือบทึบแล้ว) ไม่ทับตัวอักษรในภาพ */}
-        <div className="relative z-10 -mt-8 grid grid-cols-1 gap-6 sm:-mt-10 sm:grid-cols-3">
+        {/* จุดเด่นของรายการ — ลอยทับแค่ขอบล่างสุดของภาพ ไม่ทับตัวอักษรในภาพ · ซ่อนบนโทรศัพท์ (3 ใบเต็มจอเกือบ 2 หน้าจอ กว่าจะถึงผลการแข่งขัน) */}
+        <div className="relative z-10 -mt-10 hidden grid-cols-3 gap-6 sm:grid">
           {highlights.map(({ icon: Icon, title, titleEn, description, descriptionEn }, i) => (
             <Reveal key={title} delay={i * 120}>
               <div className="group flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-6 shadow-xl shadow-g15-950/10 transition-all duration-300 hover:-translate-y-1.5 hover:shadow-2xl">
@@ -334,7 +335,7 @@ export default async function G15WomensSeriesPage({
                   </div>
                   <Link
                     href={href("/g15-womens-series/matches")}
-                    className="flex items-center gap-1 text-xs font-medium text-g15-600 hover:text-g15-700"
+                    className="-my-2 flex items-center gap-1 py-2 text-xs font-medium text-g15-600 hover:text-g15-700"
                   >
                     ดูทั้งหมด / View all
                     <ChevronRight className="h-3.5 w-3.5" />
@@ -351,55 +352,44 @@ export default async function G15WomensSeriesPage({
                       const isFinished = match.status === "FINISHED" && match.homeScore != null && match.awayScore != null;
                       const liveScore = hasLiveScore(match);
                       const live = isLive(match, now);
+                      const winnerId = matchWinnerId(match);
                       return (
                         <Link
                           key={match.id}
                           href={`/g15-womens-series/matches/${match.id}`}
                           className="block rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:border-g15-200 hover:shadow-md"
                         >
-                          <div className="flex items-center gap-3">
-                            <div className="w-12 flex-none text-xs">
-                              <p className="font-bold text-slate-900">{formatMatchDateShort(match.matchDate)}</p>
-                              <p className="text-slate-400">{formatMatchTimeShort(match.matchDate)}</p>
-                            </div>
-                            <div className="flex min-w-0 flex-1 items-center justify-end gap-2">
-                              <span className="min-w-0 truncate text-sm font-semibold text-slate-800">
-                                {match.homeTeam.name}
-                              </span>
-                              <TeamBadge team={match.homeTeam} size="sm" />
-                            </div>
-                            <div className="flex flex-none flex-col items-center gap-1 px-1">
+                          {/* ทีมเรียงบน-ล่าง ทุกขนาดจอ — คอลัมน์นี้กว้างแค่ครึ่งจอบนเดสก์ท็อป ชื่อทีมยาวจะได้ไม่ถูกตัด */}
+                          <div className="mb-2.5 flex items-center gap-2 text-xs">
+                            <span className="font-bold text-slate-900">{formatMatchDateShort(match.matchDate)}</span>
+                            <span className="text-slate-400">{formatMatchTimeShort(match.matchDate)}</span>
+                            <span className="ml-auto">
                               {isFinished ? (
-                                <>
-                                  <span className="text-base font-extrabold tabular-nums text-slate-900">
-                                    {match.homeScore}-{match.awayScore}
-                                  </span>
-                                  <span className="rounded bg-slate-900 px-1.5 py-0.5 text-[8px] font-bold uppercase text-white">
-                                    {hasPenalties(match) ? `Pens ${match.homePenalty}-${match.awayPenalty}` : "Full time"}
-                                  </span>
-                                </>
-                              ) : liveScore ? (
-                                <>
-                                  <span className="text-base font-extrabold tabular-nums text-red-600">
-                                    {match.homeScore}-{match.awayScore}
-                                  </span>
-                                  <LivePill />
-                                </>
+                                <span className="rounded bg-slate-900 px-1.5 py-0.5 text-[9px] font-bold uppercase text-white">
+                                  Full time
+                                </span>
                               ) : live ? (
                                 <LivePill />
-                              ) : (
-                                <span className="flex items-center gap-1 rounded-lg bg-slate-100 px-2 py-1 text-[11px] font-semibold text-slate-400">
-                                  <Clock className="h-3 w-3" />
-                                  VS
-                                </span>
-                              )}
-                            </div>
-                            <div className="flex min-w-0 flex-1 items-center gap-2">
-                              <TeamBadge team={match.awayTeam} size="sm" />
-                              <span className="min-w-0 truncate text-sm font-semibold text-slate-800">
-                                {match.awayTeam.name}
-                              </span>
-                            </div>
+                              ) : null}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <StackedTeams
+                              size="sm"
+                              live={liveScore}
+                              home={{
+                                team: match.homeTeam,
+                                score: isFinished || liveScore ? match.homeScore : null,
+                                penalty: isFinished && hasPenalties(match) ? match.homePenalty : null,
+                                won: winnerId === match.homeTeamId,
+                              }}
+                              away={{
+                                team: match.awayTeam,
+                                score: isFinished || liveScore ? match.awayScore : null,
+                                penalty: isFinished && hasPenalties(match) ? match.awayPenalty : null,
+                                won: winnerId === match.awayTeamId,
+                              }}
+                            />
                           </div>
                           <div className="mt-2.5 flex items-center gap-1.5 border-t border-slate-100 pt-2 text-[11px] text-slate-400">
                             <span className={`flex-none rounded-full px-1.5 py-0.5 text-[9px] font-bold text-white ${style.bg}`}>
@@ -425,7 +415,7 @@ export default async function G15WomensSeriesPage({
                   </div>
                   <Link
                     href={href("/g15-womens-series/standings")}
-                    className="flex items-center gap-1 text-xs font-medium text-g15-600 hover:text-g15-700"
+                    className="-my-2 flex items-center gap-1 py-2 text-xs font-medium text-g15-600 hover:text-g15-700"
                   >
                     ดูทั้งหมด / View all
                     <ChevronRight className="h-3.5 w-3.5" />
@@ -501,7 +491,7 @@ export default async function G15WomensSeriesPage({
               <div className="mb-4 flex justify-end">
                 <Link
                   href={href("/g15-womens-series/stats")}
-                  className="flex items-center gap-1 text-xs font-medium text-g15-600 hover:text-g15-700"
+                  className="-my-2 flex items-center gap-1 py-2 text-xs font-medium text-g15-600 hover:text-g15-700"
                 >
                   ดูทั้งหมด / View all
                   <ChevronRight className="h-3.5 w-3.5" />

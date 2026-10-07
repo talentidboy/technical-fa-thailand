@@ -11,7 +11,7 @@ function SideRow({ side, decided }: { side: BracketSide; decided: boolean }) {
       {side.team ? (
         <>
           <TeamBadge team={side.team} size="sm" />
-          <span className={`min-w-0 flex-1 truncate text-sm ${side.isWinner ? "font-bold text-slate-900" : dim ? "text-slate-400" : "font-medium text-slate-700"}`}>
+          <span className={`line-clamp-2 min-w-0 flex-1 text-sm leading-snug ${side.isWinner ? "font-bold text-slate-900" : dim ? "text-slate-400" : "font-medium text-slate-700"}`}>
             {side.team.name}
           </span>
         </>

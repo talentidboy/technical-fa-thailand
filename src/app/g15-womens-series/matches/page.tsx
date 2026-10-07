@@ -53,7 +53,7 @@ export default async function G15MatchesPage({
 
       <div className="mx-auto max-w-6xl px-6 pb-20">
         <Reveal>
-          <div className="relative z-10 -mt-10 rounded-3xl border border-slate-200 bg-white p-5 shadow-xl shadow-g15-950/10 sm:-mt-14 sm:p-6">
+          <div className="relative z-10 -mt-10 rounded-3xl border border-slate-200 bg-white p-3 shadow-xl shadow-g15-950/10 sm:-mt-14 sm:p-6">
             {/* key ตามรอบ — สลับรอบแล้วให้บอร์ดเลือกวันเริ่มต้นใหม่ ไม่ค้างวันที่ของอีกรอบ */}
             <PublicMatchesBoard
               key={stage}

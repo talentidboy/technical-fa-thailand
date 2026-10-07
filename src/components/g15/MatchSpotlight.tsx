@@ -75,7 +75,7 @@ export function MatchSpotlight({
         <div className="flex items-center justify-center gap-4 sm:gap-10">
           <div className="flex flex-1 flex-col items-center gap-3 text-center">
             <TeamBadge team={match.homeTeam} size="lg" />
-            <span className="max-w-28 truncate text-sm font-bold text-slate-900 sm:max-w-40 sm:text-base">
+            <span className="line-clamp-3 max-w-32 text-sm font-bold leading-snug text-slate-900 sm:max-w-48 sm:text-base">
               {match.homeTeam.name}
             </span>
           </div>
@@ -106,7 +106,7 @@ export function MatchSpotlight({
 
           <div className="flex flex-1 flex-col items-center gap-3 text-center">
             <TeamBadge team={match.awayTeam} size="lg" />
-            <span className="max-w-28 truncate text-sm font-bold text-slate-900 sm:max-w-40 sm:text-base">
+            <span className="line-clamp-3 max-w-32 text-sm font-bold leading-snug text-slate-900 sm:max-w-48 sm:text-base">
               {match.awayTeam.name}
             </span>
           </div>
