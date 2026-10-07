@@ -15,16 +15,28 @@ export type TeamWithCounts = {
   officialCount: number;
 };
 
-function TeamCard({ team }: { team: TeamWithCounts }) {
+// slot — ป้ายตำแหน่งในกลุ่ม (เช่น "A1") ใช้ในมุมมองรอบชิงแชมป์ประเทศ, subtitle — ข้อความรองใต้ชื่อทีม (เช่น ภาคที่เป็นตัวแทน)
+export function TeamCard({ team, slot, subtitle }: { team: TeamWithCounts; slot?: string; subtitle?: string }) {
   return (
     <Link
       href={`/g15-womens-series/teams/${team.id}`}
       className="group flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3.5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md"
     >
+      {slot && (
+        <span className="flex h-8 w-8 flex-none items-center justify-center rounded-lg bg-slate-900 text-xs font-extrabold text-white">
+          {slot}
+        </span>
+      )}
       <TeamBadge team={team} size="md" />
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-semibold text-slate-900">{team.name}</p>
         <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] text-slate-400">
+          {subtitle && (
+            <span className="flex items-center gap-1">
+              <MapPin className="h-3 w-3" />
+              {subtitle}
+            </span>
+          )}
           {team.playerCount > 0 && (
             <span className="flex items-center gap-1">
               <Users className="h-3 w-3" />

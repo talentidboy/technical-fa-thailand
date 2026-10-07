@@ -3,7 +3,14 @@
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth";
 import { saveUploadedPhoto } from "@/lib/upload";
-import { parseBangkokDateTimeLocal } from "@/lib/g15";
+import { parseBangkokDateTimeLocal, getNationalBracket } from "@/lib/g15";
+import {
+  NATIONAL_GROUPS,
+  NATIONAL_SEEDS,
+  NATIONAL_ROUNDS,
+  isKnockoutRound,
+  type G15Stage,
+} from "@/lib/g15-stage";
 import { revalidatePath } from "next/cache";
 
 async function requireAdminOrStaff() {
@@ -29,6 +36,19 @@ function revalidateG15(teamId?: number, matchId?: number) {
   if (matchId) {
     revalidatePath(`/g15-womens-series/matches/${matchId}`);
     revalidatePath(`/g15-womens-series/manage/matches/${matchId}`);
+  }
+}
+
+// ผลลัพธ์ของ action ที่ฟอร์มฝั่ง client แสดงข้อความเองได้ (ActionForm) — ใช้แทนการ throw สำหรับข้อผิดพลาดจากการกรอก
+// เพราะตอน production ข้อความใน Error ที่ throw จาก Server Action จะถูกซ่อน ผู้ใช้จะไม่รู้ว่าผิดตรงไหน
+export type ActionResult = { ok: true } | { ok: false; error: string };
+
+async function attempt(fn: () => Promise<void>): Promise<ActionResult> {
+  try {
+    await fn();
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : "บันทึกไม่สำเร็จ" };
   }
 }
 
@@ -129,9 +149,54 @@ export async function deleteTeam(formData: FormData) {
 
 // ===== นัดการแข่งขัน =====
 
+function stageOf(formData: FormData): G15Stage {
+  return String(formData.get("stage") ?? "") === "NATIONAL" ? "NATIONAL" : "REGIONAL";
+}
+
+// สกอร์ + จุดโทษจากฟอร์ม — เว้นว่างทั้งสองช่อง = ยังไม่แข่ง (SCHEDULED), กรอกครบ = จบแล้ว (FINISHED)
+// จุดโทษเก็บเฉพาะนัดน็อกเอาต์ที่เสมอในเวลาเท่านั้น นัดอื่นล้างทิ้งเสมอ กันค่าค้างจากการแก้สกอร์ทีหลัง
+function parseResult(formData: FormData, round: string) {
+  const homeScore = int(formData, "homeScore");
+  const awayScore = int(formData, "awayScore");
+  if ((homeScore == null) !== (awayScore == null)) {
+    throw new Error("กรุณากรอกสกอร์ให้ครบทั้งสองทีม (หรือเว้นว่างทั้งคู่ถ้ายังไม่แข่ง)");
+  }
+  if ((homeScore != null && homeScore < 0) || (awayScore != null && awayScore < 0)) {
+    throw new Error("สกอร์ต้องไม่ติดลบ");
+  }
+  const isDrawnKnockout = homeScore != null && homeScore === awayScore && isKnockoutRound(round);
+  const homePenalty = isDrawnKnockout ? int(formData, "homePenalty") : null;
+  const awayPenalty = isDrawnKnockout ? int(formData, "awayPenalty") : null;
+  if (isDrawnKnockout && homePenalty != null && homePenalty === awayPenalty) {
+    throw new Error("ผลดวลจุดโทษต้องมีผู้ชนะ");
+  }
+  return {
+    homeScore,
+    awayScore,
+    homePenalty: homePenalty != null && awayPenalty != null ? homePenalty : null,
+    awayPenalty: homePenalty != null && awayPenalty != null ? awayPenalty : null,
+    status: homeScore != null && awayScore != null ? "FINISHED" : "SCHEDULED",
+  };
+}
+
+// บันทึกผลอย่างเดียว (ช่องสกอร์ในแถวรายการนัดของหน้าจัดการ + หัวหน้ารายละเอียดนัด) — ไม่ต้องเปิดฟอร์มแก้ไขเต็ม
+export async function updateMatchScore(formData: FormData): Promise<ActionResult> {
+  await requireAdminOrStaff();
+  return attempt(async () => {
+    const id = Number(formData.get("id"));
+    const match = await prisma.g15Match.findUnique({ where: { id }, select: { round: true } });
+    if (!match) throw new Error("ไม่พบนัดการแข่งขัน");
+
+    await prisma.g15Match.update({ where: { id }, data: parseResult(formData, match.round) });
+
+    revalidateG15(undefined, id);
+  });
+}
+
 export async function createMatch(formData: FormData) {
   await requireAdminOrStaff();
 
+  const stage = stageOf(formData);
   const round = String(formData.get("round") ?? "").trim();
   const venue = String(formData.get("venue") ?? "").trim();
   const matchDateRaw = String(formData.get("matchDate") ?? "").trim();
@@ -144,9 +209,14 @@ export async function createMatch(formData: FormData) {
   if (homeTeamId === awayTeamId) {
     throw new Error("ทีมเหย้าและทีมเยือนต้องไม่ใช่ทีมเดียวกัน");
   }
+  if (stage === "NATIONAL" && !NATIONAL_ROUNDS.includes(round)) {
+    throw new Error("รอบการแข่งขันไม่ถูกต้อง");
+  }
 
   await prisma.g15Match.create({
     data: {
+      stage,
+      matchNo: int(formData, "matchNo"),
       round,
       venue: venue || null,
       matchDate: parseBangkokDateTimeLocal(matchDateRaw),
@@ -167,8 +237,6 @@ export async function updateMatch(formData: FormData) {
   const matchDateRaw = String(formData.get("matchDate") ?? "").trim();
   const homeTeamId = Number(formData.get("homeTeamId"));
   const awayTeamId = Number(formData.get("awayTeamId"));
-  const homeScoreRaw = String(formData.get("homeScore") ?? "").trim();
-  const awayScoreRaw = String(formData.get("awayScore") ?? "").trim();
 
   if (!round || !homeTeamId || !awayTeamId) {
     throw new Error("กรุณากรอกรอบการแข่งขันและเลือกทีมเหย้า/ทีมเยือน");
@@ -177,11 +245,8 @@ export async function updateMatch(formData: FormData) {
     throw new Error("ทีมเหย้าและทีมเยือนต้องไม่ใช่ทีมเดียวกัน");
   }
 
-  const homeScore = homeScoreRaw ? Number(homeScoreRaw) : null;
-  const awayScore = awayScoreRaw ? Number(awayScoreRaw) : null;
-  if ((homeScore != null && !Number.isFinite(homeScore)) || (awayScore != null && !Number.isFinite(awayScore))) {
-    throw new Error("กรุณากรอกผลการแข่งขันเป็นตัวเลข");
-  }
+  // ฟอร์มแก้ไขของรอบชิงแชมป์ประเทศไม่มีช่องสกอร์ (บันทึกผลผ่าน updateMatchScore แยก) — ไม่แตะสกอร์เดิมถ้าไม่ได้ส่งมา
+  const result = formData.has("homeScore") ? parseResult(formData, round) : {};
 
   await prisma.g15Match.update({
     where: { id },
@@ -191,9 +256,8 @@ export async function updateMatch(formData: FormData) {
       matchDate: parseBangkokDateTimeLocal(matchDateRaw),
       homeTeamId,
       awayTeamId,
-      homeScore,
-      awayScore,
-      status: homeScore != null && awayScore != null ? "FINISHED" : "SCHEDULED",
+      ...(formData.has("matchNo") ? { matchNo: int(formData, "matchNo") } : {}),
+      ...result,
     },
   });
 
@@ -205,6 +269,78 @@ export async function deleteMatch(formData: FormData) {
   const id = Number(formData.get("id"));
 
   await prisma.g15Match.delete({ where: { id } });
+
+  revalidateG15();
+}
+
+// ===== รอบชิงแชมป์ประเทศ =====
+
+// จัดกลุ่ม A/B (ช่อง slot_A_1 ... slot_B_4 = teamId) — บันทึกทั้งผังในครั้งเดียว แทนการไล่แก้ทีละทีม
+export async function saveNationalGroups(formData: FormData): Promise<ActionResult> {
+  await requireAdminOrStaff();
+  return attempt(() => saveNationalGroupsInner(formData));
+}
+
+async function saveNationalGroupsInner(formData: FormData) {
+  const assignments: { teamId: number; group: string; seed: number }[] = [];
+  for (const group of NATIONAL_GROUPS) {
+    for (const seed of NATIONAL_SEEDS) {
+      const teamId = int(formData, `slot_${group}_${seed}`);
+      if (teamId) assignments.push({ teamId, group, seed });
+    }
+  }
+  const ids = assignments.map((a) => a.teamId);
+  if (new Set(ids).size !== ids.length) {
+    throw new Error("มีทีมซ้ำกันในผังการแข่งขัน — แต่ละทีมอยู่ได้ตำแหน่งเดียว");
+  }
+
+  await prisma.$transaction([
+    prisma.g15Team.updateMany({ data: { nationalGroup: null, nationalSeed: null } }),
+    ...assignments.map((a) =>
+      prisma.g15Team.update({ where: { id: a.teamId }, data: { nationalGroup: a.group, nationalSeed: a.seed } }),
+    ),
+  ]);
+
+  revalidateG15();
+}
+
+// สร้างนัดน็อกเอาต์อัตโนมัติจากผลจริง — phase "SEMI" ใช้ที่ 1-2 ของแต่ละกลุ่ม, "FINAL" ใช้ผลรอบรองฯ (ชิงที่ 3 + ชิงชนะเลิศ)
+// สร้างเฉพาะคู่ที่รู้ทีมครบแล้วและยังไม่มีนัดในระบบ (กดซ้ำได้ ไม่สร้างนัดซ้ำ) — วัน/เวลา/สนามกรอกตอนนี้หรือแก้ทีหลังก็ได้
+export async function generateKnockoutMatches(formData: FormData): Promise<ActionResult> {
+  await requireAdminOrStaff();
+  return attempt(() => generateKnockoutMatchesInner(formData));
+}
+
+async function generateKnockoutMatchesInner(formData: FormData) {  const phase = String(formData.get("phase") ?? "");
+  const keys = phase === "SEMI" ? ["SF1", "SF2"] : phase === "FINAL" ? ["THIRD", "FINAL"] : [];
+  if (keys.length === 0) throw new Error("ไม่รู้จักรอบที่ต้องการสร้าง");
+
+  const [teams, matches] = await Promise.all([
+    prisma.g15Team.findMany(),
+    prisma.g15Match.findMany({ where: { stage: "NATIONAL" } }),
+  ]);
+  const ties = getNationalBracket(teams, matches).filter((t) => keys.includes(t.key));
+
+  const ready = ties.filter((t) => t.matchId == null && t.home.team && t.away.team);
+  if (ready.length === 0) {
+    throw new Error(
+      phase === "SEMI"
+        ? "ยังสร้างคู่รอบรองฯ ไม่ได้ — ต้องบันทึกผลรอบแบ่งกลุ่มให้ครบทุกนัดก่อน (หรือสร้างไว้แล้ว)"
+        : "ยังสร้างนัดชิงฯ ไม่ได้ — ต้องบันทึกผลรอบรองฯ ให้ได้ผู้ชนะทั้งสองคู่ก่อน (หรือสร้างไว้แล้ว)",
+    );
+  }
+
+  await prisma.g15Match.createMany({
+    data: ready.map((t) => ({
+      stage: "NATIONAL",
+      matchNo: t.matchNo,
+      round: t.round,
+      homeTeamId: t.home.team!.id,
+      awayTeamId: t.away.team!.id,
+      matchDate: parseBangkokDateTimeLocal(String(formData.get(`matchDate_${t.key}`) ?? "").trim()),
+      venue: str(formData, `venue_${t.key}`),
+    })),
+  });
 
   revalidateG15();
 }

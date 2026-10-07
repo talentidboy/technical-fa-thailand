@@ -1,6 +1,6 @@
 import { Trophy, Clock, Calendar, MapPin } from "lucide-react";
 import { TeamBadge } from "./TeamBadge";
-import { regionStyle, regionEn } from "@/lib/g15-region";
+import { roundStyle, roundEn, hasPenalties } from "@/lib/g15-stage";
 import { formatMatchDateTime } from "@/lib/g15";
 
 export type SpotlightMatch = {
@@ -11,13 +11,15 @@ export type SpotlightMatch = {
   awayTeam: { name: string; logoUrl: string | null; groupName: string | null };
   homeScore: number | null;
   awayScore: number | null;
+  homePenalty?: number | null;
+  awayPenalty?: number | null;
   status: string;
 };
 
 export function MatchSpotlight({ match, isUpcoming }: { match: SpotlightMatch; isUpcoming: boolean }) {
   const isFinished = match.status === "FINISHED" && match.homeScore != null && match.awayScore != null;
-  const style = regionStyle(match.round);
-  const regionEnLabel = regionEn(match.round);
+  const style = roundStyle(match.round);
+  const regionEnLabel = roundEn(match.round);
 
   return (
     <div className={`overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-lg ring-1 ${style.ring}`}>
@@ -52,9 +54,16 @@ export function MatchSpotlight({ match, isUpcoming }: { match: SpotlightMatch; i
 
           <div className="flex flex-none flex-col items-center">
             {isFinished ? (
-              <div className="rounded-2xl bg-slate-900 px-4 py-3 text-2xl font-extrabold tabular-nums text-white sm:px-6 sm:text-3xl">
-                {match.homeScore} - {match.awayScore}
-              </div>
+              <>
+                <div className="rounded-2xl bg-slate-900 px-4 py-3 text-2xl font-extrabold tabular-nums text-white sm:px-6 sm:text-3xl">
+                  {match.homeScore} - {match.awayScore}
+                </div>
+                {hasPenalties(match) && (
+                  <p className="mt-1.5 text-xs font-semibold text-slate-500">
+                    จุดโทษ {match.homePenalty}-{match.awayPenalty}
+                  </p>
+                )}
+              </>
             ) : (
               <div className="rounded-2xl bg-slate-100 px-4 py-3 text-lg font-bold text-slate-400 sm:px-6 sm:text-xl">
                 VS

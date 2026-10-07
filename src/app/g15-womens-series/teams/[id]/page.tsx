@@ -2,10 +2,11 @@ import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { getStandings, formatMatchDateTime } from "@/lib/g15";
+import { getStandings, getNationalStandings, formatMatchDateTime, type StandingRow } from "@/lib/g15";
 import { regionStyle, parseRegionGroup, regionEn } from "@/lib/g15-region";
+import { stageInfo, roundStyle, matchWinnerId, hasPenalties, type G15Stage } from "@/lib/g15-stage";
 import { LOGO_URL } from "@/lib/brand";
-import { ArrowLeft, MapPin, Calendar, Users, UserCog, ListOrdered } from "lucide-react";
+import { ArrowLeft, MapPin, Calendar, Users, UserCog, ListOrdered, Trophy } from "lucide-react";
 
 // หน้านี้เปิดให้ดูได้แบบสาธารณะไม่ต้องล็อกอิน — ต้องล็อกอินเฉพาะตอนจะ "จัดการข้อมูล" เท่านั้น
 export default async function G15TeamDetailPage({
@@ -62,21 +63,46 @@ export default async function G15TeamDetailPage({
     }),
   ]);
 
-  const standing = getStandings(allTeams, allMatchesForStandings)
-    .flatMap((g) => g.rows)
-    .find((r) => r.teamId === id);
-
-  // ฟอร์ม 5 นัดล่าสุด (W/D/L) ของทีมนี้ — allMatches เรียงจากล่าสุดไปเก่าสุด จึงหยิบ 5 ตัวแรกแล้วกลับลำดับให้อ่านซ้าย(เก่า)ไปขวา(ล่าสุด)
-  const recentForm = allMatches
-    .filter((m) => m.status === "FINISHED" && m.homeScore != null && m.awayScore != null)
-    .slice(0, 5)
-    .reverse()
-    .map((m) => {
-      const isHome = m.homeTeamId === id;
-      const gf = isHome ? m.homeScore! : m.awayScore!;
-      const ga = isHome ? m.awayScore! : m.homeScore!;
-      return gf > ga ? "W" : gf < ga ? "L" : "D";
+  // สถิติแยกตามรอบ — รอบชิงแชมป์ประเทศนับใหม่จากศูนย์ ไม่รวมผลรอบภูมิภาค
+  // รอบชิงแชมป์ประเทศใช้แถวจากตารางกลุ่ม (A/B) เพื่อโชว์อันดับในกลุ่มด้วย
+  const stageBlocks: { stage: G15Stage; title: string; standing: StandingRow | undefined; rank: number | null; form: ("W" | "D" | "L")[] }[] = [];
+  if (team.nationalGroup) {
+    const group = getNationalStandings(allTeams, allMatchesForStandings).find((g) => g.rows.some((r) => r.teamId === id));
+    const index = group?.rows.findIndex((r) => r.teamId === id) ?? -1;
+    stageBlocks.push({
+      stage: "NATIONAL",
+      title: `${stageInfo("NATIONAL").label} · ${group?.groupName ?? ""}`,
+      standing: index >= 0 ? group!.rows[index] : undefined,
+      rank: index >= 0 ? index + 1 : null,
+      form: formOf("NATIONAL"),
     });
+  }
+  stageBlocks.push({
+    stage: "REGIONAL",
+    title: `${stageInfo("REGIONAL").label}${team.groupName ? ` · ${team.groupName}` : ""}`,
+    standing: getStandings(
+      allTeams,
+      allMatchesForStandings.filter((m) => m.stage === "REGIONAL"),
+    )
+      .flatMap((g) => g.rows)
+      .find((r) => r.teamId === id),
+    rank: null,
+    form: formOf("REGIONAL"),
+  });
+
+  // ฟอร์ม 5 นัดล่าสุด (W/D/L) ของทีมนี้ในรอบนั้น — allMatches เรียงจากล่าสุดไปเก่าสุด จึงหยิบ 5 ตัวแรกแล้วกลับลำดับให้อ่านซ้าย(เก่า)ไปขวา(ล่าสุด)
+  function formOf(stage: G15Stage) {
+    return allMatches
+      .filter((m) => m.stage === stage && m.status === "FINISHED" && m.homeScore != null && m.awayScore != null)
+      .slice(0, 5)
+      .reverse()
+      .map((m) => {
+        const isHome = m.homeTeamId === id;
+        const gf = isHome ? m.homeScore! : m.awayScore!;
+        const ga = isHome ? m.awayScore! : m.homeScore!;
+        return gf > ga ? "W" : gf < ga ? "L" : "D";
+      });
+  }
 
   const parsed = parseRegionGroup(team.groupName);
   const style = regionStyle(parsed?.region ?? null);
@@ -145,74 +171,87 @@ export default async function G15TeamDetailPage({
             </div>
           </div>
 
-          {standing && (
-            <div className="grid grid-cols-3 gap-px bg-slate-100 sm:grid-cols-7">
-              {[
-                { label: "P", title: "แข่ง", value: standing.played },
-                { label: "W", title: "ชนะ", value: standing.won },
-                { label: "D", title: "เสมอ", value: standing.drawn },
-                { label: "L", title: "แพ้", value: standing.lost },
-                { label: "GF", title: "ได้", value: standing.goalsFor },
-                { label: "GA", title: "เสีย", value: standing.goalsAgainst },
-                { label: "Pts", title: "คะแนน", value: standing.points },
-              ].map((s) => (
-                <div key={s.label} className="bg-white px-3 py-4 text-center">
-                  <p className={`text-lg font-bold ${s.label === "Pts" ? "text-rose-600" : "text-slate-900"}`}>{s.value}</p>
-                  <p className="mt-0.5 text-[10px] uppercase tracking-wide text-slate-400" title={s.title}>
-                    {s.label}
-                  </p>
-                </div>
-              ))}
-            </div>
-          )}
+          {stageBlocks.map(({ stage: blockStage, title, standing, rank, form: recentForm }) => (
+            <div key={blockStage} className="border-t border-slate-100">
+              <div className="flex items-center gap-2 bg-slate-50 px-6 py-2.5">
+                <Trophy className={`h-3.5 w-3.5 ${blockStage === "NATIONAL" ? "text-rose-600" : "text-slate-400"}`} />
+                <p className="text-xs font-bold text-slate-700">{title}</p>
+                {rank != null && (
+                  <span className="ml-auto rounded-full bg-slate-900 px-2 py-0.5 text-[10px] font-bold text-white">
+                    อันดับ {rank} ในกลุ่ม
+                  </span>
+                )}
+              </div>
+            {standing && (
+              <div className="grid grid-cols-3 gap-px bg-slate-100 sm:grid-cols-7">
+                {[
+                  { label: "P", title: "แข่ง", value: standing.played },
+                  { label: "W", title: "ชนะ", value: standing.won },
+                  { label: "D", title: "เสมอ", value: standing.drawn },
+                  { label: "L", title: "แพ้", value: standing.lost },
+                  { label: "GF", title: "ได้", value: standing.goalsFor },
+                  { label: "GA", title: "เสีย", value: standing.goalsAgainst },
+                  { label: "Pts", title: "คะแนน", value: standing.points },
+                ].map((s) => (
+                  <div key={s.label} className="bg-white px-3 py-4 text-center">
+                    <p className={`text-lg font-bold ${s.label === "Pts" ? "text-rose-600" : "text-slate-900"}`}>{s.value}</p>
+                    <p className="mt-0.5 text-[10px] uppercase tracking-wide text-slate-400" title={s.title}>
+                      {s.label}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
 
-          {standing && standing.played > 0 && (
-            <div className="border-t border-slate-100 px-6 py-5">
-              <p className="mb-2.5 text-xs font-medium text-slate-500">
-                ฟอร์มการแข่งขัน / Form ({standing.played} นัด)
-              </p>
-              <div className="flex h-2.5 overflow-hidden rounded-full bg-slate-100">
-                {standing.won > 0 && (
-                  <div className="bg-emerald-500" style={{ width: `${(standing.won / standing.played) * 100}%` }} />
-                )}
-                {standing.drawn > 0 && (
-                  <div className="bg-amber-400" style={{ width: `${(standing.drawn / standing.played) * 100}%` }} />
-                )}
-                {standing.lost > 0 && (
-                  <div className="bg-red-400" style={{ width: `${(standing.lost / standing.played) * 100}%` }} />
-                )}
-              </div>
-              <div className="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
-                <span className="flex items-center gap-1.5 font-medium text-emerald-700">
-                  <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                  {Math.round((standing.won / standing.played) * 100)}% ชนะ / Won {standing.won}
-                </span>
-                <span className="flex items-center gap-1.5 font-medium text-amber-700">
-                  <span className="h-2 w-2 rounded-full bg-amber-400" />
-                  {Math.round((standing.drawn / standing.played) * 100)}% เสมอ / Drawn {standing.drawn}
-                </span>
-                <span className="flex items-center gap-1.5 font-medium text-red-600">
-                  <span className="h-2 w-2 rounded-full bg-red-400" />
-                  {Math.round((standing.lost / standing.played) * 100)}% แพ้ / Lost {standing.lost}
-                </span>
-              </div>
-              {recentForm.length > 0 && (
-                <div className="mt-3 flex items-center gap-1.5">
-                  <span className="text-xs text-slate-400">ฟอร์มล่าสุด / Recent form:</span>
-                  {recentForm.map((r, i) => (
-                    <span
-                      key={i}
-                      className={`flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold text-white ${
-                        r === "W" ? "bg-emerald-500" : r === "D" ? "bg-amber-400" : "bg-red-400"
-                      }`}
-                    >
-                      {r}
-                    </span>
-                  ))}
+            {standing && standing.played > 0 && (
+              <div className="border-t border-slate-100 px-6 py-5">
+                <p className="mb-2.5 text-xs font-medium text-slate-500">
+                  ฟอร์มการแข่งขัน / Form ({standing.played} นัด)
+                </p>
+                <div className="flex h-2.5 overflow-hidden rounded-full bg-slate-100">
+                  {standing.won > 0 && (
+                    <div className="bg-emerald-500" style={{ width: `${(standing.won / standing.played) * 100}%` }} />
+                  )}
+                  {standing.drawn > 0 && (
+                    <div className="bg-amber-400" style={{ width: `${(standing.drawn / standing.played) * 100}%` }} />
+                  )}
+                  {standing.lost > 0 && (
+                    <div className="bg-red-400" style={{ width: `${(standing.lost / standing.played) * 100}%` }} />
+                  )}
                 </div>
-              )}
+                <div className="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
+                  <span className="flex items-center gap-1.5 font-medium text-emerald-700">
+                    <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                    {Math.round((standing.won / standing.played) * 100)}% ชนะ / Won {standing.won}
+                  </span>
+                  <span className="flex items-center gap-1.5 font-medium text-amber-700">
+                    <span className="h-2 w-2 rounded-full bg-amber-400" />
+                    {Math.round((standing.drawn / standing.played) * 100)}% เสมอ / Drawn {standing.drawn}
+                  </span>
+                  <span className="flex items-center gap-1.5 font-medium text-red-600">
+                    <span className="h-2 w-2 rounded-full bg-red-400" />
+                    {Math.round((standing.lost / standing.played) * 100)}% แพ้ / Lost {standing.lost}
+                  </span>
+                </div>
+                {recentForm.length > 0 && (
+                  <div className="mt-3 flex items-center gap-1.5">
+                    <span className="text-xs text-slate-400">ฟอร์มล่าสุด / Recent form:</span>
+                    {recentForm.map((r, i) => (
+                      <span
+                        key={i}
+                        className={`flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold text-white ${
+                          r === "W" ? "bg-emerald-500" : r === "D" ? "bg-amber-400" : "bg-red-400"
+                        }`}
+                      >
+                        {r}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
             </div>
-          )}
+          ))}
         </div>
 
         {/* นักกีฬา */}
@@ -349,7 +388,18 @@ export default async function G15TeamDetailPage({
                   const isFinished = match.status === "FINISHED" && match.homeScore != null && match.awayScore != null;
                   const goalsFor = isFinished ? (isHome ? match.homeScore! : match.awayScore!) : null;
                   const goalsAgainst = isFinished ? (isHome ? match.awayScore! : match.homeScore!) : null;
-                  const outcome = isFinished ? (goalsFor! > goalsAgainst! ? "W" : goalsFor! < goalsAgainst! ? "L" : "D") : null;
+                  // ชนะ/แพ้จุดโทษในรอบน็อกเอาต์นับเป็นผลชนะ/แพ้ (ไม่ใช่เสมอ)
+                  const winnerId = matchWinnerId(match);
+                  const outcome = isFinished
+                    ? winnerId != null
+                      ? winnerId === id
+                        ? "W"
+                        : "L"
+                      : goalsFor === goalsAgainst
+                        ? "D"
+                        : null
+                    : null;
+                  const chip = roundStyle(match.round);
                   const outcomeBadge =
                     outcome === "W"
                       ? "bg-emerald-500"
@@ -380,6 +430,9 @@ export default async function G15TeamDetailPage({
                             {outcome}
                           </span>
                         )}
+                        <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold text-white ${chip.bg}`}>
+                          {match.round}
+                        </span>
                         <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-500">
                           {isHome ? "เหย้า / Home" : "เยือน / Away"}
                         </span>
@@ -387,6 +440,7 @@ export default async function G15TeamDetailPage({
                         {isFinished ? (
                           <span className={`rounded-lg px-2.5 py-1 text-xs font-bold text-white ${scorePill}`}>
                             {match.homeScore} - {match.awayScore}
+                            {hasPenalties(match) && ` (จุดโทษ ${match.homePenalty}-${match.awayPenalty})`}
                           </span>
                         ) : (
                           <span className="text-xs font-medium text-slate-400">ยังไม่แข่ง / Not played</span>

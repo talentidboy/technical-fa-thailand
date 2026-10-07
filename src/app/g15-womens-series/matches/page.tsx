@@ -1,15 +1,24 @@
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { REGION_ORDER } from "@/lib/g15-region";
+import { parseStage, NATIONAL_ROUNDS } from "@/lib/g15-stage";
 import { G15Chrome } from "@/components/g15/G15Chrome";
+import { StageSwitcher } from "@/components/g15/StageSwitcher";
 import { PublicMatchesBoard } from "@/components/g15/PublicMatchesBoard";
 import { Reveal } from "@/components/g15/Reveal";
 import { Calendar } from "lucide-react";
 
-export default async function G15MatchesPage() {
+export default async function G15MatchesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
+  const stage = parseStage((await searchParams).stage);
+
   const [user, matches] = await Promise.all([
     getCurrentUser(),
     prisma.g15Match.findMany({
+      where: { stage },
       orderBy: [{ matchDate: "asc" }, { createdAt: "asc" }],
       include: {
         homeTeam: true,
@@ -21,7 +30,7 @@ export default async function G15MatchesPage() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <G15Chrome user={user} />
+      <G15Chrome user={user} stage={stage} />
 
       {/* ฮีโร่ไล่สีชุดเดียวกับหน้าอื่นๆ ของ G15 — เนื้อหาหลักลอยทับขอบล่างให้ภาษาภาพเป็นชุดเดียวกันทั้งเว็บ */}
       <section className="relative overflow-hidden bg-linear-to-br from-rose-950 via-rose-900 to-fuchsia-800 pb-20 pt-8 sm:pb-24">
@@ -34,13 +43,19 @@ export default async function G15MatchesPage() {
           <h1 className="mt-1 text-2xl font-extrabold text-white sm:text-3xl">
             ตารางการแข่งขันและผลการแข่งขัน <span className="text-base font-normal text-rose-200">/ Matches &amp; Results</span>
           </h1>
+          <StageSwitcher stage={stage} basePath="/g15-womens-series/matches" />
         </div>
       </section>
 
       <div className="mx-auto max-w-6xl px-6 pb-20">
         <Reveal>
           <div className="relative z-10 -mt-10 rounded-3xl border border-slate-200 bg-white p-5 shadow-xl shadow-rose-950/10 sm:-mt-14 sm:p-6">
-            <PublicMatchesBoard matches={matches} regionOrder={REGION_ORDER} />
+            {/* key ตามรอบ — สลับรอบแล้วให้บอร์ดเลือกวันเริ่มต้นใหม่ ไม่ค้างวันที่ของอีกรอบ */}
+            <PublicMatchesBoard
+              key={stage}
+              matches={matches}
+              regionOrder={stage === "NATIONAL" ? NATIONAL_ROUNDS : REGION_ORDER}
+            />
           </div>
         </Reveal>
       </div>

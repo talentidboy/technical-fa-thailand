@@ -1,3 +1,17 @@
+import {
+  groupRound,
+  isGroupRound,
+  matchWinnerId,
+  matchLoserId,
+  ROUND_SEMI,
+  ROUND_THIRD,
+  ROUND_FINAL,
+  MATCH_NO_SEMI_1,
+  MATCH_NO_SEMI_2,
+  MATCH_NO_THIRD,
+  MATCH_NO_FINAL,
+} from "@/lib/g15-stage";
+
 // เซิร์ฟเวอร์ (Vercel) รันเวลา UTC แต่การแข่งขันทั้งหมดใช้เวลาไทย — ต้องระบุโซนเวลาให้ชัดเจนเสมอ
 // ไทยไม่มี daylight saving จึง offset +07:00 คงที่ ใช้แปลงตรงได้โดยไม่ต้องพึ่ง timezone database
 const BANGKOK_TZ = "Asia/Bangkok";
@@ -94,9 +108,13 @@ export type StandingGroup = {
 
 const UNGROUPED_LABEL = "อื่นๆ";
 
+// groupOf — กำหนดว่าทีมอยู่ตารางไหน (ค่าเริ่มต้น = groupName รอบภูมิภาค) รอบชิงแชมป์ประเทศส่ง "กลุ่ม A/B" แทน
+// ส่วน row.groupName ยังเป็นกลุ่มรอบภูมิภาคเสมอ เพราะ TeamBadge ใช้ค่านี้ระบายสีประจำภาค
+// ผู้เรียกต้องกรอง matches ให้เหลือเฉพาะ stage/รอบที่ต้องการเอง (เช่น ไม่ส่งนัดน็อกเอาต์มานับในตารางกลุ่ม)
 export function getStandings(
   teams: G15TeamInput[],
   matches: G15MatchInput[],
+  groupOf: (team: G15TeamInput) => string | null = (t) => t.groupName,
 ): StandingGroup[] {
   const rowByTeamId = new Map<number, StandingRow>();
   for (const team of teams) {
@@ -153,7 +171,7 @@ export function getStandings(
 
   const groupsByName = new Map<string, StandingRow[]>();
   for (const team of teams) {
-    const groupName = team.groupName?.trim() || UNGROUPED_LABEL;
+    const groupName = groupOf(team)?.trim() || UNGROUPED_LABEL;
     const row = rowByTeamId.get(team.id);
     if (!row) continue;
     if (!groupsByName.has(groupName)) groupsByName.set(groupName, []);
@@ -207,4 +225,128 @@ export function getRecentForm(teamId: number, matches: FormMatchInput[], limit =
       const ga = isHome ? m.awayScore! : m.homeScore!;
       return gf > ga ? "W" : gf < ga ? "L" : "D";
     });
+}
+
+// ===== รอบชิงแชมป์ประเทศ (National Round) =====
+
+export type NationalTeamInput = G15TeamInput & { nationalGroup: string | null; nationalSeed: number | null };
+
+export type NationalMatchInput = G15MatchInput & {
+  stage: string;
+  round: string;
+  matchNo: number | null;
+  homePenalty: number | null;
+  awayPenalty: number | null;
+};
+
+function nationalGroupMatches<M extends NationalMatchInput>(matches: M[]) {
+  return matches.filter((m) => m.stage === "NATIONAL" && isGroupRound(m.round));
+}
+
+// ตารางคะแนนกลุ่ม A/B — นับเฉพาะนัดรอบแบ่งกลุ่มของรอบชิงแชมป์ประเทศเท่านั้น (ผลรอบภูมิภาค/น็อกเอาต์ไม่เกี่ยว)
+export function getNationalStandings(teams: NationalTeamInput[], matches: NationalMatchInput[]): StandingGroup[] {
+  return getStandings(
+    teams.filter((t) => t.nationalGroup),
+    nationalGroupMatches(matches),
+    (t) => groupRound((t as NationalTeamInput).nationalGroup!),
+  );
+}
+
+// กลุ่มที่แข่งครบทุกนัดแล้ว — ถึงจะรู้ทีมที่ 1/2 แน่นอน (ก่อนหน้านั้นสายน็อกเอาต์แสดงเป็นป้าย "ที่ 1 กลุ่ม A" ไปก่อน)
+export function isGroupComplete(group: string, matches: NationalMatchInput[]) {
+  const round = groupRound(group);
+  const groupMatches = nationalGroupMatches(matches).filter((m) => m.round === round);
+  return groupMatches.length > 0 && groupMatches.every((m) => m.status === "FINISHED" && m.homeScore != null && m.awayScore != null);
+}
+
+export type BracketTeam = { id: number; name: string; logoUrl: string | null; groupName: string | null };
+
+export type BracketSide = {
+  placeholder: string;
+  placeholderEn: string;
+  team: BracketTeam | null;
+  score: number | null;
+  penalty: number | null;
+  isWinner: boolean;
+};
+
+export type BracketTie = {
+  key: "SF1" | "SF2" | "THIRD" | "FINAL";
+  matchNo: number;
+  round: string;
+  matchId: number | null;
+  matchDate: Date | null;
+  venue: string | null;
+  isFinished: boolean;
+  home: BracketSide;
+  away: BracketSide;
+};
+
+type BracketMatch = NationalMatchInput & { id: number; matchDate: Date | null; venue: string | null };
+
+// สายน็อกเอาต์ตามผังทางการ: นัด 13 = ที่ 1 กลุ่ม A พบ ที่ 2 กลุ่ม B, นัด 14 = ที่ 1 กลุ่ม B พบ ที่ 2 กลุ่ม A
+// ชิงที่ 3 = ผู้แพ้นัด 13 พบ ผู้แพ้นัด 14, ชิงชนะเลิศ = ผู้ชนะนัด 13 พบ ผู้ชนะนัด 14
+// ถ้ามีนัดจริงในระบบแล้ว (matchNo ตรง) ใช้ทีมจากนัดนั้นเลย ไม่งั้นคำนวณจากตารางคะแนน/ผลรอบก่อนหน้า (เฉพาะเมื่อรู้ผลแน่นอนแล้ว)
+export function getNationalBracket(
+  teams: (BracketTeam & { nationalGroup: string | null; nationalSeed: number | null })[],
+  matches: BracketMatch[],
+): BracketTie[] {
+  const national = matches.filter((m) => m.stage === "NATIONAL");
+  const teamById = new Map(teams.map((t) => [t.id, t]));
+  const standings = getNationalStandings(teams, national);
+  const rowsByGroup = new Map(standings.map((g) => [g.groupName, g.rows]));
+  const byNo = new Map(national.filter((m) => m.matchNo != null).map((m) => [m.matchNo!, m]));
+
+  const groupPos = (group: string, pos: number) => {
+    if (!isGroupComplete(group, national)) return null;
+    const row = rowsByGroup.get(groupRound(group))?.[pos - 1];
+    return row ? (teamById.get(row.teamId) ?? null) : null;
+  };
+  const resultOf = (matchNo: number, want: "winner" | "loser") => {
+    const m = byNo.get(matchNo);
+    if (!m) return null;
+    const id = want === "winner" ? matchWinnerId(m) : matchLoserId(m);
+    return id != null ? (teamById.get(id) ?? null) : null;
+  };
+
+  const build = (
+    key: BracketTie["key"],
+    matchNo: number,
+    round: string,
+    home: [string, string, BracketTeam | null],
+    away: [string, string, BracketTeam | null],
+  ): BracketTie => {
+    const m = byNo.get(matchNo) ?? null;
+    const winnerId = m ? matchWinnerId(m) : null;
+    const isFinished = !!m && m.status === "FINISHED" && m.homeScore != null && m.awayScore != null;
+    const side = ([placeholder, placeholderEn, fallback]: [string, string, BracketTeam | null], isHome: boolean): BracketSide => {
+      const team = m ? (teamById.get(isHome ? m.homeTeamId : m.awayTeamId) ?? null) : fallback;
+      return {
+        placeholder,
+        placeholderEn,
+        team,
+        score: m ? (isHome ? m.homeScore : m.awayScore) : null,
+        penalty: m ? (isHome ? m.homePenalty : m.awayPenalty) : null,
+        isWinner: winnerId != null && team?.id === winnerId,
+      };
+    };
+    return {
+      key,
+      matchNo,
+      round,
+      matchId: m?.id ?? null,
+      matchDate: m?.matchDate ?? null,
+      venue: m?.venue ?? null,
+      isFinished,
+      home: side(home, true),
+      away: side(away, false),
+    };
+  };
+
+  return [
+    build("SF1", MATCH_NO_SEMI_1, ROUND_SEMI, ["ที่ 1 กลุ่ม A", "Winner Group A", groupPos("A", 1)], ["ที่ 2 กลุ่ม B", "Runner-up Group B", groupPos("B", 2)]),
+    build("SF2", MATCH_NO_SEMI_2, ROUND_SEMI, ["ที่ 1 กลุ่ม B", "Winner Group B", groupPos("B", 1)], ["ที่ 2 กลุ่ม A", "Runner-up Group A", groupPos("A", 2)]),
+    build("THIRD", MATCH_NO_THIRD, ROUND_THIRD, ["ผู้แพ้นัดที่ 13", "Loser Match 13", resultOf(MATCH_NO_SEMI_1, "loser")], ["ผู้แพ้นัดที่ 14", "Loser Match 14", resultOf(MATCH_NO_SEMI_2, "loser")]),
+    build("FINAL", MATCH_NO_FINAL, ROUND_FINAL, ["ผู้ชนะนัดที่ 13", "Winner Match 13", resultOf(MATCH_NO_SEMI_1, "winner")], ["ผู้ชนะนัดที่ 14", "Winner Match 14", resultOf(MATCH_NO_SEMI_2, "winner")]),
+  ];
 }

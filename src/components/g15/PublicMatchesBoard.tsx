@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { MapPin, Goal } from "lucide-react";
 import { TeamBadge } from "./TeamBadge";
-import { REGION_STYLE, DEFAULT_REGION_STYLE, regionEn } from "@/lib/g15-region";
+import { roundStyle, roundEn, hasPenalties } from "@/lib/g15-stage";
 
 type Team = { id: number; name: string; logoUrl: string | null; groupName: string | null };
 
@@ -20,6 +20,9 @@ type Match = {
   homeScore: number | null;
   awayScore: number | null;
   status: string;
+  matchNo?: number | null;
+  homePenalty?: number | null;
+  awayPenalty?: number | null;
   goals: MatchGoal[];
 };
 
@@ -75,8 +78,9 @@ function bangkokTimeLabel(date: Date) {
 
 function MatchRow({ match }: { match: Match }) {
   const isFinished = match.status === "FINISHED" && match.homeScore != null && match.awayScore != null;
-  const homeWon = isFinished && match.homeScore! > match.awayScore!;
-  const awayWon = isFinished && match.awayScore! > match.homeScore!;
+  const pens = isFinished && hasPenalties(match);
+  const homeWon = isFinished && (match.homeScore! > match.awayScore! || (pens && match.homePenalty! > match.awayPenalty!));
+  const awayWon = isFinished && (match.awayScore! > match.homeScore! || (pens && match.awayPenalty! > match.homePenalty!));
   const homeScorers = isFinished ? scorerSummary(match.goals, match.homeTeam.id) : null;
   const awayScorers = isFinished ? scorerSummary(match.goals, match.awayTeam.id) : null;
 
@@ -88,6 +92,9 @@ function MatchRow({ match }: { match: Match }) {
       <div className="flex items-center gap-3 sm:gap-4">
         <div className="w-12 flex-none text-sm font-bold text-slate-900 sm:w-14">
           {match.matchDate ? bangkokTimeLabel(match.matchDate) : "TBD"}
+          {match.matchNo != null && (
+            <span className="block text-[10px] font-medium text-slate-400">นัด {match.matchNo}</span>
+          )}
         </div>
         <div className="flex min-w-0 flex-1 items-center justify-end gap-2 text-right">
           <span className={`truncate text-sm sm:text-base ${homeWon ? "font-bold text-slate-900" : "text-slate-600"}`}>
@@ -101,6 +108,11 @@ function MatchRow({ match }: { match: Match }) {
               <span className="text-xl font-extrabold tabular-nums text-slate-900 sm:text-2xl">
                 {match.homeScore} - {match.awayScore}
               </span>
+              {pens && (
+                <span className="text-[10px] font-semibold text-slate-500">
+                  จุดโทษ {match.homePenalty}-{match.awayPenalty}
+                </span>
+              )}
               <span className="rounded bg-rose-600 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white">
                 Full time
               </span>
@@ -248,7 +260,7 @@ export function PublicMatchesBoard({ matches, regionOrder }: { matches: Match[];
             ทั้งหมด
           </button>
           {availableRegions.map((region) => {
-            const style = REGION_STYLE[region] ?? DEFAULT_REGION_STYLE;
+            const style = roundStyle(region);
             const active = selectedRegion === region;
             return (
               <button
@@ -274,13 +286,13 @@ export function PublicMatchesBoard({ matches, regionOrder }: { matches: Match[];
       ) : (
         <div className="space-y-6">
           {grouped.map(({ round, items }) => {
-            const style = REGION_STYLE[round] ?? DEFAULT_REGION_STYLE;
+            const style = roundStyle(round);
             return (
               <div key={round}>
                 <div className="mb-2.5 flex items-center gap-2">
                   <span className={`h-2 w-2 flex-none rounded-full ${style.bg}`} />
                   <h3 className="text-sm font-bold uppercase tracking-wide text-slate-700">
-                    {round} <span className="font-normal normal-case text-slate-400">/ {regionEn(round)}</span>
+                    {round} <span className="font-normal normal-case text-slate-400">/ {roundEn(round)}</span>
                   </h3>
                   <span className="ml-auto flex-none text-xs text-slate-400">{items.length} นัด / matches</span>
                 </div>

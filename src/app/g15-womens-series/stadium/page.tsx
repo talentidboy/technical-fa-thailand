@@ -1,9 +1,11 @@
 import Link from "next/link";
+import Image from "next/image";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { formatMatchDateTime, formatMatchDateShort } from "@/lib/g15";
-import { REGION_STYLE, DEFAULT_REGION_STYLE } from "@/lib/g15-region";
+import { parseStage, roundStyle } from "@/lib/g15-stage";
 import { G15Chrome } from "@/components/g15/G15Chrome";
+import { StageSwitcher } from "@/components/g15/StageSwitcher";
 import { TeamBadge } from "@/components/g15/TeamBadge";
 import { Reveal } from "@/components/g15/Reveal";
 import { MapPin, Calendar, Trophy, Goal } from "lucide-react";
@@ -14,11 +16,17 @@ function bangkokDayKey(date: Date) {
   return new Intl.DateTimeFormat("en-CA", { timeZone: BANGKOK_TZ }).format(date);
 }
 
-export default async function G15StadiumPage() {
+export default async function G15StadiumPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
+  const stage = parseStage((await searchParams).stage);
+
   const [user, matches] = await Promise.all([
     getCurrentUser(),
     prisma.g15Match.findMany({
-      where: { venue: { not: null } },
+      where: { stage, venue: { not: null } },
       orderBy: [{ matchDate: "asc" }, { createdAt: "asc" }],
       include: { homeTeam: true, awayTeam: true },
     }),
@@ -37,7 +45,7 @@ export default async function G15StadiumPage() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <G15Chrome user={user} />
+      <G15Chrome user={user} stage={stage} />
 
       {/* ฮีโร่ไล่สีชุดเดียวกับหน้าอื่นๆ ของ G15 — เนื้อหาหลักลอยทับขอบล่างให้ภาษาภาพเป็นชุดเดียวกันทั้งเว็บ */}
       <section className="relative overflow-hidden bg-linear-to-br from-rose-950 via-rose-900 to-fuchsia-800 pb-20 pt-8 sm:pb-24">
@@ -50,6 +58,7 @@ export default async function G15StadiumPage() {
           <h1 className="mt-1 text-2xl font-extrabold text-white sm:text-3xl">
             สนามแข่งขัน <span className="text-base font-normal text-rose-200">/ Stadium</span>
           </h1>
+          <StageSwitcher stage={stage} basePath="/g15-womens-series/stadium" />
         </div>
       </section>
 
@@ -62,6 +71,26 @@ export default async function G15StadiumPage() {
           </div>
         ) : (
           <div className="relative z-10 -mt-10 space-y-6 sm:-mt-14">
+            {/* รอบชิงแชมป์ประเทศแข่งที่ใจฟ้าอคาเดมี่ที่เดียว — โชว์แผนผังศูนย์ฝึกให้ทีม/ผู้ชมหาสนามได้ง่าย */}
+            {stage === "NATIONAL" && (
+              <Reveal>
+                <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                  <div className="flex items-center gap-2 border-b border-slate-100 px-5 py-3">
+                    <MapPin className="h-4 w-4 text-rose-600" />
+                    <h3 className="text-sm font-semibold text-slate-900">
+                      แผนผังศูนย์ฝึกฟุตบอลใจฟ้าอคาเดมี่ <span className="font-normal text-slate-400">/ Jaifa Academy Map</span>
+                    </h3>
+                  </div>
+                  <Image
+                    src="/g15/jaifa-academy-map.jpg"
+                    alt="แผนผังศูนย์ฝึกฟุตบอลใจฟ้าอคาเดมี่ — สนาม ลานจอดรถ โรงแรม โซนขายอาหาร ห้องน้ำ และสำนักงาน"
+                    width={1920}
+                    height={1080}
+                    className="h-auto w-full"
+                  />
+                </div>
+              </Reveal>
+            )}
             {venues.map(([venue, venueMatches], venueIndex) => {
               const finished = venueMatches.filter((m) => m.status === "FINISHED" && m.homeScore != null && m.awayScore != null);
               const totalGoals = finished.reduce((s, m) => s + m.homeScore! + m.awayScore!, 0);
@@ -164,7 +193,7 @@ function VenueMatchRow({
   };
 }) {
   const isFinished = match.status === "FINISHED" && match.homeScore != null && match.awayScore != null;
-  const style = REGION_STYLE[match.round] ?? DEFAULT_REGION_STYLE;
+  const style = roundStyle(match.round);
   return (
     <li>
       <Link

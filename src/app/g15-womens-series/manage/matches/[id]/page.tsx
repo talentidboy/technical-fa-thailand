@@ -15,11 +15,15 @@ import {
   createCardsBulk,
   updateCard,
   deleteCard,
+  updateMatchScore,
 } from "../../actions";
 import { Field, SelectField } from "@/components/FormField";
 import { TeamBadge } from "@/components/g15/TeamBadge";
 import { GoalsBulkForm, SubstitutionsBulkForm, CardsBulkForm } from "@/components/g15/BulkStatForms";
 import { FormWithToast } from "@/components/g15/FormWithToast";
+import { QuickScoreRow } from "@/components/g15/QuickScoreRow";
+import { formatMatchDateTime } from "@/lib/g15";
+import { withStage, stageInfo, type G15Stage } from "@/lib/g15-stage";
 import { LOGO_URL } from "@/lib/brand";
 import { ArrowLeft, ClipboardList, Target, LogIn, Trash2, ChevronDown, ExternalLink, Users, Star } from "lucide-react";
 
@@ -218,6 +222,7 @@ export default async function G15ManageMatchPage({
   if (!match) notFound();
 
   const teamById = (teamId: number) => (teamId === match.homeTeamId ? match.homeTeam : match.awayTeam);
+  const manageHref = withStage("/g15-womens-series/manage", match.stage as G15Stage);
 
   const [rosterPlayers, rosterOfficials] = await Promise.all([
     prisma.g15Player.findMany({
@@ -260,7 +265,7 @@ export default async function G15ManageMatchPage({
     <div className="min-h-screen bg-slate-50">
       <header className="sticky top-0 z-20 border-b border-white/10 bg-indigo-950/80 backdrop-blur">
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-2 px-4 py-3 sm:gap-3 sm:px-6 sm:py-4">
-          <Link href="/g15-womens-series/manage" className="flex min-w-0 items-center gap-2">
+          <Link href={manageHref} className="flex min-w-0 items-center gap-2">
             <Image
               src={LOGO_URL}
               alt="FA Thailand"
@@ -274,7 +279,7 @@ export default async function G15ManageMatchPage({
             </div>
           </Link>
           <Link
-            href="/g15-womens-series/manage"
+            href={manageHref}
             className="inline-flex flex-none items-center gap-1.5 whitespace-nowrap rounded-lg border border-white/15 px-2.5 py-2 text-sm font-medium text-indigo-200 transition-colors hover:bg-white/10 hover:text-white sm:px-3"
           >
             <ArrowLeft className="h-4 w-4 flex-none" />
@@ -293,6 +298,7 @@ export default async function G15ManageMatchPage({
             <TeamBadge team={match.awayTeam} size="sm" />
           </div>
           <p className="mt-1 flex items-center gap-1.5 text-sm text-slate-500">
+            {stageInfo(match.stage as G15Stage).label} · {match.matchNo != null && `นัดที่ ${match.matchNo} · `}
             {match.round} · ไลน์อัพ ทีมงานผู้ตัดสิน ผู้ทำประตู เปลี่ยนตัว และใบเหลือง-ใบแดง ของนัดนี้
             <Link
               href={`/g15-womens-series/matches/${match.id}`}
@@ -302,6 +308,30 @@ export default async function G15ManageMatchPage({
               ดูหน้าสาธารณะ <ExternalLink className="h-3 w-3" />
             </Link>
           </p>
+        </div>
+
+        {/* ผลการแข่งขัน — กรอกได้จากหน้านี้เลย ไม่ต้องย้อนกลับไปหน้ารายการนัด */}
+        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <div className="border-b border-slate-100 px-6 py-3 text-sm font-semibold text-slate-900">ผลการแข่งขัน</div>
+          <QuickScoreRow
+            action={updateMatchScore}
+            detailsHref={`/g15-womens-series/matches/${match.id}`}
+            detailsLabel="ดูหน้าสาธารณะ"
+            match={{
+              id: match.id,
+              round: match.round,
+              matchNo: match.matchNo,
+              status: match.status,
+              homeScore: match.homeScore,
+              awayScore: match.awayScore,
+              homePenalty: match.homePenalty,
+              awayPenalty: match.awayPenalty,
+              timeLabel: formatMatchDateTime(match.matchDate),
+              venueLabel: match.venue,
+              homeTeam: match.homeTeam,
+              awayTeam: match.awayTeam,
+            }}
+          />
         </div>
 
         {/* ไลน์อัพ */}

@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { G15_IMAGE_URL } from "@/lib/brand";
+import { withStage, DEFAULT_STAGE, type G15Stage } from "@/lib/g15-stage";
 import { ArrowLeft, Settings, LogIn } from "lucide-react";
 
 const NAV_LINKS = [
@@ -16,7 +17,8 @@ const NAV_LINKS = [
 ];
 
 // โลโก้ + ชื่อ + เมนูนำทาง + ปุ่มจัดการ รวมอยู่ในแถบเดียวแบบเว็บทัวร์นาเมนต์ทั่วไป (ไม่แยกเป็นสองแถบซ้อนกัน)
-export function G15Chrome({ user }: { user: { role: string } | null }) {
+// stage — รอบที่กำลังดูอยู่ ลิงก์เมนูจะพารอบนั้นติดไปด้วย (ดูรอบภูมิภาคอยู่ กดไปหน้าสถิติก็ยังเป็นรอบภูมิภาค)
+export function G15Chrome({ user, stage = DEFAULT_STAGE }: { user: { role: string } | null; stage?: G15Stage }) {
   const pathname = usePathname();
   const canManage = user?.role === "ADMIN" || user?.role === "STAFF";
 
@@ -26,7 +28,7 @@ export function G15Chrome({ user }: { user: { role: string } | null }) {
       <div className="flex h-16 w-full items-center gap-2 px-3 sm:h-20 sm:gap-4 sm:px-5">
         {/* โลโก้ใหญ่กว่าความสูงของแถบเอง ชิดขอบบนของแถบ (self-start) ให้ส่วนเกินล้นออกด้านล่างเส้นทั้งหมด
             แทนที่จะกึ่งกลางแล้วครึ่งหนึ่งโดนตัดที่ขอบบนสุดของจอ (เพราะแถบนี้คือ element แรกสุดของหน้า) */}
-        <Link href="/g15-womens-series" className="flex flex-none items-center gap-2 self-start">
+        <Link href={withStage("/g15-womens-series", stage)} className="flex flex-none items-center gap-2 self-start">
           <Image
             src={G15_IMAGE_URL}
             alt="G15 Women's Football Series"
@@ -45,7 +47,7 @@ export function G15Chrome({ user }: { user: { role: string } | null }) {
             return (
               <Link
                 key={link.href}
-                href={link.href}
+                href={withStage(link.href, stage)}
                 className={`flex flex-none flex-col items-center gap-0.5 border-b-2 px-2.5 py-3 transition-colors sm:px-3 ${
                   active ? "border-amber-400 text-white" : "border-transparent text-rose-300 hover:text-white"
                 }`}
@@ -62,7 +64,7 @@ export function G15Chrome({ user }: { user: { role: string } | null }) {
         <div className="flex flex-none items-center gap-1.5">
           {canManage ? (
             <Link
-              href="/g15-womens-series/manage"
+              href={withStage("/g15-womens-series/manage", stage)}
               className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg border border-white/15 px-2.5 py-2 text-sm font-medium text-rose-200 transition-colors hover:bg-white/10 hover:text-white sm:px-3"
             >
               <Settings className="h-4 w-4 flex-none" />

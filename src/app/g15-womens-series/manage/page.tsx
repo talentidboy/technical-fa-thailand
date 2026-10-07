@@ -14,18 +14,84 @@ import { MatchStatusBoard } from "@/components/g15/MatchStatusBoard";
 import { TeamBadge } from "@/components/g15/TeamBadge";
 import { LogoPasteField } from "@/components/g15/LogoPasteField";
 import { MatchRegionFields } from "@/components/g15/MatchRegionFields";
+import { StageSwitcher } from "@/components/g15/StageSwitcher";
+import { parseStage, withStage, stageInfo } from "@/lib/g15-stage";
+import { NationalManage } from "./NationalManage";
 import { Trash2, ArrowLeft, MapPin, ChevronRight, ChevronDown, Flame } from "lucide-react";
 
-export default async function G15ManagePage() {
+export default async function G15ManagePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
   const currentUser = await getCurrentUser();
   if (!currentUser) redirect("/login");
   if (currentUser.role !== "ADMIN" && currentUser.role !== "STAFF") {
     redirect("/g15-womens-series");
   }
+  const stage = parseStage((await searchParams).stage);
 
+  return (
+    <ManageShell stage={stage}>
+      {stage === "NATIONAL" ? <NationalManage /> : <RegionalManage />}
+    </ManageShell>
+  );
+}
+
+function ManageShell({ stage, children }: { stage: ReturnType<typeof parseStage>; children: React.ReactNode }) {
+  return (
+    <div className="min-h-screen bg-slate-50">
+      <header className="sticky top-0 z-20 border-b border-white/10 bg-indigo-950/80 backdrop-blur">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-2 px-4 py-3 sm:gap-3 sm:px-6 sm:py-4">
+          <Link href={withStage("/g15-womens-series", stage)} className="flex min-w-0 items-center gap-2">
+            <Image
+              src={LOGO_URL}
+              alt="FA Thailand"
+              width={36}
+              height={36}
+              className="h-9 w-9 flex-none rounded-lg object-cover"
+            />
+            <div className="min-w-0">
+              <p className="truncate text-sm font-bold text-white">
+                FA Thailand Technical
+              </p>
+              <p className="truncate text-[11px] text-indigo-300">
+                จัดการข้อมูล G15 Women&apos;s Football Series
+              </p>
+            </div>
+          </Link>
+          <Link
+            href={withStage("/g15-womens-series", stage)}
+            className="inline-flex flex-none items-center gap-1.5 whitespace-nowrap rounded-lg border border-white/15 px-2.5 py-2 text-sm font-medium text-indigo-200 transition-colors hover:bg-white/10 hover:text-white sm:px-3"
+          >
+            <ArrowLeft className="h-4 w-4 flex-none" />
+            <span className="hidden sm:inline">กลับหน้า G15</span>
+          </Link>
+        </div>
+      </header>
+
+      <div className="mx-auto max-w-6xl space-y-6 px-4 py-8 sm:px-6 sm:py-10">
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900">จัดการข้อมูล G15</h1>
+            <p className="mt-1 text-sm text-slate-500">
+              {stageInfo(stage).label} — สถิติแต่ละรอบนับแยกกัน ทีมและรายชื่อนักกีฬาใช้ชุดเดียวกันทุกรอบ
+            </p>
+          </div>
+          <StageSwitcher stage={stage} basePath="/g15-womens-series/manage" variant="light" />
+        </div>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+// รอบภูมิภาค (จบแล้ว) — หน้าจัดการแบบเดิม: ทีมจัดตามภาค + นัดการแข่งขันจัดตามภาค
+async function RegionalManage() {
   const [teams, matches, playerCounts, officialCounts] = await Promise.all([
     prisma.g15Team.findMany({ orderBy: [{ groupName: "asc" }, { name: "asc" }] }),
     prisma.g15Match.findMany({
+      where: { stage: "REGIONAL" },
       orderBy: [{ matchDate: "desc" }, { createdAt: "asc" }],
       include: { homeTeam: true, awayTeam: true },
     }),
@@ -360,49 +426,5 @@ export default async function G15ManagePage() {
     </div>
   );
 
-  return (
-    <div className="min-h-screen bg-slate-50">
-      <header className="sticky top-0 z-20 border-b border-white/10 bg-indigo-950/80 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-2 px-4 py-3 sm:gap-3 sm:px-6 sm:py-4">
-          <Link href="/g15-womens-series" className="flex min-w-0 items-center gap-2">
-            <Image
-              src={LOGO_URL}
-              alt="FA Thailand"
-              width={36}
-              height={36}
-              className="h-9 w-9 flex-none rounded-lg object-cover"
-            />
-            <div className="min-w-0">
-              <p className="truncate text-sm font-bold text-white">
-                FA Thailand Technical
-              </p>
-              <p className="truncate text-[11px] text-indigo-300">
-                จัดการข้อมูล G15 Women&apos;s Football Series
-              </p>
-            </div>
-          </Link>
-          <Link
-            href="/g15-womens-series"
-            className="inline-flex flex-none items-center gap-1.5 whitespace-nowrap rounded-lg border border-white/15 px-2.5 py-2 text-sm font-medium text-indigo-200 transition-colors hover:bg-white/10 hover:text-white sm:px-3"
-          >
-            <ArrowLeft className="h-4 w-4 flex-none" />
-            <span className="hidden sm:inline">กลับหน้า G15</span>
-          </Link>
-        </div>
-      </header>
-
-      <div className="mx-auto max-w-6xl space-y-6 px-6 py-10">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">
-            จัดการข้อมูล G15 Women&apos;s Football Series
-          </h1>
-          <p className="mt-1 text-sm text-slate-500">
-            ทีม ({teams.length}) และนัดการแข่งขัน ({matches.length}) จัดกลุ่มตามภาคให้จัดการง่ายขึ้น — กดชื่อทีมเพื่อแก้ไขนักกีฬาและเจ้าหน้าที่
-          </p>
-        </div>
-
-        <ManageTabs teams={teamsContent} matches={matchesContent} />
-      </div>
-    </div>
-  );
+  return <ManageTabs teams={teamsContent} matches={matchesContent} />;
 }

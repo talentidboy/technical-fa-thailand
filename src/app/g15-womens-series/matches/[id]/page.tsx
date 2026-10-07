@@ -2,8 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
-import { formatMatchDateTime, formatMatchDateShort, getStandings, getRecentForm } from "@/lib/g15";
-import { regionStyle } from "@/lib/g15-region";
+import { formatMatchDateTime, formatMatchDateShort, getStandings, getNationalStandings, getRecentForm } from "@/lib/g15";
+import { roundStyle, roundEn, isGroupRound, hasPenalties, stageInfo, withStage, type G15Stage } from "@/lib/g15-stage";
 import { G15Chrome } from "@/components/g15/G15Chrome";
 import { TeamBadge } from "@/components/g15/TeamBadge";
 import { FormPills } from "@/components/g15/StandingTable";
@@ -66,7 +66,8 @@ export default async function G15MatchDetailPage({
 
   const canManage = user?.role === "ADMIN" || user?.role === "STAFF";
   const isFinished = match.status === "FINISHED" && match.homeScore != null && match.awayScore != null;
-  const style = regionStyle(match.round);
+  const style = roundStyle(match.round);
+  const stage = match.stage as G15Stage;
 
   const hasOfficials = OFFICIAL_ROLES.some((r) => match[r.key]);
   const hasHalfScores =
@@ -84,11 +85,16 @@ export default async function G15MatchDetailPage({
   const teamById = (teamId: number) => (teamId === match.homeTeamId ? match.homeTeam : match.awayTeam);
 
   // ข้อมูลก่อนแข่ง — ตำแหน่งตารางคะแนน + ฟอร์มล่าสุด ของทั้งสองทีม แสดงได้เสมอไม่ว่าจะมีใบรายงานผู้ตัดสินหรือยัง
-  const standingRows = getStandings(allTeams, allMatches).flatMap((g) => g.rows);
+  // นับเฉพาะรอบเดียวกับนัดนี้ — นัดรอบชิงแชมป์ประเทศใช้ตารางกลุ่ม A/B ไม่ใช่สถิติสะสมจากรอบภูมิภาค
+  const stageMatches = allMatches.filter((m) => m.stage === match.stage);
+  const standingRows = (
+    stage === "NATIONAL" ? getNationalStandings(allTeams, stageMatches) : getStandings(allTeams, stageMatches)
+  ).flatMap((g) => g.rows);
   const homeStanding = standingRows.find((r) => r.teamId === match.homeTeamId);
   const awayStanding = standingRows.find((r) => r.teamId === match.awayTeamId);
-  const homeForm = getRecentForm(match.homeTeamId, allMatches);
-  const awayForm = getRecentForm(match.awayTeamId, allMatches);
+  const formMatches = stage === "NATIONAL" ? stageMatches.filter((m) => isGroupRound(m.round)) : stageMatches;
+  const homeForm = getRecentForm(match.homeTeamId, formMatches);
+  const awayForm = getRecentForm(match.awayTeamId, formMatches);
 
   // พบกันล่าสุด — นัดอื่นๆ ระหว่างสองทีมนี้ (ไม่รวมนัดนี้เอง) ที่แข่งจบแล้ว เรียงล่าสุดก่อน
   const headToHead = allMatches
@@ -105,7 +111,7 @@ export default async function G15MatchDetailPage({
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <G15Chrome user={user} />
+      <G15Chrome user={user} stage={stage} />
 
       {/* ฮีโร่ไล่สีชุดเดียวกับหน้าแรก G15 — การ์ดสรุปนัดลอยทับขอบล่าง ให้ภาษาภาพเป็นชุดเดียวกันทั้งเว็บ */}
       <section className="relative overflow-hidden bg-linear-to-br from-rose-950 via-rose-900 to-fuchsia-800 pb-24 pt-6 sm:pb-32 sm:pt-8">
@@ -116,9 +122,11 @@ export default async function G15MatchDetailPage({
               G15 Women&apos;s Football Series
             </Link>
             <span className="text-rose-400/60">›</span>
-            <Link href="/g15-womens-series/matches" className="transition-colors hover:text-white">
+            <Link href={withStage("/g15-womens-series/matches", stage)} className="transition-colors hover:text-white">
               ตารางการแข่งขันและผลการแข่งขัน
             </Link>
+            <span className="text-rose-400/60">›</span>
+            <span>{stageInfo(stage).label}</span>
             <span className="text-rose-400/60">›</span>
             <span className="font-medium text-white">
               {match.homeTeam.name} vs {match.awayTeam.name}
@@ -148,7 +156,11 @@ export default async function G15MatchDetailPage({
                 )}
               </span>
               <div className="flex items-center gap-2">
-                <span className="text-xs font-medium text-white/85">{match.round}</span>
+                <span className="text-xs font-medium text-white/85">
+                  {match.matchNo != null && `นัดที่ ${match.matchNo} · `}
+                  {match.round}
+                  {roundEn(match.round) && <span className="opacity-80"> / {roundEn(match.round)}</span>}
+                </span>
                 {canManage && (
                   <Link
                     href={`/g15-womens-series/manage/matches/${match.id}`}
@@ -178,6 +190,11 @@ export default async function G15MatchDetailPage({
                 ) : (
                   <span className="rounded-2xl bg-slate-100 px-4 py-3 text-lg font-bold text-slate-400 sm:px-6 sm:text-xl">
                     VS
+                  </span>
+                )}
+                {isFinished && hasPenalties(match) && (
+                  <span className="text-xs font-semibold text-slate-500">
+                    ดวลจุดโทษ / Penalties {match.homePenalty} - {match.awayPenalty}
                   </span>
                 )}
                 {isFinished && (
@@ -286,7 +303,11 @@ export default async function G15MatchDetailPage({
                     const rightScore = sameOrientation ? m.awayScore : m.homeScore;
                     return (
                       <li key={m.id} className="flex items-center justify-between gap-3 px-5 py-3">
-                        <span className="flex-none text-xs text-slate-400">{formatMatchDateShort(m.matchDate)}</span>
+                        {/* พบกันล่าสุดดูข้ามรอบได้ (เคยเจอกันในรอบภูมิภาค) — จึงบอกรอบกำกับไว้ด้วย */}
+                        <span className="flex-none text-xs text-slate-400">
+                          {formatMatchDateShort(m.matchDate)}
+                          <span className="block text-[10px] text-slate-300">{m.round}</span>
+                        </span>
                         <div className="flex flex-1 items-center justify-end gap-2 text-right">
                           <span className="min-w-0 truncate text-sm text-slate-700">{leftTeam.name}</span>
                           <TeamBadge team={leftTeam} size="sm" />

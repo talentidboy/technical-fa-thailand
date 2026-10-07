@@ -25,9 +25,12 @@ export function FormPills({ results, size = "sm" }: { results: ("W" | "D" | "L")
 export function StandingTable({
   group,
   formByTeamId,
+  qualifyCount,
 }: {
   group: StandingGroup;
   formByTeamId?: Map<number, ("W" | "D" | "L")[]>;
+  // ไฮไลต์ N อันดับแรกที่ได้ผ่านเข้ารอบถัดไป (รอบชิงแชมป์ประเทศ: ที่ 1-2 ของกลุ่มเข้ารอบรองฯ)
+  qualifyCount?: number;
 }) {
   return (
     <div className="overflow-x-auto">
@@ -75,8 +78,10 @@ export function StandingTable({
                     ? "bg-orange-300 text-orange-950"
                     : "bg-slate-100 text-slate-400";
             return (
-              <tr key={row.teamId}>
-                <td className="px-3 py-2.5">
+              <tr key={row.teamId} className={qualifyCount && rank <= qualifyCount ? "bg-emerald-50/50" : undefined}>
+                <td
+                  className={`px-3 py-2.5 ${qualifyCount && rank <= qualifyCount ? "border-l-[3px] border-emerald-500" : qualifyCount ? "border-l-[3px] border-transparent" : ""}`}
+                >
                   <span
                     className={`flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-bold ${badge}`}
                   >

@@ -1,0 +1,122 @@
+import { REGION_STYLE, DEFAULT_REGION_STYLE, REGION_EN } from "@/lib/g15-region";
+
+// ทัวร์นาเมนต์มี 2 ช่วง — รอบภูมิภาค (จบแล้ว) และรอบชิงแชมป์ประเทศ (National Round)
+// ทุกหน้าที่คำนวณสถิติต้องกรองตาม stage เสมอ เพื่อให้รอบชิงแชมป์ประเทศเริ่มนับใหม่จากศูนย์ ไม่ปนกับรอบภูมิภาค
+export type G15Stage = "REGIONAL" | "NATIONAL";
+
+export const STAGES: { key: G15Stage; param: string; label: string; en: string }[] = [
+  { key: "NATIONAL", param: "national", label: "รอบชิงแชมป์ประเทศ", en: "National Round" },
+  { key: "REGIONAL", param: "regional", label: "รอบภูมิภาค", en: "Regional Round" },
+];
+
+export const DEFAULT_STAGE: G15Stage = "NATIONAL";
+
+// อ่านค่า ?stage= จาก URL — ค่าอื่นๆ/ไม่ระบุ ถือเป็นรอบปัจจุบัน (รอบชิงแชมป์ประเทศ)
+export function parseStage(value: string | string[] | undefined): G15Stage {
+  const v = Array.isArray(value) ? value[0] : value;
+  return STAGES.find((s) => s.param === v)?.key ?? DEFAULT_STAGE;
+}
+
+export function stageInfo(stage: G15Stage) {
+  return STAGES.find((s) => s.key === stage)!;
+}
+
+// ต่อ ?stage= ให้ลิงก์ภายในเว็บ — รอบปัจจุบันไม่ต้องใส่ เพื่อให้ URL สั้นและเป็นค่าเริ่มต้น
+export function withStage(href: string, stage: G15Stage) {
+  if (stage === DEFAULT_STAGE) return href;
+  return `${href}${href.includes("?") ? "&" : "?"}stage=${stageInfo(stage).param}`;
+}
+
+// ===== รอบชิงแชมป์ประเทศ =====
+
+export const NATIONAL_GROUPS = ["A", "B"] as const;
+export const NATIONAL_SEEDS = [1, 2, 3, 4] as const;
+
+export const ROUND_GROUP_A = "กลุ่ม A";
+export const ROUND_GROUP_B = "กลุ่ม B";
+export const ROUND_SEMI = "รอบรองชนะเลิศ";
+export const ROUND_THIRD = "ชิงอันดับที่ 3";
+export const ROUND_FINAL = "ชิงชนะเลิศ";
+
+export const NATIONAL_ROUNDS = [ROUND_GROUP_A, ROUND_GROUP_B, ROUND_SEMI, ROUND_THIRD, ROUND_FINAL];
+export const KNOCKOUT_ROUNDS = [ROUND_SEMI, ROUND_THIRD, ROUND_FINAL];
+
+export function groupRound(group: string) {
+  return `กลุ่ม ${group}`;
+}
+
+export function isGroupRound(round: string) {
+  return round === ROUND_GROUP_A || round === ROUND_GROUP_B;
+}
+
+export function isKnockoutRound(round: string) {
+  return KNOCKOUT_ROUNDS.includes(round);
+}
+
+// เลขนัดตามผังทางการ — รอบแบ่งกลุ่มคือ 1-12 แล้วต่อด้วยน็อกเอาต์
+export const MATCH_NO_SEMI_1 = 13;
+export const MATCH_NO_SEMI_2 = 14;
+export const MATCH_NO_THIRD = 15;
+export const MATCH_NO_FINAL = 16;
+
+type RoundStyle = { bg: string; text: string; light: string; ring: string };
+
+const NATIONAL_ROUND_STYLE: Record<string, RoundStyle> = {
+  [ROUND_GROUP_A]: { bg: "bg-indigo-600", text: "text-indigo-700", light: "bg-indigo-50", ring: "ring-indigo-400/30" },
+  [ROUND_GROUP_B]: { bg: "bg-fuchsia-600", text: "text-fuchsia-700", light: "bg-fuchsia-50", ring: "ring-fuchsia-400/30" },
+  [ROUND_SEMI]: { bg: "bg-orange-500", text: "text-orange-700", light: "bg-orange-50", ring: "ring-orange-400/30" },
+  [ROUND_THIRD]: { bg: "bg-amber-600", text: "text-amber-700", light: "bg-amber-50", ring: "ring-amber-400/30" },
+  [ROUND_FINAL]: { bg: "bg-rose-600", text: "text-rose-700", light: "bg-rose-50", ring: "ring-rose-400/30" },
+};
+
+const NATIONAL_ROUND_EN: Record<string, string> = {
+  [ROUND_GROUP_A]: "Group A",
+  [ROUND_GROUP_B]: "Group B",
+  [ROUND_SEMI]: "Semi-final",
+  [ROUND_THIRD]: "3rd Place",
+  [ROUND_FINAL]: "Final",
+};
+
+// สี/ชื่ออังกฤษของ "round" — ครอบคลุมทั้งชื่อภาค (รอบภูมิภาค) และชื่อรอบของรอบชิงแชมป์ประเทศ
+// ใช้แทน REGION_STYLE[match.round] ตรงๆ ที่เดิมรู้จักแค่ชื่อภาค
+export function roundStyle(round: string | null): RoundStyle {
+  if (!round) return DEFAULT_REGION_STYLE;
+  return NATIONAL_ROUND_STYLE[round] ?? REGION_STYLE[round] ?? DEFAULT_REGION_STYLE;
+}
+
+export function roundEn(round: string | null) {
+  if (!round) return "";
+  return NATIONAL_ROUND_EN[round] ?? REGION_EN[round] ?? "";
+}
+
+// ===== ผลการแข่งขัน =====
+
+type ResultInput = {
+  homeTeamId: number;
+  awayTeamId: number;
+  homeScore: number | null;
+  awayScore: number | null;
+  homePenalty?: number | null;
+  awayPenalty?: number | null;
+  status: string;
+};
+
+// ผู้ชนะของนัด (นับดวลจุดโทษด้วยถ้าเสมอในเวลา) — null = ยังไม่จบ หรือเสมอโดยไม่มีจุดโทษ
+export function matchWinnerId(m: ResultInput): number | null {
+  if (m.status !== "FINISHED" || m.homeScore == null || m.awayScore == null) return null;
+  if (m.homeScore !== m.awayScore) return m.homeScore > m.awayScore ? m.homeTeamId : m.awayTeamId;
+  if (m.homePenalty != null && m.awayPenalty != null && m.homePenalty !== m.awayPenalty) {
+    return m.homePenalty > m.awayPenalty ? m.homeTeamId : m.awayTeamId;
+  }
+  return null;
+}
+
+export function matchLoserId(m: ResultInput): number | null {
+  const winner = matchWinnerId(m);
+  if (winner == null) return null;
+  return winner === m.homeTeamId ? m.awayTeamId : m.homeTeamId;
+}
+
+export function hasPenalties(m: { homePenalty?: number | null; awayPenalty?: number | null }) {
+  return m.homePenalty != null && m.awayPenalty != null;
+}

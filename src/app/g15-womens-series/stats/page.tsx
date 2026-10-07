@@ -1,7 +1,9 @@
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { getStandings } from "@/lib/g15";
+import { parseStage, stageInfo } from "@/lib/g15-stage";
 import { G15Chrome } from "@/components/g15/G15Chrome";
+import { StageSwitcher } from "@/components/g15/StageSwitcher";
 import { MiniLeaderboard } from "@/components/g15/MiniLeaderboard";
 import { PlayerLeaderboard, type PlayerLeaderboardRow } from "@/components/g15/PlayerLeaderboard";
 import { TeamBadge } from "@/components/g15/TeamBadge";
@@ -9,13 +11,21 @@ import { Reveal } from "@/components/g15/Reveal";
 import { AnimatedCounter } from "@/components/g15/AnimatedCounter";
 import { Target, ShieldCheck, ShieldHalf, Trophy, Flame, BarChart3, Users, CheckCircle2, TrendingUp } from "lucide-react";
 
-export default async function G15StatsPage() {
-  const [user, teams, matches, goals] = await Promise.all([
+export default async function G15StatsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
+  const stage = parseStage((await searchParams).stage);
+
+  // ทุกอย่างกรองตามรอบ — รอบชิงแชมป์ประเทศเริ่มนับประตู/คลีนชีต/ดาวซัลโวใหม่จากศูนย์ ไม่รวมผลรอบภูมิภาค
+  const [user, allTeams, matches, goals] = await Promise.all([
     getCurrentUser(),
     prisma.g15Team.findMany({ orderBy: [{ groupName: "asc" }, { name: "asc" }] }),
-    prisma.g15Match.findMany({ include: { homeTeam: true, awayTeam: true } }),
-    prisma.g15Goal.findMany({ include: { team: true } }),
+    prisma.g15Match.findMany({ where: { stage }, include: { homeTeam: true, awayTeam: true } }),
+    prisma.g15Goal.findMany({ where: { match: { stage } }, include: { team: true } }),
   ]);
+  const teams = stage === "NATIONAL" ? allTeams.filter((t) => t.nationalGroup) : allTeams;
 
   const standingGroups = getStandings(teams, matches);
   const finishedMatches = matches.filter((m) => m.status === "FINISHED" && m.homeScore != null && m.awayScore != null);
@@ -70,7 +80,7 @@ export default async function G15StatsPage() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <G15Chrome user={user} />
+      <G15Chrome user={user} stage={stage} />
 
       {/* ฮีโร่ไล่สีชุดเดียวกับหน้าอื่นๆ ของ G15 — แถบสถิติลอยทับขอบล่างให้ภาษาภาพเป็นชุดเดียวกันทั้งเว็บ */}
       <section className="relative overflow-hidden bg-linear-to-br from-rose-950 via-rose-900 to-fuchsia-800 pb-20 pt-8 sm:pb-24">
@@ -81,16 +91,17 @@ export default async function G15StatsPage() {
             Statistics
           </div>
           <h1 className="mt-1 text-2xl font-extrabold text-white sm:text-3xl">
-            สถิติ <span className="text-base font-normal text-rose-200">/ ภาพรวมทัวร์นาเมนต์</span>
+            สถิติ <span className="text-base font-normal text-rose-200">/ {stageInfo(stage).label}</span>
           </h1>
+          <StageSwitcher stage={stage} basePath="/g15-womens-series/stats" />
         </div>
       </section>
 
       <div className="mx-auto max-w-6xl px-6 pb-20">
         {finishedMatches.length === 0 ? (
           <div className="relative z-10 -mt-10 rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-10 text-center shadow-xl shadow-rose-950/10 sm:-mt-14">
-            <p className="text-sm text-slate-500">ยังไม่มีผลการแข่งขัน จึงยังไม่มีสถิติให้แสดง</p>
-            <p className="mt-0.5 text-xs text-slate-400">No results yet, so no statistics to show</p>
+            <p className="text-sm text-slate-500">ยังไม่มีผลการแข่งขันใน{stageInfo(stage).label} จึงยังไม่มีสถิติให้แสดง</p>
+            <p className="mt-0.5 text-xs text-slate-400">No {stageInfo(stage).en} results yet, so no statistics to show</p>
           </div>
         ) : (
           <div className="space-y-8">

@@ -258,6 +258,10 @@ model G15Team {
   name      String
   logoUrl   String?  @map("logo_url")
   groupName String?  @map("group_name")
+  // รอบชิงแชมป์ประเทศ (National Round) — 8 ทีมตัวแทนภาค แบ่ง 2 กลุ่ม (A/B) ลำดับ 1-4 ตามผังการแข่งขันทางการ
+  // แยกจาก groupName (กลุ่มรอบภูมิภาค) เพื่อให้ข้อมูลรอบภูมิภาคเดิมยังอยู่ครบ ไม่ปนกัน — null = ไม่ได้เข้ารอบ
+  nationalGroup String?  @map("national_group")
+  nationalSeed  Int?     @map("national_seed")
   createdAt DateTime @default(now()) @map("created_at")
 
   homeMatches   G15Match[] @relation("G15HomeTeam")
@@ -325,8 +329,12 @@ model G15Official {
 
 // นัดการแข่งขัน G15 Women's Football Series
 // status: SCHEDULED, FINISHED
+// stage: REGIONAL (รอบภูมิภาค — round = ชื่อภาค), NATIONAL (รอบชิงแชมป์ประเทศ — round = กลุ่ม A/B, รอบรองฯ, ชิงที่ 3, ชิงชนะเลิศ)
+// สถิติทุกอย่าง (ตารางคะแนน/ดาวซัลโว/คลีนชีต ฯลฯ) นับแยกตาม stage เสมอ ไม่รวมข้ามรอบ
 model G15Match {
   id         Int       @id @default(autoincrement())
+  stage      String    @default("REGIONAL")
+  matchNo    Int?      @map("match_no")
   round      String
   matchDate  DateTime? @map("match_date")
   venue      String?
@@ -336,6 +344,9 @@ model G15Match {
   awayTeam   G15Team   @relation("G15AwayTeam", fields: [awayTeamId], references: [id], onDelete: Cascade)
   homeScore  Int?      @map("home_score")
   awayScore  Int?      @map("away_score")
+  // ดวลจุดโทษ — ใช้เฉพาะรอบน็อกเอาต์ที่เสมอกันในเวลา (ไม่นับเป็นประตูในสถิติ ใช้ตัดสินผู้ชนะอย่างเดียว)
+  homePenalty Int?     @map("home_penalty")
+  awayPenalty Int?     @map("away_penalty")
   status     String    @default("SCHEDULED")
   createdAt  DateTime  @default(now()) @map("created_at")
 
