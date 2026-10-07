@@ -24,7 +24,7 @@ export function PlayerLeaderboard({
   title,
   icon,
   rows,
-  accent = "rose",
+  accent = "brand",
 }: {
   title: string;
   icon: React.ReactNode;
@@ -69,7 +69,7 @@ export function PlayerLeaderboard({
                   {row.jerseyNumber != null && <span className="ml-1 text-slate-400">#{row.jerseyNumber}</span>}
                   <span className="block truncate text-xs text-slate-400">{row.teamName}</span>
                 </span>
-                <span className="flex-none text-sm font-bold text-rose-600">{row.goals}</span>
+                <span className="flex-none text-sm font-bold text-g15-600">{row.goals}</span>
               </li>
             ))}
           </ul>

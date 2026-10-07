@@ -137,7 +137,7 @@ async function RegionalManage() {
       <div className="sm:col-span-2">
         <button
           type="submit"
-          className="inline-flex items-center gap-2 rounded-lg bg-rose-600 px-5 py-2.5 text-sm font-medium text-white shadow-sm shadow-rose-200 transition-colors hover:bg-rose-700"
+          className="inline-flex items-center gap-2 rounded-lg bg-g15-600 px-5 py-2.5 text-sm font-medium text-white shadow-sm shadow-g15-200 transition-colors hover:bg-g15-700"
         >
           เพิ่มทีม
         </button>
@@ -168,7 +168,7 @@ async function RegionalManage() {
     <div className="space-y-6">
       <ModalTrigger
         label="เพิ่มทีมใหม่"
-        buttonClassName="inline-flex items-center gap-2 rounded-lg bg-rose-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm shadow-rose-200 transition-colors hover:bg-rose-700"
+        buttonClassName="inline-flex items-center gap-2 rounded-lg bg-g15-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm shadow-g15-200 transition-colors hover:bg-g15-700"
       >
         {addTeamForm}
       </ModalTrigger>

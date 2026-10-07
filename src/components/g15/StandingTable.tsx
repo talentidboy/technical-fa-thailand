@@ -101,7 +101,7 @@ export function StandingTable({
                 <td className="hidden px-2 py-2.5 text-center text-slate-500 sm:table-cell">
                   {row.goalDiff > 0 ? `+${row.goalDiff}` : row.goalDiff}
                 </td>
-                <td className="px-4 py-2.5 text-center font-bold text-rose-600">{row.points}</td>
+                <td className="px-4 py-2.5 text-center font-bold text-g15-600">{row.points}</td>
                 {formByTeamId && (
                   <td className="hidden px-2 py-2.5 md:table-cell">
                     <FormPills results={formByTeamId.get(row.teamId) ?? []} />

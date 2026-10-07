@@ -88,7 +88,7 @@ export function LogoPasteField({
         className={`flex cursor-pointer items-center gap-3 rounded-lg border border-dashed px-3.5 py-2.5 text-sm outline-none transition-colors ${
           error
             ? "border-red-300 bg-red-50/40 text-red-600"
-            : "border-slate-300 text-slate-500 hover:border-rose-300 hover:bg-rose-50/40 focus:border-rose-400 focus:ring-2 focus:ring-rose-100"
+            : "border-slate-300 text-slate-500 hover:border-g15-300 hover:bg-g15-50/40 focus:border-g15-400 focus:ring-2 focus:ring-g15-100"
         }`}
       >
         {showUrl ? (

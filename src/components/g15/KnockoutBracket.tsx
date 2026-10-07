@@ -84,7 +84,7 @@ export function KnockoutBracket({ ties }: { ties: BracketTie[] }) {
       </div>
 
       <div className="space-y-4">
-        <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-rose-600">
+        <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-g15-600">
           <Trophy className="h-3.5 w-3.5" />
           ชิงชนะเลิศ / Final
         </p>

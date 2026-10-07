@@ -66,7 +66,7 @@ const highlights = [
 ];
 
 const quickLinks = [
-  { href: "/g15-womens-series/matches", icon: Calendar, label: "การแข่งขันและผล", labelEn: "Matches & Results", color: "bg-rose-50 text-rose-600" },
+  { href: "/g15-womens-series/matches", icon: Calendar, label: "การแข่งขันและผล", labelEn: "Matches & Results", color: "bg-g15-50 text-g15-600" },
   { href: "/g15-womens-series/standings", icon: Trophy, label: "ตารางคะแนน", labelEn: "Standings", color: "bg-amber-50 text-amber-600" },
   { href: "/g15-womens-series/stats", icon: BarChart3, label: "สถิติ", labelEn: "Statistics", color: "bg-emerald-50 text-emerald-600" },
   { href: "/g15-womens-series/teams", icon: Users, label: "ทีมที่เข้าร่วม", labelEn: "Teams", color: "bg-indigo-50 text-indigo-600" },
@@ -168,7 +168,7 @@ export default async function G15WomensSeriesPage({
       <G15Chrome user={user} stage={stage} />
 
       {/* Hero — แบนเนอร์ทางการมีชื่อรายการ/สโลแกน/โลโก้ในภาพอยู่แล้ว จึงโชว์เต็มความกว้างไปเลยโดยไม่มีข้อความทับ */}
-      <section className="relative overflow-hidden bg-linear-to-br from-rose-950 via-rose-900 to-fuchsia-800 pb-6 sm:pb-8">
+      <section className="relative overflow-hidden bg-linear-to-br from-g15-950 via-g15-800 to-g15-600 pb-6 sm:pb-8">
         <div className="absolute inset-x-0 top-0 h-1.5 animate-shimmer-slide bg-linear-to-r from-amber-600 via-amber-200 via-50% to-amber-600 bg-size-[200%_100%]" />
         <Sparkles className="animate-float-y absolute right-6 top-10 hidden h-6 w-6 text-amber-300/70 sm:block" />
         <Sparkles className="animate-float-y absolute left-10 top-20 hidden h-4 w-4 text-white/40 sm:block" style={{ animationDelay: "1.2s" }} />
@@ -181,7 +181,7 @@ export default async function G15WomensSeriesPage({
           priority
         />
         {/* ไล่สีให้ขอบล่างของภาพกลืนเข้ากับพื้นหลัง เผื่อพื้นที่ให้การ์ดด้านล่างลอยทับภาพได้เลย ไม่ต้องมีช่องว่างสีทึบคั่น */}
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-40 bg-linear-to-t from-rose-950 to-transparent sm:h-56" />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-40 bg-linear-to-t from-g15-950 to-transparent sm:h-56" />
       </section>
 
       <div className="mx-auto max-w-6xl px-6 pb-20">
@@ -189,13 +189,13 @@ export default async function G15WomensSeriesPage({
         <div className="relative z-10 -mt-8 grid grid-cols-1 gap-6 sm:-mt-10 sm:grid-cols-3">
           {highlights.map(({ icon: Icon, title, titleEn, description, descriptionEn }, i) => (
             <Reveal key={title} delay={i * 120}>
-              <div className="group flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-6 shadow-xl shadow-rose-950/10 transition-all duration-300 hover:-translate-y-1.5 hover:shadow-2xl">
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-rose-50 text-rose-600 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6">
+              <div className="group flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-6 shadow-xl shadow-g15-950/10 transition-all duration-300 hover:-translate-y-1.5 hover:shadow-2xl">
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-g15-50 text-g15-600 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6">
                   <Icon className="h-5 w-5" />
                 </div>
                 <div>
                   <h3 className="font-semibold text-slate-900">{title}</h3>
-                  <p className="text-xs font-medium text-rose-500">{titleEn}</p>
+                  <p className="text-xs font-medium text-g15-500">{titleEn}</p>
                 </div>
                 <div>
                   <p className="text-sm text-slate-500">{description}</p>
@@ -209,7 +209,7 @@ export default async function G15WomensSeriesPage({
         {/* สลับรอบ — สถิติ/ผล/ตารางคะแนนด้านล่างทั้งหมดเปลี่ยนตามรอบที่เลือก */}
         <div className="mt-8 flex flex-wrap items-center justify-between gap-3">
           <div>
-            <p className="text-xs font-bold uppercase tracking-widest text-rose-500">{stageInfo(stage).en}</p>
+            <p className="text-xs font-bold uppercase tracking-widest text-g15-500">{stageInfo(stage).en}</p>
             <h2 className="text-xl font-extrabold text-slate-900">{stageInfo(stage).label}</h2>
           </div>
           <StageSwitcher stage={stage} basePath="/g15-womens-series" variant="light" />
@@ -219,7 +219,7 @@ export default async function G15WomensSeriesPage({
         <Reveal delay={150}>
           <div className="mt-4 grid grid-cols-2 gap-px overflow-hidden rounded-3xl bg-slate-200 shadow-sm ring-1 ring-black/5 sm:grid-cols-4">
             {[
-              { label: "ทีมเข้าร่วม", en: "Teams", value: teams.length, icon: Users, color: "bg-rose-50 text-rose-600" },
+              { label: "ทีมเข้าร่วม", en: "Teams", value: teams.length, icon: Users, color: "bg-g15-50 text-g15-600" },
               {
                 label: isNational ? "กลุ่ม" : "ภาคทั่วประเทศ",
                 en: isNational ? "Groups" : "Regions",
@@ -288,7 +288,7 @@ export default async function G15WomensSeriesPage({
                   </div>
                   <Link
                     href={href("/g15-womens-series/matches")}
-                    className="flex items-center gap-1 text-xs font-medium text-rose-600 hover:text-rose-700"
+                    className="flex items-center gap-1 text-xs font-medium text-g15-600 hover:text-g15-700"
                   >
                     ดูทั้งหมด / View all
                     <ChevronRight className="h-3.5 w-3.5" />
@@ -307,7 +307,7 @@ export default async function G15WomensSeriesPage({
                         <Link
                           key={match.id}
                           href={`/g15-womens-series/matches/${match.id}`}
-                          className="block rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:border-rose-200 hover:shadow-md"
+                          className="block rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:border-g15-200 hover:shadow-md"
                         >
                           <div className="flex items-center gap-3">
                             <div className="w-12 flex-none text-xs">
@@ -368,7 +368,7 @@ export default async function G15WomensSeriesPage({
                   </div>
                   <Link
                     href={href("/g15-womens-series/standings")}
-                    className="flex items-center gap-1 text-xs font-medium text-rose-600 hover:text-rose-700"
+                    className="flex items-center gap-1 text-xs font-medium text-g15-600 hover:text-g15-700"
                   >
                     ดูทั้งหมด / View all
                     <ChevronRight className="h-3.5 w-3.5" />
@@ -427,7 +427,7 @@ export default async function G15WomensSeriesPage({
             <section className="mt-10">
               <div className="mb-4">
                 <h2 className="flex items-center gap-2 text-lg font-bold text-slate-900">
-                  <GitBranch className="h-5 w-5 text-rose-600" />
+                  <GitBranch className="h-5 w-5 text-g15-600" />
                   รอบน็อกเอาต์
                 </h2>
                 <p className="text-xs text-slate-400">Knockout Stage</p>
@@ -444,7 +444,7 @@ export default async function G15WomensSeriesPage({
               <div className="mb-4 flex justify-end">
                 <Link
                   href={href("/g15-womens-series/stats")}
-                  className="flex items-center gap-1 text-xs font-medium text-rose-600 hover:text-rose-700"
+                  className="flex items-center gap-1 text-xs font-medium text-g15-600 hover:text-g15-700"
                 >
                   ดูทั้งหมด / View all
                   <ChevronRight className="h-3.5 w-3.5" />
@@ -462,7 +462,7 @@ export default async function G15WomensSeriesPage({
               <Reveal delay={0}>
                 <div className="h-full rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                   <div className="mb-4 flex items-center gap-2 text-sm font-semibold text-slate-900">
-                    <Flame className="h-4 w-4 text-rose-600" />
+                    <Flame className="h-4 w-4 text-g15-600" />
                     ชนะขาดลอยที่สุด / Biggest Win
                   </div>
                   <div className="flex items-center justify-center gap-2.5">
@@ -551,7 +551,7 @@ export default async function G15WomensSeriesPage({
               <Reveal key={path} delay={i * 70}>
                 <Link
                   href={href(path)}
-                  className="group flex h-full flex-col items-center gap-2.5 rounded-2xl border border-slate-200 bg-white p-5 text-center shadow-sm transition-all duration-300 hover:-translate-y-1.5 hover:border-rose-200 hover:shadow-lg"
+                  className="group flex h-full flex-col items-center gap-2.5 rounded-2xl border border-slate-200 bg-white p-5 text-center shadow-sm transition-all duration-300 hover:-translate-y-1.5 hover:border-g15-200 hover:shadow-lg"
                 >
                   <div className={`flex h-11 w-11 items-center justify-center rounded-xl ${color} transition-transform duration-300 group-hover:scale-110`}>
                     <Icon className="h-5 w-5" />

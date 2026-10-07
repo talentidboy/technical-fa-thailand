@@ -66,7 +66,7 @@ const NATIONAL_ROUND_STYLE: Record<string, RoundStyle> = {
   [ROUND_GROUP_B]: { bg: "bg-fuchsia-600", text: "text-fuchsia-700", light: "bg-fuchsia-50", ring: "ring-fuchsia-400/30" },
   [ROUND_SEMI]: { bg: "bg-orange-500", text: "text-orange-700", light: "bg-orange-50", ring: "ring-orange-400/30" },
   [ROUND_THIRD]: { bg: "bg-amber-600", text: "text-amber-700", light: "bg-amber-50", ring: "ring-amber-400/30" },
-  [ROUND_FINAL]: { bg: "bg-rose-600", text: "text-rose-700", light: "bg-rose-50", ring: "ring-rose-400/30" },
+  [ROUND_FINAL]: { bg: "bg-g15-600", text: "text-g15-700", light: "bg-g15-50", ring: "ring-g15-400/30" },
 };
 
 const NATIONAL_ROUND_EN: Record<string, string> = {

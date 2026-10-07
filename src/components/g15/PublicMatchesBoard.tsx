@@ -87,7 +87,7 @@ function MatchRow({ match }: { match: Match }) {
   return (
     <Link
       href={`/g15-womens-series/matches/${match.id}`}
-      className="block rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-colors hover:border-rose-200 hover:shadow-md sm:p-5"
+      className="block rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-colors hover:border-g15-200 hover:shadow-md sm:p-5"
     >
       <div className="flex items-center gap-3 sm:gap-4">
         <div className="w-12 flex-none text-sm font-bold text-slate-900 sm:w-14">
@@ -113,7 +113,7 @@ function MatchRow({ match }: { match: Match }) {
                   จุดโทษ {match.homePenalty}-{match.awayPenalty}
                 </span>
               )}
-              <span className="rounded bg-rose-600 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white">
+              <span className="rounded bg-g15-600 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white">
                 Full time
               </span>
             </>
@@ -219,7 +219,7 @@ export function PublicMatchesBoard({ matches, regionOrder }: { matches: Match[];
               onClick={() => setSelectedDateKey(key)}
               className={`flex flex-none flex-col items-center gap-0.5 rounded-xl px-4 py-2.5 text-center transition-colors ${
                 active
-                  ? "bg-rose-600 text-white shadow-sm"
+                  ? "bg-g15-600 text-white shadow-sm"
                   : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
               }`}
             >
@@ -236,7 +236,7 @@ export function PublicMatchesBoard({ matches, regionOrder }: { matches: Match[];
             onClick={() => setSelectedDateKey(TBD_KEY)}
             className={`flex flex-none flex-col items-center justify-center gap-0.5 rounded-xl px-4 py-2.5 text-center transition-colors ${
               selectedDateKey === TBD_KEY
-                ? "bg-rose-600 text-white shadow-sm"
+                ? "bg-g15-600 text-white shadow-sm"
                 : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
             }`}
           >

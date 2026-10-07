@@ -114,20 +114,20 @@ export default async function G15MatchDetailPage({
       <G15Chrome user={user} stage={stage} />
 
       {/* ฮีโร่ไล่สีชุดเดียวกับหน้าแรก G15 — การ์ดสรุปนัดลอยทับขอบล่าง ให้ภาษาภาพเป็นชุดเดียวกันทั้งเว็บ */}
-      <section className="relative overflow-hidden bg-linear-to-br from-rose-950 via-rose-900 to-fuchsia-800 pb-24 pt-6 sm:pb-32 sm:pt-8">
+      <section className="relative overflow-hidden bg-linear-to-br from-g15-950 via-g15-800 to-g15-600 pb-24 pt-6 sm:pb-32 sm:pt-8">
         <div className="absolute inset-x-0 top-0 h-1.5 animate-shimmer-slide bg-linear-to-r from-amber-600 via-amber-200 via-50% to-amber-600 bg-size-[200%_100%]" />
         <div className="mx-auto max-w-4xl px-6">
-          <nav className="flex flex-wrap items-center gap-1.5 text-xs text-rose-200">
+          <nav className="flex flex-wrap items-center gap-1.5 text-xs text-g15-200">
             <Link href="/g15-womens-series" className="transition-colors hover:text-white">
               G15 Women&apos;s Football Series
             </Link>
-            <span className="text-rose-400/60">›</span>
+            <span className="text-g15-400/60">›</span>
             <Link href={withStage("/g15-womens-series/matches", stage)} className="transition-colors hover:text-white">
               ตารางการแข่งขันและผลการแข่งขัน
             </Link>
-            <span className="text-rose-400/60">›</span>
+            <span className="text-g15-400/60">›</span>
             <span>{stageInfo(stage).label}</span>
-            <span className="text-rose-400/60">›</span>
+            <span className="text-g15-400/60">›</span>
             <span className="font-medium text-white">
               {match.homeTeam.name} vs {match.awayTeam.name}
             </span>
@@ -139,7 +139,7 @@ export default async function G15MatchDetailPage({
         {/* การ์ดสรุปนัด — ลอยทับขอบล่างของฮีโร่ */}
         <div className="relative z-10 -mt-16 sm:-mt-20">
           <div
-            className={`overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl shadow-rose-950/20 ring-1 ${style.ring}`}
+            className={`overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl shadow-g15-950/20 ring-1 ${style.ring}`}
           >
             <div className={`flex flex-wrap items-center justify-between gap-2 px-6 py-3 ${style.bg}`}>
               <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-xs font-bold uppercase tracking-widest text-white ring-1 ring-white/30">
@@ -198,7 +198,7 @@ export default async function G15MatchDetailPage({
                   </span>
                 )}
                 {isFinished && (
-                  <span className="mt-1 rounded bg-rose-600 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white">
+                  <span className="mt-1 rounded bg-g15-600 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white">
                     Full time
                   </span>
                 )}
@@ -238,7 +238,7 @@ export default async function G15MatchDetailPage({
         <Reveal delay={0}>
           <section className="mt-8">
             <div className="mb-4 flex items-center gap-2">
-              <span className="flex h-7 w-7 flex-none items-center justify-center rounded-lg bg-rose-50 text-rose-600">
+              <span className="flex h-7 w-7 flex-none items-center justify-center rounded-lg bg-g15-50 text-g15-600">
                 <ListOrdered className="h-4 w-4" />
               </span>
               <h2 className="text-sm font-semibold text-slate-900">
@@ -253,7 +253,7 @@ export default async function G15MatchDetailPage({
                 <Link
                   key={team.id}
                   href={`/g15-womens-series/teams/${team.id}`}
-                  className="block rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-rose-200 hover:shadow-md"
+                  className="block rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-g15-200 hover:shadow-md"
                 >
                   <div className="flex items-center gap-3">
                     <TeamBadge team={team} size="md" />
@@ -268,7 +268,7 @@ export default async function G15MatchDetailPage({
                         { label: "Pts", value: standing.points },
                       ].map((s) => (
                         <div key={s.label}>
-                          <p className={`text-base font-bold ${s.label === "Pts" ? "text-rose-600" : "text-slate-900"}`}>{s.value}</p>
+                          <p className={`text-base font-bold ${s.label === "Pts" ? "text-g15-600" : "text-slate-900"}`}>{s.value}</p>
                           <p className="text-[10px] uppercase tracking-wide text-slate-400">{s.label}</p>
                         </div>
                       ))}
@@ -372,7 +372,7 @@ export default async function G15MatchDetailPage({
                                           {l.player.firstNameTh} {l.player.lastNameTh}
                                         </span>
                                         {l.isCaptain && (
-                                          <span className="flex-none rounded-full bg-rose-50 px-1.5 py-0.5 text-[10px] font-bold text-rose-600">
+                                          <span className="flex-none rounded-full bg-g15-50 px-1.5 py-0.5 text-[10px] font-bold text-g15-600">
                                             C
                                           </span>
                                         )}

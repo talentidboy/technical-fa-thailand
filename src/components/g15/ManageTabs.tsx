@@ -24,7 +24,7 @@ export function ManageTabs({ teams, matches }: { teams: ReactNode; matches: Reac
             onClick={() => setActive(key)}
             className={`flex flex-none items-center gap-1.5 border-b-2 px-4 py-3 text-sm font-semibold transition-colors ${
               active === key
-                ? "border-rose-600 text-slate-900"
+                ? "border-g15-600 text-slate-900"
                 : "border-transparent text-slate-500 hover:text-slate-900"
             }`}
           >

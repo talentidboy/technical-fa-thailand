@@ -33,11 +33,11 @@ export function StageSwitcher({
             className={`flex items-center gap-2 rounded-xl px-3.5 py-2 transition-colors sm:px-4 ${
               active
                 ? light
-                  ? "bg-rose-600 text-white shadow"
-                  : "bg-white text-rose-900 shadow"
+                  ? "bg-g15-600 text-white shadow"
+                  : "bg-white text-g15-900 shadow"
                 : light
                   ? "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
-                  : "text-rose-100 hover:bg-white/10 hover:text-white"
+                  : "text-g15-100 hover:bg-white/10 hover:text-white"
             }`}
           >
             <Icon className="h-4 w-4 flex-none" />
@@ -45,7 +45,7 @@ export function StageSwitcher({
               <span className="whitespace-nowrap text-sm font-bold">{s.label}</span>
               <span
                 className={`whitespace-nowrap text-[10px] font-medium ${
-                  active ? (light ? "text-rose-100" : "text-rose-500") : light ? "text-slate-400" : "text-rose-200/80"
+                  active ? (light ? "text-g15-100" : "text-g15-500") : light ? "text-slate-400" : "text-g15-200/80"
                 }`}
               >
                 {s.en}

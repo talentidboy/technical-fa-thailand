@@ -51,7 +51,7 @@ export function TeamCard({ team, slot, subtitle }: { team: TeamWithCounts; slot?
           )}
         </div>
       </div>
-      <ChevronRight className="h-4 w-4 flex-none text-slate-300 transition-transform group-hover:translate-x-0.5 group-hover:text-rose-500" />
+      <ChevronRight className="h-4 w-4 flex-none text-slate-300 transition-transform group-hover:translate-x-0.5 group-hover:text-g15-500" />
     </Link>
   );
 }
@@ -79,7 +79,7 @@ export function TeamsGrid({ teams }: { teams: TeamWithCounts[] }) {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="ค้นหาชื่อทีม / Search team name..."
-          className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-sm text-slate-900 shadow-sm placeholder:text-slate-400 focus:border-rose-300 focus:outline-none focus:ring-2 focus:ring-rose-100"
+          className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-sm text-slate-900 shadow-sm placeholder:text-slate-400 focus:border-g15-300 focus:outline-none focus:ring-2 focus:ring-g15-100"
         />
       </div>
 

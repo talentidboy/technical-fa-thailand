@@ -243,7 +243,7 @@ export async function NationalManage() {
     <ActionForm action={generateKnockoutMatches} successText="สร้างนัดเรียบร้อย" className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
       <input type="hidden" name="phase" value={phase} />
       <div className="flex items-center gap-2">
-        <Wand2 className="h-4 w-4 text-rose-600" />
+        <Wand2 className="h-4 w-4 text-g15-600" />
         <h4 className="text-sm font-semibold text-slate-900">
           {phase === "SEMI" ? "สร้างคู่รอบรองชนะเลิศ (นัดที่ 13-14)" : "สร้างนัดชิงที่ 3 และชิงชนะเลิศ (นัดที่ 15-16)"}
         </h4>
@@ -282,7 +282,7 @@ export async function NationalManage() {
       <button
         type="submit"
         disabled={!enabled}
-        className="mt-4 inline-flex items-center gap-2 rounded-lg bg-rose-600 px-5 py-2.5 text-sm font-medium text-white shadow-sm shadow-rose-200 transition-colors hover:bg-rose-700 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400 disabled:shadow-none"
+        className="mt-4 inline-flex items-center gap-2 rounded-lg bg-g15-600 px-5 py-2.5 text-sm font-medium text-white shadow-sm shadow-g15-200 transition-colors hover:bg-g15-700 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400 disabled:shadow-none"
       >
         <Wand2 className="h-4 w-4" />
         สร้างนัดจากผลการแข่งขัน
@@ -323,13 +323,13 @@ export async function NationalManage() {
                   s.done
                     ? "bg-emerald-50 text-emerald-700"
                     : isCurrent
-                      ? "bg-rose-600 text-white shadow-sm shadow-rose-200"
+                      ? "bg-g15-600 text-white shadow-sm shadow-g15-200"
                       : "bg-slate-50 text-slate-400"
                 }`}
               >
                 <span
                   className={`flex h-5 w-5 flex-none items-center justify-center rounded-full text-[10px] font-bold ${
-                    s.done ? "bg-emerald-500 text-white" : isCurrent ? "bg-white text-rose-600" : "bg-slate-200 text-slate-500"
+                    s.done ? "bg-emerald-500 text-white" : isCurrent ? "bg-white text-g15-600" : "bg-slate-200 text-slate-500"
                   }`}
                 >
                   {s.done ? <Check className="h-3 w-3" /> : i + 1}
@@ -345,7 +345,7 @@ export async function NationalManage() {
       <section className="space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <CalendarDays className="h-5 w-5 text-rose-600" />
+            <CalendarDays className="h-5 w-5 text-g15-600" />
             <h2 className="text-lg font-bold text-slate-900">นัดการแข่งขันและผล</h2>
           </div>
           <ModalTrigger
@@ -364,7 +364,7 @@ export async function NationalManage() {
               <div className="sm:col-span-2">
                 <button
                   type="submit"
-                  className="rounded-lg bg-rose-600 px-5 py-2.5 text-sm font-medium text-white shadow-sm shadow-rose-200 transition-colors hover:bg-rose-700"
+                  className="rounded-lg bg-g15-600 px-5 py-2.5 text-sm font-medium text-white shadow-sm shadow-g15-200 transition-colors hover:bg-g15-700"
                 >
                   เพิ่มนัด
                 </button>
@@ -390,11 +390,11 @@ export async function NationalManage() {
               return (
                 <div
                   key={key}
-                  className={`overflow-hidden rounded-2xl border bg-white shadow-sm ${isToday ? "border-rose-300 ring-2 ring-rose-100" : "border-slate-200"}`}
+                  className={`overflow-hidden rounded-2xl border bg-white shadow-sm ${isToday ? "border-g15-300 ring-2 ring-g15-100" : "border-slate-200"}`}
                 >
                   <div className="flex items-center gap-2 border-b border-slate-100 bg-slate-50 px-5 py-2.5">
                     <p className="text-sm font-semibold text-slate-800">{dayLabel(dayMatches[0].matchDate!)}</p>
-                    {isToday && <span className="rounded-full bg-rose-600 px-2 py-0.5 text-[10px] font-bold text-white">วันนี้</span>}
+                    {isToday && <span className="rounded-full bg-g15-600 px-2 py-0.5 text-[10px] font-bold text-white">วันนี้</span>}
                     <span className={`ml-auto text-xs font-medium ${done === dayMatches.length ? "text-emerald-600" : "text-slate-400"}`}>
                       บันทึกผลแล้ว {done}/{dayMatches.length}
                     </span>
@@ -418,7 +418,7 @@ export async function NationalManage() {
       {/* รอบน็อกเอาต์ */}
       <section className="space-y-4">
         <div className="flex items-center gap-2">
-          <GitBranch className="h-5 w-5 text-rose-600" />
+          <GitBranch className="h-5 w-5 text-g15-600" />
           <h2 className="text-lg font-bold text-slate-900">รอบน็อกเอาต์</h2>
         </div>
         <KnockoutBracket ties={bracket} />
@@ -445,7 +445,7 @@ export async function NationalManage() {
       {/* จัดกลุ่ม */}
       <section className="space-y-4">
         <div className="flex items-center gap-2">
-          <Users className="h-5 w-5 text-rose-600" />
+          <Users className="h-5 w-5 text-g15-600" />
           <h2 className="text-lg font-bold text-slate-900">ทีมและการจัดกลุ่ม</h2>
         </div>
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
@@ -477,7 +477,7 @@ export async function NationalManage() {
                             <span className="flex-none text-[10px] text-slate-400">
                               {played.length} นัด · ชนะ {wins}
                             </span>
-                            <span className="flex flex-none items-center text-[11px] font-medium text-rose-600">
+                            <span className="flex flex-none items-center text-[11px] font-medium text-g15-600">
                               นักกีฬา
                               <ChevronRight className="h-3.5 w-3.5" />
                             </span>

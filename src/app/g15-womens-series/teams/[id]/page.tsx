@@ -174,7 +174,7 @@ export default async function G15TeamDetailPage({
           {stageBlocks.map(({ stage: blockStage, title, standing, rank, form: recentForm }) => (
             <div key={blockStage} className="border-t border-slate-100">
               <div className="flex items-center gap-2 bg-slate-50 px-6 py-2.5">
-                <Trophy className={`h-3.5 w-3.5 ${blockStage === "NATIONAL" ? "text-rose-600" : "text-slate-400"}`} />
+                <Trophy className={`h-3.5 w-3.5 ${blockStage === "NATIONAL" ? "text-g15-600" : "text-slate-400"}`} />
                 <p className="text-xs font-bold text-slate-700">{title}</p>
                 {rank != null && (
                   <span className="ml-auto rounded-full bg-slate-900 px-2 py-0.5 text-[10px] font-bold text-white">
@@ -194,7 +194,7 @@ export default async function G15TeamDetailPage({
                   { label: "Pts", title: "คะแนน", value: standing.points },
                 ].map((s) => (
                   <div key={s.label} className="bg-white px-3 py-4 text-center">
-                    <p className={`text-lg font-bold ${s.label === "Pts" ? "text-rose-600" : "text-slate-900"}`}>{s.value}</p>
+                    <p className={`text-lg font-bold ${s.label === "Pts" ? "text-g15-600" : "text-slate-900"}`}>{s.value}</p>
                     <p className="mt-0.5 text-[10px] uppercase tracking-wide text-slate-400" title={s.title}>
                       {s.label}
                     </p>
@@ -290,7 +290,7 @@ export default async function G15TeamDetailPage({
                     {players.map((p) => (
                       <tr key={p.id}>
                         <td className="px-3 py-2.5 text-center">
-                          <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-rose-50 text-xs font-bold text-rose-600">
+                          <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-g15-50 text-xs font-bold text-g15-600">
                             {p.jerseyNumber ?? "-"}
                           </span>
                         </td>
@@ -415,7 +415,7 @@ export default async function G15TeamDetailPage({
                         ? "bg-amber-500"
                         : outcome === "L"
                           ? "bg-red-500"
-                          : "bg-rose-600";
+                          : "bg-g15-600";
                   return (
                     <li key={match.id}>
                     <Link

@@ -30,7 +30,7 @@ function positionBadgeStyle(position: string | null) {
   if (primary.includes("หลัง") || primary.includes("แบ็ค") || primary.includes("แบ็ก")) return "bg-blue-100 text-blue-700";
   if (primary.includes("กลาง")) return "bg-emerald-100 text-emerald-700";
   if (primary.includes("หน้า") || primary.includes("ปีก")) return "bg-red-100 text-red-700";
-  return "bg-rose-50 text-rose-600";
+  return "bg-g15-50 text-g15-600";
 }
 
 export default async function G15ManageTeamPage({
@@ -96,7 +96,7 @@ export default async function G15ManageTeamPage({
         {/* ข้อมูลทีม */}
         <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
           <div className="flex items-center gap-2 border-b border-slate-100 px-6 py-4">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-rose-50 text-rose-600">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-g15-50 text-g15-600">
               <Shield className="h-4 w-4" />
             </div>
             <h2 className="font-semibold text-slate-900">ข้อมูลทีม</h2>
@@ -109,7 +109,7 @@ export default async function G15ManageTeamPage({
             <div className="sm:col-span-2 lg:col-span-3">
               <button
                 type="submit"
-                className="inline-flex items-center gap-2 rounded-lg bg-rose-600 px-5 py-2.5 text-sm font-medium text-white shadow-sm shadow-rose-200 transition-colors hover:bg-rose-700"
+                className="inline-flex items-center gap-2 rounded-lg bg-g15-600 px-5 py-2.5 text-sm font-medium text-white shadow-sm shadow-g15-200 transition-colors hover:bg-g15-700"
               >
                 บันทึกข้อมูลทีม
               </button>

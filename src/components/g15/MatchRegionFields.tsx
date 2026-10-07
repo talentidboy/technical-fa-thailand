@@ -74,7 +74,7 @@ export function MatchRegionFields({
             onClick={() => setMode((m) => (m === "region" ? "custom" : "region"))}
             title={mode === "region" ? "พิมพ์ชื่อรอบเอง (เช่น รอบรองชนะเลิศ)" : "เลือกจากรายชื่อภาค"}
             aria-label={mode === "region" ? "พิมพ์ชื่อรอบเอง" : "เลือกจากรายชื่อภาค"}
-            className="flex-none rounded-lg border border-slate-200 p-2.5 text-slate-500 transition-colors hover:bg-slate-50 hover:text-rose-600"
+            className="flex-none rounded-lg border border-slate-200 p-2.5 text-slate-500 transition-colors hover:bg-slate-50 hover:text-g15-600"
           >
             {mode === "region" ? <Plus className="h-4 w-4" /> : <X className="h-4 w-4" />}
           </button>

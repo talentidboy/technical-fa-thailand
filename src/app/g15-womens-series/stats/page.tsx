@@ -83,15 +83,15 @@ export default async function G15StatsPage({
       <G15Chrome user={user} stage={stage} />
 
       {/* ฮีโร่ไล่สีชุดเดียวกับหน้าอื่นๆ ของ G15 — แถบสถิติลอยทับขอบล่างให้ภาษาภาพเป็นชุดเดียวกันทั้งเว็บ */}
-      <section className="relative overflow-hidden bg-linear-to-br from-rose-950 via-rose-900 to-fuchsia-800 pb-20 pt-8 sm:pb-24">
+      <section className="relative overflow-hidden bg-linear-to-br from-g15-950 via-g15-800 to-g15-600 pb-20 pt-8 sm:pb-24">
         <div className="absolute inset-x-0 top-0 h-1.5 animate-shimmer-slide bg-linear-to-r from-amber-600 via-amber-200 via-50% to-amber-600 bg-size-[200%_100%]" />
         <div className="mx-auto max-w-6xl px-6">
-          <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-rose-200">
+          <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-g15-200">
             <BarChart3 className="h-3.5 w-3.5" />
             Statistics
           </div>
           <h1 className="mt-1 text-2xl font-extrabold text-white sm:text-3xl">
-            สถิติ <span className="text-base font-normal text-rose-200">/ {stageInfo(stage).label}</span>
+            สถิติ <span className="text-base font-normal text-g15-200">/ {stageInfo(stage).label}</span>
           </h1>
           <StageSwitcher stage={stage} basePath="/g15-womens-series/stats" />
         </div>
@@ -99,7 +99,7 @@ export default async function G15StatsPage({
 
       <div className="mx-auto max-w-6xl px-6 pb-20">
         {finishedMatches.length === 0 ? (
-          <div className="relative z-10 -mt-10 rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-10 text-center shadow-xl shadow-rose-950/10 sm:-mt-14">
+          <div className="relative z-10 -mt-10 rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-10 text-center shadow-xl shadow-g15-950/10 sm:-mt-14">
             <p className="text-sm text-slate-500">ยังไม่มีผลการแข่งขันใน{stageInfo(stage).label} จึงยังไม่มีสถิติให้แสดง</p>
             <p className="mt-0.5 text-xs text-slate-400">No {stageInfo(stage).en} results yet, so no statistics to show</p>
           </div>
@@ -107,9 +107,9 @@ export default async function G15StatsPage({
           <div className="space-y-8">
             {/* แถบสถิติ — ลอยทับขอบล่างของฮีโร่ */}
             <div className="relative z-10 -mt-10 sm:-mt-14">
-              <div className="grid grid-cols-2 gap-px overflow-hidden rounded-3xl bg-slate-200 shadow-xl shadow-rose-950/10 ring-1 ring-black/5 sm:grid-cols-4">
+              <div className="grid grid-cols-2 gap-px overflow-hidden rounded-3xl bg-slate-200 shadow-xl shadow-g15-950/10 ring-1 ring-black/5 sm:grid-cols-4">
                 {[
-                  { label: "ทีมทั้งหมด", en: "Teams", value: teams.length, decimals: 0, icon: Users, color: "bg-rose-50 text-rose-600" },
+                  { label: "ทีมทั้งหมด", en: "Teams", value: teams.length, decimals: 0, icon: Users, color: "bg-g15-50 text-g15-600" },
                   {
                     label: "นัดที่แข่งแล้ว",
                     en: "Played",
@@ -149,7 +149,7 @@ export default async function G15StatsPage({
                   title="ดาวซัลโว / Top Scorers"
                   icon={<Trophy className="h-4 w-4" />}
                   rows={topIndividualScorers}
-                  accent="rose"
+                  accent="brand"
                 />
               </Reveal>
               <Reveal delay={80}>

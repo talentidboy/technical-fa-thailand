@@ -23,7 +23,7 @@ export function G15Chrome({ user, stage = DEFAULT_STAGE }: { user: { role: strin
   const canManage = user?.role === "ADMIN" || user?.role === "STAFF";
 
   return (
-    <header className="sticky top-0 z-20 border-b border-white/10 bg-rose-950/90 backdrop-blur">
+    <header className="sticky top-0 z-20 border-b border-white/10 bg-g15-950/90 backdrop-blur">
       {/* ไม่ใส่ max-w-6xl ตรงนี้ (ต่างจากส่วนเนื้อหาอื่นของหน้า) ให้โลโก้/ปุ่มชิดขอบซ้าย-ขวาสุดของจอจริงๆ */}
       <div className="flex h-16 w-full items-center gap-2 px-3 sm:h-20 sm:gap-4 sm:px-5">
         {/* โลโก้ใหญ่กว่าความสูงของแถบเอง ชิดขอบบนของแถบ (self-start) ให้ส่วนเกินล้นออกด้านล่างเส้นทั้งหมด
@@ -49,7 +49,7 @@ export function G15Chrome({ user, stage = DEFAULT_STAGE }: { user: { role: strin
                 key={link.href}
                 href={withStage(link.href, stage)}
                 className={`flex flex-none flex-col items-center gap-0.5 border-b-2 px-2.5 py-3 transition-colors sm:px-3 ${
-                  active ? "border-amber-400 text-white" : "border-transparent text-rose-300 hover:text-white"
+                  active ? "border-amber-400 text-white" : "border-transparent text-g15-300 hover:text-white"
                 }`}
               >
                 <span className="whitespace-nowrap text-xs font-bold uppercase tracking-wide">{link.label}</span>
@@ -65,7 +65,7 @@ export function G15Chrome({ user, stage = DEFAULT_STAGE }: { user: { role: strin
           {canManage ? (
             <Link
               href={withStage("/g15-womens-series/manage", stage)}
-              className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg border border-white/15 px-2.5 py-2 text-sm font-medium text-rose-200 transition-colors hover:bg-white/10 hover:text-white sm:px-3"
+              className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg border border-white/15 px-2.5 py-2 text-sm font-medium text-g15-200 transition-colors hover:bg-white/10 hover:text-white sm:px-3"
             >
               <Settings className="h-4 w-4 flex-none" />
               <span className="hidden sm:inline">จัดการข้อมูล</span>
@@ -74,7 +74,7 @@ export function G15Chrome({ user, stage = DEFAULT_STAGE }: { user: { role: strin
             !user && (
               <Link
                 href="/login"
-                className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg border border-white/15 px-2.5 py-2 text-sm font-medium text-rose-200 transition-colors hover:bg-white/10 hover:text-white sm:px-3"
+                className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg border border-white/15 px-2.5 py-2 text-sm font-medium text-g15-200 transition-colors hover:bg-white/10 hover:text-white sm:px-3"
               >
                 <LogIn className="h-4 w-4 flex-none" />
                 <span className="hidden sm:inline">เข้าสู่ระบบ</span>
@@ -83,7 +83,7 @@ export function G15Chrome({ user, stage = DEFAULT_STAGE }: { user: { role: strin
           )}
           <Link
             href="/"
-            className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg border border-white/15 px-2.5 py-2 text-sm font-medium text-rose-200 transition-colors hover:bg-white/10 hover:text-white sm:px-3"
+            className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg border border-white/15 px-2.5 py-2 text-sm font-medium text-g15-200 transition-colors hover:bg-white/10 hover:text-white sm:px-3"
           >
             <ArrowLeft className="h-4 w-4 flex-none" />
             <span className="hidden sm:inline">กลับหน้าแรก</span>

@@ -27,9 +27,9 @@ export type QuickScoreMatch = {
 const toStr = (n: number | null) => (n == null ? "" : String(n));
 
 const scoreInput =
-  "h-11 w-12 rounded-xl border border-slate-200 bg-white text-center text-lg font-bold tabular-nums text-slate-900 focus:border-rose-400 focus:outline-none focus:ring-2 focus:ring-rose-100 sm:w-14";
+  "h-11 w-12 rounded-xl border border-slate-200 bg-white text-center text-lg font-bold tabular-nums text-slate-900 focus:border-g15-400 focus:outline-none focus:ring-2 focus:ring-g15-100 sm:w-14";
 const penInput =
-  "h-8 w-10 rounded-lg border border-slate-200 bg-white text-center text-sm font-semibold tabular-nums text-slate-700 focus:border-rose-400 focus:outline-none focus:ring-2 focus:ring-rose-100";
+  "h-8 w-10 rounded-lg border border-slate-200 bg-white text-center text-sm font-semibold tabular-nums text-slate-700 focus:border-g15-400 focus:outline-none focus:ring-2 focus:ring-g15-100";
 
 // แถวนัดการแข่งขันที่กรอกสกอร์ได้ทันที — ไม่ต้องกดขยาย/เปิดฟอร์มแก้ไขก่อน (วันแข่งจริงแอดมินกรอกผลทีละนัดเร็วๆ)
 // ช่องจุดโทษโผล่เฉพาะนัดน็อกเอาต์ที่สกอร์เสมอกัน, ปุ่มบันทึกเด่นขึ้นเมื่อมีการแก้ไขที่ยังไม่ได้บันทึก

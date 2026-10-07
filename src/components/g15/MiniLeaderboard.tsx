@@ -5,10 +5,10 @@ import { ChevronDown, ChevronUp } from "lucide-react";
 import { TeamBadge } from "./TeamBadge";
 import type { StandingRow } from "@/lib/g15";
 
-export type LeaderboardAccent = "rose" | "emerald" | "indigo" | "cyan" | "amber" | "fuchsia";
+export type LeaderboardAccent = "brand" | "emerald" | "indigo" | "cyan" | "amber" | "fuchsia";
 
 export const ACCENT_STYLE: Record<LeaderboardAccent, string> = {
-  rose: "bg-rose-50 text-rose-600",
+  brand: "bg-g15-50 text-g15-600",
   emerald: "bg-emerald-50 text-emerald-600",
   indigo: "bg-indigo-50 text-indigo-600",
   cyan: "bg-cyan-50 text-cyan-600",
@@ -26,7 +26,7 @@ export function MiniLeaderboard<T extends StandingRow & { value: number }>({
   title,
   icon,
   rows,
-  accent = "rose",
+  accent = "brand",
 }: {
   title: string;
   icon: React.ReactNode;
@@ -67,7 +67,7 @@ export function MiniLeaderboard<T extends StandingRow & { value: number }>({
                 </span>
                 <TeamBadge team={{ name: row.teamName, logoUrl: row.logoUrl, groupName: row.groupName }} size="sm" />
                 <span className="min-w-0 flex-1 truncate text-sm text-slate-700">{row.teamName}</span>
-                <span className="flex-none text-sm font-bold text-rose-600">{row.value}</span>
+                <span className="flex-none text-sm font-bold text-g15-600">{row.value}</span>
               </li>
             ))}
           </ul>
