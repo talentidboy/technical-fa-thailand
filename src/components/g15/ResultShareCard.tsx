@@ -139,7 +139,7 @@ export function ResultShareCard({ data, fileName }: { data: ShareCardData; fileN
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={G15_IMAGE_URL} alt="" crossOrigin="anonymous" style={{ width: 130, height: 130, objectFit: "contain" }} />
             <div>
-              <div style={{ fontSize: 30, fontWeight: 800, letterSpacing: 1 }}>FA THAILAND G15 WOMEN&apos;S FOOTBALL SERIES 2026</div>
+              <div style={{ fontSize: 26, fontWeight: 800, letterSpacing: 0.5, whiteSpace: "nowrap" }}>FA THAILAND G15 WOMEN&apos;S FOOTBALL SERIES 2026</div>
               <div style={{ fontSize: 28, color: "#d2c4f3", marginTop: 6 }}>
                 {data.matchNo != null && `Match ${data.matchNo} · `}
                 {data.round} / {data.roundEn}

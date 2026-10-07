@@ -31,6 +31,7 @@ import { StageSwitcher } from "@/components/g15/StageSwitcher";
 import { NationalGroupTables } from "@/components/g15/NationalGroupTables";
 import { KnockoutBracket } from "@/components/g15/KnockoutBracket";
 import { TeamOfRoundPitch } from "@/components/g15/TeamOfRoundPitch";
+import { NationalHero } from "@/components/g15/NationalHero";
 import { ChampionPodium } from "@/components/g15/ChampionPodium";
 import { LivePill } from "@/components/g15/LivePill";
 import { AutoRefresh } from "@/components/g15/AutoRefresh";
@@ -203,16 +204,28 @@ export default async function G15WomensSeriesPage({
         <HeroArt />
         <Sparkles className="animate-float-y absolute right-6 top-10 hidden h-6 w-6 text-amber-300/70 sm:block" />
         <Sparkles className="animate-float-y absolute left-10 top-20 hidden h-4 w-4 text-white/40 sm:block" style={{ animationDelay: "1.2s" }} />
-        <Image
-          src={G15_HERO_BANNER_URL}
-          alt="G15 Women's Football Series 2026 — Beautiful Game, Bright Future"
-          width={2752}
-          height={1536}
-          className="h-auto w-full"
-          priority
-        />
-        {/* ไล่สีให้ขอบล่างของภาพกลืนเข้ากับพื้นหลัง เผื่อพื้นที่ให้การ์ดด้านล่างลอยทับภาพได้เลย ไม่ต้องมีช่องว่างสีทึบคั่น */}
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-40 bg-linear-to-t from-g15-950 to-transparent sm:h-56" />
+        {/* รอบชิงแชมป์ประเทศใช้แบนเนอร์ที่วาดด้วยโค้ด (ชื่อรอบ/วันแข่ง/สนาม/8 ทีม) ส่วนรอบภูมิภาคใช้ภาพแบนเนอร์ทางการเดิม */}
+        {isNational ? (
+          <NationalHero
+            teams={teams}
+            firstMatch={matches.find((m) => m.matchDate)?.matchDate ?? null}
+            lastMatch={[...matches].reverse().find((m) => m.matchDate)?.matchDate ?? null}
+            venue="ศูนย์ฝึกฟุตบอลใจฟ้าอคาเดมี่ จ.ลพบุรี"
+          />
+        ) : (
+          <>
+            <Image
+              src={G15_HERO_BANNER_URL}
+              alt="G15 Women's Football Series 2026 — Beautiful Game, Bright Future"
+              width={2752}
+              height={1536}
+              className="h-auto w-full"
+              priority
+            />
+            {/* ไล่สีให้ขอบล่างของภาพกลืนเข้ากับพื้นหลัง เผื่อพื้นที่ให้การ์ดด้านล่างลอยทับภาพได้เลย ไม่ต้องมีช่องว่างสีทึบคั่น */}
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-40 bg-linear-to-t from-g15-950 to-transparent sm:h-56" />
+          </>
+        )}
       </section>
 
       <div className="mx-auto max-w-6xl px-6 pb-20">

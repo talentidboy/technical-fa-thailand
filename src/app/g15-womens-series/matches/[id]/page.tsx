@@ -17,6 +17,7 @@ import {
 import { LivePill } from "@/components/g15/LivePill";
 import { AutoRefresh } from "@/components/g15/AutoRefresh";
 import { ResultShareCard } from "@/components/g15/ResultShareCard";
+import { Countdown } from "@/components/g15/Countdown";
 import { G15Chrome } from "@/components/g15/G15Chrome";
 import { HeroArt } from "@/components/g15/HeroArt";
 import { TeamBadge } from "@/components/g15/TeamBadge";
@@ -80,7 +81,10 @@ export default async function G15MatchDetailPage({
 
   const canManage = user?.role === "ADMIN" || user?.role === "STAFF";
   const isFinished = match.status === "FINISHED" && match.homeScore != null && match.awayScore != null;
-  const live = isLive(match);
+  const now = new Date();
+  const live = isLive(match, now);
+  // ยังไม่ถึงเวลาเตะ → นับถอยหลังใต้สกอร์ (ถึงเวลาแล้ว Countdown จะรีเฟรชหน้าเอง ให้กลายเป็นสถานะกำลังแข่ง)
+  const showCountdown = match.status === "SCHEDULED" && !!match.matchDate && match.matchDate.getTime() > now.getTime();
   const liveScore = hasLiveScore(match);
 
   // ผู้ทำประตูแต่ละฝั่งสำหรับภาพสรุปผล — รวมเป็น "ชื่อ 12', 45'" ต่อคน
@@ -283,6 +287,15 @@ export default async function G15MatchDetailPage({
                 <span className="text-sm font-bold text-slate-900 sm:text-base">{match.awayTeam.name}</span>
               </Link>
             </div>
+
+            {showCountdown && (
+              <div className="border-t border-slate-100 px-6 py-6">
+                <p className="mb-3 text-center text-xs font-bold uppercase tracking-widest text-g15-600">
+                  เริ่มเตะใน / Kick-off in
+                </p>
+                <Countdown target={match.matchDate!.toISOString()} serverNow={now.getTime()} />
+              </div>
+            )}
 
             <div className="flex flex-wrap items-center gap-2 border-t border-slate-100 px-6 py-4">
               <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-600">
