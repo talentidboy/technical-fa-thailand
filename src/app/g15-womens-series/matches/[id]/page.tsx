@@ -18,6 +18,9 @@ import { LivePill } from "@/components/g15/LivePill";
 import { AutoRefresh } from "@/components/g15/AutoRefresh";
 import { ResultShareCard } from "@/components/g15/ResultShareCard";
 import { Countdown } from "@/components/g15/Countdown";
+import { LiveClock } from "@/components/g15/LiveClock";
+import { MatchTimeline } from "@/components/g15/MatchTimeline";
+import { isClockLive } from "@/lib/g15-clock";
 import { G15Chrome } from "@/components/g15/G15Chrome";
 import { HeroArt } from "@/components/g15/HeroArt";
 import { TeamBadge } from "@/components/g15/TeamBadge";
@@ -83,6 +86,20 @@ export default async function G15MatchDetailPage({
   const isFinished = match.status === "FINISHED" && match.homeScore != null && match.awayScore != null;
   const now = new Date();
   const live = isLive(match, now);
+  // นาฬิกาเกมสด (แอดมินกดเริ่ม/จบครึ่งในหน้าจัดการนัด) — ส่งเป็น ISO string ให้ client component
+  const clock = {
+    clockPhase: match.clockPhase,
+    firstHalfStartedAt: match.firstHalfStartedAt?.toISOString() ?? null,
+    secondHalfStartedAt: match.secondHalfStartedAt?.toISOString() ?? null,
+    firstHalfAddedTime: match.firstHalfAddedTime,
+    secondHalfAddedTime: match.secondHalfAddedTime,
+  };
+  const clockLive = isClockLive(match.clockPhase);
+  const nearKickoff =
+    match.status !== "FINISHED" &&
+    match.clockPhase !== "FULL_TIME" &&
+    match.matchDate != null &&
+    Math.abs(match.matchDate.getTime() - now.getTime()) < 3 * 3600_000;
   // ยังไม่ถึงเวลาเตะ → นับถอยหลังใต้สกอร์ (ถึงเวลาแล้ว Countdown จะรีเฟรชหน้าเอง ให้กลายเป็นสถานะกำลังแข่ง)
   const showCountdown = match.status === "SCHEDULED" && !!match.matchDate && match.matchDate.getTime() > now.getTime();
   const liveScore = hasLiveScore(match);
@@ -143,7 +160,9 @@ export default async function G15MatchDetailPage({
   return (
     <div className="min-h-screen bg-slate-50">
       <G15Chrome user={user} stage={stage} />
-      <AutoRefresh active={live} />
+      {/* กำลังแข่ง → ดึงสกอร์/เหตุการณ์ใหม่ทุก 10 วินาที (นาฬิกาเดินเองทุกวินาทีฝั่งเบราว์เซอร์)
+          ช่วง 3 ชม. รอบเวลาเตะ (ยังไม่จบ) → เช็กทุก 30 วินาที คนที่เปิดหน้าค้างไว้ก่อนเตะจะเห็นเกมเริ่มเองโดยไม่ต้องรีเฟรช */}
+      <AutoRefresh active={live || nearKickoff} intervalMs={live ? 10_000 : 30_000} />
 
       {/* ฮีโร่ไล่สีชุดเดียวกับหน้าแรก G15 — การ์ดสรุปนัดลอยทับขอบล่าง ให้ภาษาภาพเป็นชุดเดียวกันทั้งเว็บ */}
       <section className="relative isolate overflow-hidden bg-linear-to-br from-g15-950 via-g15-800 to-g15-600 pb-24 pt-6 sm:pb-32 sm:pt-8">
@@ -252,7 +271,7 @@ export default async function G15MatchDetailPage({
                     <span className="rounded-2xl bg-red-600 px-4 py-3 text-3xl font-extrabold tabular-nums text-white sm:px-6 sm:text-4xl">
                       {match.homeScore} - {match.awayScore}
                     </span>
-                    <LivePill />
+                    {clockLive ? <LiveClock state={clock} serverNow={now.getTime()} /> : <LivePill />}
                   </>
                 ) : live ? (
                   <LivePill size="md" />
@@ -273,8 +292,13 @@ export default async function G15MatchDetailPage({
                 )}
                 {hasHalfScores && (
                   <p className="mt-1 text-center text-[11px] text-slate-400">
-                    ตามใบรายงานผู้ตัดสิน: ครึ่งแรก {match.firstHalfHomeScore ?? "-"}-{match.firstHalfAwayScore ?? "-"} ·
-                    ครึ่งหลัง {match.secondHalfHomeScore ?? "-"}-{match.secondHalfAwayScore ?? "-"}
+                    {/* แสดงเฉพาะส่วนที่มีข้อมูล — ระหว่างเกมมีแค่สกอร์ครึ่งแรก (บันทึกตอนกดจบครึ่งแรก) */}
+                    {match.firstHalfHomeScore != null && match.firstHalfAwayScore != null && (
+                      <>ครึ่งแรก / HT {match.firstHalfHomeScore}-{match.firstHalfAwayScore}</>
+                    )}
+                    {match.secondHalfHomeScore != null && match.secondHalfAwayScore != null && (
+                      <> · ครึ่งหลัง {match.secondHalfHomeScore}-{match.secondHalfAwayScore}</>
+                    )}
                   </p>
                 )}
               </div>
@@ -311,6 +335,38 @@ export default async function G15MatchDetailPage({
             </div>
           </div>
         </div>
+
+        {/* ไทม์ไลน์เหตุการณ์ (ประตู/ใบเหลือง-แดง/เปลี่ยนตัว) — อัปเดตเองระหว่างเกม */}
+        {(live || match.goals.length + match.cards.length + match.substitutions.length > 0) && (
+          <section className="mt-8">
+            <div className="mb-4 flex items-center gap-2">
+              <span className="flex h-7 w-7 flex-none items-center justify-center rounded-lg bg-red-50 text-red-600">
+                <Clock className="h-4 w-4" />
+              </span>
+              <h2 className="text-sm font-semibold text-slate-900">
+                ไทม์ไลน์ <span className="font-normal text-slate-400">/ Match Timeline</span>
+              </h2>
+              {clockLive && (
+                <span className="ml-auto">
+                  <LiveClock state={clock} serverNow={now.getTime()} />
+                </span>
+              )}
+            </div>
+            <MatchTimeline
+              homeTeamId={match.homeTeamId}
+              goals={match.goals}
+              cards={match.cards}
+              substitutions={match.substitutions}
+              live={live}
+              finished={isFinished}
+              halfTimeScore={
+                match.firstHalfHomeScore != null && match.firstHalfAwayScore != null
+                  ? `${match.firstHalfHomeScore}-${match.firstHalfAwayScore}`
+                  : null
+              }
+            />
+          </section>
+        )}
 
         {/* ข้อมูลก่อนแข่ง — โชว์ได้เสมอจากตารางคะแนน/ผลย้อนหลังในระบบ ไม่ต้องรอใบรายงานผู้ตัดสิน */}
         <Reveal delay={0}>

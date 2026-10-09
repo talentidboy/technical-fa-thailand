@@ -196,7 +196,7 @@ export default async function G15WomensSeriesPage({
   return (
     <div className="min-h-screen bg-slate-50">
       <G15Chrome user={user} stage={stage} />
-      <AutoRefresh active={liveMatches.length > 0} />
+      <AutoRefresh active={liveMatches.length > 0} intervalMs={15_000} />
 
       {/* Hero — แบนเนอร์ทางการมีชื่อรายการ/สโลแกน/โลโก้ในภาพอยู่แล้ว จึงโชว์เต็มความกว้างไปเลยโดยไม่มีข้อความทับ */}
       <section className="relative isolate overflow-hidden bg-linear-to-br from-g15-950 via-g15-800 to-g15-600 pb-6 sm:pb-8">

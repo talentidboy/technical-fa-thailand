@@ -7,6 +7,8 @@ import { TeamBadge } from "./TeamBadge";
 import { roundStyle, roundEn, hasPenalties, isLive, hasLiveScore } from "@/lib/g15-stage";
 import { LivePill } from "./LivePill";
 import { StackedTeams } from "./StackedTeams";
+import { LiveClock } from "./LiveClock";
+import { isClockLive } from "@/lib/g15-clock";
 
 type Team = { id: number; name: string; logoUrl: string | null; groupName: string | null };
 
@@ -26,6 +28,11 @@ type Match = {
   homePenalty?: number | null;
   awayPenalty?: number | null;
   goals: MatchGoal[];
+  clockPhase?: string;
+  firstHalfStartedAt?: Date | null;
+  secondHalfStartedAt?: Date | null;
+  firstHalfAddedTime?: number | null;
+  secondHalfAddedTime?: number | null;
 };
 
 // รวมผู้ทำประตูของทีมเดียวกันเป็นบรรทัดเดียว เช่น "ชิชา 9', 33' · อัญชฎา 20'"
@@ -84,6 +91,20 @@ function MatchRow({ match, now }: { match: Match; now: Date }) {
   const homeWon = isFinished && (match.homeScore! > match.awayScore! || (pens && match.homePenalty! > match.awayPenalty!));
   const awayWon = isFinished && (match.awayScore! > match.homeScore! || (pens && match.awayPenalty! > match.homePenalty!));
   const live = isLive(match, now);
+  // ใช้นาฬิกาเกมแทนป้าย LIVE เมื่อแอดมินเดินนาฬิกาอยู่ — เห็นนาทีปัจจุบันได้จากหน้ารายการเลย
+  const clockBadge =
+    match.clockPhase && isClockLive(match.clockPhase) ? (
+      <LiveClock
+        serverNow={now.getTime()}
+        state={{
+          clockPhase: match.clockPhase,
+          firstHalfStartedAt: match.firstHalfStartedAt ? new Date(match.firstHalfStartedAt).toISOString() : null,
+          secondHalfStartedAt: match.secondHalfStartedAt ? new Date(match.secondHalfStartedAt).toISOString() : null,
+          firstHalfAddedTime: match.firstHalfAddedTime ?? null,
+          secondHalfAddedTime: match.secondHalfAddedTime ?? null,
+        }}
+      />
+    ) : null;
   const liveScore = hasLiveScore(match);
   const homeScorers = isFinished || liveScore ? scorerSummary(match.goals, match.homeTeam.id) : null;
   const awayScorers = isFinished || liveScore ? scorerSummary(match.goals, match.awayTeam.id) : null;
@@ -102,7 +123,7 @@ function MatchRow({ match, now }: { match: Match; now: Date }) {
             {isFinished ? (
               <span className="rounded bg-g15-600 px-1.5 py-0.5 text-[10px] font-bold uppercase text-white">Full time</span>
             ) : live ? (
-              <LivePill />
+              (clockBadge ?? <LivePill />)
             ) : null}
           </span>
         </div>
@@ -146,7 +167,7 @@ function MatchRow({ match, now }: { match: Match; now: Date }) {
               <span className="text-xl font-extrabold tabular-nums text-red-600 sm:text-2xl">
                 {match.homeScore} - {match.awayScore}
               </span>
-              <LivePill />
+              {clockBadge ?? <LivePill />}
             </>
           ) : live ? (
             <LivePill size="md" />

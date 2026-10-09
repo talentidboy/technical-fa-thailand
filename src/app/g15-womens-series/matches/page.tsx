@@ -33,7 +33,7 @@ export default async function G15MatchesPage({
   return (
     <div className="min-h-screen bg-slate-50">
       <G15Chrome user={user} stage={stage} />
-      <AutoRefresh active={matches.some((m) => isLive(m))} />
+      <AutoRefresh active={matches.some((m) => isLive(m))} intervalMs={15_000} />
 
       {/* ฮีโร่ไล่สีชุดเดียวกับหน้าอื่นๆ ของ G15 — เนื้อหาหลักลอยทับขอบล่างให้ภาษาภาพเป็นชุดเดียวกันทั้งเว็บ */}
       <section className="relative isolate overflow-hidden bg-linear-to-br from-g15-950 via-g15-800 to-g15-600 pb-20 pt-8 sm:pb-24">

@@ -207,7 +207,7 @@ export async function NationalManage() {
 
   const matchRow = (m: (typeof matches)[number]) => (
     <QuickScoreRow
-      key={m.id}
+      key={`${m.id}-${m.homeScore}-${m.awayScore}-${m.homePenalty}-${m.awayPenalty}-${m.status}`}
       action={updateMatchScore}
       detailsHref={`/g15-womens-series/manage/matches/${m.id}`}
       match={{

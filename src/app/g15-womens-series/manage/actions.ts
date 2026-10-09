@@ -894,3 +894,95 @@ export async function setOfficialActive(formData: FormData) {
   await prisma.g15Official.update({ where: { id }, data: { isActive: formData.get("active") === "1" } });
   revalidateG15(teamId);
 }
+
+// ===== นาฬิกาเกมสด =====
+// ลำดับ: PRE → (เริ่มครึ่งแรก) FIRST_HALF → (จบครึ่งแรก) HALF_TIME → (เริ่มครึ่งหลัง) SECOND_HALF → (จบเกม) FULL_TIME
+// UNDO = ย้อนกลับหนึ่งขั้น (กดผิด) — เคลียร์เวลาของขั้นที่ย้อนออก
+const CLOCK_NEXT: Record<string, { from: string; to: string }> = {
+  START_1: { from: "PRE", to: "FIRST_HALF" },
+  END_1: { from: "FIRST_HALF", to: "HALF_TIME" },
+  START_2: { from: "HALF_TIME", to: "SECOND_HALF" },
+  END_2: { from: "SECOND_HALF", to: "FULL_TIME" },
+};
+
+export async function controlMatchClock(formData: FormData): Promise<ActionResult> {
+  await requireAdminOrStaff();
+  return attempt(async () => {
+    const id = Number(formData.get("id"));
+    const op = String(formData.get("op") ?? "");
+    const match = await prisma.g15Match.findUnique({ where: { id } });
+    if (!match) throw new Error("ไม่พบนัดการแข่งขัน");
+    const now = new Date();
+
+    if (op === "UNDO") {
+      const undo: Record<string, Parameters<typeof prisma.g15Match.update>[0]["data"]> = {
+        FIRST_HALF: { clockPhase: "PRE", firstHalfStartedAt: null, status: "SCHEDULED", homeScore: null, awayScore: null },
+        HALF_TIME: { clockPhase: "FIRST_HALF", firstHalfEndedAt: null },
+        SECOND_HALF: { clockPhase: "HALF_TIME", secondHalfStartedAt: null },
+        FULL_TIME: { clockPhase: "SECOND_HALF", secondHalfEndedAt: null, status: "LIVE" },
+      };
+      const data = undo[match.clockPhase];
+      if (!data) throw new Error("ยังไม่มีขั้นให้ย้อนกลับ");
+      await prisma.g15Match.update({ where: { id }, data });
+      revalidateG15(undefined, id);
+      return;
+    }
+
+    const step = CLOCK_NEXT[op];
+    if (!step) throw new Error("คำสั่งไม่ถูกต้อง");
+    if (match.clockPhase !== step.from) throw new Error("สถานะเกมเปลี่ยนไปแล้ว — รีเฟรชหน้าแล้วลองอีกครั้ง");
+
+    const home = match.homeScore ?? 0;
+    const away = match.awayScore ?? 0;
+    const data: Parameters<typeof prisma.g15Match.update>[0]["data"] = { clockPhase: step.to };
+    if (op === "START_1") Object.assign(data, { firstHalfStartedAt: now, status: "LIVE", homeScore: home, awayScore: away });
+    // จบครึ่งแรก — จดสกอร์ครึ่งแรกไว้ให้ด้วย (ใช้แสดง "ครึ่งแรก x-y" ในหน้ารายละเอียด)
+    if (op === "END_1") Object.assign(data, { firstHalfEndedAt: now, firstHalfHomeScore: home, firstHalfAwayScore: away });
+    if (op === "START_2") Object.assign(data, { secondHalfStartedAt: now });
+    // จบเกม = ผลทางการ (นับในตารางคะแนน)
+    if (op === "END_2") Object.assign(data, { secondHalfEndedAt: now, status: "FINISHED", homeScore: home, awayScore: away });
+
+    await prisma.g15Match.update({ where: { id }, data });
+    revalidateG15(undefined, id);
+  });
+}
+
+// ทดเวลาบาดเจ็บที่ประกาศของแต่ละครึ่ง (half = 1 | 2) — เว้นว่าง = ยังไม่ประกาศ
+export async function setAddedTime(formData: FormData): Promise<ActionResult> {
+  await requireAdminOrStaff();
+  return attempt(async () => {
+    const id = Number(formData.get("id"));
+    const half = String(formData.get("half"));
+    const minutes = int(formData, "minutes");
+    if (minutes != null && (minutes < 0 || minutes > 30)) throw new Error("ทดเวลาต้องอยู่ระหว่าง 0-30 นาที");
+    await prisma.g15Match.update({
+      where: { id },
+      data: half === "1" ? { firstHalfAddedTime: minutes } : { secondHalfAddedTime: minutes },
+    });
+    revalidateG15(undefined, id);
+  });
+}
+
+// ปุ่ม +1/-1 สกอร์ระหว่างเกม — ขึ้นหน้าเว็บทันที (สถานะ LIVE ยังไม่นับในตารางจนกดจบเกม)
+export async function adjustLiveScore(formData: FormData): Promise<ActionResult> {
+  await requireAdminOrStaff();
+  return attempt(async () => {
+    const id = Number(formData.get("id"));
+    const side = String(formData.get("side"));
+    const delta = Number(formData.get("delta")) === -1 ? -1 : 1;
+    const match = await prisma.g15Match.findUnique({ where: { id }, select: { homeScore: true, awayScore: true, clockPhase: true } });
+    if (!match) throw new Error("ไม่พบนัดการแข่งขัน");
+    const key = side === "away" ? "awayScore" : "homeScore";
+    const next = Math.max(0, (match[key] ?? 0) + delta);
+    await prisma.g15Match.update({
+      where: { id },
+      data: {
+        [key]: next,
+        // อีกฝั่งที่ยังว่างให้เป็น 0 ด้วย สกอร์จะได้แสดงครบคู่
+        ...(side === "away" ? { homeScore: match.homeScore ?? 0 } : { awayScore: match.awayScore ?? 0 }),
+        ...(match.clockPhase === "FULL_TIME" ? {} : { status: "LIVE" }),
+      },
+    });
+    revalidateG15(undefined, id);
+  });
+}

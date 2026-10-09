@@ -2,6 +2,7 @@
 
 import { useActionState, useEffect, useRef, useState } from "react";
 import { Plus, X, Check, Search } from "lucide-react";
+import { readClock, type ClockState } from "@/lib/g15-clock";
 
 // ไม่ใส่ความกว้าง (w-*) ไว้ในนี้โดยตรง — ปล่อยให้แต่ละช่องกำหนดเอง (flex-1/w-16/ฯลฯ) เพราะ Tailwind ไม่ได้ generate CSS
 // ตามลำดับ className ที่เขียนในโค้ด ถ้าใส่ w-full ไว้ในนี้แล้วช่องไหนพยายาม override ด้วย w-16/flex-none ทีหลัง
@@ -25,7 +26,7 @@ type RosterOfficial = {
 
 type Team = { id: number; name: string };
 type Side = "home" | "away";
-type Row = { key: number; side: Side };
+type Row = { key: number; side: Side; minute?: number | null };
 
 type ComboOption = { value: string; label: string; searchText: string };
 
@@ -35,7 +36,7 @@ function useTeamRows(initial: Row[] = []) {
   const nextKey = useRef(initial.length);
   const [rows, setRows] = useState<Row[]>(initial);
 
-  const addRow = (side: Side) => setRows((r) => [...r, { key: nextKey.current++, side }]);
+  const addRow = (side: Side, minute?: number | null) => setRows((r) => [...r, { key: nextKey.current++, side, minute }]);
   const removeRow = (key: number) => setRows((r) => r.filter((x) => x.key !== key));
   const indexOf = (key: number) => rows.findIndex((r) => r.key === key);
 
@@ -155,10 +156,23 @@ function SearchableSelect({ name, options, placeholder = "— พิมพ์ค
   );
 }
 
+// นาทีปัจจุบันของเกมตอนกด "เพิ่มแถว" — คำนวณจากนาฬิกาเกมสด (ไม่ใช่เวลาที่โหลดหน้า) ให้แถวใหม่ได้นาทีที่ถูกต้องเสมอ
+// skew = ส่วนต่างนาฬิกาเครื่องกับเซิร์ฟเวอร์ วัดครั้งแรกหลัง mount; ยังไม่เริ่มเกม/พักครึ่ง = ไม่เติม (null)
+function useLiveMinute(clock?: ClockState | null, serverNow?: number) {
+  const skew = useRef(0);
+  useEffect(() => {
+    if (serverNow != null) skew.current = serverNow - Date.now();
+  }, [serverNow]);
+  return () => (clock ? readClock(clock, Date.now() + skew.current).minute : null);
+}
+
+
 // ===== ผู้ทำประตู =====
 
 export function GoalsBulkForm({
   matchId,
+  clock,
+  serverNow,
   action,
   homeTeam,
   awayTeam,
@@ -167,12 +181,15 @@ export function GoalsBulkForm({
 }: {
   matchId: number;
   action: (formData: FormData) => void;
+  clock?: ClockState | null;
+  serverNow?: number;
   homeTeam: Team;
   awayTeam: Team;
   homePlayers: RosterPlayer[];
   awayPlayers: RosterPlayer[];
 }) {
   const { rows, addRow, removeRow, indexOf } = useTeamRows();
+  const liveMinute = useLiveMinute(clock, serverNow);
   const { formAction, showToast } = useSavedToast(action);
 
   const column = (side: Side, team: Team, players: RosterPlayer[]) => (
@@ -184,12 +201,12 @@ export function GoalsBulkForm({
           .map((r) => (
             <div key={r.key} className="flex items-center gap-1.5">
               <SearchableSelect name={`playerId_${indexOf(r.key)}`} options={playerOptions(players)} />
-              <input type="number" name={`minute_${indexOf(r.key)}`} placeholder="นาที" className={`${compactFieldClass} w-20 flex-none`} />
+              <input type="number" name={`minute_${indexOf(r.key)}`} defaultValue={r.minute ?? undefined} placeholder="นาที" className={`${compactFieldClass} w-20 flex-none`} />
               <RemoveRowButton onClick={() => removeRow(r.key)} />
             </div>
           ))}
       </div>
-      <AddRowButton onClick={() => addRow(side)} />
+      <AddRowButton onClick={() => addRow(side, liveMinute())} />
     </div>
   );
 
@@ -215,6 +232,8 @@ export function GoalsBulkForm({
 
 export function SubstitutionsBulkForm({
   matchId,
+  clock,
+  serverNow,
   action,
   homeTeam,
   awayTeam,
@@ -225,6 +244,8 @@ export function SubstitutionsBulkForm({
 }: {
   matchId: number;
   action: (formData: FormData) => void;
+  clock?: ClockState | null;
+  serverNow?: number;
   homeTeam: Team;
   awayTeam: Team;
   homeInPlayers: RosterPlayer[];
@@ -233,6 +254,7 @@ export function SubstitutionsBulkForm({
   awayOutPlayers: RosterPlayer[];
 }) {
   const { rows, addRow, removeRow, indexOf } = useTeamRows();
+  const liveMinute = useLiveMinute(clock, serverNow);
   const { formAction, showToast } = useSavedToast(action);
 
   const column = (side: Side, team: Team, inPlayers: RosterPlayer[], outPlayers: RosterPlayer[]) => (
@@ -257,14 +279,14 @@ export function SubstitutionsBulkForm({
                   <SearchableSelect name={`outPlayerId_${i}`} options={playerOptions(outPlayers)} placeholder="— ตัวจริง —" />
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <input type="number" name={`minute_${i}`} placeholder="นาที" className={`${compactFieldClass} w-20 flex-none`} />
+                  <input type="number" name={`minute_${i}`} defaultValue={r.minute ?? undefined} placeholder="นาที" className={`${compactFieldClass} w-20 flex-none`} />
                   <RemoveRowButton onClick={() => removeRow(r.key)} />
                 </div>
               </div>
             );
           })}
       </div>
-      <AddRowButton onClick={() => addRow(side)} />
+      <AddRowButton onClick={() => addRow(side, liveMinute())} />
     </div>
   );
 
@@ -293,6 +315,8 @@ export function SubstitutionsBulkForm({
 
 export function CardsBulkForm({
   matchId,
+  clock,
+  serverNow,
   action,
   homeTeam,
   awayTeam,
@@ -303,6 +327,8 @@ export function CardsBulkForm({
 }: {
   matchId: number;
   action: (formData: FormData) => void;
+  clock?: ClockState | null;
+  serverNow?: number;
   homeTeam: Team;
   awayTeam: Team;
   homePlayers: RosterPlayer[];
@@ -311,6 +337,7 @@ export function CardsBulkForm({
   awayOfficials: RosterOfficial[];
 }) {
   const { rows, addRow, removeRow, indexOf } = useTeamRows();
+  const liveMinute = useLiveMinute(clock, serverNow);
   const { formAction, showToast } = useSavedToast(action);
 
   const holderOptions = (players: RosterPlayer[], officials: RosterOfficial[]): ComboOption[] => [
@@ -341,14 +368,14 @@ export function CardsBulkForm({
                   <option value="YELLOW">เหลือง</option>
                   <option value="RED">แดง</option>
                 </select>
-                <input type="number" name={`minute_${i}`} placeholder="นาที" className={`${compactFieldClass} w-20 flex-none`} />
+                <input type="number" name={`minute_${i}`} defaultValue={r.minute ?? undefined} placeholder="นาที" className={`${compactFieldClass} w-20 flex-none`} />
                 <input type="text" name={`reason_${i}`} placeholder="เหตุผล" className={`${compactFieldClass} min-w-24 flex-1`} />
                 <RemoveRowButton onClick={() => removeRow(r.key)} />
               </div>
             );
           })}
       </div>
-      <AddRowButton onClick={() => addRow(side)} />
+      <AddRowButton onClick={() => addRow(side, liveMinute())} />
     </div>
   );
 

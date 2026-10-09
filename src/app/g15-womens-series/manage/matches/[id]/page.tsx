@@ -16,6 +16,9 @@ import {
   updateCard,
   deleteCard,
   updateMatchScore,
+  controlMatchClock,
+  setAddedTime,
+  adjustLiveScore,
 } from "../../actions";
 import { Field, SelectField } from "@/components/FormField";
 import { TeamBadge } from "@/components/g15/TeamBadge";
@@ -23,6 +26,7 @@ import { GoalsBulkForm, SubstitutionsBulkForm, CardsBulkForm } from "@/component
 import { FormWithToast } from "@/components/g15/FormWithToast";
 import { QuickScoreRow } from "@/components/g15/QuickScoreRow";
 import { OfficialCountdown } from "@/components/g15/OfficialCountdown";
+import { LiveMatchControl } from "@/components/g15/LiveMatchControl";
 import { formatMatchDateTime } from "@/lib/g15";
 import { withStage, stageInfo, isLive, type G15Stage } from "@/lib/g15-stage";
 import { LOGO_URL } from "@/lib/brand";
@@ -224,6 +228,15 @@ export default async function G15ManageMatchPage({
 
   const teamById = (teamId: number) => (teamId === match.homeTeamId ? match.homeTeam : match.awayTeam);
   const manageHref = withStage("/g15-womens-series/manage", match.stage as G15Stage);
+  // สถานะนาฬิกาเกมสด — ส่งให้แผงควบคุมและฟอร์มผู้ทำประตู/ใบเหลือง/เปลี่ยนตัว (เติมนาทีอัตโนมัติ)
+  const clock = {
+    clockPhase: match.clockPhase,
+    firstHalfStartedAt: match.firstHalfStartedAt?.toISOString() ?? null,
+    secondHalfStartedAt: match.secondHalfStartedAt?.toISOString() ?? null,
+    firstHalfAddedTime: match.firstHalfAddedTime,
+    secondHalfAddedTime: match.secondHalfAddedTime,
+  };
+  const serverNow = new Date().getTime();
 
   const [rosterPlayers, rosterOfficials] = await Promise.all([
     // คนที่ไม่อยู่ในรายชื่อปัจจุบันไม่ต้องให้เลือก ยกเว้นคนที่อยู่ในไลน์อัพนัดนี้อยู่แล้ว (นัดรอบก่อน) — ไม่งั้นกดบันทึกไลน์อัพซ้ำแล้วคนนั้นจะหลุด
@@ -315,10 +328,28 @@ export default async function G15ManageMatchPage({
           </p>
         </div>
 
-        {/* ผลการแข่งขัน — กรอกได้จากหน้านี้เลย ไม่ต้องย้อนกลับไปหน้ารายการนัด */}
+        {/* ควบคุมเกมสด — นาฬิกา/ทดเวลา/สกอร์ ขึ้นหน้าเว็บแบบเรียลไทม์ */}
+        <LiveMatchControl
+          matchId={match.id}
+          homeTeam={match.homeTeam}
+          awayTeam={match.awayTeam}
+          homeScore={match.homeScore}
+          awayScore={match.awayScore}
+          clock={clock}
+          serverNow={serverNow}
+          controlAction={controlMatchClock}
+          addedTimeAction={setAddedTime}
+          scoreAction={adjustLiveScore}
+        />
+
+        {/* แก้ผลด้วยตนเอง — สำหรับกรอกผลย้อนหลัง/แก้สกอร์ (ไม่ได้ใช้นาฬิกาเกมสด) */}
         <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-          <div className="border-b border-slate-100 px-6 py-3 text-sm font-semibold text-slate-900">ผลการแข่งขัน</div>
+          <div className="border-b border-slate-100 px-6 py-3 text-sm font-semibold text-slate-900">
+            แก้ผลด้วยตนเอง <span className="font-normal text-slate-400">(กรอกผลย้อนหลัง / แก้สกอร์)</span>
+          </div>
+          {/* key ตามสกอร์/สถานะ — สกอร์เปลี่ยนจากแผงควบคุมเกมสดแล้วให้ช่องกรอกโหลดค่าใหม่ (ไม่ค้างค่าเก่าที่อาจถูกกดบันทึกทับ) */}
           <QuickScoreRow
+            key={`${match.homeScore}-${match.awayScore}-${match.homePenalty}-${match.awayPenalty}-${match.status}`}
             action={updateMatchScore}
             detailsHref={`/g15-womens-series/matches/${match.id}`}
             detailsLabel="ดูหน้าสาธารณะ"
@@ -510,6 +541,8 @@ export default async function G15ManageMatchPage({
             <p className="text-xs text-slate-400">แยกตามทีม กดเพิ่มแถวเองตามจำนวนที่ต้องการ — เลือกจากไลน์อัพของนัดนี้</p>
           </div>
           <GoalsBulkForm
+            clock={clock}
+            serverNow={serverNow}
             matchId={match.id}
             action={createGoalsBulk}
             homeTeam={match.homeTeam}
@@ -604,6 +637,8 @@ export default async function G15ManageMatchPage({
             </p>
           </div>
           <SubstitutionsBulkForm
+            clock={clock}
+            serverNow={serverNow}
             matchId={match.id}
             action={createSubstitutionsBulk}
             homeTeam={match.homeTeam}
@@ -699,6 +734,8 @@ export default async function G15ManageMatchPage({
             <p className="text-xs text-slate-400">แยกตามทีม กดเพิ่มแถวเองตามจำนวนที่ต้องการ — เลือกผู้รับได้ทั้งนักกีฬาในไลน์อัพและเจ้าหน้าที่ทีม</p>
           </div>
           <CardsBulkForm
+            clock={clock}
+            serverNow={serverNow}
             matchId={match.id}
             action={createCardsBulk}
             homeTeam={match.homeTeam}

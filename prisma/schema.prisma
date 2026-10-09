@@ -374,6 +374,17 @@ model G15Match {
   status     String    @default("SCHEDULED")
   createdAt  DateTime  @default(now()) @map("created_at")
 
+  // นาฬิกาเกมสด (แอดมินกดเริ่ม/จบแต่ละครึ่ง) — clockPhase: PRE, FIRST_HALF, HALF_TIME, SECOND_HALF, FULL_TIME
+  // เวลาในเกมคำนวณจากเวลาที่กดเริ่มครึ่งนั้น (ไม่ได้เก็บนาทีที่เดินอยู่) — ทุกเครื่องเห็นเวลาตรงกัน แม้แอดมินปิดหน้าจอไป
+  clockPhase          String    @default("PRE") @map("clock_phase")
+  firstHalfStartedAt  DateTime? @map("first_half_started_at")
+  firstHalfEndedAt    DateTime? @map("first_half_ended_at")
+  secondHalfStartedAt DateTime? @map("second_half_started_at")
+  secondHalfEndedAt   DateTime? @map("second_half_ended_at")
+  // ทดเวลาบาดเจ็บ (นาที) ที่ผู้ตัดสินที่ 4 ประกาศของแต่ละครึ่ง
+  firstHalfAddedTime  Int?      @map("first_half_added_time")
+  secondHalfAddedTime Int?      @map("second_half_added_time")
+
   // ทีมงานผู้ตัดสิน — จากใบรายงานผู้ตัดสิน/Starting List ของแต่ละนัด (มีเฉพาะนัดที่ได้รับเอกสารแล้ว)
   referee            String? @map("referee")
   assistantReferee1  String? @map("assistant_referee_1")

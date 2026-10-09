@@ -3,6 +3,8 @@ import { Trophy, Clock, Calendar, MapPin, ChevronRight } from "lucide-react";
 import { TeamBadge } from "./TeamBadge";
 import { LivePill } from "./LivePill";
 import { Countdown } from "./Countdown";
+import { LiveClock } from "./LiveClock";
+import { isClockLive } from "@/lib/g15-clock";
 import { roundStyle, roundEn, hasPenalties, hasLiveScore } from "@/lib/g15-stage";
 import { formatMatchDateTime } from "@/lib/g15";
 
@@ -19,6 +21,12 @@ export type SpotlightMatch = {
   homePenalty?: number | null;
   awayPenalty?: number | null;
   status: string;
+  // นาฬิกาเกมสด (ถ้าแอดมินใช้แผงควบคุมเกม)
+  clockPhase?: string;
+  firstHalfStartedAt?: Date | null;
+  secondHalfStartedAt?: Date | null;
+  firstHalfAddedTime?: number | null;
+  secondHalfAddedTime?: number | null;
 };
 
 export type SpotlightMode = "upcoming" | "live" | "result";
@@ -90,7 +98,21 @@ export function MatchSpotlight({
                 >
                   {match.homeScore} - {match.awayScore}
                 </div>
-                {liveScore && <LivePill />}
+                {liveScore &&
+                  (match.clockPhase && isClockLive(match.clockPhase) && serverNow != null ? (
+                    <LiveClock
+                      serverNow={serverNow}
+                      state={{
+                        clockPhase: match.clockPhase,
+                        firstHalfStartedAt: match.firstHalfStartedAt?.toISOString() ?? null,
+                        secondHalfStartedAt: match.secondHalfStartedAt?.toISOString() ?? null,
+                        firstHalfAddedTime: match.firstHalfAddedTime ?? null,
+                        secondHalfAddedTime: match.secondHalfAddedTime ?? null,
+                      }}
+                    />
+                  ) : (
+                    <LivePill />
+                  ))}
                 {isFinished && hasPenalties(match) && (
                   <p className="text-xs font-semibold text-slate-500">
                     จุดโทษ {match.homePenalty}-{match.awayPenalty}

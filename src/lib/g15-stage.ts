@@ -126,10 +126,13 @@ export function hasPenalties(m: { homePenalty?: number | null; awayPenalty?: num
 // 90 นาที + พักครึ่ง 15 นาที + ทดเวลา ≈ 2 ชั่วโมงนับจากเวลาเตะ
 export const LIVE_WINDOW_MS = 120 * 60 * 1000;
 
-type LiveInput = { status: string; matchDate: Date | null };
+type LiveInput = { status: string; matchDate: Date | null; clockPhase?: string };
 
 // กำลังแข่ง = แอดมินกดอัปเดตสกอร์สด (status LIVE) หรือยังไม่มีผลแต่อยู่ในช่วงเวลาแข่งตามโปรแกรม
 export function isLive(m: LiveInput, now: Date = new Date()) {
+  // นาฬิกาเกมสดเป็นตัวบอกที่แม่นที่สุด — แอดมินกดเริ่มแล้วจนถึงก่อนจบเกม = กำลังแข่ง, จบเกมแล้ว = ไม่ใช่
+  if (m.clockPhase === "FIRST_HALF" || m.clockPhase === "HALF_TIME" || m.clockPhase === "SECOND_HALF") return true;
+  if (m.clockPhase === "FULL_TIME") return false;
   if (m.status === "LIVE") return true;
   if (m.status !== "SCHEDULED" || !m.matchDate) return false;
   const kickoff = m.matchDate.getTime();
