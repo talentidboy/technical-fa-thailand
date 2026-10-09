@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
-import { ArrowRight, ChevronUp, UserRound } from "lucide-react";
+import { ArrowRight, UserRound, X } from "lucide-react";
 import { TeamBadge } from "./TeamBadge";
 
 export type StatLeaderRow = {
@@ -69,6 +70,7 @@ export function StatLeaderCard({
   unitTh,
   displayFont,
   kind = "player",
+  title,
 }: {
   rows: StatLeaderRow[];
   unit: string; // เช่น "Goals"
@@ -76,12 +78,26 @@ export function StatLeaderCard({
   displayFont: string; // className ของฟอนต์ตัวแคบสูง (โหลดจากหน้า server)
   // team = แบนเนอร์ใช้โลโก้ทีมแทนรูปนักกีฬา และชื่อทีม (ภาษาไทย) ใช้ฟอนต์ไทยตัวหนาแทนฟอนต์แคบสูงที่ไม่มีอักษรไทย
   kind?: "player" | "team";
+  // หัวข้อของป็อปอัพ "ดูทั้งหมด" เช่น "Top Scorers / ดาวซัลโว"
+  title?: string;
 }) {
   const isTeam = kind === "team";
-  const [expanded, setExpanded] = useState(false);
+  // "ดูทั้งหมด" เปิดเป็นป็อปอัพ (เลื่อนดูในป็อปอัพ) แทนการขยายการ์ด — การ์ดในหน้าจะได้สูงเท่าเดิมเสมอ
+  const [open, setOpen] = useState(false);
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = prev;
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
   const ranked = withRanks(rows);
   const [leader, ...rest] = ranked;
-  const visible = expanded ? rest : rest.slice(0, PREVIEW);
+  const visible = rest.slice(0, PREVIEW);
 
   // ยังไม่มีข้อมูล — การ์ดสั้นเท่าแบนเนอร์อันดับ 1 บนฉากสนาม (ไม่ยืดเป็นกล่องว่างสูงเท่าการ์ดข้างๆ)
   if (!leader) {
@@ -103,6 +119,40 @@ export function StatLeaderCard({
       </div>
     );
   }
+
+  const rankRow = (r: (typeof ranked)[number]) => (
+              <li key={r.key}>
+                <PlayerLink playerId={r.playerId} href={r.href} className="flex items-center gap-3 py-2.5 transition-colors hover:bg-slate-50">
+                  <RankBadge rank={r.rank} solid={r.rank === 1} />
+                  {isTeam ? (
+                    <span className="flex h-11 w-11 flex-none items-center justify-center rounded-full bg-white ring-1 ring-slate-200">
+                      <TeamBadge team={r.team} size="md" />
+                    </span>
+                  ) : (
+                  <span className="relative h-11 w-11 flex-none overflow-hidden rounded-full bg-linear-to-b from-g15-200 to-g15-500">
+                    {r.photoUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={r.photoUrl} alt="" loading="lazy" className="h-[125%] w-full object-cover object-top" />
+                    ) : (
+                      <UserRound className="absolute bottom-0 left-1/2 h-4/5 w-4/5 -translate-x-1/2 text-white/70" />
+                    )}
+                  </span>
+                  )}
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm font-bold uppercase text-slate-900">{r.nameEn || r.nameTh}</span>
+                    {isTeam ? (
+                      r.subtitle && <span className="block truncate text-[11px] font-semibold text-slate-400">{r.subtitle}</span>
+                    ) : (
+                      <span className="flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+                        <TeamBadge team={r.team} size="sm" />
+                        <span className="truncate">{r.team.name}</span>
+                      </span>
+                    )}
+                  </span>
+                  <span className={`${displayFont} w-8 flex-none text-right text-2xl text-slate-900`}>{r.value}</span>
+                </PlayerLink>
+              </li>
+  );
 
   return (
     <div className="flex h-full flex-col overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200">
@@ -174,59 +224,60 @@ export function StatLeaderCard({
           <p className="py-6 text-center text-xs text-slate-400">มีผู้นำเพียงคนเดียว</p>
         ) : (
           <ul className="divide-y divide-slate-100">
-            {visible.map((r) => (
-              <li key={r.key}>
-                <PlayerLink playerId={r.playerId} href={r.href} className="flex items-center gap-3 py-2.5 transition-colors hover:bg-slate-50">
-                  <RankBadge rank={r.rank} solid={r.rank === 1} />
-                  {isTeam ? (
-                    <span className="flex h-11 w-11 flex-none items-center justify-center rounded-full bg-white ring-1 ring-slate-200">
-                      <TeamBadge team={r.team} size="md" />
-                    </span>
-                  ) : (
-                  <span className="relative h-11 w-11 flex-none overflow-hidden rounded-full bg-linear-to-b from-g15-200 to-g15-500">
-                    {r.photoUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={r.photoUrl} alt="" loading="lazy" className="h-[125%] w-full object-cover object-top" />
-                    ) : (
-                      <UserRound className="absolute bottom-0 left-1/2 h-4/5 w-4/5 -translate-x-1/2 text-white/70" />
-                    )}
-                  </span>
-                  )}
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-bold uppercase text-slate-900">{r.nameEn || r.nameTh}</span>
-                    {isTeam ? (
-                      r.subtitle && <span className="block truncate text-[11px] font-semibold text-slate-400">{r.subtitle}</span>
-                    ) : (
-                      <span className="flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
-                        <TeamBadge team={r.team} size="sm" />
-                        <span className="truncate">{r.team.name}</span>
-                      </span>
-                    )}
-                  </span>
-                  <span className={`${displayFont} w-8 flex-none text-right text-2xl text-slate-900`}>{r.value}</span>
-                </PlayerLink>
-              </li>
-            ))}
+            {visible.map((r) => rankRow(r))}
           </ul>
         )}
         {rest.length > PREVIEW && (
           <button
             type="button"
-            onClick={() => setExpanded((e) => !e)}
+            onClick={() => setOpen(true)}
             className="mt-auto flex w-full items-center justify-center gap-1.5 rounded-xl border-2 border-g15-600 py-2.5 text-xs font-bold uppercase tracking-wide text-g15-700 transition-colors hover:bg-g15-600 hover:text-white"
           >
-            {expanded ? (
-              <>
-                แสดงน้อยลง / Show less <ChevronUp className="h-4 w-4" />
-              </>
-            ) : (
-              <>
-                ดูทั้งหมด ({rest.length + 1}) / View all <ArrowRight className="h-4 w-4" />
-              </>
-            )}
+            ดูทั้งหมด ({ranked.length}) / View all <ArrowRight className="h-4 w-4" />
           </button>
         )}
       </div>
+
+      {/* ป็อปอัพรายชื่อเต็ม — โทรศัพท์เป็นแผ่นเลื่อนขึ้นจากด้านล่าง, จอใหญ่อยู่กลางจอ; รายชื่อเลื่อนภายในป็อปอัพ
+          render ผ่าน portal ไปที่ body: การ์ดอยู่ใน Reveal ที่มี transform ซึ่งจะทำให้ position:fixed ยึดกับการ์ดแทนหน้าจอ */}
+      {open &&
+        createPortal(
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label={title ?? unit}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setOpen(false);
+          }}
+          className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/60 backdrop-blur-sm sm:items-center sm:p-4"
+        >
+          <div className="flex max-h-[85vh] w-full max-w-lg flex-col overflow-hidden rounded-t-3xl bg-white shadow-2xl sm:rounded-3xl">
+            <div className="relative flex-none overflow-hidden bg-linear-to-r from-g15-900 via-g15-700 to-g15-600 px-5 py-4 text-white">
+              <p className={`${displayFont} pr-10 text-3xl uppercase leading-none`}>{title ?? unit}</p>
+              <p className="mt-1 text-xs text-g15-200">
+                ทั้งหมด {ranked.length} {isTeam ? "ทีม" : "คน"} · เรียงตาม{unitTh}
+              </p>
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                aria-label="ปิด"
+                className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-white/15 transition-colors hover:bg-white/25"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="flex flex-none items-center gap-3 border-b border-slate-100 px-5 py-2 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+              <span className="w-8 text-center">Rank</span>
+              <span className="flex-1">{isTeam ? "Team" : "Player"}</span>
+              <span>{unit}</span>
+            </div>
+            <ul className="divide-y divide-slate-100 overflow-y-auto overscroll-contain px-5 pb-4">
+              {ranked.map((r) => rankRow(r))}
+            </ul>
+          </div>
+        </div>,
+          document.body,
+        )}
     </div>
   );
 }

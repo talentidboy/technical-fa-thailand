@@ -260,7 +260,7 @@ export default async function G15StatsPage({
                         <span className="text-xs font-semibold text-slate-400">{b.th}</span>
                       </p>
                       <div className="flex-1">
-                        <StatLeaderCard rows={b.rows} unit={b.unit} unitTh={b.unitTh} displayFont={display.className} />
+                        <StatLeaderCard rows={b.rows} unit={b.unit} unitTh={b.unitTh} displayFont={display.className} title={`${b.title} / ${b.th}`} />
                       </div>
                     </div>
                   </Reveal>
@@ -287,7 +287,7 @@ export default async function G15StatsPage({
                         <span className="text-xs font-semibold text-slate-400">{b.th}</span>
                       </p>
                       <div className="flex-1">
-                        <StatLeaderCard rows={b.rows} unit={b.unit} unitTh={b.unitTh} displayFont={display.className} kind="team" />
+                        <StatLeaderCard rows={b.rows} unit={b.unit} unitTh={b.unitTh} displayFont={display.className} kind="team" title={`${b.title} / ${b.th}`} />
                       </div>
                     </div>
                   </Reveal>
