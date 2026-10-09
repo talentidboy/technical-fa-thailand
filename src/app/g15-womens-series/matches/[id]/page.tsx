@@ -18,7 +18,6 @@ import { LivePill } from "@/components/g15/LivePill";
 import { AutoRefresh } from "@/components/g15/AutoRefresh";
 import { ResultShareCard } from "@/components/g15/ResultShareCard";
 import { Countdown } from "@/components/g15/Countdown";
-import { OfficialCountdown } from "@/components/g15/OfficialCountdown";
 import { G15Chrome } from "@/components/g15/G15Chrome";
 import { HeroArt } from "@/components/g15/HeroArt";
 import { TeamBadge } from "@/components/g15/TeamBadge";
@@ -312,17 +311,6 @@ export default async function G15MatchDetailPage({
             </div>
           </div>
         </div>
-
-        {/* กำหนดการก่อนเริ่มเกม — ซ่อนไว้หลังปุ่ม (มีเฉพาะนัดที่กำหนดเวลาเตะแล้ว) */}
-        {match.matchDate && (
-          <OfficialCountdown
-            kickoff={match.matchDate.toISOString()}
-            homeTeam={match.homeTeam.name}
-            awayTeam={match.awayTeam.name}
-            venue={match.venue}
-            matchLabel={`${match.matchNo != null ? `Match ${match.matchNo} · ` : ""}${match.round}`}
-          />
-        )}
 
         {/* ข้อมูลก่อนแข่ง — โชว์ได้เสมอจากตารางคะแนน/ผลย้อนหลังในระบบ ไม่ต้องรอใบรายงานผู้ตัดสิน */}
         <Reveal delay={0}>

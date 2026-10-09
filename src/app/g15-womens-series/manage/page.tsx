@@ -17,7 +17,7 @@ import { MatchRegionFields } from "@/components/g15/MatchRegionFields";
 import { StageSwitcher } from "@/components/g15/StageSwitcher";
 import { parseStage, withStage, stageInfo } from "@/lib/g15-stage";
 import { NationalManage } from "./NationalManage";
-import { Trash2, ArrowLeft, MapPin, ChevronRight, ChevronDown, Flame } from "lucide-react";
+import { Trash2, ArrowLeft, MapPin, ChevronRight, ChevronDown, Flame, ClipboardList } from "lucide-react";
 
 export default async function G15ManagePage({
   searchParams,
@@ -78,7 +78,16 @@ function ManageShell({ stage, children }: { stage: ReturnType<typeof parseStage>
               {stageInfo(stage).label} — สถิติแต่ละรอบนับแยกกัน ทีมและรายชื่อนักกีฬาใช้ชุดเดียวกันทุกรอบ
             </p>
           </div>
-          <StageSwitcher stage={stage} basePath="/g15-womens-series/manage" variant="light" />
+          <div className="flex flex-wrap items-center gap-2">
+            <Link
+              href="/g15-womens-series/manage/countdown"
+              className="inline-flex h-12 items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-semibold text-g15-700 shadow-sm transition-colors hover:border-g15-200 hover:bg-g15-50"
+            >
+              <ClipboardList className="h-4 w-4" />
+              Official Countdown
+            </Link>
+            <StageSwitcher stage={stage} basePath="/g15-womens-series/manage" variant="light" />
+          </div>
         </div>
         {children}
       </div>

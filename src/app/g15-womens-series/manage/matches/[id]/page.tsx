@@ -22,6 +22,7 @@ import { TeamBadge } from "@/components/g15/TeamBadge";
 import { GoalsBulkForm, SubstitutionsBulkForm, CardsBulkForm } from "@/components/g15/BulkStatForms";
 import { FormWithToast } from "@/components/g15/FormWithToast";
 import { QuickScoreRow } from "@/components/g15/QuickScoreRow";
+import { OfficialCountdown } from "@/components/g15/OfficialCountdown";
 import { formatMatchDateTime } from "@/lib/g15";
 import { withStage, stageInfo, isLive, type G15Stage } from "@/lib/g15-stage";
 import { LOGO_URL } from "@/lib/brand";
@@ -338,6 +339,17 @@ export default async function G15ManageMatchPage({
             }}
           />
         </div>
+
+        {/* กำหนดการก่อนเริ่มเกม (เฉพาะแอดมิน) */}
+        {match.matchDate && (
+          <OfficialCountdown
+            kickoff={match.matchDate.toISOString()}
+            homeTeam={match.homeTeam.name}
+            awayTeam={match.awayTeam.name}
+            venue={match.venue}
+            matchLabel={`${match.matchNo != null ? `Match ${match.matchNo} · ` : ""}${match.round}`}
+          />
+        )}
 
         {/* ไลน์อัพ */}
         <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">

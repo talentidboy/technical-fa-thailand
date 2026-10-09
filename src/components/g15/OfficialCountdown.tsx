@@ -67,21 +67,28 @@ function StepTimer({ target, now, isNext }: { target: number; now: number | null
   );
 }
 
-// กำหนดการก่อนเริ่มเกม (Official Countdown) — ซ่อนไว้หลังปุ่ม กดแล้วค่อยแสดง เวลาทุกขั้นคำนวณจากเวลาเตะจริงของนัด
+// กำหนดการก่อนเริ่มเกม (Official Countdown) — สำหรับแอดมิน/เจ้าหน้าที่เท่านั้น (หน้า /manage/countdown และหน้าจัดการนัด)
+// พับ/กางได้ เวลาทุกขั้นคำนวณจากเวลาเตะจริงของนัด
 export function OfficialCountdown({
   kickoff,
   homeTeam,
   awayTeam,
   venue,
   matchLabel,
+  defaultOpen = false,
+  title,
 }: {
   kickoff: string;
   homeTeam: string;
   awayTeam: string;
   venue: string | null;
   matchLabel: string;
+  // เปิดไว้ตั้งแต่แรก — หน้า Official Countdown ของแอดมินเปิดนัดถัดไปให้อัตโนมัติ
+  defaultOpen?: boolean;
+  // ข้อความหลักบนปุ่ม (เช่น "นัด 1 · ทีม A vs ทีม B") — ไม่ใส่ = "Official Countdown"
+  title?: string;
 }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(defaultOpen);
   // นาฬิกาสำหรับนับถอยหลังแต่ละขั้น — เริ่มเดินตอนกดเปิดเท่านั้น (ปิดอยู่ไม่ต้องอัปเดตทุกวินาที)
   const [now, setNow] = useState<number | null>(null);
   useEffect(() => {
@@ -97,7 +104,7 @@ export function OfficialCountdown({
   const koLabel = timeAt(ko, 0);
 
   return (
-    <section className="mt-8">
+    <section>
       <button
         type="button"
         onClick={() => {
@@ -111,7 +118,7 @@ export function OfficialCountdown({
           <ClipboardList className="h-4.5 w-4.5" />
         </span>
         <span className="min-w-0 flex-1">
-          <span className="block text-sm font-bold text-slate-900">Official Countdown</span>
+          <span className="block truncate text-sm font-bold text-slate-900">{title ?? "Official Countdown"}</span>
           <span className="block text-xs text-slate-500">กำหนดการก่อนเริ่มการแข่งขัน · เตะ {koLabel} น.</span>
         </span>
         <span className="flex flex-none items-center gap-1 text-xs font-semibold text-g15-600">
