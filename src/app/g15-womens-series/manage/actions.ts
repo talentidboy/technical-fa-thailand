@@ -392,10 +392,13 @@ export async function updatePlayer(formData: FormData) {
   if (!firstNameTh || !lastNameTh) {
     throw new Error("กรุณากรอกชื่อ-นามสกุลนักกีฬา");
   }
+  // แนบรูปใหม่ = เปลี่ยนรูป, ไม่แนบ = คงรูปเดิม (รูปที่อัปโหลดจากหน้านี้ไม่ได้ไดคัทพื้นหลังอัตโนมัติ)
+  const photoUrl = await trySaveUploadedPhoto(formData.get("photo") as File | null);
 
   await prisma.g15Player.update({
     where: { id },
     data: {
+      ...(photoUrl ? { photoUrl } : {}),
       firstNameTh,
       lastNameTh,
       no: int(formData, "no"),
@@ -465,10 +468,12 @@ export async function updateOfficial(formData: FormData) {
   if (!firstNameTh || !lastNameTh) {
     throw new Error("กรุณากรอกชื่อ-นามสกุลเจ้าหน้าที่");
   }
+  const photoUrl = await trySaveUploadedPhoto(formData.get("photo") as File | null);
 
   await prisma.g15Official.update({
     where: { id },
     data: {
+      ...(photoUrl ? { photoUrl } : {}),
       firstNameTh,
       lastNameTh,
       no: int(formData, "no"),

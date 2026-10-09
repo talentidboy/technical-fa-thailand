@@ -31,6 +31,7 @@ export default async function G15PlayerPage({ params }: { params: Promise<{ id: 
         lastNameEn: true,
         jerseyNumber: true,
         jerseyName: true,
+        photoUrl: true,
         position: true,
         nationality: true,
         team: true,
@@ -80,21 +81,44 @@ export default async function G15PlayerPage({ params }: { params: Promise<{ id: 
     <div className="min-h-screen bg-slate-50">
       <G15Chrome user={user} />
 
-      <section className="relative isolate overflow-hidden bg-linear-to-br from-g15-950 via-g15-800 to-g15-600 pb-24 pt-8 sm:pb-28">
+      {/* ฮีโร่โปรไฟล์ — ชื่อใหญ่ซ้าย, รูปไดคัทขวาพร้อมเบอร์เสื้อตัวยักษ์ด้านหลัง (แบบหน้าโปรไฟล์นักเตะทัวร์นาเมนต์ทั่วไป) */}
+      <section className="relative isolate overflow-hidden bg-linear-to-br from-g15-950 via-g15-800 to-g15-600">
         <div className="absolute inset-x-0 top-0 h-1.5 animate-shimmer-slide bg-linear-to-r from-amber-600 via-amber-200 via-50% to-amber-600 bg-size-[200%_100%]" />
         <HeroArt />
-        <div className="mx-auto flex max-w-4xl items-center gap-5 px-6">
-          <div className="flex h-20 w-20 flex-none items-center justify-center rounded-3xl bg-white/10 text-4xl font-extrabold text-white ring-2 ring-white/25 sm:h-24 sm:w-24 sm:text-5xl">
-            {player.jerseyNumber ?? <User className="h-10 w-10" />}
-          </div>
-          <div className="min-w-0">
-            <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-g15-200">
+        <div className="mx-auto grid max-w-5xl grid-cols-[1fr_auto] items-end gap-2 px-6 pt-8 sm:gap-6 sm:pt-10">
+          <div className="min-w-0 pb-24 sm:pb-28">
+            <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-[0.25em] text-g15-200">
               <Shirt className="h-3.5 w-3.5" />
               Player Profile
             </p>
-            <h1 className="mt-1 truncate text-2xl font-extrabold text-white sm:text-3xl">{fullName}</h1>
+            <span className="mt-2 block h-0.5 w-10 rounded-full bg-amber-400" />
+            <h1 className="mt-3 text-3xl font-black leading-tight text-white sm:text-5xl">
+              {player.firstNameTh}
+              <br />
+              {player.lastNameTh}
+            </h1>
             {(player.firstNameEn || player.lastNameEn) && (
-              <p className="truncate text-sm text-g15-200">{[player.firstNameEn, player.lastNameEn].filter(Boolean).join(" ")}</p>
+              <p className="mt-2 text-sm font-bold uppercase tracking-widest text-g15-200 sm:text-base">
+                {[player.firstNameEn, player.lastNameEn].filter(Boolean).join(" ")}
+              </p>
+            )}
+          </div>
+          {/* ยกรูปขึ้นเท่าระยะที่การ์ดข้อมูลด้านล่างลอยทับฮีโร่ (-mt-14) ให้ช่วงอก/เสื้อไม่โดนการ์ดบัง */}
+          <div className="relative mb-14 h-56 w-44 flex-none sm:h-80 sm:w-64">
+            {player.jerseyNumber != null && (
+              <span className="absolute -top-2 right-0 select-none text-[9rem] font-black italic leading-none tracking-tighter text-white/15 sm:text-[13rem]">
+                {player.jerseyNumber}
+              </span>
+            )}
+            {player.photoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={player.photoUrl}
+                alt={fullName}
+                className="absolute inset-x-0 bottom-0 h-full w-full object-contain object-bottom drop-shadow-[0_10px_30px_rgba(0,0,0,0.35)]"
+              />
+            ) : (
+              <User className="absolute bottom-0 left-1/2 h-4/5 w-4/5 -translate-x-1/2 text-white/20" strokeWidth={1.2} />
             )}
           </div>
         </div>

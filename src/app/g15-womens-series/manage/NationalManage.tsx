@@ -79,7 +79,7 @@ export async function NationalManage() {
       where: { stage: "NATIONAL" },
       include: {
         player: {
-          select: { id: true, firstNameTh: true, lastNameTh: true, jerseyNumber: true, team: true },
+          select: { id: true, firstNameTh: true, lastNameTh: true, jerseyNumber: true, photoUrl: true, team: true },
         },
       },
     }),

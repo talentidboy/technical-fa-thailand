@@ -112,7 +112,7 @@ export default async function G15WomensSeriesPage({
     prisma.g15Goal.findMany({ where: { match: { stage } }, include: { team: true } }),
     prisma.g15AllStar.findMany({
       where: { stage },
-      include: { player: { select: { id: true, firstNameTh: true, lastNameTh: true, jerseyNumber: true, team: true } } },
+      include: { player: { select: { id: true, firstNameTh: true, lastNameTh: true, jerseyNumber: true, photoUrl: true, team: true } } },
     }),
   ]);
   const teams = isNational ? allTeams.filter((t) => t.nationalGroup) : allTeams;

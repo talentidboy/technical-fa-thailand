@@ -10,6 +10,7 @@ export type TeamOfRoundPick = {
     firstNameTh: string;
     lastNameTh: string;
     jerseyNumber: number | null;
+    photoUrl?: string | null;
     team: { name: string; logoUrl: string | null; groupName: string | null };
   };
 };
@@ -47,8 +48,16 @@ export function TeamOfRoundPitch({ picks, title }: { picks: TeamOfRoundPick[]; t
                       href={`/g15-womens-series/players/${p.id}`}
                       className="group flex w-20 flex-col items-center gap-1 text-center sm:w-24"
                     >
-                      <span className="relative flex h-11 w-11 items-center justify-center rounded-full bg-g15-600 text-sm font-extrabold text-white shadow-lg ring-2 ring-white transition-transform group-hover:scale-110">
-                        {p.jerseyNumber ?? "-"}
+                      <span className="relative flex h-12 w-12 items-center justify-center rounded-full bg-linear-to-b from-g15-400 to-g15-700 text-sm font-extrabold text-white shadow-lg ring-2 ring-white transition-transform group-hover:scale-110 sm:h-14 sm:w-14">
+                        {/* ตัดขอบวงกลมเฉพาะรูป — โลโก้ทีมที่มุมล่างขวาต้องล้นออกนอกวงได้ */}
+                        {p.photoUrl ? (
+                          <span className="absolute inset-0 overflow-hidden rounded-full">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={p.photoUrl} alt="" className="h-[125%] w-full object-cover object-top" />
+                          </span>
+                        ) : (
+                          p.jerseyNumber ?? "-"
+                        )}
                         <span className="absolute -bottom-1 -right-1">
                           <TeamBadge team={p.team} size="sm" />
                         </span>

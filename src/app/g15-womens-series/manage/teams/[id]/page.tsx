@@ -223,6 +223,10 @@ export default async function G15ManageTeamPage({
                       >
                         {p.jerseyNumber ?? p.no ?? "-"}
                       </span>
+                      {p.photoUrl && (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={p.photoUrl} alt="" className="h-8 w-7 flex-none rounded-md bg-g15-600 object-contain object-bottom" />
+                      )}
                       <span className="min-w-0 flex-1 truncate text-sm font-medium text-slate-900">
                         {p.firstNameTh} {p.lastNameTh}
                       </span>
@@ -265,6 +269,23 @@ export default async function G15ManageTeamPage({
                           type="number"
                           defaultValue={p.heightCm?.toString() ?? ""}
                         />
+                        <label className="col-span-2 flex flex-col gap-1.5 sm:col-span-4 lg:col-span-6">
+                          <span className="text-sm font-medium text-slate-700">รูป (ไม่แนบ = ใช้รูปเดิม)</span>
+                          <span className="flex items-center gap-3">
+                            {p.photoUrl ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img src={p.photoUrl} alt="" className="h-16 w-12 flex-none rounded-lg bg-g15-600 object-contain object-bottom" />
+                            ) : (
+                              <span className="flex h-16 w-12 flex-none items-center justify-center rounded-lg bg-slate-100 text-[10px] text-slate-400">ไม่มีรูป</span>
+                            )}
+                            <input
+                              type="file"
+                              name="photo"
+                              accept="image/jpeg,image/png,image/webp"
+                              className="min-w-0 text-xs text-slate-500 file:mr-3 file:rounded-lg file:border-0 file:bg-g15-50 file:px-3 file:py-2 file:text-xs file:font-semibold file:text-g15-700 hover:file:bg-g15-100"
+                            />
+                          </span>
+                        </label>
                       </form>
                       <div className="mt-4 flex items-center justify-between gap-3 border-t border-slate-100 pt-3">
                         <div className="flex items-center gap-1">
@@ -369,6 +390,23 @@ export default async function G15ManageTeamPage({
                         <Field label="บทบาท" name="role" defaultValue={o.role ?? ""} />
                         <Field label="วันเกิด" name="dob" type="date" defaultValue={toDateInputValue(o.dob)} />
                         <Field label="ใบอนุญาตผู้ฝึกสอน" name="coachingLicense" defaultValue={o.coachingLicense ?? ""} />
+                        <label className="col-span-2 flex flex-col gap-1.5 sm:col-span-4 lg:col-span-6">
+                          <span className="text-sm font-medium text-slate-700">รูป (ไม่แนบ = ใช้รูปเดิม)</span>
+                          <span className="flex items-center gap-3">
+                            {o.photoUrl ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img src={o.photoUrl} alt="" className="h-16 w-12 flex-none rounded-lg bg-g15-600 object-contain object-bottom" />
+                            ) : (
+                              <span className="flex h-16 w-12 flex-none items-center justify-center rounded-lg bg-slate-100 text-[10px] text-slate-400">ไม่มีรูป</span>
+                            )}
+                            <input
+                              type="file"
+                              name="photo"
+                              accept="image/jpeg,image/png,image/webp"
+                              className="min-w-0 text-xs text-slate-500 file:mr-3 file:rounded-lg file:border-0 file:bg-g15-50 file:px-3 file:py-2 file:text-xs file:font-semibold file:text-g15-700 hover:file:bg-g15-100"
+                            />
+                          </span>
+                        </label>
                       </form>
                       <div className="mt-4 flex items-center justify-between gap-3 border-t border-slate-100 pt-3">
                         <div className="flex items-center gap-1">

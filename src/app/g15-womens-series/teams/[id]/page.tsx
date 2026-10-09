@@ -1,13 +1,15 @@
 import Link from "next/link";
-import Image from "next/image";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getStandings, getNationalStandings, formatMatchDateTime, type StandingRow } from "@/lib/g15";
 import { regionStyle, parseRegionGroup, regionEn } from "@/lib/g15-region";
 import { stageInfo, roundStyle, matchWinnerId, hasPenalties, isLive, hasLiveScore, type G15Stage } from "@/lib/g15-stage";
 import { LivePill } from "@/components/g15/LivePill";
-import { LOGO_URL } from "@/lib/brand";
-import { ArrowLeft, MapPin, Calendar, Users, UserCog, ListOrdered, Trophy } from "lucide-react";
+import { SquadCard } from "@/components/g15/SquadCard";
+import { SQUAD_LINES, squadLine, squadLineLabel, staffRank } from "@/lib/g15-squad";
+import { getCurrentUser } from "@/lib/auth";
+import { G15Chrome } from "@/components/g15/G15Chrome";
+import { MapPin, Calendar, ListOrdered, Trophy } from "lucide-react";
 
 // หน้านี้เปิดให้ดูได้แบบสาธารณะไม่ต้องล็อกอิน — ต้องล็อกอินเฉพาะตอนจะ "จัดการข้อมูล" เท่านั้น
 export default async function G15TeamDetailPage({
@@ -19,7 +21,7 @@ export default async function G15TeamDetailPage({
   const id = Number(idParam);
   if (!Number.isInteger(id)) notFound();
 
-  const team = await prisma.g15Team.findUnique({ where: { id } });
+  const [user, team] = await Promise.all([getCurrentUser(), prisma.g15Team.findUnique({ where: { id } })]);
   if (!team) notFound();
 
   const [allTeams, allMatchesForStandings, allMatches, players, officials] = await Promise.all([
@@ -44,6 +46,7 @@ export default async function G15TeamDetailPage({
         nationality: true,
         jerseyNumber: true,
         position: true,
+        photoUrl: true,
       },
     }),
     prisma.g15Official.findMany({
@@ -60,6 +63,7 @@ export default async function G15TeamDetailPage({
         nationality: true,
         role: true,
         coachingLicense: true,
+        photoUrl: true,
       },
     }),
   ]);
@@ -110,30 +114,7 @@ export default async function G15TeamDetailPage({
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <header className="sticky top-0 z-20 border-b border-white/10 bg-indigo-950/80 backdrop-blur">
-        <div className="mx-auto flex max-w-5xl items-center justify-between gap-2 px-4 py-3 sm:gap-3 sm:px-6 sm:py-4">
-          <Link href="/" className="flex min-w-0 items-center gap-2">
-            <Image
-              src={LOGO_URL}
-              alt="FA Thailand"
-              width={36}
-              height={36}
-              className="h-9 w-9 flex-none rounded-lg object-cover"
-            />
-            <div className="min-w-0">
-              <p className="truncate text-sm font-bold text-white">FA Thailand Technical</p>
-              <p className="truncate text-[11px] text-indigo-300">หมวด: G15 Women&apos;s Football Series</p>
-            </div>
-          </Link>
-          <Link
-            href="/g15-womens-series"
-            className="inline-flex flex-none items-center gap-1.5 whitespace-nowrap rounded-lg border border-white/15 px-2.5 py-2 text-sm font-medium text-indigo-200 transition-colors hover:bg-white/10 hover:text-white sm:px-3"
-          >
-            <ArrowLeft className="h-4 w-4 flex-none" />
-            <span className="hidden sm:inline">กลับหน้า G15 / Back</span>
-          </Link>
-        </div>
-      </header>
+      <G15Chrome user={user} />
 
       <div className="mx-auto max-w-5xl px-6 py-10">
         <nav className="mb-6 flex flex-wrap items-center gap-1.5 text-xs text-slate-400">
@@ -255,11 +236,14 @@ export default async function G15TeamDetailPage({
           ))}
         </div>
 
-        {/* นักกีฬา */}
-        <section className="mt-8">
-          <div className="mb-4 flex items-center gap-2 text-sm font-medium text-slate-500">
-            <Users className="h-4 w-4" />
-            นักกีฬา / Players ({players.length})
+        {/* รายชื่อนักกีฬา (Squad List) — การ์ดรูปไดคัท จัดกลุ่มตามตำแหน่ง เรียงตามเบอร์เสื้อ */}
+        <section className="mt-10">
+          <div className="mb-5 flex items-center gap-3">
+            <h2 className="text-xl font-black uppercase tracking-wide text-slate-900">Squad List</h2>
+            <span className="h-0.5 w-10 rounded-full bg-g15-500" />
+            <span className="text-sm text-slate-400">
+              นักกีฬา {players.length} คน
+            </span>
           </div>
           {players.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-10 text-center text-sm text-slate-500">
@@ -267,60 +251,43 @@ export default async function G15TeamDetailPage({
               <p className="mt-0.5 text-xs text-slate-400">No registered players yet</p>
             </div>
           ) : (
-            <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-80 text-left text-sm">
-                  <thead className="bg-slate-50 text-[11px] font-medium uppercase tracking-wide text-slate-500">
-                    <tr>
-                      <th className="w-12 px-3 py-2.5 text-center" title="เบอร์">
-                        No.
-                      </th>
-                      <th className="px-3 py-2.5" title="ชื่อ-นามสกุล">
-                        Name
-                      </th>
-                      <th className="hidden px-3 py-2.5 sm:table-cell">English</th>
-                      <th className="px-3 py-2.5" title="ตำแหน่ง">
-                        Position
-                      </th>
-                      <th className="hidden px-3 py-2.5 md:table-cell" title="สัญชาติ">
-                        Nationality
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {players.map((p) => (
-                      <tr key={p.id}>
-                        <td className="px-3 py-2.5 text-center">
-                          <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-g15-50 text-xs font-bold text-g15-600">
-                            {p.jerseyNumber ?? "-"}
-                          </span>
-                        </td>
-                        <td className="max-w-30 truncate px-3 py-2.5 font-medium text-slate-900 sm:max-w-none sm:whitespace-nowrap">
-                          <Link href={`/g15-womens-series/players/${p.id}`} className="hover:text-g15-600 hover:underline">
-                            {p.firstNameTh} {p.lastNameTh}
-                          </Link>
-                        </td>
-                        <td className="hidden whitespace-nowrap px-3 py-2.5 text-slate-500 sm:table-cell">
-                          {[p.firstNameEn, p.lastNameEn].filter(Boolean).join(" ") || "-"}
-                        </td>
-                        <td className="whitespace-nowrap px-3 py-2.5 text-slate-600">{p.position ?? "-"}</td>
-                        <td className="hidden whitespace-nowrap px-3 py-2.5 text-slate-500 md:table-cell">
-                          {p.nationality ?? "-"}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+            <div className="space-y-8">
+              {SQUAD_LINES.map((line) => {
+                const group = players
+                  .filter((p) => squadLine(p.position) === line.key)
+                  .sort((a, b) => (a.jerseyNumber ?? 999) - (b.jerseyNumber ?? 999));
+                if (group.length === 0) return null;
+                return (
+                  <div key={line.key}>
+                    <p className="mb-3 text-xs font-bold uppercase tracking-widest text-g15-600">
+                      {line.label} <span className="text-slate-400">/ {line.en}</span>
+                    </p>
+                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-4 lg:grid-cols-6">
+                      {group.map((p) => (
+                        <SquadCard
+                          key={p.id}
+                          href={`/g15-womens-series/players/${p.id}`}
+                          photoUrl={p.photoUrl}
+                          number={p.jerseyNumber}
+                          name={`${p.firstNameTh} ${p.lastNameTh}`}
+                          nameEn={[p.firstNameEn, p.lastNameEn].filter(Boolean).join(" ") || null}
+                          caption={squadLineLabel(p.position)}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
         </section>
 
-        {/* เจ้าหน้าที่ */}
-        <section className="mt-8">
-          <div className="mb-4 flex items-center gap-2 text-sm font-medium text-slate-500">
-            <UserCog className="h-4 w-4" />
-            เจ้าหน้าที่ / Staff ({officials.length})
+        {/* เจ้าหน้าที่ทีม */}
+        <section className="mt-10">
+          <div className="mb-5 flex items-center gap-3">
+            <h2 className="text-xl font-black uppercase tracking-wide text-slate-900">Team Officials</h2>
+            <span className="h-0.5 w-10 rounded-full bg-g15-500" />
+            <span className="text-sm text-slate-400">เจ้าหน้าที่ {officials.length} คน</span>
           </div>
           {officials.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-10 text-center text-sm text-slate-500">
@@ -328,45 +295,19 @@ export default async function G15TeamDetailPage({
               <p className="mt-0.5 text-xs text-slate-400">No registered staff yet</p>
             </div>
           ) : (
-            <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-72 text-left text-sm">
-                  <thead className="bg-slate-50 text-[11px] font-medium uppercase tracking-wide text-slate-500">
-                    <tr>
-                      <th className="px-3 py-2.5" title="ชื่อ-นามสกุล">
-                        Name
-                      </th>
-                      <th className="px-3 py-2.5" title="บทบาท">
-                        Role
-                      </th>
-                      <th className="hidden px-3 py-2.5 sm:table-cell" title="เพศ">
-                        Gender
-                      </th>
-                      <th className="hidden px-3 py-2.5 md:table-cell" title="ใบอนุญาตผู้ฝึกสอน">
-                        License
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {officials.map((o) => (
-                      <tr key={o.id}>
-                        <td className="max-w-27 truncate px-3 py-2.5 font-medium text-slate-900 sm:max-w-none sm:whitespace-nowrap">
-                          {o.firstNameTh} {o.lastNameTh}
-                        </td>
-                        <td className="max-w-22 truncate px-3 py-2.5 text-slate-600 sm:max-w-none sm:whitespace-nowrap">
-                          {o.role ?? "-"}
-                        </td>
-                        <td className="hidden whitespace-nowrap px-3 py-2.5 text-slate-500 sm:table-cell">
-                          {o.gender ?? "-"}
-                        </td>
-                        <td className="hidden whitespace-nowrap px-3 py-2.5 text-slate-500 md:table-cell">
-                          {o.coachingLicense ?? "-"}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-4 lg:grid-cols-6">
+              {[...officials]
+                .sort((a, b) => staffRank(a.role) - staffRank(b.role) || (a.no ?? 99) - (b.no ?? 99))
+                .map((o) => (
+                  <SquadCard
+                    key={o.id}
+                    tone="staff"
+                    photoUrl={o.photoUrl}
+                    name={`${o.firstNameTh} ${o.lastNameTh}`}
+                    nameEn={[o.firstNameEn, o.lastNameEn].filter(Boolean).join(" ") || null}
+                    caption={[o.role, o.coachingLicense ? `License ${o.coachingLicense}` : null].filter(Boolean).join(" · ") || "เจ้าหน้าที่ทีม"}
+                  />
+                ))}
             </div>
           )}
         </section>

@@ -300,6 +300,8 @@ model G15Player {
   // false = ไม่อยู่ในรายชื่อส่งแข่งปัจจุบัน (เช่น ไม่ได้ถูกส่งชื่อเข้ารอบชิงแชมป์ประเทศ) — ซ่อนจากหน้าทีม/ตัวเลือกไลน์อัพ
   // แต่ไม่ลบ เพื่อให้ไลน์อัพ/ประตู/โปรไฟล์ของรอบที่ผ่านมายังอยู่ครบ
   isActive       Boolean   @default(true) @map("is_active")
+  // รูปนักกีฬาแบบไดคัทพื้นหลังโปร่งใส (WebP 600x800 ตัวคนชิดขอบล่าง) — วางบนพื้นสีของรายการในการ์ดรายชื่อ/โปรไฟล์
+  photoUrl       String?   @map("photo_url")
   createdAt      DateTime  @default(now()) @map("created_at")
 
   goals    G15Goal[]
@@ -342,6 +344,8 @@ model G15Official {
   passportNumber  String?   @map("passport_number")
   // เหมือน G15Player.isActive — false = ไม่อยู่ในรายชื่อเจ้าหน้าที่ปัจจุบัน (ซ่อน ไม่ลบ)
   isActive        Boolean   @default(true) @map("is_active")
+  // รูปเจ้าหน้าที่แบบไดคัท — รูปแบบเดียวกับ G15Player.photoUrl
+  photoUrl        String?   @map("photo_url")
   createdAt       DateTime  @default(now()) @map("created_at")
 
   @@map("g15_officials")
