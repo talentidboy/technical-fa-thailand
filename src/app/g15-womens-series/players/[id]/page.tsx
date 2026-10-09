@@ -81,16 +81,16 @@ export default async function G15PlayerPage({ params }: { params: Promise<{ id: 
     <div className="min-h-screen bg-slate-50">
       <G15Chrome user={user} />
 
-      {/* ฮีโร่โปรไฟล์ — ภาพแบนเนอร์ทางการ (ซ้ายพื้นสว่างมีคำว่า PLAYER PROFILE ในภาพแล้ว / ขวาเป็นสนาม)
-          จอใหญ่คงสัดส่วนภาพ 3840:1120 เพื่อให้ชื่อวางใต้หัวข้อในภาพพอดี; โทรศัพท์ใช้ความสูงคงที่ ยึดภาพชิดซ้าย
+      {/* ฮีโร่โปรไฟล์ — ภาพแบนเนอร์ทางการ (ซ้ายพื้นสว่างสำหรับข้อความ / ขวาเป็นสนาม) หัวข้อ PLAYER PROFILE ทำเป็นตัวหนังสือเอง
+          จอใหญ่คงสัดส่วนภาพ 3840:1120; โทรศัพท์ใช้ความสูงคงที่ ยึดภาพชิดซ้าย
           ชื่ออังกฤษเป็นหัวข้อหลัก (ใหญ่) ชื่อไทยรองลงมา; รูปนักกีฬายืนชิดขอบล่างฝั่งสนาม */}
       <section className="relative isolate overflow-hidden bg-[#efe9fb]">
         {/* w-full จำเป็น — aspect-ratio + min-h ทำให้กล่องขยายกว้างเกินจอบน iPad (ความกว้างถูกคำนวณจากความสูงขั้นต่ำ) */}
-        <div className="relative h-[19rem] w-full sm:h-auto sm:aspect-[3840/1120] sm:max-h-[36rem] sm:min-h-[21rem]">
+        <div className="relative h-[20rem] w-full sm:h-auto sm:aspect-[3840/1120] sm:max-h-[36rem] sm:min-h-[22rem]">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src="/g15/player-profile-banner.webp"
-            srcSet="/g15/player-profile-banner-sm.webp 1200w, /g15/player-profile-banner.webp 2880w"
+            src="/g15/player-profile-banner-v2.webp"
+            srcSet="/g15/player-profile-banner-v2-sm.webp 1200w, /g15/player-profile-banner-v2.webp 2880w"
             sizes="100vw"
             alt=""
             aria-hidden
@@ -98,8 +98,17 @@ export default async function G15PlayerPage({ params }: { params: Promise<{ id: 
           />
 
           <div className="absolute inset-0 grid grid-cols-[minmax(0,1fr)_auto] items-end gap-2 px-5 sm:px-[5.2%]">
-            {/* ชื่อ — เริ่มใต้หัวข้อ PLAYER PROFILE ที่อยู่ในภาพ */}
-            <div className="min-w-0 self-start pt-[5.6rem] sm:pt-[min(max(10.2vw,7.6rem),12.5rem)]">
+            {/* หัวข้อ PLAYER PROFILE (ตัวบางกว้าง + เส้นใต้ไล่สีชมพู→ทอง มีลายขีดที่ปลาย) แล้วตามด้วยชื่อ — จัดกึ่งกลางแนวตั้ง */}
+            <div className="min-w-0 self-center pb-4 pt-6 sm:pb-6 sm:pt-8">
+              <p className="text-xl font-light uppercase leading-none tracking-[0.12em] text-g15-900 sm:text-[clamp(1.6rem,3.3vw,3.4rem)]">
+                Player Profile
+              </p>
+              <div aria-hidden className="mt-2 flex h-1.5 w-[min(100%,15rem)] items-stretch gap-1 sm:mt-3 sm:h-2 sm:w-[clamp(15rem,31vw,34rem)]">
+                <span className="w-6 flex-none bg-[repeating-linear-gradient(115deg,#db2777_0_3px,transparent_3px_6px)] sm:w-10" />
+                <span className="flex-1 bg-linear-to-r from-pink-600 via-g15-500 to-amber-500 [clip-path:polygon(0_0,100%_0,calc(100%-6px)_100%,0_100%)]" />
+                <span className="w-8 flex-none bg-[repeating-linear-gradient(115deg,#c9a227_0_3px,transparent_3px_6px)] sm:w-14" />
+              </div>
+              <div className="mt-4 sm:mt-6">
               {player.firstNameEn || player.lastNameEn ? (
                 <>
                   <h1 className="bg-linear-to-r from-g15-900 via-g15-700 to-pink-600 bg-clip-text text-[1.7rem] font-black uppercase leading-[1.05] tracking-tight text-transparent sm:text-5xl lg:text-6xl">
@@ -132,6 +141,7 @@ export default async function G15PlayerPage({ params }: { params: Promise<{ id: 
                     {squadLineLabel(player.position)}
                   </span>
                 )}
+              </div>
               </div>
             </div>
 
