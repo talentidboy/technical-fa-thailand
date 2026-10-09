@@ -4,6 +4,7 @@ const SIZE_CLASSES = {
   sm: { box: "h-6 w-6", text: "text-[10px]" },
   md: { box: "h-8 w-8", text: "text-xs" },
   lg: { box: "h-16 w-16 sm:h-20 sm:w-20", text: "text-2xl" },
+  xl: { box: "h-24 w-24 sm:h-28 sm:w-28", text: "text-5xl" },
 } as const;
 
 export function TeamBadge({
