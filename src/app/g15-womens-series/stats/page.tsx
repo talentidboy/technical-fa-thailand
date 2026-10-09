@@ -11,7 +11,7 @@ import { PlayerLeaderboard, type PlayerLeaderboardRow } from "@/components/g15/P
 import { TeamBadge } from "@/components/g15/TeamBadge";
 import { Reveal } from "@/components/g15/Reveal";
 import { AnimatedCounter } from "@/components/g15/AnimatedCounter";
-import { Target, ShieldCheck, ShieldHalf, Trophy, Flame, BarChart3, Users, CheckCircle2, TrendingUp } from "lucide-react";
+import { Handshake, Target, ShieldCheck, ShieldHalf, Trophy, Flame, BarChart3, Users, CheckCircle2, TrendingUp } from "lucide-react";
 
 export default async function G15StatsPage({
   searchParams,
@@ -21,14 +21,20 @@ export default async function G15StatsPage({
   const stage = parseStage((await searchParams).stage);
 
   // ทุกอย่างกรองตามรอบ — รอบชิงแชมป์ประเทศเริ่มนับประตู/คลีนชีต/ดาวซัลโวใหม่จากศูนย์ ไม่รวมผลรอบภูมิภาค
-  const [user, allTeams, matches, goals, allStars] = await Promise.all([
+  const [user, allTeams, matches, goals, allStars, assistGoals] = await Promise.all([
     getCurrentUser(),
     prisma.g15Team.findMany({ orderBy: [{ groupName: "asc" }, { name: "asc" }] }),
     prisma.g15Match.findMany({ where: { stage }, include: { homeTeam: true, awayTeam: true } }),
-    prisma.g15Goal.findMany({ where: { match: { stage } }, include: { team: true } }),
+    // ไม่นับประตูตัวเอง (OG) เป็นประตูของคนยิง
+    prisma.g15Goal.findMany({ where: { match: { stage }, isOwnGoal: false }, include: { team: true } }),
     prisma.g15AllStar.findMany({
       where: { stage },
       include: { player: { select: { id: true, firstNameTh: true, lastNameTh: true, jerseyNumber: true, photoUrl: true, team: true } } },
+    }),
+    // แอสซิสต์ — ประตูที่มีผู้จ่ายบอล (ผูกทะเบียน) ในรอบนี้
+    prisma.g15Goal.findMany({
+      where: { match: { stage }, assistPlayerId: { not: null } },
+      include: { team: true },
     }),
   ]);
   const teams = stage === "NATIONAL" ? allTeams.filter((t) => t.nationalGroup) : allTeams;
@@ -83,6 +89,25 @@ export default async function G15StatsPage({
     }
   }
   const topIndividualScorers = Array.from(scorerMap.values()).sort((a, b) => b.goals - a.goals);
+
+  // แอสซิสต์สูงสุด — ใช้แถวรูปแบบเดียวกับดาวซัลโว (ช่อง goals = จำนวนแอสซิสต์)
+  const assistMap = new Map<string, PlayerLeaderboardRow>();
+  for (const g of assistGoals) {
+    const key = `p${g.assistPlayerId}`;
+    const existing = assistMap.get(key);
+    if (existing) existing.goals += 1;
+    else
+      assistMap.set(key, {
+        key,
+        playerName: g.assistName ?? "-",
+        jerseyNumber: null,
+        teamName: g.team.name,
+        teamLogoUrl: g.team.logoUrl,
+        teamGroupName: g.team.groupName,
+        goals: 1,
+      });
+  }
+  const topAssists = Array.from(assistMap.values()).sort((a, b) => b.goals - a.goals);
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -159,6 +184,16 @@ export default async function G15StatsPage({
                   accent="brand"
                 />
               </Reveal>
+              {topAssists.length > 0 && (
+                <Reveal delay={40}>
+                  <PlayerLeaderboard
+                    title="แอสซิสต์สูงสุด / Top Assists"
+                    icon={<Handshake className="h-4 w-4" />}
+                    rows={topAssists}
+                    accent="cyan"
+                  />
+                </Reveal>
+              )}
               <Reveal delay={80}>
                 <MiniLeaderboard
                   title="ทีมทำประตูสูงสุด / Top Scoring Teams"

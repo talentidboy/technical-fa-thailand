@@ -19,6 +19,9 @@ import {
   controlMatchClock,
   setAddedTime,
   adjustLiveScore,
+  recordLiveGoal,
+  recordLiveCard,
+  recordLiveSub,
 } from "../../actions";
 import { Field, SelectField } from "@/components/FormField";
 import { TeamBadge } from "@/components/g15/TeamBadge";
@@ -26,7 +29,7 @@ import { GoalsBulkForm, SubstitutionsBulkForm, CardsBulkForm } from "@/component
 import { FormWithToast } from "@/components/g15/FormWithToast";
 import { QuickScoreRow } from "@/components/g15/QuickScoreRow";
 import { OfficialCountdown } from "@/components/g15/OfficialCountdown";
-import { LiveMatchControl } from "@/components/g15/LiveMatchControl";
+import { LiveMatchControl, type LiveRoster } from "@/components/g15/LiveMatchControl";
 import { formatMatchDateTime } from "@/lib/g15";
 import { withStage, stageInfo, isLive, type G15Stage } from "@/lib/g15-stage";
 import { LOGO_URL } from "@/lib/brand";
@@ -277,6 +280,34 @@ export default async function G15ManageMatchPage({
         }
       : { starters: players, subs: players };
   const homeSplit = splitByLineupStatus(eligibleHomePlayers, homeInLineup.size > 0);
+
+  // รายชื่อสำหรับป็อปอัพในแผงควบคุมเกมสด — คำนวณว่าใครอยู่ในสนาม/บนม้านั่ง จากไลน์อัพ + การเปลี่ยนตัวที่บันทึกแล้ว
+  // (การเปลี่ยนตัวเก็บเป็นชื่อ จึงจับคู่ด้วยชื่อ-นามสกุล) ทีมที่ยังไม่มีไลน์อัพ = ทุกคนที่ยังไม่ถูกเปลี่ยนออกเลือกได้หมด
+  const liveRoster = (teamId: number, players: RosterPlayer[], officials: typeof homeOfficials): LiveRoster => {
+    const hasLineup = match.lineups.some((l) => l.teamId === teamId);
+    const subs = match.substitutions.filter((x) => x.teamId === teamId);
+    const subbedIn = new Set(subs.map((x) => x.playerInName));
+    const subbedOut = new Set(subs.map((x) => x.playerOutName));
+    return {
+      players: players.map((p) => {
+        const name = `${p.firstNameTh} ${p.lastNameTh}`;
+        const status = lineupByPlayerId.get(p.id)?.status;
+        const out = subbedOut.has(name);
+        return {
+          id: p.id,
+          name,
+          number: p.jerseyNumber,
+          onPitch: !out && (!hasLineup || status === "STARTING" || subbedIn.has(name)),
+          onBench: !out && !subbedIn.has(name) && (!hasLineup || status === "SUBSTITUTE"),
+        };
+      }),
+      officials: officials.map((o) => ({ id: o.id, name: `${o.firstNameTh} ${o.lastNameTh}`, role: o.role })),
+    };
+  };
+  const rosters = {
+    home: liveRoster(match.homeTeamId, homePlayers, homeOfficials),
+    away: liveRoster(match.awayTeamId, awayPlayers, awayOfficials),
+  };
   const awaySplit = splitByLineupStatus(eligibleAwayPlayers, awayInLineup.size > 0);
 
   return (
@@ -337,9 +368,13 @@ export default async function G15ManageMatchPage({
           awayScore={match.awayScore}
           clock={clock}
           serverNow={serverNow}
+          rosters={rosters}
           controlAction={controlMatchClock}
           addedTimeAction={setAddedTime}
           scoreAction={adjustLiveScore}
+          goalAction={recordLiveGoal}
+          cardAction={recordLiveCard}
+          subAction={recordLiveSub}
         />
 
         {/* แก้ผลด้วยตนเอง — สำหรับกรอกผลย้อนหลัง/แก้สกอร์ (ไม่ได้ใช้นาฬิกาเกมสด) */}
@@ -484,11 +519,15 @@ export default async function G15ManageMatchPage({
                       <span className="min-w-0 flex-1 truncate text-sm font-medium text-slate-900">
                         {g.playerName}
                         {g.jerseyNumber != null && <span className="ml-1.5 text-slate-400">#{g.jerseyNumber}</span>}
+                        {g.isOwnGoal && (
+                          <span className="ml-1.5 rounded-full bg-red-50 px-1.5 py-0.5 text-[10px] font-bold text-red-600">OG</span>
+                        )}
                         {g.playerId == null && (
                           <span className="ml-1.5 rounded-full bg-amber-50 px-1.5 py-0.5 text-[10px] font-medium text-amber-600">
                             ไม่ได้ผูกทะเบียน
                           </span>
                         )}
+                        {g.assistName && <span className="ml-1.5 text-xs font-normal text-slate-400">แอสซิสต์: {g.assistName}</span>}
                       </span>
                       <span className="hidden flex-none text-xs text-slate-400 sm:block">{teamById(g.teamId).name}</span>
                     </summary>

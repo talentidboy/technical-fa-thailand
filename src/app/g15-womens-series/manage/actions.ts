@@ -970,10 +970,21 @@ export async function adjustLiveScore(formData: FormData): Promise<ActionResult>
     const id = Number(formData.get("id"));
     const side = String(formData.get("side"));
     const delta = Number(formData.get("delta")) === -1 ? -1 : 1;
-    const match = await prisma.g15Match.findUnique({ where: { id }, select: { homeScore: true, awayScore: true, clockPhase: true } });
+    const match = await prisma.g15Match.findUnique({
+      where: { id },
+      select: { homeScore: true, awayScore: true, clockPhase: true, homeTeamId: true, awayTeamId: true },
+    });
     if (!match) throw new Error("ไม่พบนัดการแข่งขัน");
     const key = side === "away" ? "awayScore" : "homeScore";
     const next = Math.max(0, (match[key] ?? 0) + delta);
+    // ลดสกอร์ = ลบประตูล่าสุดของทีมนั้นด้วย (ถ้ามี) ให้สกอร์กับรายชื่อผู้ทำประตูตรงกันเสมอ
+    if (delta === -1) {
+      const last = await prisma.g15Goal.findFirst({
+        where: { matchId: id, teamId: side === "away" ? match.awayTeamId : match.homeTeamId },
+        orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      });
+      if (last) await prisma.g15Goal.delete({ where: { id: last.id } });
+    }
     await prisma.g15Match.update({
       where: { id },
       data: {
@@ -984,5 +995,126 @@ export async function adjustLiveScore(formData: FormData): Promise<ActionResult>
       },
     });
     revalidateG15(undefined, id);
+  });
+}
+
+// ===== บันทึกเหตุการณ์ระหว่างเกม (ป็อปอัพจากแผงควบคุมเกมสด) =====
+
+async function liveMatchTeams(matchId: number) {
+  const match = await prisma.g15Match.findUnique({
+    where: { id: matchId },
+    select: { homeTeamId: true, awayTeamId: true, clockPhase: true, homeScore: true, awayScore: true },
+  });
+  if (!match) throw new Error("ไม่พบนัดการแข่งขัน");
+  return match;
+}
+
+const playerName = (p: { firstNameTh: string; lastNameTh: string }) => `${p.firstNameTh} ${p.lastNameTh}`;
+
+// ประตู: side = ทีมที่ได้ประตู, scorer = คนยิง (ถ้า OG คือผู้เล่นทีมตรงข้าม), assist ไม่บังคับ — บันทึกประตู + เพิ่มสกอร์พร้อมกัน
+export async function recordLiveGoal(formData: FormData): Promise<ActionResult> {
+  await requireAdminOrStaff();
+  return attempt(async () => {
+    const matchId = Number(formData.get("id"));
+    const side = String(formData.get("side")) === "away" ? "away" : "home";
+    const ownGoal = String(formData.get("ownGoal")) === "1";
+    const match = await liveMatchTeams(matchId);
+    const teamId = side === "home" ? match.homeTeamId : match.awayTeamId;
+    const opponentId = side === "home" ? match.awayTeamId : match.homeTeamId;
+
+    const scorerId = int(formData, "scorerId");
+    const scorer = scorerId ? await prisma.g15Player.findUnique({ where: { id: scorerId } }) : null;
+    if (scorer && scorer.teamId !== (ownGoal ? opponentId : teamId)) {
+      throw new Error(ownGoal ? "ประตูตัวเองต้องเลือกผู้เล่นของทีมตรงข้าม" : "ผู้ทำประตูต้องเป็นผู้เล่นของทีมนี้");
+    }
+    const assistId = ownGoal ? null : int(formData, "assistId");
+    const assist = assistId ? await prisma.g15Player.findUnique({ where: { id: assistId } }) : null;
+    if (assist && (assist.teamId !== teamId || assist.id === scorer?.id)) throw new Error("ผู้จ่ายบอลไม่ถูกต้อง");
+
+    await prisma.$transaction([
+      prisma.g15Goal.create({
+        data: {
+          matchId,
+          teamId,
+          playerId: scorer?.id ?? null,
+          playerName: scorer ? playerName(scorer) : "ไม่ระบุผู้ทำประตู",
+          jerseyNumber: scorer?.jerseyNumber ?? null,
+          minute: int(formData, "minute"),
+          isOwnGoal: ownGoal,
+          assistPlayerId: assist?.id ?? null,
+          assistName: assist ? playerName(assist) : null,
+        },
+      }),
+      prisma.g15Match.update({
+        where: { id: matchId },
+        data: {
+          homeScore: (match.homeScore ?? 0) + (side === "home" ? 1 : 0),
+          awayScore: (match.awayScore ?? 0) + (side === "away" ? 1 : 0),
+          ...(match.clockPhase === "FULL_TIME" ? {} : { status: "LIVE" }),
+        },
+      }),
+    ]);
+    revalidateG15(undefined, matchId);
+  });
+}
+
+// ใบเหลือง/ใบแดง: holder = "player:<id>" หรือ "official:<id>" ของทีมฝั่งที่กด
+export async function recordLiveCard(formData: FormData): Promise<ActionResult> {
+  await requireAdminOrStaff();
+  return attempt(async () => {
+    const matchId = Number(formData.get("id"));
+    const side = String(formData.get("side")) === "away" ? "away" : "home";
+    const cardType = String(formData.get("cardType")) === "RED" ? "RED" : "YELLOW";
+    const holder = String(formData.get("holder") ?? "");
+    const match = await liveMatchTeams(matchId);
+    const teamId = side === "home" ? match.homeTeamId : match.awayTeamId;
+
+    let data: { holderName: string; holderNumber: number | null; holderRole: string };
+    if (holder.startsWith("player:")) {
+      const p = await prisma.g15Player.findUnique({ where: { id: Number(holder.slice(7)) } });
+      if (!p || p.teamId !== teamId) throw new Error("กรุณาเลือกผู้เล่นของทีมนี้");
+      data = { holderName: playerName(p), holderNumber: p.jerseyNumber, holderRole: "PLAYER" };
+    } else if (holder.startsWith("official:")) {
+      const o = await prisma.g15Official.findUnique({ where: { id: Number(holder.slice(9)) } });
+      if (!o || o.teamId !== teamId) throw new Error("กรุณาเลือกเจ้าหน้าที่ของทีมนี้");
+      data = { holderName: playerName(o), holderNumber: null, holderRole: "OFFICIAL" };
+    } else {
+      throw new Error("กรุณาเลือกคนที่ได้รับใบ");
+    }
+
+    await prisma.g15Card.create({
+      data: { matchId, teamId, cardType, minute: int(formData, "minute"), reason: str(formData, "reason"), ...data },
+    });
+    revalidateG15(undefined, matchId);
+  });
+}
+
+// เปลี่ยนตัว: out = คนออก (อยู่ในสนาม), in = คนเข้า (ตัวสำรอง) ของทีมฝั่งที่กด
+export async function recordLiveSub(formData: FormData): Promise<ActionResult> {
+  await requireAdminOrStaff();
+  return attempt(async () => {
+    const matchId = Number(formData.get("id"));
+    const side = String(formData.get("side")) === "away" ? "away" : "home";
+    const match = await liveMatchTeams(matchId);
+    const teamId = side === "home" ? match.homeTeamId : match.awayTeamId;
+    const [out, inn] = await Promise.all([
+      prisma.g15Player.findUnique({ where: { id: int(formData, "outId") ?? 0 } }),
+      prisma.g15Player.findUnique({ where: { id: int(formData, "inId") ?? 0 } }),
+    ]);
+    if (!out || !inn) throw new Error("กรุณาเลือกทั้งคนออกและคนเข้า");
+    if (out.teamId !== teamId || inn.teamId !== teamId || out.id === inn.id) throw new Error("ผู้เล่นที่เลือกไม่ถูกต้อง");
+
+    await prisma.g15Substitution.create({
+      data: {
+        matchId,
+        teamId,
+        minute: int(formData, "minute"),
+        playerOutName: playerName(out),
+        playerOutNumber: out.jerseyNumber,
+        playerInName: playerName(inn),
+        playerInNumber: inn.jerseyNumber,
+      },
+    });
+    revalidateG15(undefined, matchId);
   });
 }

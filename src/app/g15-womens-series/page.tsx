@@ -109,7 +109,8 @@ export default async function G15WomensSeriesPage({
       orderBy: [{ matchDate: "asc" }, { createdAt: "asc" }],
       include: { homeTeam: true, awayTeam: true },
     }),
-    prisma.g15Goal.findMany({ where: { match: { stage } }, include: { team: true } }),
+    // ไม่นับประตูตัวเอง (OG) เป็นประตูของคนยิง
+    prisma.g15Goal.findMany({ where: { match: { stage }, isOwnGoal: false }, include: { team: true } }),
     prisma.g15AllStar.findMany({
       where: { stage },
       include: { player: { select: { id: true, firstNameTh: true, lastNameTh: true, jerseyNumber: true, photoUrl: true, team: true } } },

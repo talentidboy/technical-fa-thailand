@@ -109,8 +109,9 @@ export default async function G15MatchDetailPage({
     const byName = new Map<string, number[]>();
     for (const g of match.goals) {
       if (g.teamId !== teamId) continue;
-      if (!byName.has(g.playerName)) byName.set(g.playerName, []);
-      if (g.minute != null) byName.get(g.playerName)!.push(g.minute);
+      const label = g.isOwnGoal ? `${g.playerName} (OG)` : g.playerName;
+      if (!byName.has(label)) byName.set(label, []);
+      if (g.minute != null) byName.get(label)!.push(g.minute);
     }
     return Array.from(byName.entries()).map(([name, mins]) => `${name}${mins.length ? ` ${mins.map((m) => `${m}'`).join(", ")}` : ""}`);
   };
@@ -575,6 +576,10 @@ export default async function G15MatchDetailPage({
                             <span className="min-w-0 flex-1 truncate text-sm font-medium text-slate-900">
                               {g.playerName}
                               {g.jerseyNumber != null && <span className="ml-1.5 text-slate-400">#{g.jerseyNumber}</span>}
+                              {g.isOwnGoal && (
+                                <span className="ml-1.5 rounded-full bg-red-50 px-1.5 py-0.5 text-[10px] font-bold text-red-600">OG</span>
+                              )}
+                              {g.assistName && <span className="block truncate text-xs font-normal text-slate-400">แอสซิสต์: {g.assistName}</span>}
                             </span>
                             <span className="flex-none truncate text-xs text-slate-400">{team.name}</span>
                           </li>

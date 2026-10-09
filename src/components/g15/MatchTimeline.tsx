@@ -1,11 +1,11 @@
 import { ArrowLeftRight, Flag, Goal } from "lucide-react";
 
-type GoalEv = { id: number; teamId: number; minute: number | null; playerName: string };
+type GoalEv = { id: number; teamId: number; minute: number | null; playerName: string; isOwnGoal?: boolean; assistName?: string | null };
 type CardEv = { id: number; teamId: number; minute: number | null; holderName: string; cardType: string };
 type SubEv = { id: number; teamId: number; minute: number | null; playerInName: string; playerOutName: string };
 
 type Ev =
-  | { kind: "goal"; key: string; minute: number | null; side: "home" | "away"; title: string; score: string }
+  | { kind: "goal"; key: string; minute: number | null; side: "home" | "away"; title: string; score: string; og: boolean; assist: string | null }
   | { kind: "card"; key: string; minute: number | null; side: "home" | "away"; title: string; red: boolean }
   | { kind: "sub"; key: string; minute: number | null; side: "home" | "away"; inName: string; outName: string };
 
@@ -38,7 +38,16 @@ export function MatchTimeline({
     const side = sideOf(g.teamId);
     if (side === "home") h++;
     else a++;
-    return { kind: "goal", key: `g${g.id}`, minute: g.minute, side, title: g.playerName, score: `${h}-${a}` };
+    return {
+      kind: "goal",
+      key: `g${g.id}`,
+      minute: g.minute,
+      side,
+      title: g.playerName,
+      score: `${h}-${a}`,
+      og: !!g.isOwnGoal,
+      assist: g.assistName ?? null,
+    };
   });
   const events: Ev[] = [
     ...goalEvents,
@@ -84,7 +93,10 @@ export function MatchTimeline({
           <Goal className="h-4 w-4 flex-none text-emerald-600" />
           <span className="min-w-0">
             <span className="block truncate text-sm font-bold text-slate-900">{e.title}</span>
-            <span className="text-[11px] font-semibold text-emerald-600">ประตู! {e.score}</span>
+            <span className="text-[11px] font-semibold text-emerald-600">
+              {e.og ? "ทำเข้าประตูตัวเอง (OG)" : "ประตู!"} {e.score}
+            </span>
+            {e.assist && <span className="block truncate text-[11px] text-slate-400">แอสซิสต์: {e.assist}</span>}
           </span>
         </span>
       );

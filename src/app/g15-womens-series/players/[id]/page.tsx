@@ -47,18 +47,20 @@ export default async function G15PlayerPage({ params }: { params: Promise<{ id: 
   const matchInclude = { homeTeam: true, awayTeam: true } as const;
 
   // ใบเหลือง/แดงไม่ได้ผูก player_id (มาจากใบรายงานผู้ตัดสิน) — จับคู่ด้วยทีม + ชื่อ-นามสกุลแบบเดียวกับที่ระบบบันทึกจากทะเบียน
-  const [lineups, goals, cards] = await Promise.all([
+  const [lineups, goals, cards, assists] = await Promise.all([
     prisma.g15Lineup.findMany({ where: { playerId: id }, include: { match: { include: matchInclude } } }),
-    prisma.g15Goal.findMany({ where: { playerId: id }, include: { match: { include: matchInclude } } }),
+    // ประตูตัวเอง (OG) ไม่นับเป็นประตูของนักกีฬา
+    prisma.g15Goal.findMany({ where: { playerId: id, isOwnGoal: false }, include: { match: { include: matchInclude } } }),
     prisma.g15Card.findMany({
       where: { teamId: player.teamId, holderRole: "PLAYER", holderName: fullName },
       include: { match: { include: matchInclude } },
     }),
+    prisma.g15Goal.findMany({ where: { assistPlayerId: id }, include: { match: { include: matchInclude } } }),
   ]);
 
   type MatchWithTeams = (typeof lineups)[number]["match"];
   const matchById = new Map<number, MatchWithTeams>();
-  for (const x of [...lineups, ...goals, ...cards]) matchById.set(x.match.id, x.match);
+  for (const x of [...lineups, ...goals, ...cards, ...assists]) matchById.set(x.match.id, x.match);
   const playedMatches = Array.from(matchById.values()).sort(
     (a, b) => (b.matchDate?.getTime() ?? 0) - (a.matchDate?.getTime() ?? 0),
   );
@@ -70,12 +72,13 @@ export default async function G15PlayerPage({ params }: { params: Promise<{ id: 
       apps: ls.length,
       starts: ls.filter((l) => l.status === "STARTING").length,
       goals: inStage(goals).length,
+      assists: inStage(assists).length,
       yellow: inStage(cards).filter((c) => c.cardType === "YELLOW").length,
       red: inStage(cards).filter((c) => c.cardType === "RED").length,
     };
   };
   const stageStats = STAGES.map((s) => ({ ...s, stats: statsFor(s.key) })).filter(
-    (s) => s.stats.apps + s.stats.goals + s.stats.yellow + s.stats.red > 0 || (s.key === "NATIONAL" && player.team.nationalGroup),
+    (s) => s.stats.apps + s.stats.goals + s.stats.assists + s.stats.yellow + s.stats.red > 0 || (s.key === "NATIONAL" && player.team.nationalGroup),
   );
 
   const region = parseRegionGroup(player.team.groupName)?.region ?? null;
@@ -187,11 +190,12 @@ export default async function G15PlayerPage({ params }: { params: Promise<{ id: 
                 <div className="border-b border-slate-100 bg-slate-50 px-5 py-2.5 text-xs font-bold text-slate-700">
                   {s.label} <span className="font-normal text-slate-400">/ {s.en}</span>
                 </div>
-                <div className="grid grid-cols-5 gap-px bg-slate-100">
+                <div className="grid grid-cols-3 gap-px bg-slate-100 sm:grid-cols-6">
                   {[
                     { label: "ลงเล่น", en: "Apps", value: s.stats.apps, color: "text-slate-900" },
                     { label: "ตัวจริง", en: "Starts", value: s.stats.starts, color: "text-slate-900" },
                     { label: "ประตู", en: "Goals", value: s.stats.goals, color: "text-g15-600" },
+                    { label: "แอสซิสต์", en: "Assists", value: s.stats.assists, color: "text-sky-600" },
                     { label: "ใบเหลือง", en: "Yellow", value: s.stats.yellow, color: "text-amber-500" },
                     { label: "ใบแดง", en: "Red", value: s.stats.red, color: "text-red-600" },
                   ].map((t) => (

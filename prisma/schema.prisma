@@ -438,6 +438,12 @@ model G15Goal {
   playerName   String   @map("player_name")
   jerseyNumber Int?     @map("jersey_number")
   minute       Int?
+  // ทำเข้าประตูตัวเอง — teamId = ทีมที่ได้ประตู, playerId/playerName = คนยิง (เป็นผู้เล่นทีมตรงข้าม)
+  // ไม่นับเป็นประตูของคนยิงในดาวซัลโว/โปรไฟล์
+  isOwnGoal    Boolean  @default(false) @map("is_own_goal")
+  // ผู้จ่ายบอล (ไม่บังคับ) — เก็บชื่อไว้ด้วย เผื่อนักกีฬาถูกลบ/ซ่อนจากทะเบียนภายหลัง
+  assistPlayerId Int?   @map("assist_player_id")
+  assistName   String?  @map("assist_name")
   createdAt    DateTime @default(now()) @map("created_at")
 
   @@map("g15_goals")

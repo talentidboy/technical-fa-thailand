@@ -12,7 +12,7 @@ import { isClockLive } from "@/lib/g15-clock";
 
 type Team = { id: number; name: string; logoUrl: string | null; groupName: string | null };
 
-type MatchGoal = { teamId: number; playerName: string; minute: number | null };
+type MatchGoal = { teamId: number; playerName: string; minute: number | null; isOwnGoal?: boolean };
 
 type Match = {
   id: number;
@@ -40,8 +40,9 @@ function scorerSummary(goals: MatchGoal[], teamId: number) {
   const byPlayer = new Map<string, number[]>();
   for (const g of goals) {
     if (g.teamId !== teamId) continue;
-    if (!byPlayer.has(g.playerName)) byPlayer.set(g.playerName, []);
-    if (g.minute != null) byPlayer.get(g.playerName)!.push(g.minute);
+    const label = g.isOwnGoal ? `${g.playerName} (OG)` : g.playerName;
+    if (!byPlayer.has(label)) byPlayer.set(label, []);
+    if (g.minute != null) byPlayer.get(label)!.push(g.minute);
   }
   if (byPlayer.size === 0) return null;
   return Array.from(byPlayer.entries())
