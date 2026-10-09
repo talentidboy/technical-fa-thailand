@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
-import { ClipboardList, ChevronDown } from "lucide-react";
+import { ClipboardList, ChevronDown, Check } from "lucide-react";
 import { G15_IMAGE_URL } from "@/lib/brand";
 
 const BANGKOK_TZ = "Asia/Bangkok";
@@ -35,6 +35,38 @@ function timeAt(kickoff: Date, minutesBefore: number) {
   });
 }
 
+// เวลาที่เหลือก่อนถึงขั้นนั้น — "1 วัน 02:14:05" / "02:14:05"
+function remainingLabel(ms: number) {
+  const totalSec = Math.floor(ms / 1000);
+  const days = Math.floor(totalSec / 86_400);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const hms = `${pad(Math.floor((totalSec % 86_400) / 3600))}:${pad(Math.floor((totalSec % 3600) / 60))}:${pad(totalSec % 60)}`;
+  return days > 0 ? `${days} วัน ${hms}` : hms;
+}
+
+function StepTimer({ target, now, isNext }: { target: number; now: number | null; isNext: boolean }) {
+  if (now == null) return null;
+  const ms = target - now;
+  if (ms <= 0) {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-400">
+        <Check className="h-3 w-3" />
+        ผ่านแล้ว
+      </span>
+    );
+  }
+  return (
+    <span
+      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-bold tabular-nums ${
+        isNext ? "bg-g15-600 text-white" : "bg-white/70 text-g15-700 ring-1 ring-g15-200"
+      }`}
+    >
+      {isNext && <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-white" />}
+      อีก {remainingLabel(ms)}
+    </span>
+  );
+}
+
 // กำหนดการก่อนเริ่มเกม (Official Countdown) — ซ่อนไว้หลังปุ่ม กดแล้วค่อยแสดง เวลาทุกขั้นคำนวณจากเวลาเตะจริงของนัด
 export function OfficialCountdown({
   kickoff,
@@ -50,7 +82,17 @@ export function OfficialCountdown({
   matchLabel: string;
 }) {
   const [open, setOpen] = useState(false);
+  // นาฬิกาสำหรับนับถอยหลังแต่ละขั้น — เริ่มเดินตอนกดเปิดเท่านั้น (ปิดอยู่ไม่ต้องอัปเดตทุกวินาที)
+  const [now, setNow] = useState<number | null>(null);
+  useEffect(() => {
+    if (!open) return;
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, [open]);
   const ko = new Date(kickoff);
+  const stepTimes = [...STEPS.map((st) => ko.getTime() - st.offset * 60_000), ko.getTime()];
+  // ขั้นถัดไปที่ยังไม่ถึงเวลา — ไฮไลต์ให้เห็นว่าตอนนี้ต้องเตรียมอะไร
+  const nextIndex = now == null ? -1 : stepTimes.findIndex((t) => t > now);
   const dateLabel = ko.toLocaleDateString("en-GB", { timeZone: BANGKOK_TZ, weekday: "long", day: "numeric", month: "long", year: "numeric" });
   const koLabel = timeAt(ko, 0);
 
@@ -58,7 +100,10 @@ export function OfficialCountdown({
     <section className="mt-8">
       <button
         type="button"
-        onClick={() => setOpen((o) => !o)}
+        onClick={() => {
+          setNow(Date.now());
+          setOpen((o) => !o);
+        }}
         aria-expanded={open}
         className="flex w-full items-center gap-3 rounded-2xl border border-slate-200 bg-white px-5 py-4 text-left shadow-sm transition-colors hover:border-g15-200 hover:bg-g15-50/40"
       >
@@ -106,27 +151,39 @@ export function OfficialCountdown({
           </dl>
 
           <ol className="divide-y divide-slate-100 text-sm">
-            {STEPS.map((s) => (
+            {STEPS.map((s, i) => (
               <li
                 key={s.offset}
                 className={`grid grid-cols-[4.5rem_1fr_auto] items-start gap-3 px-5 py-2.5 ${
                   s.tone === "amber" ? "bg-amber-50" : s.tone === "green" ? "bg-lime-100/70" : ""
+                } ${i === nextIndex ? "relative ring-2 ring-inset ring-g15-500" : ""} ${
+                  now != null && stepTimes[i] <= now ? "opacity-55" : ""
                 }`}
               >
                 <span className="font-bold tabular-nums text-slate-900">{s.label}</span>
                 <span className="text-slate-700">{s.text}</span>
-                <span className="whitespace-nowrap font-semibold tabular-nums text-slate-900">
-                  <span className="mr-2 text-xs font-normal text-slate-400">at</span>
-                  {timeAt(ko, s.offset)}
+                <span className="flex flex-col items-end gap-1">
+                  <span className="whitespace-nowrap font-semibold tabular-nums text-slate-900">
+                    <span className="mr-2 text-xs font-normal text-slate-400">at</span>
+                    {timeAt(ko, s.offset)}
+                  </span>
+                  <StepTimer target={stepTimes[i]} now={now} isNext={i === nextIndex} />
                 </span>
               </li>
             ))}
-            <li className="grid grid-cols-[4.5rem_1fr_auto] items-center gap-3 border-t-2 border-slate-900 bg-lime-200/80 px-5 py-3">
+            <li
+              className={`grid grid-cols-[4.5rem_1fr_auto] items-center gap-3 border-t-2 border-slate-900 bg-lime-200/80 px-5 py-3 ${
+                nextIndex === STEPS.length ? "ring-2 ring-inset ring-g15-500" : ""
+              }`}
+            >
               <span className="font-extrabold tabular-nums text-slate-900">- 0&apos;</span>
               <span className="font-bold text-slate-900">เริ่มทำการแข่งขัน</span>
-              <span className="whitespace-nowrap text-lg font-extrabold tabular-nums text-slate-900">
-                <span className="mr-2 text-xs font-normal text-slate-500">at</span>
-                {koLabel}
+              <span className="flex flex-col items-end gap-1">
+                <span className="whitespace-nowrap text-lg font-extrabold tabular-nums text-slate-900">
+                  <span className="mr-2 text-xs font-normal text-slate-500">at</span>
+                  {koLabel}
+                </span>
+                <StepTimer target={stepTimes[STEPS.length]} now={now} isNext={nextIndex === STEPS.length} />
               </span>
             </li>
           </ol>
@@ -135,14 +192,6 @@ export function OfficialCountdown({
             <p>พักครึ่งเวลา 15 นาที จากเสียงนกหวีดถึงเสียงนกหวีด</p>
             <p>
               โดยทีมต้องออกจากห้องพักนักกีฬา เพื่อเตรียมความพร้อมก่อนเวลาเริ่มแข่งขันในครึ่งหลัง 4 นาที และเดินลงสู่สนามพร้อมกับผู้ตัดสิน
-            </p>
-            <p className="pt-1 font-bold text-slate-900">ขั้นตอนหลังจากจบเกมการแข่งขัน</p>
-            <p>
-              หลังจากจบการแข่งขันแล้ว ต้องมีการแถลงข่าวต่อสื่อมวลชนโดยหัวหน้าผู้ฝึกสอน ณ ห้องแถลงข่าว โดยเจ้าหน้าที่ด้านสื่อมวลชน
-              (Media Officer) ของสโมสรต้องประสานงานกับผู้เข้าร่วมการแถลงข่าว
-            </p>
-            <p className="pt-1">
-              <span className="font-bold text-slate-900">สำเนาแจก:</span> ทีม · เจ้าหน้าที่จัดการแข่งขัน · ผู้ตัดสิน · LOC · สื่อมวลชน
             </p>
           </div>
         </div>
