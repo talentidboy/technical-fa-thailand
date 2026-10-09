@@ -83,12 +83,14 @@ export default async function G15StadiumPage({
                       แผนผังศูนย์ฝึกฟุตบอลใจฟ้าอคาเดมี่ <span className="font-normal text-slate-400">/ Jaifa Academy Map</span>
                     </h3>
                   </div>
+                  {/* แผนผังภาพเกือบจัตุรัส — จำกัดความกว้างบนจอใหญ่ ไม่ให้สูงล้นจอ */}
                   <Image
-                    src="/g15/jaifa-academy-map.jpg"
-                    alt="แผนผังศูนย์ฝึกฟุตบอลใจฟ้าอคาเดมี่ — สนาม ลานจอดรถ โรงแรม โซนขายอาหาร ห้องน้ำ และสำนักงาน"
-                    width={1920}
-                    height={1080}
-                    className="h-auto w-full"
+                    src="/g15/jaifa-academy-map-v2.webp"
+                    alt="แผนผังศูนย์ฝึกฟุตบอลใจฟ้าอคาเดมี่ — ทางเข้าหลัก อัฒจันทร์หลัก สนาม 1-9 ลานจอดรถ โรงแรม โซนบ้านพัก โซนขายอาหาร ห้องน้ำ และสำนักงาน"
+                    width={1059}
+                    height={992}
+                    sizes="(min-width: 768px) 768px, 100vw"
+                    className="mx-auto h-auto w-full max-w-3xl"
                   />
                 </div>
               </Reveal>
