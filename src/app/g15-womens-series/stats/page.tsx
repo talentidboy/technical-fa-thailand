@@ -7,11 +7,15 @@ import { HeroArt } from "@/components/g15/HeroArt";
 import { StageSwitcher } from "@/components/g15/StageSwitcher";
 import { TeamOfRoundPitch } from "@/components/g15/TeamOfRoundPitch";
 import { MiniLeaderboard } from "@/components/g15/MiniLeaderboard";
-import { PlayerLeaderboard, type PlayerLeaderboardRow } from "@/components/g15/PlayerLeaderboard";
+import { StatLeaderCard, type StatLeaderRow } from "@/components/g15/StatLeaderCard";
+import { Bebas_Neue } from "next/font/google";
 import { TeamBadge } from "@/components/g15/TeamBadge";
 import { Reveal } from "@/components/g15/Reveal";
 import { AnimatedCounter } from "@/components/g15/AnimatedCounter";
-import { Handshake, Target, ShieldCheck, ShieldHalf, Trophy, Flame, BarChart3, Users, CheckCircle2, TrendingUp } from "lucide-react";
+import { Target, ShieldCheck, ShieldHalf, Flame, BarChart3, Users, CheckCircle2, TrendingUp } from "lucide-react";
+
+// ตัวอักษรแคบสูงสำหรับหัวข้อ/ชื่อ/ตัวเลขในการ์ดอันดับ (แบบเดียวกับหน้าโปรไฟล์นักกีฬา)
+const display = Bebas_Neue({ weight: "400", subsets: ["latin"], display: "swap" });
 
 export default async function G15StatsPage({
   searchParams,
@@ -21,12 +25,15 @@ export default async function G15StatsPage({
   const stage = parseStage((await searchParams).stage);
 
   // ทุกอย่างกรองตามรอบ — รอบชิงแชมป์ประเทศเริ่มนับประตู/คลีนชีต/ดาวซัลโวใหม่จากศูนย์ ไม่รวมผลรอบภูมิภาค
-  const [user, allTeams, matches, goals, allStars, assistGoals] = await Promise.all([
+  const [user, allTeams, matches, goals, allStars, assistGoals, cards] = await Promise.all([
     getCurrentUser(),
     prisma.g15Team.findMany({ orderBy: [{ groupName: "asc" }, { name: "asc" }] }),
     prisma.g15Match.findMany({ where: { stage }, include: { homeTeam: true, awayTeam: true } }),
     // ไม่นับประตูตัวเอง (OG) เป็นประตูของคนยิง
-    prisma.g15Goal.findMany({ where: { match: { stage }, isOwnGoal: false }, include: { team: true } }),
+    prisma.g15Goal.findMany({
+      where: { match: { stage }, isOwnGoal: false },
+      include: { team: true, player: { select: { firstNameEn: true, lastNameEn: true, photoUrl: true } } },
+    }),
     prisma.g15AllStar.findMany({
       where: { stage },
       include: { player: { select: { id: true, firstNameTh: true, lastNameTh: true, jerseyNumber: true, photoUrl: true, team: true } } },
@@ -36,6 +43,7 @@ export default async function G15StatsPage({
       where: { match: { stage }, assistPlayerId: { not: null } },
       include: { team: true },
     }),
+    prisma.g15Card.findMany({ where: { match: { stage }, holderRole: "PLAYER" }, include: { team: true } }),
   ]);
   const teams = stage === "NATIONAL" ? allTeams.filter((t) => t.nationalGroup) : allTeams;
 
@@ -69,45 +77,85 @@ export default async function G15StatsPage({
   )[0];
   const biggestWinMargin = biggestWin ? Math.abs(biggestWin.homeScore! - biggestWin.awayScore!) : 0;
 
-  // ดาวซัลโว — รวมประตูรายคน คีย์ด้วย playerId ถ้าผูกทะเบียนไว้ ไม่งั้นคีย์ด้วยทีม+ชื่อ (กันปะปนกันข้ามทีม)
-  const scorerMap = new Map<string, PlayerLeaderboardRow>();
-  for (const goal of goals) {
-    const key = goal.playerId != null ? `p${goal.playerId}` : `n${goal.teamId}:${goal.playerName}`;
-    const existing = scorerMap.get(key);
-    if (existing) {
-      existing.goals += 1;
-    } else {
-      scorerMap.set(key, {
-        key,
-        playerName: goal.playerName,
-        jerseyNumber: goal.jerseyNumber,
-        teamName: goal.team.name,
-        teamLogoUrl: goal.team.logoUrl,
-        teamGroupName: goal.team.groupName,
-        goals: 1,
-      });
-    }
-  }
-  const topIndividualScorers = Array.from(scorerMap.values()).sort((a, b) => b.goals - a.goals);
+  // ===== อันดับรายบุคคล (การ์ดแบบ leaderboard) =====
+  // ข้อมูลนักกีฬาที่ต้องใช้ (รูป/ชื่ออังกฤษ) — แอสซิสต์อ้าง id, ใบเหลือง/แดงเก็บเป็นชื่อ (จับคู่ด้วยทีม+ชื่อ)
+  const assistIds = [...new Set(assistGoals.map((g) => g.assistPlayerId!))];
+  const cardTeamIds = [...new Set(cards.map((c) => c.teamId))];
+  const people = await prisma.g15Player.findMany({
+    where: { OR: [{ id: { in: assistIds } }, { teamId: { in: cardTeamIds } }] },
+    select: { id: true, teamId: true, firstNameTh: true, lastNameTh: true, firstNameEn: true, lastNameEn: true, photoUrl: true },
+  });
+  const personById = new Map(people.map((p) => [p.id, p]));
+  const personByTeamName = new Map(people.map((p) => [`${p.teamId}|${p.firstNameTh} ${p.lastNameTh}`, p]));
+  const enName = (p?: { firstNameEn: string | null; lastNameEn: string | null } | null) =>
+    p ? [p.firstNameEn, p.lastNameEn].filter(Boolean).join(" ") || null : null;
+  const teamOf = (t: { name: string; logoUrl: string | null; groupName: string | null }) => ({
+    name: t.name,
+    logoUrl: t.logoUrl,
+    groupName: t.groupName,
+  });
 
-  // แอสซิสต์สูงสุด — ใช้แถวรูปแบบเดียวกับดาวซัลโว (ช่อง goals = จำนวนแอสซิสต์)
-  const assistMap = new Map<string, PlayerLeaderboardRow>();
-  for (const g of assistGoals) {
-    const key = `p${g.assistPlayerId}`;
-    const existing = assistMap.get(key);
-    if (existing) existing.goals += 1;
-    else
-      assistMap.set(key, {
-        key,
-        playerName: g.assistName ?? "-",
-        jerseyNumber: null,
-        teamName: g.team.name,
-        teamLogoUrl: g.team.logoUrl,
-        teamGroupName: g.team.groupName,
-        goals: 1,
-      });
-  }
-  const topAssists = Array.from(assistMap.values()).sort((a, b) => b.goals - a.goals);
+  // นับรายการต่อคน แล้วเรียงมาก→น้อย (เท่ากันเรียงตามชื่อ)
+  const tally = (entries: { key: string; build: () => Omit<StatLeaderRow, "value" | "key"> }[]) => {
+    const map = new Map<string, StatLeaderRow>();
+    for (const e of entries) {
+      const row = map.get(e.key);
+      if (row) row.value += 1;
+      else map.set(e.key, { key: e.key, value: 1, ...e.build() });
+    }
+    return [...map.values()].sort((a, b) => b.value - a.value || a.nameTh.localeCompare(b.nameTh, "th"));
+  };
+
+  // ดาวซัลโว — คีย์ด้วย playerId ถ้าผูกทะเบียน ไม่งั้นทีม+ชื่อ; ไม่นับ OG และประตูที่ไม่ระบุผู้ทำ
+  const topScorerRows = tally(
+    goals
+      .filter((g) => g.playerId != null || g.playerName !== "ไม่ระบุผู้ทำประตู")
+      .map((g) => ({
+        key: g.playerId != null ? `p${g.playerId}` : `n${g.teamId}:${g.playerName}`,
+        build: () => ({
+          playerId: g.playerId,
+          nameTh: g.playerName,
+          nameEn: enName(g.player),
+          photoUrl: g.player?.photoUrl ?? null,
+          team: teamOf(g.team),
+        }),
+      })),
+  );
+  const assistRows = tally(
+    assistGoals.map((g) => {
+      const p = personById.get(g.assistPlayerId!);
+      return {
+        key: `p${g.assistPlayerId}`,
+        build: () => ({
+          playerId: g.assistPlayerId,
+          nameTh: g.assistName ?? (p ? `${p.firstNameTh} ${p.lastNameTh}` : "-"),
+          nameEn: enName(p),
+          photoUrl: p?.photoUrl ?? null,
+          team: teamOf(g.team),
+        }),
+      };
+    }),
+  );
+  const cardRows = (type: "YELLOW" | "RED") =>
+    tally(
+      cards
+        .filter((c) => c.cardType === type)
+        .map((c) => {
+          const p = personByTeamName.get(`${c.teamId}|${c.holderName}`);
+          return {
+            key: p ? `p${p.id}` : `n${c.teamId}:${c.holderName}`,
+            build: () => ({
+              playerId: p?.id ?? null,
+              nameTh: c.holderName,
+              nameEn: enName(p),
+              photoUrl: p?.photoUrl ?? null,
+              team: teamOf(c.team),
+            }),
+          };
+        }),
+    );
+  const yellowRows = cardRows("YELLOW");
+  const redRows = cardRows("RED");
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -175,25 +223,38 @@ export default async function G15StatsPage({
               </div>
             </div>
 
+            {/* อันดับรายบุคคล — การ์ดแบบ leaderboard (อันดับ 1 เป็นแบนเนอร์ใหญ่) */}
+            <section>
+              <h2 className={`${display.className} mb-4 text-4xl uppercase leading-none text-g15-900`}>
+                Player Stats <span className="font-sans text-base font-semibold normal-case text-slate-400">/ สถิตินักกีฬา</span>
+              </h2>
+              <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
+                {[
+                  { title: "Top Scorers", th: "ดาวซัลโว", rows: topScorerRows, unit: "Goals", unitTh: "ประตู" },
+                  { title: "Top Assists", th: "แอสซิสต์สูงสุด", rows: assistRows, unit: "Assists", unitTh: "แอสซิสต์" },
+                  { title: "Yellow Cards", th: "ใบเหลือง", rows: yellowRows, unit: "Yellow", unitTh: "ใบเหลือง" },
+                  ...(redRows.length > 0 ? [{ title: "Red Cards", th: "ใบแดง", rows: redRows, unit: "Red", unitTh: "ใบแดง" }] : []),
+                ].map((b, i) => (
+                  <Reveal key={b.title} delay={i * 60} className="h-full">
+                    <div className="flex h-full flex-col">
+                      <p className="mb-2 flex items-baseline gap-2">
+                        <span className={`${display.className} text-2xl uppercase text-g15-700`}>{b.title}</span>
+                        <span className="text-xs font-semibold text-slate-400">{b.th}</span>
+                      </p>
+                      <div className="flex-1">
+                        <StatLeaderCard rows={b.rows} unit={b.unit} unitTh={b.unitTh} displayFont={display.className} />
+                      </div>
+                    </div>
+                  </Reveal>
+                ))}
+              </div>
+            </section>
+
+            <section>
+            <h2 className={`${display.className} mb-4 text-4xl uppercase leading-none text-g15-900`}>
+              Team Stats <span className="font-sans text-base font-semibold normal-case text-slate-400">/ สถิติทีม</span>
+            </h2>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              <Reveal delay={0}>
-                <PlayerLeaderboard
-                  title="ดาวซัลโว / Top Scorers"
-                  icon={<Trophy className="h-4 w-4" />}
-                  rows={topIndividualScorers}
-                  accent="brand"
-                />
-              </Reveal>
-              {topAssists.length > 0 && (
-                <Reveal delay={40}>
-                  <PlayerLeaderboard
-                    title="แอสซิสต์สูงสุด / Top Assists"
-                    icon={<Handshake className="h-4 w-4" />}
-                    rows={topAssists}
-                    accent="cyan"
-                  />
-                </Reveal>
-              )}
               <Reveal delay={80}>
                 <MiniLeaderboard
                   title="ทีมทำประตูสูงสุด / Top Scoring Teams"
@@ -249,6 +310,7 @@ export default async function G15StatsPage({
                 </Reveal>
               )}
             </div>
+            </section>
 
             {allStars.length > 0 && (
               <Reveal>

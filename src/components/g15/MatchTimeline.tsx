@@ -1,4 +1,5 @@
-import { ArrowLeftRight, Flag, Goal } from "lucide-react";
+import { ArrowLeftRight, Flag } from "lucide-react";
+import { BallIcon } from "./BallIcon";
 
 type GoalEv = { id: number; teamId: number; minute: number | null; playerName: string; isOwnGoal?: boolean; assistName?: string | null };
 type CardEv = { id: number; teamId: number; minute: number | null; holderName: string; cardType: string };
@@ -90,7 +91,7 @@ export function MatchTimeline({
     if (e.kind === "goal")
       return (
         <span className="flex items-center gap-2">
-          <Goal className="h-4 w-4 flex-none text-emerald-600" />
+          <BallIcon className="h-4 w-4 flex-none text-emerald-600" />
           <span className="min-w-0">
             <span className="block truncate text-sm font-bold text-slate-900">{e.title}</span>
             <span className="text-[11px] font-semibold text-emerald-600">

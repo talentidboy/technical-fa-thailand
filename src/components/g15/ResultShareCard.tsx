@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { toPng } from "html-to-image";
 import { Download, Loader2 } from "lucide-react";
 import { G15_IMAGE_URL } from "@/lib/brand";
+import { BallIcon } from "./BallIcon";
 
 type CardTeam = { name: string; logoUrl: string | null };
 
@@ -73,8 +74,11 @@ export function ResultShareCard({ data, fileName }: { data: ShareCardData; fileN
   const scorerList = (names: string[], align: "left" | "right") => (
     <div style={{ display: "flex", flexDirection: "column", gap: 6, alignItems: align === "left" ? "flex-start" : "flex-end", minHeight: 40 }}>
       {names.slice(0, 5).map((n) => (
-        <span key={n} style={{ fontSize: 26, color: "rgba(255,255,255,0.85)", textAlign: align }}>
-          ⚽ {n}
+        <span key={n} style={{ fontSize: 26, color: "rgba(255,255,255,0.85)", textAlign: align, display: "flex", alignItems: "center", gap: 10 }}>
+          <span style={{ color: "#f3da93", display: "inline-flex" }}>
+            <BallIcon className="h-7 w-7" />
+          </span>
+          {n}
         </span>
       ))}
     </div>

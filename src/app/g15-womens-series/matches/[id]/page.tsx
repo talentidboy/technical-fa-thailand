@@ -21,6 +21,7 @@ import { Countdown } from "@/components/g15/Countdown";
 import { LiveClock } from "@/components/g15/LiveClock";
 import { MatchTimeline } from "@/components/g15/MatchTimeline";
 import { MatchLineups, MatchStatBars } from "@/components/g15/MatchLineups";
+import { BallIcon } from "@/components/g15/BallIcon";
 import { isClockLive } from "@/lib/g15-clock";
 import { G15Chrome } from "@/components/g15/G15Chrome";
 import { HeroArt } from "@/components/g15/HeroArt";
@@ -283,7 +284,7 @@ export default async function G15MatchDetailPage({
                 <ul className="mt-3 space-y-1 text-[11px] leading-snug text-g15-100 sm:text-xs text-right">
                   {scorerChips(match.homeTeamId).map((c) => (
                     <li key={c.name + c.og} className="flex items-start gap-1 justify-end">
-                      <span aria-hidden>⚽</span>
+                      <BallIcon className="mt-0.5 h-3.5 w-3.5 flex-none text-amber-300" />
                       <span>
                         {c.name}
                         {c.og && <span className="ml-1 font-bold text-red-300">(OG)</span>}
@@ -336,7 +337,7 @@ export default async function G15MatchDetailPage({
                 <ul className="mt-3 space-y-1 text-[11px] leading-snug text-g15-100 sm:text-xs text-left">
                   {scorerChips(match.awayTeamId).map((c) => (
                     <li key={c.name + c.og} className="flex items-start gap-1 ">
-                      <span aria-hidden>⚽</span>
+                      <BallIcon className="mt-0.5 h-3.5 w-3.5 flex-none text-amber-300" />
                       <span>
                         {c.name}
                         {c.og && <span className="ml-1 font-bold text-red-300">(OG)</span>}

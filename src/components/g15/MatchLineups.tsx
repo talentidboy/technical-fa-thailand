@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowDown, ArrowUp, UserRound } from "lucide-react";
 import { TeamBadge } from "./TeamBadge";
+import { BallIcon } from "./BallIcon";
 
 type Team = { id: number; name: string; logoUrl: string | null; groupName: string | null };
 type LineupRow = {
@@ -38,7 +39,8 @@ function EventIcons({
     <span className="flex flex-none items-center gap-1.5">
       {goals > 0 && (
         <span className="inline-flex items-center gap-0.5 text-[11px] font-bold text-slate-700" title="ประตู">
-          ⚽{goals > 1 && <span>×{goals}</span>}
+          <BallIcon className="h-3.5 w-3.5 text-slate-800" />
+          {goals > 1 && <span>×{goals}</span>}
         </span>
       )}
       {ownGoals > 0 && (
@@ -203,7 +205,9 @@ export function MatchLineups({
         <TeamLineup team={awayTeam} lineups={lineups.filter((l) => l.teamId === awayTeam.id)} goals={goals} cards={cards} subs={substitutions} accent="away" />
       </div>
       <p className="flex flex-wrap items-center gap-x-4 gap-y-1 px-1 text-[11px] text-slate-400">
-        <span>⚽ ประตู</span>
+        <span className="flex items-center gap-1">
+          <BallIcon className="h-3 w-3 text-slate-600" /> ประตู
+        </span>
         <span className="font-bold text-sky-600">A</span>
         <span className="-ml-3">แอสซิสต์</span>
         <span className="flex items-center gap-1">
