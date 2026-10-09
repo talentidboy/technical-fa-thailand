@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Bebas_Neue } from "next/font/google";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
@@ -7,9 +8,11 @@ import { parseRegionGroup, regionEn } from "@/lib/g15-region";
 import { STAGES, roundStyle, hasPenalties, type G15Stage } from "@/lib/g15-stage";
 import { G15Chrome } from "@/components/g15/G15Chrome";
 import { TeamBadge } from "@/components/g15/TeamBadge";
-import { squadLineLabel } from "@/lib/g15-squad";
 import { Reveal } from "@/components/g15/Reveal";
 import { User, Goal, Square, ListOrdered } from "lucide-react";
+
+// ตัวอักษรแคบสูงสำหรับชื่อ/เบอร์เสื้อบนแบนเนอร์ (โหลดเฉพาะหน้านี้)
+const display = Bebas_Neue({ weight: "400", subsets: ["latin"], display: "swap" });
 
 // โปรไฟล์นักกีฬา — สถิติแยกตามรอบ (ลงเล่น/ตัวจริง/ประตู/ใบเหลือง-แดง) จากไลน์อัพ ผู้ทำประตู และใบรายงานผู้ตัดสิน
 // ไม่แสดงวันเกิด/ส่วนสูง/น้ำหนัก/เลขบัตร — นักกีฬาเป็นเยาวชน แสดงเฉพาะข้อมูลที่หน้าทีมเปิดเผยอยู่แล้ว
@@ -98,51 +101,25 @@ export default async function G15PlayerPage({ params }: { params: Promise<{ id: 
           />
 
           <div className="absolute inset-0 grid grid-cols-[minmax(0,1fr)_auto] items-end gap-2 px-5 sm:px-[5.2%]">
-            {/* หัวข้อ PLAYER PROFILE (ตัวบางกว้าง + เส้นใต้ไล่สีชมพู→ทอง มีลายขีดที่ปลาย) แล้วตามด้วยชื่อ — จัดกึ่งกลางแนวตั้ง */}
-            <div className="min-w-0 self-center pb-4 pt-6 sm:pb-6 sm:pt-8">
-              <p className="text-xl font-light uppercase leading-none tracking-[0.12em] text-g15-900 sm:text-[clamp(1.6rem,3.3vw,3.4rem)]">
-                Player Profile
-              </p>
-              <div aria-hidden className="mt-2 flex h-1.5 w-[min(100%,15rem)] items-stretch gap-1 sm:mt-3 sm:h-2 sm:w-[clamp(15rem,31vw,34rem)]">
-                <span className="w-6 flex-none bg-[repeating-linear-gradient(115deg,#db2777_0_3px,transparent_3px_6px)] sm:w-10" />
-                <span className="flex-1 bg-linear-to-r from-pink-600 via-g15-500 to-amber-500 [clip-path:polygon(0_0,100%_0,calc(100%-6px)_100%,0_100%)]" />
-                <span className="w-8 flex-none bg-[repeating-linear-gradient(115deg,#c9a227_0_3px,transparent_3px_6px)] sm:w-14" />
-              </div>
-              <div className="mt-4 sm:mt-6">
+            {/* มินิมอล: ป้ายเล็ก PLAYER PROFILE + ขีดสั้น, ชื่ออังกฤษตัวแคบสูงใหญ่ (Bebas Neue), ชื่อไทยบรรทัดเล็ก
+                ข้อมูลทีม/เบอร์/ตำแหน่งอยู่ในการ์ดด้านล่างแล้ว จึงไม่ใส่ซ้ำในแบนเนอร์ */}
+            <div className="min-w-0 self-center py-6">
+              <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-g15-900/60 sm:text-xs">Player Profile</p>
+              <span aria-hidden className="mt-1.5 block h-0.5 w-8 bg-g15-600 sm:mt-2 sm:w-10" />
               {player.firstNameEn || player.lastNameEn ? (
                 <>
-                  <h1 className="bg-linear-to-r from-g15-900 via-g15-700 to-pink-600 bg-clip-text text-[1.7rem] font-black uppercase leading-[1.05] tracking-tight text-transparent sm:text-5xl lg:text-6xl">
+                  <h1
+                    className={`${display.className} mt-3 text-[3.1rem] uppercase leading-[0.88] text-g15-700 sm:mt-4 sm:text-[clamp(4rem,7.4vw,8.5rem)]`}
+                  >
                     {player.firstNameEn}
                     <br />
                     {player.lastNameEn}
                   </h1>
-                  <p className="mt-2 text-base font-bold text-g15-800 sm:mt-3 sm:text-2xl">{fullName}</p>
+                  <p className="mt-2 text-sm font-semibold text-g15-900/55 sm:mt-3 sm:text-lg">{fullName}</p>
                 </>
               ) : (
-                <h1 className="text-3xl font-black leading-tight text-g15-900 sm:text-5xl">{fullName}</h1>
+                <h1 className="mt-3 text-3xl font-black leading-tight text-g15-700 sm:mt-4 sm:text-6xl">{fullName}</h1>
               )}
-              <div className="mt-3 flex flex-wrap items-center gap-1.5 sm:mt-5 sm:gap-2">
-                <Link
-                  href={`/g15-womens-series/teams/${player.team.id}`}
-                  className="inline-flex max-w-full items-center gap-2 rounded-full bg-g15-900 py-1 pl-1 pr-3 text-[11px] font-semibold text-white shadow-lg shadow-g15-900/20 transition-colors hover:bg-g15-700 sm:text-sm"
-                >
-                  <span className="flex-none rounded-full bg-white p-0.5">
-                    <TeamBadge team={player.team} size="sm" />
-                  </span>
-                  <span className="truncate">{player.team.name}</span>
-                </Link>
-                {player.jerseyNumber != null && (
-                  <span className="rounded-full bg-amber-400 px-3 py-1 text-[11px] font-black text-amber-950 shadow-sm sm:text-sm">
-                    #{player.jerseyNumber}
-                  </span>
-                )}
-                {player.position && (
-                  <span className="rounded-full bg-white/80 px-3 py-1 text-[11px] font-semibold text-g15-800 ring-1 ring-g15-200 sm:text-sm">
-                    {squadLineLabel(player.position)}
-                  </span>
-                )}
-              </div>
-              </div>
             </div>
 
             {/* รูปนักกีฬาฝั่งสนาม — ยืนชิดขอบล่าง เบอร์เสื้อยักษ์แบบเส้นขอบด้านหลัง */}
@@ -150,8 +127,7 @@ export default async function G15PlayerPage({ params }: { params: Promise<{ id: 
               {player.jerseyNumber != null && (
                 <span
                   aria-hidden
-                  className="absolute -right-3 top-0 select-none text-[7rem] font-black italic leading-none tracking-tighter text-transparent sm:-right-[30%] sm:top-[-4%] sm:text-[min(16vw,17rem)]"
-                  style={{ WebkitTextStroke: "2px rgba(255,255,255,0.45)" }}
+                  className={`${display.className} absolute bottom-[8%] right-[52%] select-none text-[9rem] leading-none text-g15-300/50 sm:right-[58%] sm:text-[min(21vw,23rem)] sm:text-g15-200/60`}
                 >
                   {player.jerseyNumber}
                 </span>
