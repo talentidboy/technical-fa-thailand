@@ -225,13 +225,17 @@ export default async function G15ManageMatchPage({
   const manageHref = withStage("/g15-womens-series/manage", match.stage as G15Stage);
 
   const [rosterPlayers, rosterOfficials] = await Promise.all([
+    // คนที่ไม่อยู่ในรายชื่อปัจจุบันไม่ต้องให้เลือก ยกเว้นคนที่อยู่ในไลน์อัพนัดนี้อยู่แล้ว (นัดรอบก่อน) — ไม่งั้นกดบันทึกไลน์อัพซ้ำแล้วคนนั้นจะหลุด
     prisma.g15Player.findMany({
-      where: { teamId: { in: [match.homeTeamId, match.awayTeamId] } },
+      where: {
+        teamId: { in: [match.homeTeamId, match.awayTeamId] },
+        OR: [{ isActive: true }, { lineups: { some: { matchId: id } } }],
+      },
       orderBy: [{ jerseyNumber: { sort: "asc", nulls: "last" } }, { no: "asc" }],
       select: { id: true, teamId: true, firstNameTh: true, lastNameTh: true, jerseyNumber: true },
     }),
     prisma.g15Official.findMany({
-      where: { teamId: { in: [match.homeTeamId, match.awayTeamId] } },
+      where: { teamId: { in: [match.homeTeamId, match.awayTeamId] }, isActive: true },
       orderBy: [{ no: "asc" }],
       select: { id: true, teamId: true, firstNameTh: true, lastNameTh: true, role: true },
     }),

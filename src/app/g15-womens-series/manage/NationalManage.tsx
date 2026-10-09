@@ -85,7 +85,7 @@ export async function NationalManage() {
     }),
     // ตัวเลือกทีมยอดเยี่ยมฯ — เฉพาะนักกีฬาของ 8 ทีมที่เข้ารอบ
     prisma.g15Player.findMany({
-      where: { team: { nationalGroup: { not: null } } },
+      where: { isActive: true, team: { nationalGroup: { not: null } } },
       orderBy: [{ teamId: "asc" }, { jerseyNumber: { sort: "asc", nulls: "last" } }],
       select: { id: true, teamId: true, firstNameTh: true, lastNameTh: true, jerseyNumber: true, position: true },
     }),

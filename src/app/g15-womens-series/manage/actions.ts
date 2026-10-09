@@ -871,3 +871,21 @@ export async function saveTeamOfRound(formData: FormData): Promise<ActionResult>
     revalidateG15();
   });
 }
+
+// ===== อยู่/ไม่อยู่ในรายชื่อส่งแข่งปัจจุบัน =====
+// ไม่ลบนักกีฬา/เจ้าหน้าที่ที่หลุดจากรายชื่อ (ไลน์อัพ/ประตูรอบก่อนยังอ้างถึงอยู่) แค่ซ่อนจากหน้าทีมและตัวเลือกไลน์อัพ
+export async function setPlayerActive(formData: FormData) {
+  await requireAdminOrStaff();
+  const id = Number(formData.get("id"));
+  const teamId = Number(formData.get("teamId"));
+  await prisma.g15Player.update({ where: { id }, data: { isActive: formData.get("active") === "1" } });
+  revalidateG15(teamId);
+}
+
+export async function setOfficialActive(formData: FormData) {
+  await requireAdminOrStaff();
+  const id = Number(formData.get("id"));
+  const teamId = Number(formData.get("teamId"));
+  await prisma.g15Official.update({ where: { id }, data: { isActive: formData.get("active") === "1" } });
+  revalidateG15(teamId);
+}

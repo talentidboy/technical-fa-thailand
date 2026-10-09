@@ -32,7 +32,7 @@ export default async function G15TeamDetailPage({
     }),
     // ไม่ดึง idCardNumber/passportNumber มาเลย — ข้อมูลอ่อนไหวเก็บไว้ในฐานข้อมูลอย่างเดียว ไม่แสดงผลที่ไหน
     prisma.g15Player.findMany({
-      where: { teamId: id },
+      where: { teamId: id, isActive: true },
       orderBy: { no: "asc" },
       select: {
         id: true,
@@ -47,7 +47,7 @@ export default async function G15TeamDetailPage({
       },
     }),
     prisma.g15Official.findMany({
-      where: { teamId: id },
+      where: { teamId: id, isActive: true },
       orderBy: { no: "asc" },
       select: {
         id: true,

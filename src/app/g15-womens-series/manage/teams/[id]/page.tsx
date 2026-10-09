@@ -11,12 +11,14 @@ import {
   createOfficial,
   updateOfficial,
   deleteOfficial,
+  setPlayerActive,
+  setOfficialActive,
 } from "../../actions";
 import { Field } from "@/components/FormField";
 import { LogoPasteField } from "@/components/g15/LogoPasteField";
 import { ModalTrigger } from "@/components/Modal";
 import { LOGO_URL } from "@/lib/brand";
-import { ArrowLeft, Shield, Users, UserCog, Trash2, ChevronDown } from "lucide-react";
+import { ArrowLeft, Shield, Users, UserCog, Trash2, ChevronDown, UserMinus, UserPlus } from "lucide-react";
 
 function toDateInputValue(date: Date | null) {
   if (!date) return "";
@@ -59,6 +61,57 @@ export default async function G15ManageTeamPage({
     }),
     prisma.g15Official.findMany({ where: { teamId: id }, orderBy: { no: "asc" } }),
   ]);
+  // คนที่ไม่อยู่ในรายชื่อส่งแข่งปัจจุบัน (isActive = false) แยกไว้ด้านล่าง — ไม่ลบเพราะยังมีประวัติรอบก่อนผูกอยู่
+  const activePlayers = players.filter((p) => p.isActive);
+  const inactivePlayers = players.filter((p) => !p.isActive);
+  const activeOfficials = officials.filter((o) => o.isActive);
+  const inactiveOfficials = officials.filter((o) => !o.isActive);
+
+  const toggleForm = (
+    action: (formData: FormData) => Promise<void>,
+    personId: number,
+    active: boolean,
+  ) => (
+    <form action={action}>
+      <input type="hidden" name="id" value={personId} />
+      <input type="hidden" name="teamId" value={team.id} />
+      <input type="hidden" name="active" value={active ? "1" : "0"} />
+      <button
+        type="submit"
+        className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors ${
+          active ? "text-emerald-600 hover:bg-emerald-50" : "text-slate-500 hover:bg-slate-100"
+        }`}
+      >
+        {active ? <UserPlus className="h-3.5 w-3.5" /> : <UserMinus className="h-3.5 w-3.5" />}
+        {active ? "นำกลับเข้ารายชื่อ" : "ย้ายออกจากรายชื่อ"}
+      </button>
+    </form>
+  );
+
+  const inactiveSection = (
+    label: string,
+    people: { id: number; firstNameTh: string; lastNameTh: string; jerseyNumber?: number | null }[],
+    action: (formData: FormData) => Promise<void>,
+  ) =>
+    people.length > 0 && (
+      <details className="group border-t border-slate-100">
+        <summary className="flex cursor-pointer list-none items-center gap-2 px-6 py-3 text-xs font-medium text-slate-500 hover:bg-slate-50 [&::-webkit-details-marker]:hidden">
+          <ChevronDown className="h-3.5 w-3.5 transition-transform group-open:rotate-180" />
+          {label} ({people.length}) — ซ่อนจากหน้าทีมและตัวเลือกไลน์อัพ แต่ประวัติรอบก่อนยังอยู่
+        </summary>
+        <ul className="divide-y divide-slate-100 bg-slate-50/60">
+          {people.map((x) => (
+            <li key={x.id} className="flex items-center gap-3 px-6 py-2">
+              <span className="w-7 flex-none text-center text-xs font-bold text-slate-400">{x.jerseyNumber ?? "-"}</span>
+              <span className="min-w-0 flex-1 truncate text-sm text-slate-500">
+                {x.firstNameTh} {x.lastNameTh}
+              </span>
+              {toggleForm(action, x.id, true)}
+            </li>
+          ))}
+        </ul>
+      </details>
+    );
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -124,7 +177,7 @@ export default async function G15ManageTeamPage({
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
                 <Users className="h-4 w-4" />
               </div>
-              <h2 className="font-semibold text-slate-900">นักกีฬา ({players.length})</h2>
+              <h2 className="font-semibold text-slate-900">นักกีฬา ({activePlayers.length})</h2>
             </div>
             <ModalTrigger
               label="เพิ่มนักกีฬาใหม่"
@@ -156,11 +209,11 @@ export default async function G15ManageTeamPage({
             </ModalTrigger>
           </div>
 
-          {players.length === 0 ? (
+          {activePlayers.length === 0 ? (
             <p className="px-6 py-10 text-center text-sm text-slate-400">ยังไม่มีนักกีฬาในทีมนี้</p>
           ) : (
             <ul className="divide-y divide-slate-100">
-              {players.map((p) => (
+              {activePlayers.map((p) => (
                 <li key={p.id}>
                   <details className="group">
                     <summary className="flex cursor-pointer list-none items-center gap-3 px-6 py-3 hover:bg-slate-50 [&::-webkit-details-marker]:hidden">
@@ -214,6 +267,8 @@ export default async function G15ManageTeamPage({
                         />
                       </form>
                       <div className="mt-4 flex items-center justify-between gap-3 border-t border-slate-100 pt-3">
+                        <div className="flex items-center gap-1">
+                        {toggleForm(setPlayerActive, p.id, false)}
                         <form action={deletePlayer}>
                           <input type="hidden" name="id" value={p.id} />
                           <input type="hidden" name="teamId" value={team.id} />
@@ -225,6 +280,7 @@ export default async function G15ManageTeamPage({
                             ลบนักกีฬาคนนี้
                           </button>
                         </form>
+                        </div>
                         <button
                           type="submit"
                           form={`player-form-${p.id}`}
@@ -239,6 +295,7 @@ export default async function G15ManageTeamPage({
               ))}
             </ul>
           )}
+          {inactiveSection("ไม่อยู่ในรายชื่อนักกีฬาปัจจุบัน", inactivePlayers, setPlayerActive)}
         </div>
 
         {/* เจ้าหน้าที่ */}
@@ -248,7 +305,7 @@ export default async function G15ManageTeamPage({
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-50 text-amber-600">
                 <UserCog className="h-4 w-4" />
               </div>
-              <h2 className="font-semibold text-slate-900">เจ้าหน้าที่ ({officials.length})</h2>
+              <h2 className="font-semibold text-slate-900">เจ้าหน้าที่ ({activeOfficials.length})</h2>
             </div>
             <ModalTrigger
               label="เพิ่มเจ้าหน้าที่ใหม่"
@@ -278,11 +335,11 @@ export default async function G15ManageTeamPage({
             </ModalTrigger>
           </div>
 
-          {officials.length === 0 ? (
+          {activeOfficials.length === 0 ? (
             <p className="px-6 py-10 text-center text-sm text-slate-400">ยังไม่มีเจ้าหน้าที่ในทีมนี้</p>
           ) : (
             <ul className="divide-y divide-slate-100">
-              {officials.map((o) => (
+              {activeOfficials.map((o) => (
                 <li key={o.id}>
                   <details className="group">
                     <summary className="flex cursor-pointer list-none items-center gap-3 px-6 py-3 hover:bg-slate-50 [&::-webkit-details-marker]:hidden">
@@ -314,6 +371,8 @@ export default async function G15ManageTeamPage({
                         <Field label="ใบอนุญาตผู้ฝึกสอน" name="coachingLicense" defaultValue={o.coachingLicense ?? ""} />
                       </form>
                       <div className="mt-4 flex items-center justify-between gap-3 border-t border-slate-100 pt-3">
+                        <div className="flex items-center gap-1">
+                        {toggleForm(setOfficialActive, o.id, false)}
                         <form action={deleteOfficial}>
                           <input type="hidden" name="id" value={o.id} />
                           <input type="hidden" name="teamId" value={team.id} />
@@ -325,6 +384,7 @@ export default async function G15ManageTeamPage({
                             ลบเจ้าหน้าที่คนนี้
                           </button>
                         </form>
+                        </div>
                         <button
                           type="submit"
                           form={`official-form-${o.id}`}
@@ -339,6 +399,7 @@ export default async function G15ManageTeamPage({
               ))}
             </ul>
           )}
+          {inactiveSection("ไม่อยู่ในรายชื่อเจ้าหน้าที่ปัจจุบัน", inactiveOfficials, setOfficialActive)}
         </div>
       </div>
     </div>

@@ -95,8 +95,8 @@ async function RegionalManage() {
       orderBy: [{ matchDate: "desc" }, { createdAt: "asc" }],
       include: { homeTeam: true, awayTeam: true },
     }),
-    prisma.g15Player.groupBy({ by: ["teamId"], _count: { id: true } }),
-    prisma.g15Official.groupBy({ by: ["teamId"], _count: { id: true } }),
+    prisma.g15Player.groupBy({ by: ["teamId"], where: { isActive: true }, _count: { id: true } }),
+    prisma.g15Official.groupBy({ by: ["teamId"], where: { isActive: true }, _count: { id: true } }),
   ]);
 
   const playerCountByTeam = new Map(playerCounts.map((p) => [p.teamId, p._count.id]));

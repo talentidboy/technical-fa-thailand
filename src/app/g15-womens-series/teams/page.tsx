@@ -20,8 +20,8 @@ export default async function G15TeamsPage({
     getCurrentUser(),
     prisma.g15Team.findMany({ orderBy: [{ groupName: "asc" }, { name: "asc" }] }),
     // แค่ตัวนับต่อทีมสำหรับหน้ารวม — รายละเอียดเต็มไปอยู่หน้าโปรไฟล์ทีมแทน
-    prisma.g15Player.groupBy({ by: ["teamId"], _count: { id: true } }),
-    prisma.g15Official.groupBy({ by: ["teamId"], _count: { id: true } }),
+    prisma.g15Player.groupBy({ by: ["teamId"], where: { isActive: true }, _count: { id: true } }),
+    prisma.g15Official.groupBy({ by: ["teamId"], where: { isActive: true }, _count: { id: true } }),
   ]);
 
   const playerCountByTeam = new Map(players.map((p) => [p.teamId, p._count.id]));
