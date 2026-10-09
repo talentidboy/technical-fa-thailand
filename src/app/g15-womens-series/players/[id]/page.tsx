@@ -82,78 +82,88 @@ export default async function G15PlayerPage({ params }: { params: Promise<{ id: 
     <div className="min-h-screen bg-slate-50">
       <G15Chrome user={user} />
 
-      {/* ฮีโร่โปรไฟล์ — ชื่อใหญ่ซ้าย, รูปไดคัทขวาพร้อมเบอร์เสื้อตัวยักษ์ด้านหลัง (แบบหน้าโปรไฟล์นักเตะทัวร์นาเมนต์ทั่วไป) */}
+      {/* ฮีโร่โปรไฟล์ — รูปไดคัทขนาดใหญ่ "ยืน" ชิดขอบล่างของฮีโร่ (ไม่ลอย) ช่วงอกจางเข้ากับพื้น,
+          เบอร์เสื้อยักษ์แบบตัวอักษรโปร่ง + สปอตไลต์/ลำแสงด้านหลัง, ชื่อใหญ่ไล่สีด้านซ้าย */}
       <section className="relative isolate overflow-hidden bg-linear-to-br from-g15-950 via-g15-800 to-g15-600">
         <div className="absolute inset-x-0 top-0 h-1.5 animate-shimmer-slide bg-linear-to-r from-amber-600 via-amber-200 via-50% to-amber-600 bg-size-[200%_100%]" />
         <HeroArt />
-        <div className="mx-auto grid max-w-5xl grid-cols-[1fr_auto] items-end gap-3 px-6 pt-8 sm:gap-8 sm:pt-12">
-          <div className="min-w-0 pb-24 sm:pb-28">
-            <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-[0.25em] text-g15-200">
+        {/* พื้นด้านล่างมืดลง ให้ขอบล่างของรูปกลืนกับฮีโร่ */}
+        <div aria-hidden className="absolute inset-x-0 bottom-0 -z-10 h-1/2 bg-linear-to-t from-g15-950 to-transparent" />
+
+        <div className="relative mx-auto grid max-w-5xl grid-cols-[minmax(0,1fr)_auto] items-end gap-2 px-6 pt-10 sm:gap-8 sm:pt-14">
+          <div className="min-w-0 self-center pb-6 sm:pb-12">
+            <p className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.3em] text-amber-300 sm:text-xs">
               <Shirt className="h-3.5 w-3.5" />
               Player Profile
             </p>
-            <span className="mt-2 block h-0.5 w-10 rounded-full bg-amber-400" />
-            <h1 className="mt-3 text-3xl font-black leading-tight text-white sm:text-5xl">
+            <h1 className="mt-3 bg-linear-to-b from-white via-white to-g15-200 bg-clip-text text-3xl font-black leading-[1.15] text-transparent drop-shadow-[0_4px_20px_rgba(0,0,0,0.35)] sm:text-6xl">
               {player.firstNameTh}
               <br />
               {player.lastNameTh}
             </h1>
             {(player.firstNameEn || player.lastNameEn) && (
-              <p className="mt-2 text-sm font-bold uppercase tracking-widest text-g15-200 sm:text-base">
+              <p className="mt-2 text-xs font-bold uppercase tracking-[0.2em] text-g15-200 sm:mt-3 sm:text-base">
                 {[player.firstNameEn, player.lastNameEn].filter(Boolean).join(" ")}
               </p>
             )}
-          </div>
-          {/* การ์ดนักเตะแบบ FUT — รูปอยู่ในกรอบการ์ด (ไม่ลอยกลางอากาศ) ขอบล่างของรูปจางเข้ากับการ์ด
-              mb-14 = ระยะที่การ์ดข้อมูลด้านล่างลอยทับฮีโร่ (-mt-14) ให้การ์ดนักเตะไม่ถูกบัง */}
-          <div className="relative mb-16 w-40 flex-none sm:mb-20 sm:w-72">
-            {/* แสงเรืองรอบการ์ด */}
-            <div aria-hidden className="absolute -inset-4 rounded-[2rem] bg-amber-300/20 blur-2xl" />
-            <div className="relative rounded-[1.6rem] bg-linear-to-br from-amber-200 via-amber-400 to-amber-700 p-[2px] shadow-2xl shadow-black/40">
-              <div className="relative aspect-[3/4] overflow-hidden rounded-[1.5rem] bg-linear-to-b from-g15-400 via-g15-600 to-g15-950">
-                {/* สปอตไลต์หลังศีรษะ + เส้นแปรงทแยง */}
-                <div aria-hidden className="absolute inset-0 bg-[radial-gradient(circle_at_50%_32%,rgba(255,255,255,0.45),transparent_55%)]" />
-                <div aria-hidden className="absolute -left-8 top-10 h-2.5 w-40 -rotate-[35deg] rounded-full bg-linear-to-r from-transparent via-pink-400/60 to-transparent" />
-                <div aria-hidden className="absolute -right-10 top-1/3 h-2 w-40 -rotate-[35deg] rounded-full bg-linear-to-r from-transparent via-cyan-300/50 to-transparent" />
-                {player.jerseyNumber != null && (
-                  <span className="absolute -right-1 -top-3 select-none text-[6.5rem] font-black italic leading-none tracking-tighter text-white/25 sm:text-[9.5rem]">
-                    {player.jerseyNumber}
-                  </span>
-                )}
-                {player.photoUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={player.photoUrl}
-                    alt={fullName}
-                    className="absolute inset-x-0 bottom-[18%] h-[78%] w-full object-contain object-bottom drop-shadow-[0_8px_20px_rgba(0,0,0,0.35)]"
-                    style={{ maskImage: "linear-gradient(to bottom, black 78%, transparent 100%)", WebkitMaskImage: "linear-gradient(to bottom, black 78%, transparent 100%)" }}
-                  />
-                ) : (
-                  <User className="absolute bottom-[18%] left-1/2 h-3/5 w-3/5 -translate-x-1/2 text-white/25" strokeWidth={1.2} />
-                )}
-                {/* แถบล่างของการ์ด: เบอร์ ชื่อบนเสื้อ ตำแหน่ง โลโก้ทีม */}
-                <div className="absolute inset-x-0 bottom-0 h-[30%] bg-linear-to-t from-g15-950 via-g15-950/90 to-transparent" />
-                <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-2 px-3 pb-3 sm:px-4 sm:pb-4">
-                  <div className="min-w-0">
-                    <p className="text-2xl font-black italic leading-none text-amber-300 sm:text-4xl">{player.jerseyNumber ?? "-"}</p>
-                    <p className="mt-1 truncate text-[10px] font-bold uppercase tracking-widest text-white sm:text-xs">
-                      {/* ชื่อภาษาอังกฤษของนักกีฬา — ไม่ใช้ jerseyName เพราะบางทีมกรอกเป็นชื่อทีม (เช่น "CHONBURI") ทุกคน */}
-                      {player.firstNameEn || player.jerseyName || player.firstNameTh}
-                    </p>
-                    <p className="truncate text-[10px] font-medium text-g15-200 sm:text-[11px]">{squadLineLabel(player.position)}</p>
-                  </div>
-                  <span className="flex-none rounded-full bg-white p-0.5 shadow-lg">
-                    <TeamBadge team={player.team} size="md" />
-                  </span>
-                </div>
-              </div>
+            <div className="mt-4 flex flex-wrap items-center gap-2 sm:mt-6">
+              <Link
+                href={`/g15-womens-series/teams/${player.team.id}`}
+                className="inline-flex max-w-full items-center gap-2 rounded-full bg-white/10 py-1 pl-1 pr-3 text-xs font-semibold text-white ring-1 ring-white/20 backdrop-blur transition-colors hover:bg-white/20 sm:text-sm"
+              >
+                <span className="flex-none rounded-full bg-white p-0.5">
+                  <TeamBadge team={player.team} size="sm" />
+                </span>
+                <span className="truncate">{player.team.name}</span>
+              </Link>
+              {player.jerseyNumber != null && (
+                <span className="rounded-full bg-amber-400 px-3 py-1 text-xs font-black text-amber-950 sm:text-sm">#{player.jerseyNumber}</span>
+              )}
+              {player.position && (
+                <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-g15-100 ring-1 ring-white/20 sm:text-sm">
+                  {squadLineLabel(player.position)}
+                </span>
+              )}
             </div>
+          </div>
+
+          <div className="relative h-60 w-44 flex-none sm:h-[26rem] sm:w-80">
+            {/* ลำแสงฟุ้ง 3 เส้นจากด้านบน + สปอตไลต์หลังศีรษะ — ทุกชิ้นเบลอ ไม่มีขอบแข็ง */}
+            <div aria-hidden className="absolute -top-16 left-[30%] h-[110%] w-10 -rotate-[18deg] bg-linear-to-b from-white/30 to-transparent blur-xl" />
+            <div aria-hidden className="absolute -top-16 left-[52%] h-[110%] w-14 rotate-[8deg] bg-linear-to-b from-pink-300/30 to-transparent blur-xl" />
+            <div aria-hidden className="absolute -top-16 left-[72%] h-[110%] w-8 rotate-[24deg] bg-linear-to-b from-cyan-200/25 to-transparent blur-xl" />
+            <div aria-hidden className="absolute left-1/2 top-[18%] h-3/4 w-[110%] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgba(255,255,255,0.35),rgba(167,139,250,0.22)_40%,transparent_70%)] blur-2xl" />
+            {player.jerseyNumber != null && (
+              <span
+                aria-hidden
+                className="absolute -right-4 top-0 select-none text-[8rem] font-black italic leading-none tracking-tighter text-transparent sm:-right-10 sm:text-[17rem]"
+                style={{ WebkitTextStroke: "2px rgba(255,255,255,0.28)" }}
+              >
+                {player.jerseyNumber}
+              </span>
+            )}
+            <Reveal className="absolute inset-0">
+              {player.photoUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={player.photoUrl}
+                  alt={fullName}
+                  className="absolute inset-x-0 bottom-0 h-full w-full object-contain object-bottom drop-shadow-[0_20px_40px_rgba(0,0,0,0.45)]"
+                  style={{
+                    maskImage: "linear-gradient(to bottom, black 82%, transparent 100%)",
+                    WebkitMaskImage: "linear-gradient(to bottom, black 82%, transparent 100%)",
+                  }}
+                />
+              ) : (
+                <User className="absolute bottom-0 left-1/2 h-4/5 w-4/5 -translate-x-1/2 text-white/20" strokeWidth={1.2} />
+              )}
+            </Reveal>
           </div>
         </div>
       </section>
 
       <div className="mx-auto max-w-4xl px-6 pb-20">
-        <div className="relative z-10 -mt-14 space-y-6">
+        <div className="relative z-10 mt-8 space-y-6">
           <Reveal>
             <div className="grid grid-cols-1 gap-4 rounded-3xl border border-slate-200 bg-white p-5 shadow-xl shadow-g15-950/10 sm:grid-cols-4">
               <Link
