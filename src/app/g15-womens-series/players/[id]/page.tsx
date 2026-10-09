@@ -8,6 +8,7 @@ import { STAGES, roundStyle, hasPenalties, type G15Stage } from "@/lib/g15-stage
 import { G15Chrome } from "@/components/g15/G15Chrome";
 import { HeroArt } from "@/components/g15/HeroArt";
 import { TeamBadge } from "@/components/g15/TeamBadge";
+import { squadLineLabel } from "@/lib/g15-squad";
 import { Reveal } from "@/components/g15/Reveal";
 import { User, Shirt, Goal, Square, ListOrdered } from "lucide-react";
 
@@ -85,7 +86,7 @@ export default async function G15PlayerPage({ params }: { params: Promise<{ id: 
       <section className="relative isolate overflow-hidden bg-linear-to-br from-g15-950 via-g15-800 to-g15-600">
         <div className="absolute inset-x-0 top-0 h-1.5 animate-shimmer-slide bg-linear-to-r from-amber-600 via-amber-200 via-50% to-amber-600 bg-size-[200%_100%]" />
         <HeroArt />
-        <div className="mx-auto grid max-w-5xl grid-cols-[1fr_auto] items-end gap-2 px-6 pt-8 sm:gap-6 sm:pt-10">
+        <div className="mx-auto grid max-w-5xl grid-cols-[1fr_auto] items-end gap-3 px-6 pt-8 sm:gap-8 sm:pt-12">
           <div className="min-w-0 pb-24 sm:pb-28">
             <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-[0.25em] text-g15-200">
               <Shirt className="h-3.5 w-3.5" />
@@ -103,23 +104,50 @@ export default async function G15PlayerPage({ params }: { params: Promise<{ id: 
               </p>
             )}
           </div>
-          {/* ยกรูปขึ้นเท่าระยะที่การ์ดข้อมูลด้านล่างลอยทับฮีโร่ (-mt-14) ให้ช่วงอก/เสื้อไม่โดนการ์ดบัง */}
-          <div className="relative mb-14 h-56 w-44 flex-none sm:h-80 sm:w-64">
-            {player.jerseyNumber != null && (
-              <span className="absolute -top-2 right-0 select-none text-[9rem] font-black italic leading-none tracking-tighter text-white/15 sm:text-[13rem]">
-                {player.jerseyNumber}
-              </span>
-            )}
-            {player.photoUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={player.photoUrl}
-                alt={fullName}
-                className="absolute inset-x-0 bottom-0 h-full w-full object-contain object-bottom drop-shadow-[0_10px_30px_rgba(0,0,0,0.35)]"
-              />
-            ) : (
-              <User className="absolute bottom-0 left-1/2 h-4/5 w-4/5 -translate-x-1/2 text-white/20" strokeWidth={1.2} />
-            )}
+          {/* การ์ดนักเตะแบบ FUT — รูปอยู่ในกรอบการ์ด (ไม่ลอยกลางอากาศ) ขอบล่างของรูปจางเข้ากับการ์ด
+              mb-14 = ระยะที่การ์ดข้อมูลด้านล่างลอยทับฮีโร่ (-mt-14) ให้การ์ดนักเตะไม่ถูกบัง */}
+          <div className="relative mb-16 w-40 flex-none sm:mb-20 sm:w-72">
+            {/* แสงเรืองรอบการ์ด */}
+            <div aria-hidden className="absolute -inset-4 rounded-[2rem] bg-amber-300/20 blur-2xl" />
+            <div className="relative rounded-[1.6rem] bg-linear-to-br from-amber-200 via-amber-400 to-amber-700 p-[2px] shadow-2xl shadow-black/40">
+              <div className="relative aspect-[3/4] overflow-hidden rounded-[1.5rem] bg-linear-to-b from-g15-400 via-g15-600 to-g15-950">
+                {/* สปอตไลต์หลังศีรษะ + เส้นแปรงทแยง */}
+                <div aria-hidden className="absolute inset-0 bg-[radial-gradient(circle_at_50%_32%,rgba(255,255,255,0.45),transparent_55%)]" />
+                <div aria-hidden className="absolute -left-8 top-10 h-2.5 w-40 -rotate-[35deg] rounded-full bg-linear-to-r from-transparent via-pink-400/60 to-transparent" />
+                <div aria-hidden className="absolute -right-10 top-1/3 h-2 w-40 -rotate-[35deg] rounded-full bg-linear-to-r from-transparent via-cyan-300/50 to-transparent" />
+                {player.jerseyNumber != null && (
+                  <span className="absolute -right-1 -top-3 select-none text-[6.5rem] font-black italic leading-none tracking-tighter text-white/25 sm:text-[9.5rem]">
+                    {player.jerseyNumber}
+                  </span>
+                )}
+                {player.photoUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={player.photoUrl}
+                    alt={fullName}
+                    className="absolute inset-x-0 bottom-[18%] h-[78%] w-full object-contain object-bottom drop-shadow-[0_8px_20px_rgba(0,0,0,0.35)]"
+                    style={{ maskImage: "linear-gradient(to bottom, black 78%, transparent 100%)", WebkitMaskImage: "linear-gradient(to bottom, black 78%, transparent 100%)" }}
+                  />
+                ) : (
+                  <User className="absolute bottom-[18%] left-1/2 h-3/5 w-3/5 -translate-x-1/2 text-white/25" strokeWidth={1.2} />
+                )}
+                {/* แถบล่างของการ์ด: เบอร์ ชื่อบนเสื้อ ตำแหน่ง โลโก้ทีม */}
+                <div className="absolute inset-x-0 bottom-0 h-[30%] bg-linear-to-t from-g15-950 via-g15-950/90 to-transparent" />
+                <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-2 px-3 pb-3 sm:px-4 sm:pb-4">
+                  <div className="min-w-0">
+                    <p className="text-2xl font-black italic leading-none text-amber-300 sm:text-4xl">{player.jerseyNumber ?? "-"}</p>
+                    <p className="mt-1 truncate text-[10px] font-bold uppercase tracking-widest text-white sm:text-xs">
+                      {/* ชื่อภาษาอังกฤษของนักกีฬา — ไม่ใช้ jerseyName เพราะบางทีมกรอกเป็นชื่อทีม (เช่น "CHONBURI") ทุกคน */}
+                      {player.firstNameEn || player.jerseyName || player.firstNameTh}
+                    </p>
+                    <p className="truncate text-[10px] font-medium text-g15-200 sm:text-[11px]">{squadLineLabel(player.position)}</p>
+                  </div>
+                  <span className="flex-none rounded-full bg-white p-0.5 shadow-lg">
+                    <TeamBadge team={player.team} size="md" />
+                  </span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
