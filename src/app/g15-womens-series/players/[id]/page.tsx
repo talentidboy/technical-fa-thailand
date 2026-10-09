@@ -6,7 +6,7 @@ import { formatMatchDateShort } from "@/lib/g15";
 import { parseRegionGroup, regionEn } from "@/lib/g15-region";
 import { STAGES, roundStyle, hasPenalties, type G15Stage } from "@/lib/g15-stage";
 import { G15Chrome } from "@/components/g15/G15Chrome";
-import { HeroArt } from "@/components/g15/HeroArt";
+import { StadiumBackdrop } from "@/components/g15/StadiumBackdrop";
 import { TeamBadge } from "@/components/g15/TeamBadge";
 import { squadLineLabel } from "@/lib/g15-squad";
 import { Reveal } from "@/components/g15/Reveal";
@@ -84,11 +84,11 @@ export default async function G15PlayerPage({ params }: { params: Promise<{ id: 
 
       {/* ฮีโร่โปรไฟล์ — รูปไดคัทขนาดใหญ่ "ยืน" ชิดขอบล่างของฮีโร่ (ไม่ลอย) ช่วงอกจางเข้ากับพื้น,
           เบอร์เสื้อยักษ์แบบตัวอักษรโปร่ง + สปอตไลต์/ลำแสงด้านหลัง, ชื่อใหญ่ไล่สีด้านซ้าย */}
-      <section className="relative isolate overflow-hidden bg-linear-to-br from-g15-950 via-g15-800 to-g15-600">
-        <div className="absolute inset-x-0 top-0 h-1.5 animate-shimmer-slide bg-linear-to-r from-amber-600 via-amber-200 via-50% to-amber-600 bg-size-[200%_100%]" />
-        <HeroArt />
-        {/* พื้นด้านล่างมืดลง ให้ขอบล่างของรูปกลืนกับฮีโร่ */}
-        <div aria-hidden className="absolute inset-x-0 bottom-0 -z-10 h-1/2 bg-linear-to-t from-g15-950 to-transparent" />
+      <section className="relative isolate overflow-hidden bg-g15-950">
+        <div className="absolute inset-x-0 top-0 z-10 h-1.5 animate-shimmer-slide bg-linear-to-r from-amber-600 via-amber-200 via-50% to-amber-600 bg-size-[200%_100%]" />
+        <StadiumBackdrop />
+        {/* ฝั่งซ้ายเข้มขึ้นให้ชื่ออ่านชัดบนฉากสนาม */}
+        <div aria-hidden className="absolute inset-0 -z-10 bg-linear-to-r from-g15-950/85 via-g15-950/30 to-transparent" />
 
         <div className="relative mx-auto grid max-w-5xl grid-cols-[minmax(0,1fr)_auto] items-end gap-2 px-6 pt-10 sm:gap-8 sm:pt-14">
           <div className="min-w-0 self-center pb-6 sm:pb-12">
@@ -142,6 +142,8 @@ export default async function G15PlayerPage({ params }: { params: Promise<{ id: 
                 {player.jerseyNumber}
               </span>
             )}
+            {/* แสงเรืองบนพื้นสนามใต้ตัวนักกีฬา — ให้ดูยืนอยู่บนสนามจริง */}
+            <div aria-hidden className="absolute -bottom-6 left-1/2 h-16 w-[95%] -translate-x-1/2 rounded-[100%] bg-g15-300/45 blur-2xl" />
             <Reveal className="absolute inset-0">
               {player.photoUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
