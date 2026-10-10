@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useEffect, useOptimistic, useRef, useState, useTransition } from "react";
 import { Play, Pause, Square, Undo2, Minus, Plus, Loader2, AlertCircle, Flag, X, ArrowLeftRight, Goal } from "lucide-react";
 import { LiveClock } from "./LiveClock";
 import { TeamBadge } from "./TeamBadge";
@@ -121,6 +121,11 @@ export function LiveMatchControl({
 }) {
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  // สกอร์บนจอแอดมินเปลี่ยนทันทีที่กด (optimistic) ไม่ต้องรอเซิร์ฟเวอร์ — ถ้าบันทึกไม่สำเร็จจะเด้งกลับค่าจริงเอง
+  const [score, bumpScore] = useOptimistic(
+    { home: homeScore ?? 0, away: awayScore ?? 0 },
+    (cur, { side, delta }: { side: Side; delta: number }) => ({ ...cur, [side]: Math.max(0, cur[side] + delta) }),
+  );
   const [dialog, setDialog] = useState<Dialog>(null);
   const skew = useRef(0);
   useEffect(() => {
@@ -151,16 +156,23 @@ export function LiveMatchControl({
   };
   const close = () => setDialog(null);
 
-  const run = (action: Action, fields: Record<string, string>, opts?: { confirm?: string; onDone?: () => void }) => {
+  const run = (
+    action: Action,
+    fields: Record<string, string>,
+    opts?: { confirm?: string; onDone?: () => void; optimistic?: { side: Side; delta: number } },
+  ) => {
     if (opts?.confirm && !window.confirm(opts.confirm)) return;
     const fd = new FormData();
     fd.set("id", String(matchId));
     for (const [k, v] of Object.entries(fields)) fd.set(k, v);
     setError(null);
     startTransition(async () => {
+      if (opts?.optimistic) bumpScore(opts.optimistic);
+      // ป็อปอัพปิดทันที (ข้อมูลกำลังบันทึกเบื้องหลัง) — ถ้าผิดพลาดจะแสดงข้อความเตือนบนแผงควบคุม
+      if (opts?.optimistic) opts.onDone?.();
       const res = await action(fd);
       if (!res.ok) setError(res.error);
-      else opts?.onDone?.();
+      else if (!opts?.optimistic) opts?.onDone?.();
     });
   };
 
@@ -176,7 +188,7 @@ export function LiveMatchControl({
           <button
             type="button"
             disabled={pending || (score ?? 0) === 0}
-            onClick={() => run(scoreAction, { side, delta: "-1" }, { confirm: `ลดสกอร์ ${team.name} ลง 1? (ประตูล่าสุดของทีมนี้จะถูกลบด้วย)` })}
+            onClick={() => run(scoreAction, { side, delta: "-1" }, { confirm: `ลดสกอร์ ${team.name} ลง 1? (ประตูล่าสุดของทีมนี้จะถูกลบด้วย)`, optimistic: { side, delta: -1 } })}
             aria-label={`ลดสกอร์ ${team.name}`}
             className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 text-white transition-colors hover:bg-white/20 disabled:opacity-30"
           >
@@ -315,7 +327,7 @@ export function LiveMatchControl({
           run(
             goalAction,
             { side, ownGoal: ownGoal ? "1" : "0", scorerId: pickA ?? "", assistId: ownGoal ? "" : (pickB ?? ""), minute },
-            { onDone: close },
+            { onDone: close, optimistic: { side, delta: 1 } },
           ),
         submitLabel: "บันทึกประตู",
         canSubmit: true,
@@ -428,11 +440,11 @@ export function LiveMatchControl({
 
       <div className="space-y-5 p-5">
         <div className="flex items-start justify-between gap-3">
-          {scoreBox("home", homeScore)}
+          {scoreBox("home", score.home)}
           <div className="flex-none pt-2">
             <LiveClock state={clock} serverNow={serverNow} variant="big" />
           </div>
-          {scoreBox("away", awayScore)}
+          {scoreBox("away", score.away)}
         </div>
 
         {next ? (
@@ -441,7 +453,7 @@ export function LiveMatchControl({
             disabled={pending}
             onClick={() =>
               run(controlAction, { op: next.op }, {
-                confirm: next.op === "END_2" ? `จบเกมด้วยสกอร์ ${homeScore ?? 0}-${awayScore ?? 0}? ผลนี้จะนับในตารางคะแนน` : undefined,
+                confirm: next.op === "END_2" ? `จบเกมด้วยสกอร์ ${score.home}-${score.away}? ผลนี้จะนับในตารางคะแนน` : undefined,
               })
             }
             className={`flex w-full items-center justify-center gap-3 rounded-2xl py-4 text-lg font-black shadow-lg transition-colors disabled:opacity-60 ${next.tone}`}

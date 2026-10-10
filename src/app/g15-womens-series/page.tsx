@@ -19,6 +19,7 @@ import {
   isGroupRound,
   hasPenalties,
   isLive,
+  needsLiveSync,
   hasLiveScore,
   projectLive,
   matchWinnerId,
@@ -35,7 +36,7 @@ import { TeamOfRoundPitch } from "@/components/g15/TeamOfRoundPitch";
 import { ChampionPodium } from "@/components/g15/ChampionPodium";
 import { LivePill } from "@/components/g15/LivePill";
 import { StackedTeams } from "@/components/g15/StackedTeams";
-import { AutoRefresh } from "@/components/g15/AutoRefresh";
+import { LiveSync } from "@/components/g15/LiveSync";
 import { MatchSpotlight } from "@/components/g15/MatchSpotlight";
 import { PlayerLeaderboard, type PlayerLeaderboardRow } from "@/components/g15/PlayerLeaderboard";
 import { Reveal } from "@/components/g15/Reveal";
@@ -197,7 +198,7 @@ export default async function G15WomensSeriesPage({
   return (
     <div className="min-h-screen bg-slate-50">
       <G15Chrome user={user} stage={stage} />
-      <AutoRefresh active={liveMatches.length > 0} intervalMs={15_000} />
+      <LiveSync active={matches.some((m) => needsLiveSync(m, now))} stage={stage} />
 
       {/* Hero — แบนเนอร์ทางการมีชื่อรายการ/สโลแกน/โลโก้ในภาพอยู่แล้ว จึงโชว์เต็มความกว้างไปเลยโดยไม่มีข้อความทับ */}
       <section className="relative isolate overflow-hidden bg-linear-to-br from-g15-950 via-g15-800 to-g15-600 pb-6 sm:pb-8">

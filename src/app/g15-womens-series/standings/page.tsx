@@ -2,8 +2,8 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { getStandings, getRecentForm, getNationalStandings, getNationalBracket } from "@/lib/g15";
 import { REGION_STYLE, DEFAULT_REGION_STYLE, regionEn, groupStandingsByRegion } from "@/lib/g15-region";
-import { parseStage, isGroupRound, isLive, hasLiveScore, projectLive } from "@/lib/g15-stage";
-import { AutoRefresh } from "@/components/g15/AutoRefresh";
+import { parseStage, isGroupRound, hasLiveScore, projectLive, needsLiveSync } from "@/lib/g15-stage";
+import { LiveSync } from "@/components/g15/LiveSync";
 import { G15Chrome } from "@/components/g15/G15Chrome";
 import { HeroArt } from "@/components/g15/HeroArt";
 import { StandingTable } from "@/components/g15/StandingTable";
@@ -29,7 +29,7 @@ export default async function G15StandingsPage({
   return (
     <div className="min-h-screen bg-slate-50">
       <G15Chrome user={user} stage={stage} />
-      <AutoRefresh active={matches.some((m) => isLive(m))} />
+      <LiveSync active={matches.some((m) => needsLiveSync(m))} stage={stage} />
 
       {/* ฮีโร่ไล่สีชุดเดียวกับหน้าอื่นๆ ของ G15 — เนื้อหาหลักลอยทับขอบล่างให้ภาษาภาพเป็นชุดเดียวกันทั้งเว็บ */}
       <section className="relative isolate overflow-hidden bg-linear-to-br from-g15-950 via-g15-800 to-g15-600 pb-20 pt-8 sm:pb-24">

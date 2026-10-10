@@ -11,11 +11,12 @@ import {
   stageInfo,
   withStage,
   isLive,
+  needsLiveSync,
   hasLiveScore,
   type G15Stage,
 } from "@/lib/g15-stage";
 import { LivePill } from "@/components/g15/LivePill";
-import { AutoRefresh } from "@/components/g15/AutoRefresh";
+import { LiveSync } from "@/components/g15/LiveSync";
 import { ResultShareCard } from "@/components/g15/ResultShareCard";
 import { Countdown } from "@/components/g15/Countdown";
 import { LiveClock } from "@/components/g15/LiveClock";
@@ -95,11 +96,6 @@ export default async function G15MatchDetailPage({
     secondHalfAddedTime: match.secondHalfAddedTime,
   };
   const clockLive = isClockLive(match.clockPhase);
-  const nearKickoff =
-    match.status !== "FINISHED" &&
-    match.clockPhase !== "FULL_TIME" &&
-    match.matchDate != null &&
-    Math.abs(match.matchDate.getTime() - now.getTime()) < 3 * 3600_000;
   // ยังไม่ถึงเวลาเตะ → นับถอยหลังใต้สกอร์ (ถึงเวลาแล้ว Countdown จะรีเฟรชหน้าเอง ให้กลายเป็นสถานะกำลังแข่ง)
   const showCountdown = match.status === "SCHEDULED" && !!match.matchDate && match.matchDate.getTime() > now.getTime();
   const liveScore = hasLiveScore(match);
@@ -183,7 +179,7 @@ export default async function G15MatchDetailPage({
       <G15Chrome user={user} stage={stage} />
       {/* กำลังแข่ง → ดึงสกอร์/เหตุการณ์ใหม่ทุก 10 วินาที (นาฬิกาเดินเองทุกวินาทีฝั่งเบราว์เซอร์)
           ช่วง 3 ชม. รอบเวลาเตะ (ยังไม่จบ) → เช็กทุก 30 วินาที คนที่เปิดหน้าค้างไว้ก่อนเตะจะเห็นเกมเริ่มเองโดยไม่ต้องรีเฟรช */}
-      <AutoRefresh active={live || nearKickoff} intervalMs={live ? 10_000 : 30_000} />
+      <LiveSync active={needsLiveSync(match, now)} matchId={match.id} />
 
       {/* สกอร์บอร์ดเต็มความกว้างบนพื้นม่วงเข้ม — โลโก้ใหญ่ สกอร์ตัวโต ผู้ทำประตูใต้แต่ละทีม */}
       <section className="relative isolate overflow-hidden bg-linear-to-br from-g15-950 via-g15-900 to-g15-700 pb-8 pt-6 sm:pb-10 sm:pt-8">

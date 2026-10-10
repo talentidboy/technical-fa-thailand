@@ -164,3 +164,11 @@ export const TEAM_OF_ROUND_SLOTS = [
   { slot: "FW2", line: 3, label: "กองหน้า 2", en: "FW" },
   { slot: "FW3", line: 3, label: "กองหน้า 3", en: "FW" },
 ] as const;
+
+// ช่วงที่ต้องซิงก์ข้อมูลสด: กำลังแข่ง หรือยังไม่จบและเวลาเตะอยู่ภายใน ±3 ชม. (คนที่เปิดหน้าไว้ก่อนเตะจะเห็นเกมเริ่มเอง)
+const SYNC_WINDOW_MS = 3 * 3600_000;
+export function needsLiveSync(m: LiveInput, now: Date = new Date()) {
+  if (isLive(m, now)) return true;
+  if (m.status === "FINISHED" || m.clockPhase === "FULL_TIME" || !m.matchDate) return false;
+  return Math.abs(m.matchDate.getTime() - now.getTime()) < SYNC_WINDOW_MS;
+}
