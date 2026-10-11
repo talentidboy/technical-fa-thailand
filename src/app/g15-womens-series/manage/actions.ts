@@ -1301,14 +1301,28 @@ export async function deleteLiveEvent(formData: FormData): Promise<ActionResult>
   });
 }
 
-// ===== แกลเลอรีภาพ =====
-// รูปถูกย่อในเบราว์เซอร์แล้ว (ภาพเต็ม ≤ 2000px + ภาพย่อ ≤ 640px เป็น WebP) จึงส่งทีละรูปได้ไม่ติดลิมิตขนาด
-export async function uploadGalleryPhoto(formData: FormData): Promise<ActionResult> {
+// ===== แกลเลอรี (อัลบั้มลิงก์) =====
+// หัวข้อ + ลิงก์ (Google Drive ฯลฯ) — id ว่าง = เพิ่มใหม่, มี id = แก้ไข
+function cleanUrl(raw: string) {
+  const v = raw.trim();
+  if (!v) throw new Error("กรุณาใส่ลิงก์อัลบั้ม");
+  const withProto = /^https?:\/\//i.test(v) ? v : `https://${v}`;
+  try {
+    const u = new URL(withProto);
+    if (!u.hostname.includes(".")) throw new Error();
+    return u.toString();
+  } catch {
+    throw new Error("ลิงก์ไม่ถูกต้อง");
+  }
+}
+
+export async function saveGalleryLink(formData: FormData): Promise<ActionResult> {
   await requireAdminOrStaff();
   return attempt(async () => {
-    const file = formData.get("photo");
-    const thumb = formData.get("thumb");
-    if (!(file instanceof File) || !(thumb instanceof File)) throw new Error("ไม่พบไฟล์รูป");
+    const id = int(formData, "id");
+    const title = String(formData.get("title") ?? "").trim();
+    if (!title) throw new Error("กรุณาใส่ชื่อหัวข้อ");
+    const url = cleanUrl(String(formData.get("url") ?? ""));
     const matchId = int(formData, "matchId");
     let stage = String(formData.get("stage") ?? "NATIONAL") === "REGIONAL" ? "REGIONAL" : "NATIONAL";
     if (matchId) {
@@ -1316,32 +1330,23 @@ export async function uploadGalleryPhoto(formData: FormData): Promise<ActionResu
       if (!match) throw new Error("ไม่พบนัดการแข่งขัน");
       stage = match.stage;
     }
-    const [url, thumbUrl] = await Promise.all([saveUploadedPhoto(file), saveUploadedPhoto(thumb)]);
-    if (!url || !thumbUrl) throw new Error("อัปโหลดรูปไม่สำเร็จ");
-    await prisma.g15Photo.create({
-      data: {
-        stage,
-        matchId: matchId ?? null,
-        url,
-        thumbUrl,
-        width: int(formData, "width"),
-        height: int(formData, "height"),
-        caption: str(formData, "caption"),
-      },
-    });
+    const data = { title, url, stage, matchId: matchId ?? null };
+    const prev = id ? await prisma.g15GalleryLink.findUnique({ where: { id }, select: { matchId: true } }) : null;
+    if (id) await prisma.g15GalleryLink.update({ where: { id }, data });
+    else await prisma.g15GalleryLink.create({ data });
     revalidatePath("/g15-womens-series/gallery");
-    if (matchId) revalidatePath(`/g15-womens-series/matches/${matchId}`);
+    for (const m of [matchId, prev?.matchId]) if (m) revalidatePath(`/g15-womens-series/matches/${m}`);
   });
 }
 
-export async function deleteGalleryPhoto(formData: FormData): Promise<ActionResult> {
+export async function deleteGalleryLink(formData: FormData): Promise<ActionResult> {
   await requireAdminOrStaff();
   return attempt(async () => {
     const id = Number(formData.get("id"));
-    const photo = await prisma.g15Photo.findUnique({ where: { id }, select: { matchId: true } });
-    if (!photo) throw new Error("ไม่พบรูปนี้");
-    await prisma.g15Photo.delete({ where: { id } });
+    const link = await prisma.g15GalleryLink.findUnique({ where: { id }, select: { matchId: true } });
+    if (!link) throw new Error("ไม่พบอัลบั้มนี้");
+    await prisma.g15GalleryLink.delete({ where: { id } });
     revalidatePath("/g15-womens-series/gallery");
-    if (photo.matchId) revalidatePath(`/g15-womens-series/matches/${photo.matchId}`);
+    if (link.matchId) revalidatePath(`/g15-womens-series/matches/${link.matchId}`);
   });
 }

@@ -411,7 +411,7 @@ model G15Match {
   substitutions G15Substitution[]
   cards         G15Card[]
   lineups       G15Lineup[]
-  photos        G15Photo[]
+  galleryLinks  G15GalleryLink[]
 
   @@map("g15_matches")
 }
@@ -518,19 +518,16 @@ model PlayAndLearnCenter {
   @@map("play_and_learn_centers")
 }
 
-// แกลเลอรีภาพบรรยากาศ G15 — แอดมินอัปโหลด (ย่อขนาดในเบราว์เซอร์ก่อนส่ง) ผูกกับนัดได้ (ไม่บังคับ)
-model G15Photo {
+// แกลเลอรี G15 = รายการอัลบั้มภาพ (หัวข้อ + ลิงก์ เช่น Google Drive) — ไม่ได้เก็บไฟล์รูปเอง ผูกกับนัดได้ (ไม่บังคับ)
+model G15GalleryLink {
   id        Int       @id @default(autoincrement())
   stage     String    @default("NATIONAL")
   matchId   Int?      @map("match_id")
   match     G15Match? @relation(fields: [matchId], references: [id], onDelete: SetNull)
+  title     String
   url       String
-  thumbUrl  String    @map("thumb_url")
-  width     Int?
-  height    Int?
-  caption   String?
   createdAt DateTime  @default(now()) @map("created_at")
 
   @@index([stage, matchId])
-  @@map("g15_photos")
+  @@map("g15_gallery_links")
 }

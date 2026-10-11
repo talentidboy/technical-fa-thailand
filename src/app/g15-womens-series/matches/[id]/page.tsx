@@ -25,7 +25,7 @@ import { MatchTimeline } from "@/components/g15/MatchTimeline";
 import { MatchLineups, MatchStatBars } from "@/components/g15/MatchLineups";
 import { BallIcon } from "@/components/g15/BallIcon";
 import { PlayerOfMatchCard } from "@/components/g15/PlayerOfMatchCard";
-import { GalleryGrid } from "@/components/g15/GalleryGrid";
+import { GalleryAlbumCard } from "@/components/g15/GalleryAlbumCard";
 import { isClockLive, formatMinute, minuteOrder } from "@/lib/g15-clock";
 import { G15Chrome } from "@/components/g15/G15Chrome";
 import { HeroArt } from "@/components/g15/HeroArt";
@@ -81,7 +81,7 @@ export default async function G15MatchDetailPage({
           include: { player: { select: { firstNameTh: true, lastNameTh: true, jerseyNumber: true, photoUrl: true } } },
           orderBy: [{ player: { jerseyNumber: { sort: "asc", nulls: "last" } } }],
         },
-        photos: { orderBy: [{ createdAt: "desc" }, { id: "desc" }] },
+        galleryLinks: { orderBy: [{ createdAt: "desc" }, { id: "desc" }] },
         playerOfMatch: {
           select: {
             id: true,
@@ -513,33 +513,22 @@ export default async function G15MatchDetailPage({
             )}
           </div>
         )}
-        {/* ภาพบรรยากาศของนัดนี้ (แกลเลอรี) — โชว์ 8 รูปล่าสุด ดูทั้งหมดในหน้าแกลเลอรี */}
-        {match.photos.length > 0 && (
+        {/* อัลบั้มภาพของนัดนี้ (ลิงก์จากหน้าแกลเลอรี) */}
+        {match.galleryLinks.length > 0 && (
           <section className="mt-8">
             <div className="mb-4 flex items-center gap-2">
               <span className="flex h-7 w-7 flex-none items-center justify-center rounded-lg bg-g15-50 text-g15-600">
                 <Images className="h-4 w-4" />
               </span>
-              <h2 className="flex-1 text-sm font-semibold text-slate-900">
-                ภาพบรรยากาศ <span className="font-normal text-slate-400">/ Photos ({match.photos.length})</span>
+              <h2 className="text-sm font-semibold text-slate-900">
+                อัลบั้มภาพ <span className="font-normal text-slate-400">/ Photo albums</span>
               </h2>
-              {match.photos.length > 8 && (
-                <Link href={withStage("/g15-womens-series/gallery", stage)} className="text-xs font-semibold text-g15-600 hover:underline">
-                  ดูทั้งหมด →
-                </Link>
-              )}
             </div>
-            <GalleryGrid
-              photos={match.photos.slice(0, 8).map((p) => ({
-                id: p.id,
-                url: p.url,
-                thumbUrl: p.thumbUrl,
-                width: p.width,
-                height: p.height,
-                caption: p.caption,
-                label: `${match.homeTeam.name} vs ${match.awayTeam.name}`,
-              }))}
-            />
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+              {match.galleryLinks.map((l) => (
+                <GalleryAlbumCard key={l.id} album={{ id: l.id, title: l.title, url: l.url, matchLabel: null, dateLabel: formatMatchDateShort(l.createdAt) }} />
+              ))}
+            </div>
           </section>
         )}
 
