@@ -394,6 +394,7 @@ model G15Match {
   matchCommissioner  String? @map("match_commissioner")
   refereeAssessor    String? @map("referee_assessor")
   generalCoordinator String? @map("general_coordinator")
+  assistantGeneralCoordinator String? @map("assistant_general_coordinator")
 
   // สกอร์แยกครึ่งเวลาตามที่ระบุในใบรายงานผู้ตัดสิน — เก็บไว้อ้างอิงเฉยๆ ไม่ใช่ค่าที่ใช้คำนวณตารางคะแนน
   // (homeScore/awayScore ด้านบนคือค่าทางการที่ใช้จริง อาจไม่ตรงกับผลรวมครึ่งแรก+ครึ่งหลังในเอกสารเสมอไป)

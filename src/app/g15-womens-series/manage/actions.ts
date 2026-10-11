@@ -517,6 +517,7 @@ export async function updateMatchOfficials(formData: FormData) {
       matchCommissioner: str(formData, "matchCommissioner"),
       refereeAssessor: str(formData, "refereeAssessor"),
       generalCoordinator: str(formData, "generalCoordinator"),
+      assistantGeneralCoordinator: str(formData, "assistantGeneralCoordinator"),
       firstHalfHomeScore: int(formData, "firstHalfHomeScore"),
       firstHalfAwayScore: int(formData, "firstHalfAwayScore"),
       secondHalfHomeScore: int(formData, "secondHalfHomeScore"),

@@ -52,6 +52,7 @@ const OFFICIAL_ROLES = [
   { key: "matchCommissioner", label: "Match Commissioner", en: "" },
   { key: "refereeAssessor", label: "ผู้ประเมินผู้ตัดสิน", en: "Referee Assessor" },
   { key: "generalCoordinator", label: "ผู้ประสานงานกลาง", en: "General Coordinator" },
+  { key: "assistantGeneralCoordinator", label: "ผู้ช่วยผู้ประสานงานกลาง", en: "Assistant General Coordinator" },
 ] as const;
 
 // หน้านี้เปิดให้ดูได้แบบสาธารณะไม่ต้องล็อกอิน — เหมือนหน้าทีม (teams/[id]) ต้องล็อกอินเฉพาะตอนจะจัดการข้อมูลเท่านั้น

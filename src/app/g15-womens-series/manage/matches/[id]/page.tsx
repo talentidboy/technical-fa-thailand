@@ -399,8 +399,8 @@ export default async function G15ManageMatchPage({
           subAction={recordLiveSub}
         />
 
-        {/* ไลน์อัพ + ผู้เล่นยอดเยี่ยมประจำนัด — ปุ่มการ์ด กดแล้วเปิดป็อปอัพ */}
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        {/* ไลน์อัพ / ผู้เล่นยอดเยี่ยมประจำนัด / ทีมงานผู้ตัดสิน — ปุ่มการ์ด กดแล้วเปิดป็อปอัพ */}
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
           <ManageDialogButton
             title="ไลน์อัพ"
             subtitle="Lineups"
@@ -451,6 +451,65 @@ export default async function G15ManageMatchPage({
                 ]}
               />
           </ManageDialogButton>
+          <ManageDialogButton
+            title="ทีมงานผู้ตัดสิน"
+            subtitle="สกอร์ตามใบรายงาน"
+            icon={<ClipboardList className="h-5 w-5" />}
+            summary={match.referee ? `ผู้ตัดสิน: ${match.referee}` : "ยังไม่ได้กรอก"}
+          >
+              <FormWithToast action={updateMatchOfficials} className="grid grid-cols-1 gap-4 p-6 sm:grid-cols-2 lg:grid-cols-4">
+                <input type="hidden" name="id" value={match.id} />
+                <div className="sm:col-span-2 lg:col-span-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <Field label="ผู้ตัดสิน" name="referee" defaultValue={match.referee ?? ""} />
+                  <Field label="ผู้ช่วยผู้ตัดสินที่ 1" name="assistantReferee1" defaultValue={match.assistantReferee1 ?? ""} />
+                  <Field label="ผู้ช่วยผู้ตัดสินที่ 2" name="assistantReferee2" defaultValue={match.assistantReferee2 ?? ""} />
+                  <Field label="ผู้ตัดสินที่ 4" name="fourthOfficial" defaultValue={match.fourthOfficial ?? ""} />
+                  <Field label="Match Commissioner" name="matchCommissioner" defaultValue={match.matchCommissioner ?? ""} />
+                  <Field label="ผู้ประเมินผู้ตัดสิน" name="refereeAssessor" defaultValue={match.refereeAssessor ?? ""} />
+                  <Field label="ผู้ประสานงานกลาง" name="generalCoordinator" defaultValue={match.generalCoordinator ?? ""} />
+                  <Field
+                    label="ผู้ช่วยผู้ประสานงานกลาง"
+                    name="assistantGeneralCoordinator"
+                    defaultValue={match.assistantGeneralCoordinator ?? ""}
+                  />
+                </div>
+                <p className="sm:col-span-2 lg:col-span-4 -mb-2 text-xs text-slate-400">
+                  สกอร์แยกครึ่งเวลาตามใบรายงานผู้ตัดสิน (แสดงอ้างอิงในหน้าสาธารณะเท่านั้น ไม่กระทบผลการแข่งขัน/ตารางคะแนนที่ตั้งไว้ในแท็บ &quot;นัดการแข่งขัน&quot;)
+                </p>
+                <Field
+                  label="ครึ่งแรก (เหย้า)"
+                  name="firstHalfHomeScore"
+                  type="number"
+                  defaultValue={match.firstHalfHomeScore?.toString() ?? ""}
+                />
+                <Field
+                  label="ครึ่งแรก (เยือน)"
+                  name="firstHalfAwayScore"
+                  type="number"
+                  defaultValue={match.firstHalfAwayScore?.toString() ?? ""}
+                />
+                <Field
+                  label="ครึ่งหลัง (เหย้า)"
+                  name="secondHalfHomeScore"
+                  type="number"
+                  defaultValue={match.secondHalfHomeScore?.toString() ?? ""}
+                />
+                <Field
+                  label="ครึ่งหลัง (เยือน)"
+                  name="secondHalfAwayScore"
+                  type="number"
+                  defaultValue={match.secondHalfAwayScore?.toString() ?? ""}
+                />
+                <div className="sm:col-span-2 lg:col-span-4">
+                  <button
+                    type="submit"
+                    className="inline-flex items-center gap-2 rounded-lg bg-g15-600 px-5 py-2.5 text-sm font-medium text-white shadow-sm shadow-g15-200 transition-colors hover:bg-g15-700"
+                  >
+                    บันทึก
+                  </button>
+                </div>
+              </FormWithToast>
+          </ManageDialogButton>
         </div>
 
         {/* แก้ผลด้วยตนเอง — สำหรับกรอกผลย้อนหลัง/แก้สกอร์ (ไม่ได้ใช้นาฬิกาเกมสด) */}
@@ -492,63 +551,6 @@ export default async function G15ManageMatchPage({
             matchLabel={`${matchday != null ? `Matchday ${matchday} · ` : ""}${match.round}`}
           />
         )}
-
-        {/* ทีมงานผู้ตัดสิน + สกอร์แยกครึ่งเวลา */}
-        <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
-          <div className="flex items-center gap-2 border-b border-slate-100 px-6 py-4">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-g15-50 text-g15-600">
-              <ClipboardList className="h-4 w-4" />
-            </div>
-            <h2 className="font-semibold text-slate-900">ทีมงานผู้ตัดสิน &amp; สกอร์ตามใบรายงาน</h2>
-          </div>
-          <FormWithToast action={updateMatchOfficials} className="grid grid-cols-1 gap-4 p-6 sm:grid-cols-2 lg:grid-cols-4">
-            <input type="hidden" name="id" value={match.id} />
-            <div className="sm:col-span-2 lg:col-span-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <Field label="ผู้ตัดสิน" name="referee" defaultValue={match.referee ?? ""} />
-              <Field label="ผู้ช่วยผู้ตัดสินที่ 1" name="assistantReferee1" defaultValue={match.assistantReferee1 ?? ""} />
-              <Field label="ผู้ช่วยผู้ตัดสินที่ 2" name="assistantReferee2" defaultValue={match.assistantReferee2 ?? ""} />
-              <Field label="ผู้ตัดสินที่ 4" name="fourthOfficial" defaultValue={match.fourthOfficial ?? ""} />
-              <Field label="Match Commissioner" name="matchCommissioner" defaultValue={match.matchCommissioner ?? ""} />
-              <Field label="ผู้ประเมินผู้ตัดสิน" name="refereeAssessor" defaultValue={match.refereeAssessor ?? ""} />
-              <Field label="ผู้ประสานงานกลาง" name="generalCoordinator" defaultValue={match.generalCoordinator ?? ""} />
-            </div>
-            <p className="sm:col-span-2 lg:col-span-4 -mb-2 text-xs text-slate-400">
-              สกอร์แยกครึ่งเวลาตามใบรายงานผู้ตัดสิน (แสดงอ้างอิงในหน้าสาธารณะเท่านั้น ไม่กระทบผลการแข่งขัน/ตารางคะแนนที่ตั้งไว้ในแท็บ &quot;นัดการแข่งขัน&quot;)
-            </p>
-            <Field
-              label="ครึ่งแรก (เหย้า)"
-              name="firstHalfHomeScore"
-              type="number"
-              defaultValue={match.firstHalfHomeScore?.toString() ?? ""}
-            />
-            <Field
-              label="ครึ่งแรก (เยือน)"
-              name="firstHalfAwayScore"
-              type="number"
-              defaultValue={match.firstHalfAwayScore?.toString() ?? ""}
-            />
-            <Field
-              label="ครึ่งหลัง (เหย้า)"
-              name="secondHalfHomeScore"
-              type="number"
-              defaultValue={match.secondHalfHomeScore?.toString() ?? ""}
-            />
-            <Field
-              label="ครึ่งหลัง (เยือน)"
-              name="secondHalfAwayScore"
-              type="number"
-              defaultValue={match.secondHalfAwayScore?.toString() ?? ""}
-            />
-            <div className="sm:col-span-2 lg:col-span-4">
-              <button
-                type="submit"
-                className="inline-flex items-center gap-2 rounded-lg bg-g15-600 px-5 py-2.5 text-sm font-medium text-white shadow-sm shadow-g15-200 transition-colors hover:bg-g15-700"
-              >
-                บันทึก
-              </button>
-            </div>
-          </FormWithToast>
-        </div>
 
         {/* ผู้ทำประตู */}
         <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
