@@ -189,6 +189,9 @@ export function LiveMatchControl({
   const [minute, setMinute] = useState("");
   const [cardType, setCardType] = useState<"YELLOW" | "RED">("YELLOW");
   const [reason, setReason] = useState("");
+  // เปลี่ยนตัวหลายคู่ในครั้งเดียว (ได้ทั้งสองทีม) — เลือกออก+เข้าครบคู่แล้วเข้าคิวอัตโนมัติ กดบันทึกทีเดียว
+  const [subSide, setSubSide] = useState<Side>("home");
+  const [subQueue, setSubQueue] = useState<{ side: Side; outId: string; inId: string }[]>([]);
 
   const open = (
     d: NonNullable<Dialog>,
@@ -199,6 +202,8 @@ export function LiveMatchControl({
     setPickB(preset?.pickB ?? null);
     setReason(preset?.reason ?? "");
     if (d.kind === "card") setCardType(d.cardType);
+    setSubSide(d.side);
+    setSubQueue([]);
     if (preset?.minute !== undefined) setMinute(preset.minute);
     else {
       // เติมนาทีจากนาฬิกาเกม — ช่วงทดเวลาเป็นแบบ 45+2 / 90+3
@@ -531,45 +536,151 @@ export function LiveMatchControl({
       };
     }
 
-    // เปลี่ยนตัว
-    // แก้ไข/เพิ่มย้อนหลัง: เลือกได้ทุกคนในทีม (สถานะในสนามตอนนี้ไม่ตรงกับช่วงเวลาของเหตุการณ์นั้น)
-    const anyone = dialog.editId != null || !!dialog.fromList;
-    const outs = sortPitchFirst(rosters[side].players.filter((p) => anyone || p.onPitch)).map((p) => ({ key: String(p.id), name: p.name, number: p.number }));
-    const ins = sortPitchFirst(rosters[side].players.filter((p) => (anyone || p.onBench) && String(p.id) !== pickA), "bench").map((p) => ({
+    // เปลี่ยนตัว — แก้ไขรายการเดิม = คู่เดียวของทีมเดิม
+    if (dialog.editId != null) {
+      const outs = sortPitchFirst(rosters[side].players).map((p) => ({ key: String(p.id), name: p.name, number: p.number }));
+      const ins = sortPitchFirst(rosters[side].players.filter((p) => String(p.id) !== pickA), "bench").map((p) => ({ key: String(p.id), name: p.name, number: p.number }));
+      return {
+        title: (
+          <>
+            <ArrowLeftRight className="h-5 w-5 text-sky-500" /> แก้ไขการเปลี่ยนตัว — {team.name}
+          </>
+        ),
+        body: (
+          <div className="space-y-4">
+            <div>
+              <p className="mb-2 text-xs font-bold text-red-600">▼ ออก</p>
+              <PlayerGrid players={outs} value={pickA} onChange={setPickA} tone="red" />
+            </div>
+            <div>
+              <p className="mb-2 text-xs font-bold text-emerald-600">▲ เข้า</p>
+              <PlayerGrid players={ins} value={pickB} onChange={setPickB} tone="emerald" />
+            </div>
+            {minuteField}
+          </div>
+        ),
+        submit: () => run(editSubAction, { eventId: String(dialog.editId), outId: pickA ?? "", inId: pickB ?? "", minute }, { onDone: close }),
+        note: null,
+        submitLabel: "บันทึกการแก้ไข",
+        canSubmit: true,
+      };
+    }
+
+    // เพิ่มใหม่ — เลือกได้หลายคู่ สลับทีมได้ในป็อปอัพเดียว
+    // เพิ่มย้อนหลัง (จากรายการ) เลือกได้ทุกคนในทีม เพราะสถานะในสนามตอนนี้ไม่ตรงกับช่วงเวลานั้น
+    const anyone = !!dialog.fromList;
+    const queuedOut = new Set(subQueue.filter((q) => q.side === subSide).map((q) => q.outId));
+    const queuedIn = new Set(subQueue.filter((q) => q.side === subSide).map((q) => q.inId));
+    const outs = sortPitchFirst(rosters[subSide].players.filter((p) => (anyone || p.onPitch) && !queuedOut.has(String(p.id)) && !queuedIn.has(String(p.id)))).map((p) => ({
       key: String(p.id),
       name: p.name,
       number: p.number,
     }));
+    const ins = sortPitchFirst(
+      rosters[subSide].players.filter((p) => (anyone || p.onBench) && String(p.id) !== pickA && !queuedIn.has(String(p.id)) && !queuedOut.has(String(p.id))),
+      "bench",
+    ).map((p) => ({ key: String(p.id), name: p.name, number: p.number }));
+    const addPair = (outId: string, inId: string) => {
+      setSubQueue((q) => [...q, { side: subSide, outId, inId }]);
+      setPickA(null);
+      setPickB(null);
+    };
+    const nameOf = (sd: Side, id: string) => rosters[sd].players.find((p) => String(p.id) === id);
     return {
       title: (
         <>
-          <ArrowLeftRight className="h-5 w-5 text-sky-500" /> {dialog.editId != null ? "แก้ไขการเปลี่ยนตัว" : "เปลี่ยนตัว"} — {team.name}
+          <ArrowLeftRight className="h-5 w-5 text-sky-500" /> เปลี่ยนตัว
         </>
       ),
       body: (
         <div className="space-y-4">
+          {/* เลือกทีม — สลับไปเพิ่มของอีกทีมได้เลย คู่ที่เลือกแล้วยังอยู่ในคิว */}
+          <div className="flex gap-1.5 rounded-xl bg-slate-100 p-1">
+            {(["home", "away"] as const).map((sd) => (
+              <button
+                key={sd}
+                type="button"
+                onClick={() => {
+                  setSubSide(sd);
+                  setPickA(null);
+                  setPickB(null);
+                }}
+                className={`flex min-w-0 flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-2 text-xs font-bold transition-colors ${
+                  subSide === sd ? "bg-white text-slate-900 shadow" : "text-slate-500"
+                }`}
+              >
+                <TeamBadge team={teams[sd]} size="sm" />
+                <span className="truncate">{teams[sd].name}</span>
+                {subQueue.some((q) => q.side === sd) && (
+                  <span className="flex-none rounded-full bg-sky-500 px-1.5 text-[10px] text-white">{subQueue.filter((q) => q.side === sd).length}</span>
+                )}
+              </button>
+            ))}
+          </div>
+
+          {subQueue.length > 0 && (
+            <div className="space-y-1.5 rounded-xl bg-sky-50 p-2.5 ring-1 ring-sky-100">
+              <p className="px-1 text-[11px] font-bold text-sky-700">จะบันทึก {subQueue.length} คู่</p>
+              {subQueue.map((q, i) => (
+                <div key={i} className="flex items-center gap-2 rounded-lg bg-white px-2 py-1.5 text-xs shadow-sm">
+                  <TeamBadge team={teams[q.side]} size="sm" />
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate font-semibold text-red-600">▼ {nameOf(q.side, q.outId)?.name}</span>
+                    <span className="block truncate font-semibold text-emerald-700">▲ {nameOf(q.side, q.inId)?.name}</span>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setSubQueue((all) => all.filter((_, j) => j !== i))}
+                    aria-label="เอาคู่นี้ออก"
+                    className="flex h-8 w-8 flex-none items-center justify-center rounded-lg text-slate-400 hover:bg-red-50 hover:text-red-600"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
           <div>
-            <p className="mb-2 text-xs font-bold text-red-600">▼ ออก (อยู่ในสนาม)</p>
-            <PlayerGrid players={outs} value={pickA} onChange={setPickA} tone="red" />
+            <p className="mb-2 text-xs font-bold text-red-600">▼ ออก {anyone ? "" : "(อยู่ในสนาม)"}</p>
+            <PlayerGrid
+              players={outs}
+              value={pickA}
+              onChange={(k) => {
+                if (k && pickB) addPair(k, pickB);
+                else setPickA(k);
+              }}
+              tone="red"
+            />
           </div>
           <div>
-            <p className="mb-2 text-xs font-bold text-emerald-600">▲ เข้า (ตัวสำรอง)</p>
+            <p className="mb-2 text-xs font-bold text-emerald-600">▲ เข้า {anyone ? "" : "(ตัวสำรอง)"}</p>
             {ins.length === 0 ? (
               <p className="text-xs text-slate-400">ไม่มีตัวสำรองเหลือ</p>
             ) : (
-              <PlayerGrid players={ins} value={pickB} onChange={setPickB} tone="emerald" />
+              <PlayerGrid
+                players={ins}
+                value={pickB}
+                onChange={(k) => {
+                  if (k && pickA) addPair(pickA, k);
+                  else setPickB(k);
+                }}
+                tone="emerald"
+              />
             )}
           </div>
           {minuteField}
         </div>
       ),
       submit: () =>
-        dialog.editId != null
-          ? run(editSubAction, { eventId: String(dialog.editId), outId: pickA ?? "", inId: pickB ?? "", minute }, { onDone: close })
-          : run(subAction, { side, outId: pickA ?? "", inId: pickB ?? "", minute }, { onDone: close }),
-      note: null,
-      submitLabel: dialog.editId != null ? "บันทึกการแก้ไข" : "บันทึกการเปลี่ยนตัว",
-      canSubmit: dialog.editId != null || (pickA != null && pickB != null),
+        run(
+          subAction,
+          { pairs: JSON.stringify(subQueue.map((q) => ({ side: q.side, outId: Number(q.outId), inId: Number(q.inId) }))), minute },
+          { onDone: close },
+        ),
+      note: subQueue.length === 0 ? "แตะคนออก แล้วแตะคนเข้า = 1 คู่ (เพิ่มได้หลายคู่ ทั้งสองทีม แล้วกดบันทึกทีเดียว)" : null,
+      submitLabel: subQueue.length > 1 ? `บันทึกการเปลี่ยนตัว (${subQueue.length} คู่)` : "บันทึกการเปลี่ยนตัว",
+      canSubmit: subQueue.length > 0,
     };
   };
   const d = dialogBody();

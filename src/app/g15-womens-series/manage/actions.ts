@@ -1101,32 +1101,45 @@ export async function recordLiveCard(formData: FormData): Promise<ActionResult> 
   });
 }
 
-// เปลี่ยนตัว: out = คนออก (อยู่ในสนาม), in = คนเข้า (ตัวสำรอง) ของทีมฝั่งที่กด
+// เปลี่ยนตัว: pairs = JSON [{ side, outId, inId }] หลายคู่ได้ทั้งสองทีม (นาทีเดียวกัน) — หรือคู่เดียวแบบเดิม (side/outId/inId)
 export async function recordLiveSub(formData: FormData): Promise<ActionResult> {
   await requireAdminOrStaff();
   return attempt(async () => {
     const matchId = Number(formData.get("id"));
-    const side = String(formData.get("side")) === "away" ? "away" : "home";
     const match = await liveMatchTeams(matchId);
-    const teamId = side === "home" ? match.homeTeamId : match.awayTeamId;
-    const [out, inn] = await Promise.all([
-      prisma.g15Player.findUnique({ where: { id: int(formData, "outId") ?? 0 } }),
-      prisma.g15Player.findUnique({ where: { id: int(formData, "inId") ?? 0 } }),
-    ]);
-    if (!out || !inn) throw new Error("กรุณาเลือกทั้งคนออกและคนเข้า");
-    if (out.teamId !== teamId || inn.teamId !== teamId || out.id === inn.id) throw new Error("ผู้เล่นที่เลือกไม่ถูกต้อง");
+    let pairs: { side: string; outId: number; inId: number }[];
+    if (formData.has("pairs")) {
+      try {
+        pairs = JSON.parse(String(formData.get("pairs")));
+      } catch {
+        throw new Error("ข้อมูลการเปลี่ยนตัวไม่ถูกต้อง");
+      }
+    } else {
+      pairs = [{ side: String(formData.get("side")), outId: int(formData, "outId") ?? 0, inId: int(formData, "inId") ?? 0 }];
+    }
+    if (!Array.isArray(pairs) || pairs.length === 0) throw new Error("กรุณาเลือกทั้งคนออกและคนเข้า");
 
-    await prisma.g15Substitution.create({
-      data: {
+    const ids = pairs.flatMap((p) => [Number(p.outId), Number(p.inId)]);
+    const players = await prisma.g15Player.findMany({ where: { id: { in: ids } } });
+    const byId = new Map(players.map((p) => [p.id, p]));
+    const minute = minuteFields(formData);
+    const data = pairs.map((pr) => {
+      const teamId = pr.side === "away" ? match.awayTeamId : match.homeTeamId;
+      const out = byId.get(Number(pr.outId));
+      const inn = byId.get(Number(pr.inId));
+      if (!out || !inn) throw new Error("กรุณาเลือกทั้งคนออกและคนเข้า");
+      if (out.teamId !== teamId || inn.teamId !== teamId || out.id === inn.id) throw new Error("ผู้เล่นที่เลือกไม่ถูกต้อง");
+      return {
         matchId,
         teamId,
-        ...minuteFields(formData),
+        ...minute,
         playerOutName: playerName(out),
         playerOutNumber: out.jerseyNumber,
         playerInName: playerName(inn),
         playerInNumber: inn.jerseyNumber,
-      },
+      };
     });
+    await prisma.g15Substitution.createMany({ data });
     revalidateG15(undefined, matchId);
   });
 }
