@@ -12,6 +12,9 @@ import { NationalGroupTables } from "@/components/g15/NationalGroupTables";
 import { KnockoutBracket } from "@/components/g15/KnockoutBracket";
 import { Reveal } from "@/components/g15/Reveal";
 import { MapPin, Trophy, GitBranch } from "lucide-react";
+import { Bebas_Neue } from "next/font/google";
+
+const display = Bebas_Neue({ weight: "400", subsets: ["latin"], display: "swap" });
 
 export default async function G15StandingsPage({
   searchParams,
@@ -82,13 +85,14 @@ function NationalStandings({ teams, matches }: { teams: Teams; matches: Matches 
   return (
     <div className="relative z-10 -mt-10 space-y-10 sm:-mt-14">
       <Reveal>
-        <NationalGroupTables groups={groups} formByTeamId={formByTeamId} live={liveTable} />
+        <NationalGroupTables groups={groups} formByTeamId={formByTeamId} columns={1} live={liveTable} />
       </Reveal>
       <Reveal>
         <section>
-          <h2 className="mb-4 flex items-center gap-2 text-lg font-bold text-slate-900">
-            <GitBranch className="h-5 w-5 text-g15-600" />
-            รอบน็อกเอาต์ <span className="text-sm font-normal text-slate-400">/ Knockout Stage</span>
+          <h2 className="mb-5 flex items-center gap-3">
+            <GitBranch className="h-6 w-6 text-g15-600" />
+            <span className={`${display.className} text-4xl uppercase leading-none text-g15-900`}>Knockout Stage</span>
+            <span className="text-sm font-semibold text-slate-400">/ รอบน็อกเอาต์</span>
           </h2>
           <KnockoutBracket ties={ties} />
         </section>
