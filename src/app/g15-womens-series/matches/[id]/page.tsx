@@ -526,7 +526,7 @@ export default async function G15MatchDetailPage({
             </div>
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
               {match.galleryLinks.map((l) => (
-                <GalleryAlbumCard key={l.id} album={{ id: l.id, title: l.title, url: l.url, matchLabel: null, dateLabel: formatMatchDateShort(l.createdAt) }} />
+                <GalleryAlbumCard key={l.id} album={{ id: l.id, title: l.title, url: l.url, coverUrl: l.coverUrl, matchLabel: null, dateLabel: formatMatchDateShort(l.createdAt) }} />
               ))}
             </div>
           </section>

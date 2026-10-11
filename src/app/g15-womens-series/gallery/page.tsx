@@ -37,6 +37,7 @@ export default async function G15GalleryPage({
       id: l.id,
       title: l.title,
       url: l.url,
+      coverUrl: l.coverUrl,
       matchId: l.matchId,
       matchLabel: m ? matchLabel(m) : null,
       dateLabel: formatMatchDateShort(l.createdAt),

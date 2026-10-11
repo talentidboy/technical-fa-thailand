@@ -2,11 +2,26 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Link2, Loader2, AlertCircle, Pencil, Trash2, Plus, X } from "lucide-react";
+import { Link2, Loader2, AlertCircle, Pencil, Trash2, Plus, X, ImagePlus } from "lucide-react";
 import { GalleryAlbumCard, type GalleryAlbum } from "./GalleryAlbumCard";
 import type { ActionResult } from "@/app/g15-womens-series/manage/actions";
 
 type Album = GalleryAlbum & { matchId: number | null };
+
+// ย่อรูปปกในเบราว์เซอร์เป็น WebP ด้านยาวไม่เกิน 1600px (รูปจากมือถือหลาย MB เหลือไม่กี่ร้อย KB)
+async function resizeCover(file: File) {
+  const bitmap = await createImageBitmap(file);
+  const scale = Math.min(1, 1600 / Math.max(bitmap.width, bitmap.height));
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.round(bitmap.width * scale);
+  canvas.height = Math.round(bitmap.height * scale);
+  canvas.getContext("2d")!.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+  bitmap.close();
+  const blob = await new Promise<Blob>((resolve, reject) =>
+    canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("แปลงรูปไม่สำเร็จ"))), "image/webp", 0.85),
+  );
+  return new File([blob], "cover.webp", { type: "image/webp" });
+}
 
 // สำหรับแอดมิน: ฟอร์มเพิ่ม/แก้อัลบั้ม (หัวข้อ + ลิงก์ + ผูกนัด) และปุ่มแก้/ลบบนการ์ด
 export function GalleryLinkManager({
@@ -29,6 +44,20 @@ export function GalleryLinkManager({
   const [url, setUrl] = useState("");
   const [matchId, setMatchId] = useState("");
   const [error, setError] = useState<string | null>(null);
+  // รูปปก: cover = ไฟล์ใหม่ที่เลือก, existingCover = ปกเดิม (ตอนแก้ไข), removeCover = กดเอาปกเดิมออก
+  const [cover, setCover] = useState<File | null>(null);
+  const [preview, setPreview] = useState<string | null>(null);
+  const [existingCover, setExistingCover] = useState<string | null>(null);
+  const [removeCover, setRemoveCover] = useState(false);
+  const [fileKey, setFileKey] = useState(0);
+
+  const setCoverFile = (f: File | null) => {
+    setCover(f);
+    setPreview((old) => {
+      if (old) URL.revokeObjectURL(old);
+      return f ? URL.createObjectURL(f) : null;
+    });
+  };
 
   const reset = () => {
     setEditId(null);
@@ -36,7 +65,22 @@ export function GalleryLinkManager({
     setUrl("");
     setMatchId("");
     setError(null);
+    setCoverFile(null);
+    setExistingCover(null);
+    setRemoveCover(false);
+    setFileKey((k) => k + 1);
   };
+
+  const pickCover = async (file: File | undefined) => {
+    if (!file) return;
+    try {
+      setCoverFile(await resizeCover(file));
+      setRemoveCover(false);
+    } catch {
+      setError("อ่านไฟล์รูปไม่ได้ ลองเลือกรูปอื่น");
+    }
+  };
+  const shownCover = preview ?? (removeCover ? null : existingCover);
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,6 +90,8 @@ export function GalleryLinkManager({
     fd.set("url", url);
     fd.set("matchId", matchId);
     fd.set("stage", stage);
+    if (cover) fd.set("cover", cover);
+    if (removeCover) fd.set("removeCover", "1");
     setError(null);
     startTransition(async () => {
       const res = await saveAction(fd);
@@ -93,6 +139,38 @@ export function GalleryLinkManager({
             ))}
           </select>
         </div>
+        {/* รูปปก (ไม่บังคับ) — ตัวอย่างสัดส่วน 16:9 แบบเดียวกับการ์ด */}
+        <div className="mt-3 flex flex-wrap items-center gap-3">
+          <div className="relative aspect-video w-40 flex-none overflow-hidden rounded-xl bg-slate-100 ring-1 ring-slate-200">
+            {shownCover ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={shownCover} alt="" className="h-full w-full object-cover" />
+            ) : (
+              <span className="flex h-full w-full items-center justify-center text-[11px] text-slate-400">ยังไม่มีรูปปก</span>
+            )}
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <label className="inline-flex h-10 cursor-pointer items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+              <ImagePlus className="h-4 w-4 text-g15-600" />
+              {shownCover ? "เปลี่ยนรูปปก" : "เลือกรูปปก"}
+              <input key={fileKey} type="file" accept="image/*" className="sr-only" onChange={(e) => pickCover(e.target.files?.[0])} />
+            </label>
+            {shownCover && (
+              <button
+                type="button"
+                onClick={() => {
+                  setCoverFile(null);
+                  setFileKey((k) => k + 1);
+                  if (existingCover) setRemoveCover(true);
+                }}
+                className="inline-flex h-10 items-center gap-1 rounded-xl px-3 text-sm font-semibold text-slate-500 hover:bg-red-50 hover:text-red-600"
+              >
+                <X className="h-4 w-4" /> เอารูปปกออก
+              </button>
+            )}
+          </div>
+          <p className="w-full text-[11px] text-slate-400">แนะนำรูปแนวนอน · ไม่ใส่ก็ได้ (จะใช้ปกสีตามแหล่งที่มาของลิงก์)</p>
+        </div>
         {error && (
           <p className="mt-3 flex items-center gap-1.5 text-xs font-medium text-red-600">
             <AlertCircle className="h-3.5 w-3.5" /> {error}
@@ -128,6 +206,10 @@ export function GalleryLinkManager({
                     setTitle(a.title);
                     setUrl(a.url);
                     setMatchId(a.matchId != null ? String(a.matchId) : "");
+                    setCoverFile(null);
+                    setExistingCover(a.coverUrl);
+                    setRemoveCover(false);
+                    setFileKey((k) => k + 1);
                     setError(null);
                     window.scrollTo({ top: 0, behavior: "smooth" });
                   }}

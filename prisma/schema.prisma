@@ -526,6 +526,8 @@ model G15GalleryLink {
   match     G15Match? @relation(fields: [matchId], references: [id], onDelete: SetNull)
   title     String
   url       String
+  // รูปปกอัลบั้ม (อัปโหลด ย่อเป็น WebP ในเบราว์เซอร์) — ว่าง = ใช้ปกสีตามแหล่งที่มา
+  coverUrl  String?   @map("cover_url")
   createdAt DateTime  @default(now()) @map("created_at")
 
   @@index([stage, matchId])

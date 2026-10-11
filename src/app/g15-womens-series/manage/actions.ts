@@ -1330,7 +1330,17 @@ export async function saveGalleryLink(formData: FormData): Promise<ActionResult>
       if (!match) throw new Error("ไม่พบนัดการแข่งขัน");
       stage = match.stage;
     }
-    const data = { title, url, stage, matchId: matchId ?? null };
+    // รูปปก: ไฟล์ใหม่ = อัปโหลดแทน, removeCover = เอาออก, ไม่ส่งอะไร = คงเดิม
+    const coverFile = formData.get("cover");
+    const newCover = coverFile instanceof File && coverFile.size > 0 ? await saveUploadedPhoto(coverFile) : null;
+    const removeCover = String(formData.get("removeCover") ?? "") === "1";
+    const data = {
+      title,
+      url,
+      stage,
+      matchId: matchId ?? null,
+      ...(newCover ? { coverUrl: newCover } : removeCover ? { coverUrl: null } : {}),
+    };
     const prev = id ? await prisma.g15GalleryLink.findUnique({ where: { id }, select: { matchId: true } }) : null;
     if (id) await prisma.g15GalleryLink.update({ where: { id }, data });
     else await prisma.g15GalleryLink.create({ data });
