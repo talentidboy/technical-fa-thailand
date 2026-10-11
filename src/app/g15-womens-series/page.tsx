@@ -7,23 +7,18 @@ import {
   getRecentForm,
   getNationalStandings,
   getNationalBracket,
-  formatMatchDateShort,
-  formatMatchTimeShort,
 } from "@/lib/g15";
 import { REGION_STYLE, DEFAULT_REGION_STYLE, regionEn, groupTeamsByRegion, groupStandingsByRegion } from "@/lib/g15-region";
 import {
   parseStage,
   stageInfo,
   withStage,
-  roundStyle,
   isGroupRound,
-  hasPenalties,
   isLive,
   needsLiveSync,
   matchdayMap,
   hasLiveScore,
   projectLive,
-  matchWinnerId,
 } from "@/lib/g15-stage";
 import { G15_HERO_BANNER_URL } from "@/lib/brand";
 import { G15Chrome } from "@/components/g15/G15Chrome";
@@ -35,11 +30,12 @@ import { NationalGroupTables } from "@/components/g15/NationalGroupTables";
 import { KnockoutBracket } from "@/components/g15/KnockoutBracket";
 import { TeamOfRoundPitch } from "@/components/g15/TeamOfRoundPitch";
 import { ChampionPodium } from "@/components/g15/ChampionPodium";
-import { LivePill } from "@/components/g15/LivePill";
-import { StackedTeams } from "@/components/g15/StackedTeams";
 import { LiveSync } from "@/components/g15/LiveSync";
 import { MatchSpotlight } from "@/components/g15/MatchSpotlight";
-import { PlayerLeaderboard, type PlayerLeaderboardRow } from "@/components/g15/PlayerLeaderboard";
+import { type PlayerLeaderboardRow } from "@/components/g15/PlayerLeaderboard";
+import { MatchCard } from "@/components/g15/MatchCard";
+import { StatLeaderCard, type StatLeaderRow } from "@/components/g15/StatLeaderCard";
+import { Bebas_Neue } from "next/font/google";
 import { Reveal } from "@/components/g15/Reveal";
 import { AnimatedCounter } from "@/components/g15/AnimatedCounter";
 import {
@@ -52,12 +48,32 @@ import {
   Rocket,
   Users,
   CheckCircle2,
-  Flame,
   ShieldHalf,
   BarChart3,
   Sparkles,
-  GitBranch,
+  Images,
 } from "lucide-react";
+
+// ตัวอักษรแคบสูงสำหรับหัวข้อ/ตัวเลข (ชุดเดียวกับหน้าสถิติ/ตารางคะแนน)
+const display = Bebas_Neue({ weight: "400", subsets: ["latin"], display: "swap" });
+
+// หัวข้อแต่ละส่วนของหน้าแรก — ภาษาอังกฤษตัวใหญ่ + ภาษาไทย + ลิงก์ "ดูทั้งหมด"
+function SectionHead({ en, th, href }: { en: string; th: string; href?: string }) {
+  return (
+    <div className="mb-4 flex items-end justify-between gap-3">
+      <h2 className="flex min-w-0 flex-wrap items-baseline gap-x-2">
+        <span className={`${display.className} text-4xl uppercase leading-none text-g15-950`}>{en}</span>
+        <span className="text-sm font-semibold text-slate-400">/ {th}</span>
+      </h2>
+      {href && (
+        <Link href={href} className="-my-2 flex flex-none items-center gap-1 py-2 text-xs font-semibold text-g15-600 hover:text-g15-700">
+          ดูทั้งหมด / View all
+          <ChevronRight className="h-3.5 w-3.5" />
+        </Link>
+      )}
+    </div>
+  );
+}
 
 const highlights = [
   {
@@ -89,6 +105,7 @@ const quickLinks = [
   { href: "/g15-womens-series/stats", icon: BarChart3, label: "สถิติ", labelEn: "Statistics", color: "bg-emerald-50 text-emerald-600" },
   { href: "/g15-womens-series/teams", icon: Users, label: "ทีมที่เข้าร่วม", labelEn: "Teams", color: "bg-indigo-50 text-indigo-600" },
   { href: "/g15-womens-series/stadium", icon: MapPin, label: "สนามแข่งขัน", labelEn: "Stadium", color: "bg-fuchsia-50 text-fuchsia-600" },
+  { href: "/g15-womens-series/gallery", icon: Images, label: "แกลเลอรี", labelEn: "Gallery", color: "bg-sky-50 text-sky-600" },
 ];
 
 export default async function G15WomensSeriesPage({
@@ -109,10 +126,13 @@ export default async function G15WomensSeriesPage({
     prisma.g15Match.findMany({
       where: { stage },
       orderBy: [{ matchDate: "asc" }, { createdAt: "asc" }],
-      include: { homeTeam: true, awayTeam: true },
+      include: { homeTeam: true, awayTeam: true, goals: true },
     }),
     // ไม่นับประตูตัวเอง (OG) เป็นประตูของคนยิง
-    prisma.g15Goal.findMany({ where: { match: { stage }, isOwnGoal: false }, include: { team: true } }),
+    prisma.g15Goal.findMany({
+      where: { match: { stage }, isOwnGoal: false },
+      include: { team: true, player: { select: { firstNameEn: true, lastNameEn: true, photoUrl: true } } },
+    }),
     prisma.g15AllStar.findMany({
       where: { stage },
       include: { player: { select: { id: true, firstNameTh: true, lastNameTh: true, jerseyNumber: true, photoUrl: true, team: true } } },
@@ -166,11 +186,30 @@ export default async function G15WomensSeriesPage({
   const topScorersPreview = Array.from(scorerMap.values())
     .sort((a, b) => b.goals - a.goals)
     .slice(0, 5);
+  // การ์ดดาวซัลโวแบบเดียวกับหน้าสถิติ (รูปนักกีฬา + ชื่ออังกฤษ)
+  const scorerRowMap = new Map<string, StatLeaderRow>();
+  for (const g of goals) {
+    if (g.playerId == null && g.playerName === "ไม่ระบุผู้ทำประตู") continue;
+    const key = g.playerId != null ? `p${g.playerId}` : `n${g.teamId}:${g.playerName}`;
+    const row = scorerRowMap.get(key);
+    if (row) row.value += 1;
+    else
+      scorerRowMap.set(key, {
+        key,
+        playerId: g.playerId,
+        nameTh: g.playerName,
+        nameEn: g.player ? [g.player.firstNameEn, g.player.lastNameEn].filter(Boolean).join(" ") || null : null,
+        photoUrl: g.player?.photoUrl ?? null,
+        team: { name: g.team.name, logoUrl: g.team.logoUrl, groupName: g.team.groupName },
+        value: 1,
+      });
+  }
+  const topScorerRows = [...scorerRowMap.values()].sort((a, b) => b.value - a.value || a.nameTh.localeCompare(b.nameTh, "th"));
 
   // ผลการแข่งขันล่าสุด — ทุกนัดในระบบตอนนี้แข่งจบไปแล้ว (ไม่มีนัดที่ยังไม่ถึงวันแข่ง) จึงโชว์ผลล่าสุดแทน "นัดถัดไป"
   const recentResults = [...finishedMatches]
     .sort((a, b) => (b.matchDate?.getTime() ?? 0) - (a.matchDate?.getTime() ?? 0))
-    .slice(0, 5);
+    .slice(0, 3);
 
   // การ์ดพิเศษด้านบน — กำลังแข่ง > นัดถัดไป (นับถอยหลัง) > ผลล่าสุด
   const now = new Date();
@@ -193,7 +232,7 @@ export default async function G15WomensSeriesPage({
   const upcomingMatches = matches
     .filter((m) => m.status !== "FINISHED")
     .sort((a, b) => (a.matchDate?.getTime() ?? Infinity) - (b.matchDate?.getTime() ?? Infinity))
-    .slice(0, 5);
+    .slice(0, 3);
   const showUpcomingList = recentResults.length === 0 && upcomingMatches.length > 0;
   const listMatches = showUpcomingList ? upcomingMatches : recentResults;
 
@@ -245,8 +284,8 @@ export default async function G15WomensSeriesPage({
         {/* สลับรอบ — สถิติ/ผล/ตารางคะแนนด้านล่างทั้งหมดเปลี่ยนตามรอบที่เลือก */}
         <div className="mt-8 flex flex-wrap items-center justify-between gap-3">
           <div>
-            <p className="text-xs font-bold uppercase tracking-widest text-g15-500">{stageInfo(stage).en}</p>
-            <h2 className="text-xl font-extrabold text-slate-900">{stageInfo(stage).label}</h2>
+            <p className={`${display.className} text-4xl uppercase leading-none text-g15-950`}>{stageInfo(stage).en}</p>
+            <h2 className="text-sm font-semibold text-slate-400">{stageInfo(stage).label}</h2>
           </div>
           <StageSwitcher stage={stage} basePath="/g15-womens-series" variant="light" />
         </div>
@@ -282,7 +321,7 @@ export default async function G15WomensSeriesPage({
                 <div className={`mx-auto mb-2 flex h-9 w-9 items-center justify-center rounded-xl ${s.color} transition-transform duration-300 group-hover:scale-110`}>
                   <s.icon className="h-4.5 w-4.5" />
                 </div>
-                <p className="text-3xl font-extrabold text-slate-900 sm:text-4xl">
+                <p className={`${display.className} text-5xl leading-none text-g15-950 sm:text-6xl`}>
                   <AnimatedCounter value={s.value} />
                 </p>
                 <p className="mt-1 text-xs font-medium text-slate-500">
@@ -327,83 +366,23 @@ export default async function G15WomensSeriesPage({
           </div>
         ) : (
           <div className="mt-10 grid grid-cols-1 gap-8 lg:grid-cols-2">
-            {/* ผลการแข่งขันล่าสุด */}
+            {/* ผลการแข่งขันล่าสุด / โปรแกรมถัดไป — การ์ดนัดแบบเดียวกับหน้ารายการแข่ง */}
             <Reveal delay={0}>
               <div>
-                <div className="mb-4 flex items-center justify-between">
-                  <div>
-                    <h2 className="text-lg font-bold text-slate-900">
-                      {showUpcomingList ? "โปรแกรมการแข่งขัน" : "ผลการแข่งขันล่าสุด"}
-                    </h2>
-                    <p className="text-xs text-slate-400">{showUpcomingList ? "Upcoming Fixtures" : "Latest Results"}</p>
-                  </div>
-                  <Link
-                    href={href("/g15-womens-series/matches")}
-                    className="-my-2 flex items-center gap-1 py-2 text-xs font-medium text-g15-600 hover:text-g15-700"
-                  >
-                    ดูทั้งหมด / View all
-                    <ChevronRight className="h-3.5 w-3.5" />
-                  </Link>
-                </div>
+                <SectionHead
+                  en={showUpcomingList ? "Fixtures" : "Latest Results"}
+                  th={showUpcomingList ? "โปรแกรมการแข่งขัน" : "ผลการแข่งขันล่าสุด"}
+                  href={href("/g15-womens-series/matches")}
+                />
                 {listMatches.length === 0 ? (
-                  <p className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-10 text-center text-sm text-slate-400">
+                  <p className="rounded-3xl border border-dashed border-slate-300 bg-white px-6 py-10 text-center text-sm text-slate-400">
                     ยังไม่มีผลการแข่งขัน
                   </p>
                 ) : (
-                  <div className="space-y-3">
-                    {listMatches.map((match) => {
-                      const style = roundStyle(match.round);
-                      const isFinished = match.status === "FINISHED" && match.homeScore != null && match.awayScore != null;
-                      const liveScore = hasLiveScore(match);
-                      const live = isLive(match, now);
-                      const winnerId = matchWinnerId(match);
-                      return (
-                        <Link
-                          key={match.id}
-                          href={`/g15-womens-series/matches/${match.id}`}
-                          className="block rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:border-g15-200 hover:shadow-md"
-                        >
-                          {/* ทีมเรียงบน-ล่าง ทุกขนาดจอ — คอลัมน์นี้กว้างแค่ครึ่งจอบนเดสก์ท็อป ชื่อทีมยาวจะได้ไม่ถูกตัด */}
-                          <div className="mb-2.5 flex items-center gap-2 text-xs">
-                            <span className="font-bold text-slate-900">{formatMatchDateShort(match.matchDate)}</span>
-                            <span className="text-slate-400">{formatMatchTimeShort(match.matchDate)}</span>
-                            <span className="ml-auto">
-                              {isFinished ? (
-                                <span className="rounded bg-slate-900 px-1.5 py-0.5 text-[9px] font-bold uppercase text-white">
-                                  Full time
-                                </span>
-                              ) : live ? (
-                                <LivePill />
-                              ) : null}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-3">
-                            <StackedTeams
-                              size="sm"
-                              live={liveScore}
-                              home={{
-                                team: match.homeTeam,
-                                score: isFinished || liveScore ? match.homeScore : null,
-                                penalty: isFinished && hasPenalties(match) ? match.homePenalty : null,
-                                won: winnerId === match.homeTeamId,
-                              }}
-                              away={{
-                                team: match.awayTeam,
-                                score: isFinished || liveScore ? match.awayScore : null,
-                                penalty: isFinished && hasPenalties(match) ? match.awayPenalty : null,
-                                won: winnerId === match.awayTeamId,
-                              }}
-                            />
-                          </div>
-                          <div className="mt-2.5 flex items-center gap-1.5 border-t border-slate-100 pt-2 text-[11px] text-slate-400">
-                            <span className={`flex-none rounded-full px-1.5 py-0.5 text-[9px] font-bold text-white ${style.bg}`}>
-                              {match.round}
-                            </span>
-                            {match.venue && <span className="truncate">• {match.venue}</span>}
-                          </div>
-                        </Link>
-                      );
-                    })}
+                  <div className="space-y-4">
+                    {listMatches.map((match) => (
+                      <MatchCard key={match.id} match={{ ...match, matchNo: matchdays.get(match.id) ?? null }} now={now} showDate />
+                    ))}
                   </div>
                 )}
               </div>
@@ -412,19 +391,7 @@ export default async function G15WomensSeriesPage({
             {/* ตารางคะแนน */}
             <Reveal delay={120}>
               <div>
-                <div className="mb-4 flex items-center justify-between">
-                  <div>
-                    <h2 className="text-lg font-bold text-slate-900">ตารางคะแนน</h2>
-                    <p className="text-xs text-slate-400">Current Standings</p>
-                  </div>
-                  <Link
-                    href={href("/g15-womens-series/standings")}
-                    className="-my-2 flex items-center gap-1 py-2 text-xs font-medium text-g15-600 hover:text-g15-700"
-                  >
-                    ดูทั้งหมด / View all
-                    <ChevronRight className="h-3.5 w-3.5" />
-                  </Link>
-                </div>
+                <SectionHead en="Standings" th="ตารางคะแนน" href={href("/g15-womens-series/standings")} />
                 {isNational ? (
                   nationalGroups.length > 0 ? (
                     <NationalGroupTables groups={nationalGroups} formByTeamId={formByTeamId} columns={1} live={liveGroupTable} compact />
@@ -476,102 +443,110 @@ export default async function G15WomensSeriesPage({
         {isNational && bracket.length > 0 && (
           <Reveal delay={0}>
             <section className="mt-10">
-              <div className="mb-4">
-                <h2 className="flex items-center gap-2 text-lg font-bold text-slate-900">
-                  <GitBranch className="h-5 w-5 text-g15-600" />
-                  รอบน็อกเอาต์
-                </h2>
-                <p className="text-xs text-slate-400">Knockout Stage</p>
-              </div>
+              <SectionHead en="Knockout Stage" th="รอบน็อกเอาต์" href={href("/g15-womens-series/standings")} />
               <KnockoutBracket ties={bracket} />
             </section>
           </Reveal>
         )}
 
-        {/* ดาวซัลโว — โชว์ที่หน้าแรกเลย เพราะเป็นข้อมูลที่คนสนใจดูเร็วๆ (การ์ดมีหัวข้อในตัวเองอยู่แล้ว จึงมีแค่ลิงก์ "ดูทั้งหมด" กำกับด้านบนพอ) */}
-        {topScorersPreview.length > 0 && (
-          <Reveal delay={0}>
-            <div className="mt-8">
-              <div className="mb-4 flex justify-end">
-                <Link
-                  href={href("/g15-womens-series/stats")}
-                  className="-my-2 flex items-center gap-1 py-2 text-xs font-medium text-g15-600 hover:text-g15-700"
-                >
-                  ดูทั้งหมด / View all
-                  <ChevronRight className="h-3.5 w-3.5" />
-                </Link>
-              </div>
-              <PlayerLeaderboard title="ดาวซัลโว / Top Scorers" icon={<Trophy className="h-4 w-4" />} rows={topScorersPreview} />
+        {/* ไฮไลต์สถิติ — ดาวซัลโว (การ์ดแบบหน้าสถิติ) · ชนะขาดลอยที่สุด · คลีนชีตมากที่สุด */}
+        {(topScorerRows.length > 0 || (biggestWin && biggestWinMargin > 0) || topCleanSheetTeam) && (
+          <section className="mt-12">
+            <SectionHead en="Stats Highlights" th="ไฮไลต์สถิติ" href={href("/g15-womens-series/stats")} />
+            <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
+              {topScorerRows.length > 0 && (
+                <Reveal className="h-full">
+                  <div className="flex h-full flex-col">
+                    <p className="mb-2 flex items-baseline gap-2">
+                      <span className={`${display.className} text-2xl uppercase text-g15-700`}>Top Scorers</span>
+                      <span className="text-xs font-semibold text-slate-400">ดาวซัลโว</span>
+                    </p>
+                    <div className="flex-1">
+                      <StatLeaderCard rows={topScorerRows} unit="Goals" unitTh="ประตู" displayFont={display.className} title="Top Scorers / ดาวซัลโว" />
+                    </div>
+                  </div>
+                </Reveal>
+              )}
+              {biggestWin && biggestWinMargin > 0 && (
+                <Reveal delay={80} className="h-full">
+                  <div className="flex h-full flex-col">
+                    <p className="mb-2 flex items-baseline gap-2">
+                      <span className={`${display.className} text-2xl uppercase text-g15-700`}>Biggest Win</span>
+                      <span className="text-xs font-semibold text-slate-400">ชนะขาดลอยที่สุด</span>
+                    </p>
+                    <Link
+                      href={`/g15-womens-series/matches/${biggestWin.id}`}
+                      className="group relative block min-h-72 flex-1 overflow-hidden rounded-2xl shadow-sm ring-1 ring-slate-200"
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src="/g15/player-profile-banner-v2-sm.webp" alt="" aria-hidden className="absolute inset-0 h-full w-full object-cover object-[60%_50%]" />
+                      <div aria-hidden className="absolute inset-0 bg-linear-to-b from-g15-950/70 via-g15-900/60 to-g15-950/85" />
+                      <div className="relative flex h-full flex-col items-center justify-center gap-4 p-6 text-center text-white">
+                        <div className="flex items-center gap-4">
+                          <span className="rounded-full bg-white p-1.5 shadow-xl ring-4 ring-white/20 transition-transform group-hover:scale-105">
+                            <TeamBadge team={biggestWin.homeTeam} size="lg" />
+                          </span>
+                          <span className={`${display.className} text-6xl leading-none drop-shadow-lg`}>
+                            {biggestWin.homeScore}
+                            <span className="mx-1.5 text-white/40">:</span>
+                            {biggestWin.awayScore}
+                          </span>
+                          <span className="rounded-full bg-white p-1.5 shadow-xl ring-4 ring-white/20 transition-transform group-hover:scale-105">
+                            <TeamBadge team={biggestWin.awayTeam} size="lg" />
+                          </span>
+                        </div>
+                        <p className="line-clamp-2 text-sm font-bold">
+                          {biggestWin.homeTeam.name} <span className="font-normal text-g15-200">vs</span> {biggestWin.awayTeam.name}
+                        </p>
+                        <p className="rounded-full bg-amber-400 px-3 py-1 text-xs font-black text-amber-950">
+                          ต่างกัน {biggestWinMargin} ประตู · {biggestWin.round}
+                        </p>
+                      </div>
+                    </Link>
+                  </div>
+                </Reveal>
+              )}
+              {topCleanSheetTeam && topCleanSheetEntry && (
+                <Reveal delay={160} className="h-full">
+                  <div className="flex h-full flex-col">
+                    <p className="mb-2 flex items-baseline gap-2">
+                      <span className={`${display.className} text-2xl uppercase text-g15-700`}>Clean Sheets</span>
+                      <span className="text-xs font-semibold text-slate-400">คลีนชีตมากที่สุด</span>
+                    </p>
+                    <Link
+                      href={`/g15-womens-series/teams/${topCleanSheetTeam.id}`}
+                      className="group relative isolate flex min-h-72 flex-1 flex-col items-center justify-center gap-3 overflow-hidden rounded-2xl bg-linear-to-br from-emerald-700 via-emerald-600 to-teal-500 p-6 text-center text-white shadow-sm ring-1 ring-emerald-700/20"
+                    >
+                      <ShieldHalf aria-hidden className="absolute -right-8 -top-8 -z-10 h-52 w-52 text-white/10" />
+                      <span className="rounded-full bg-white p-2 shadow-xl ring-4 ring-white/25 transition-transform group-hover:scale-105">
+                        <TeamBadge team={topCleanSheetTeam} size="xl" />
+                      </span>
+                      <p className="line-clamp-2 text-base font-extrabold">{topCleanSheetTeam.name}</p>
+                      <p className="flex items-baseline gap-2">
+                        <span className={`${display.className} text-6xl leading-none`}>{topCleanSheetEntry[1]}</span>
+                        <span className="text-sm font-semibold text-emerald-100">นัดไม่เสียประตู</span>
+                      </p>
+                    </Link>
+                  </div>
+                </Reveal>
+              )}
             </div>
-          </Reveal>
+          </section>
         )}
 
         {allStars.length > 0 && (
           <Reveal delay={0}>
-            <div className="mx-auto mt-8 max-w-2xl">
+            <div className="mx-auto mt-10 max-w-2xl">
               <TeamOfRoundPitch picks={allStars} title="ทีมยอดเยี่ยมประจำรอบ / Team of the Round" />
             </div>
           </Reveal>
-        )}
-
-        {/* ชนะขาดลอยที่สุด + คลีนชีตมากที่สุด */}
-        {(biggestWin || topCleanSheetTeam) && (
-          <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
-            {biggestWin && (
-              <Reveal delay={0}>
-                <div className="h-full rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                  <div className="mb-4 flex items-center gap-2 text-sm font-semibold text-slate-900">
-                    <Flame className="h-4 w-4 text-g15-600" />
-                    ชนะขาดลอยที่สุด / Biggest Win
-                  </div>
-                  <div className="flex items-center justify-center gap-2.5">
-                    <div className="flex flex-1 flex-col items-center gap-1.5 text-center">
-                      <TeamBadge team={biggestWin.homeTeam} size="md" />
-                      <span className="max-w-24 truncate text-xs font-semibold text-slate-700">{biggestWin.homeTeam.name}</span>
-                    </div>
-                    <span className="flex-none rounded-lg bg-slate-900 px-3 py-1.5 text-lg font-extrabold tabular-nums text-white">
-                      {biggestWin.homeScore}-{biggestWin.awayScore}
-                    </span>
-                    <div className="flex flex-1 flex-col items-center gap-1.5 text-center">
-                      <TeamBadge team={biggestWin.awayTeam} size="md" />
-                      <span className="max-w-24 truncate text-xs font-semibold text-slate-700">{biggestWin.awayTeam.name}</span>
-                    </div>
-                  </div>
-                  <p className="mt-3.5 text-center text-xs text-slate-400">
-                    {biggestWin.round} · ต่างกัน {biggestWinMargin} ประตู
-                  </p>
-                </div>
-              </Reveal>
-            )}
-            {topCleanSheetTeam && topCleanSheetEntry && (
-              <Reveal delay={100}>
-                <div className="flex h-full flex-col justify-center rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                  <div className="mb-4 flex items-center gap-2 text-sm font-semibold text-slate-900">
-                    <ShieldHalf className="h-4 w-4 text-emerald-600" />
-                    คลีนชีตมากที่สุด / Most Clean Sheets
-                  </div>
-                  <Link href={`/g15-womens-series/teams/${topCleanSheetTeam.id}`} className="flex items-center gap-3 hover:opacity-80">
-                    <TeamBadge team={topCleanSheetTeam} size="lg" />
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-bold text-slate-900">{topCleanSheetTeam.name}</p>
-                      <p className="text-xs text-slate-400">ไม่เสียประตูเลย / clean sheets</p>
-                    </div>
-                    <p className="flex-none text-3xl font-extrabold text-emerald-600">{topCleanSheetEntry[1]}</p>
-                  </Link>
-                </div>
-              </Reveal>
-            )}
-          </div>
         )}
 
         {/* 4 ภาคทั่วประเทศ */}
         {regionOrder.length > 0 && (
           <div className="mt-10">
             <Reveal>
-              <h2 className="mb-4 text-lg font-bold text-slate-900">
-                {isNational ? "ตัวแทน 4 ภาค" : "4 ภาคทั่วประเทศ"}{" "}
-                <span className="text-sm font-normal text-slate-400">/ {isNational ? "Regional Representatives" : "Regions"}</span>
-              </h2>
+              <SectionHead en={isNational ? "Representatives" : "Regions"} th={isNational ? "ตัวแทน 4 ภาค" : "4 ภาคทั่วประเทศ"} href={href("/g15-womens-series/teams")} />
             </Reveal>
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
               {regionOrder.map((region, i) => {
@@ -582,13 +557,15 @@ export default async function G15WomensSeriesPage({
                   <Reveal key={region} delay={i * 90}>
                     <Link
                       href={href("/g15-womens-series/teams")}
-                      className={`block rounded-2xl p-5 text-white shadow-sm transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl ${style.bg}`}
+                      className={`group relative isolate block overflow-hidden rounded-2xl p-5 text-white shadow-sm transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl ${style.bg}`}
                     >
-                      <MapPin className="h-5 w-5 text-white/80" />
-                      <p className="mt-3 text-base font-bold">{region}</p>
-                      <p className="text-xs text-white/70">{regionEn(region)}</p>
-                      <p className="mt-3 text-2xl font-extrabold">
-                        {count} <span className="text-xs font-normal text-white/80">ทีม</span>
+                      <div aria-hidden className="absolute inset-0 -z-10 bg-linear-to-br from-white/10 via-transparent to-black/25" />
+                      <MapPin aria-hidden className="absolute -bottom-5 -right-5 -z-10 h-28 w-28 text-white/15 transition-transform duration-500 group-hover:scale-110" />
+                      <p className={`${display.className} text-2xl uppercase leading-none tracking-wide text-white/90`}>{regionEn(region)}</p>
+                      <p className="mt-1 text-sm font-bold">{region}</p>
+                      <p className="mt-4 flex items-baseline gap-1.5">
+                        <span className={`${display.className} text-5xl leading-none`}>{count}</span>
+                        <span className="text-xs font-semibold text-white/80">ทีม</span>
                       </p>
                     </Link>
                   </Reveal>
@@ -599,13 +576,11 @@ export default async function G15WomensSeriesPage({
         )}
 
         {/* ลิงก์ด่วนไปทุกหมวด */}
-        <div className="mt-10">
+        <div className="mt-12">
           <Reveal>
-            <h2 className="mb-4 text-lg font-bold text-slate-900">
-              สำรวจ G15 <span className="text-sm font-normal text-slate-400">/ Explore</span>
-            </h2>
+            <SectionHead en="Explore" th="สำรวจ G15" />
           </Reveal>
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
             {quickLinks.map(({ href: path, icon: Icon, label, labelEn, color }, i) => (
               <Reveal key={path} delay={i * 70}>
                 <Link
