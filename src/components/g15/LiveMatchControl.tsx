@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useOptimistic, useRef, useState, useTransition } from "react";
-import { Play, Pause, Square, Undo2, Minus, Plus, Loader2, AlertCircle, Flag, X, ArrowLeftRight, Goal, Pencil, Trash2, ListOrdered } from "lucide-react";
+import { Play, Pause, Square, Undo2, Minus, Plus, Loader2, AlertCircle, Flag, X, ArrowLeftRight, Goal, Pencil, Trash2 } from "lucide-react";
 import { LiveClock } from "./LiveClock";
 import { TeamBadge } from "./TeamBadge";
 import { asPhase, readClock, formatMinute, minuteOrder, minuteInputValue, type ClockState } from "@/lib/g15-clock";
@@ -888,115 +888,159 @@ export function LiveMatchControl({
       )}
     </div>
 
-    {/* รายการเหตุการณ์ในเกม — เรียงตามเวลา แตะดินสอเพื่อแก้ / ถังขยะเพื่อลบ; ปุ่มด้านล่างเพิ่มย้อนหลังได้ (ไม่ต้องใช้นาฬิกาเกม) */}
-    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-      <div className="flex items-center gap-2 border-b border-slate-100 px-5 py-4 sm:px-6">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-g15-50 text-g15-600">
-          <ListOrdered className="h-4 w-4" />
-        </div>
-        <h2 className="font-semibold text-slate-900">
-          เหตุการณ์ในเกม <span className="font-normal text-slate-400">/ Match events ({timeline.length})</span>
-        </h2>
-      </div>
-      {error && !dialog && (
-        <p role="alert" className="mx-5 mt-3 flex items-center gap-1.5 rounded-lg bg-red-50 px-3 py-2 text-xs font-medium text-red-700 sm:mx-6">
-          <AlertCircle className="h-3.5 w-3.5" />
-          {error}
-        </p>
-      )}
-      {timeline.length === 0 ? (
-        <p className="px-6 py-8 text-center text-sm text-slate-400">ยังไม่มีเหตุการณ์ — กดปุ่มด้านล่างเพื่อเพิ่ม</p>
-      ) : (
-        <ul className="divide-y divide-slate-100">
-          {timeline.map((ev) => {
-            const side = sideOf(ev.teamId);
-            return (
-              <li key={`${ev.kind}-${ev.raw.id}`} className="flex items-center gap-3 px-4 py-2.5 sm:px-6">
-                <span className="w-14 flex-none text-center font-mono text-sm font-black text-g15-700">
-                  {formatMinute(ev.raw.minute, ev.raw.addedMinute) || "-"}
-                </span>
-                <span className="flex h-8 w-8 flex-none items-center justify-center rounded-lg bg-slate-50">
-                  {ev.kind === "goal" ? (
-                    <BallIcon className="h-4.5 w-4.5 text-emerald-600" />
-                  ) : ev.kind === "card" ? (
-                    <span className={`h-4.5 w-3.5 rounded-[3px] ${ev.raw.cardType === "RED" ? "bg-red-600" : "bg-amber-400"}`} />
-                  ) : (
-                    <ArrowLeftRight className="h-4 w-4 text-sky-500" />
-                  )}
-                </span>
-                <span className="min-w-0 flex-1">
-                  {ev.kind === "goal" ? (
-                    <>
-                      <span className="block truncate text-sm font-semibold text-slate-900">
-                        {ev.raw.playerName}
-                        {ev.raw.isOwnGoal && <span className="ml-1 text-xs font-bold text-red-500">(OG)</span>}
-                      </span>
-                      {ev.raw.assistName && <span className="block truncate text-xs text-slate-400">แอสซิสต์: {ev.raw.assistName}</span>}
-                    </>
-                  ) : ev.kind === "card" ? (
-                    <span className="block truncate text-sm font-semibold text-slate-900">
-                      {ev.raw.holderName}
-                      {ev.raw.holderRole === "OFFICIAL" && <span className="ml-1 text-xs font-normal text-slate-400">(เจ้าหน้าที่)</span>}
-                    </span>
-                  ) : (
-                    <span className="block min-w-0 text-sm">
-                      <span className="block truncate font-semibold text-emerald-700">▲ {ev.raw.playerInName}</span>
-                      <span className="block truncate text-xs text-red-500">▼ {ev.raw.playerOutName}</span>
-                    </span>
-                  )}
-                </span>
-                <span className="hidden flex-none sm:block" title={teams[side].name}>
-                  <TeamBadge team={teams[side]} size="sm" />
-                </span>
-                <button
-                  type="button"
-                  disabled={pending}
-                  onClick={() => editEvent(ev)}
-                  aria-label="แก้ไข"
-                  className="flex h-9 w-9 flex-none items-center justify-center rounded-lg text-slate-500 ring-1 ring-slate-200 transition-colors hover:bg-g15-50 hover:text-g15-700 disabled:opacity-40"
-                >
-                  <Pencil className="h-4 w-4" />
-                </button>
-                <button
-                  type="button"
-                  disabled={pending}
-                  onClick={() => removeEvent(ev)}
-                  aria-label="ลบ"
-                  className="flex h-9 w-9 flex-none items-center justify-center rounded-lg text-slate-400 ring-1 ring-slate-200 transition-colors hover:bg-red-50 hover:text-red-600 disabled:opacity-40"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
-              </li>
-            );
-          })}
-        </ul>
-      )}
-      {/* เพิ่มเหตุการณ์ย้อนหลัง แยกตามทีม */}
-      <div className="grid grid-cols-1 gap-3 border-t border-slate-100 bg-slate-50/60 px-4 py-4 sm:grid-cols-2 sm:px-6">
-        {(["home", "away"] as const).map((side) => (
-          <div key={side}>
-            <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-slate-600">
-              <TeamBadge team={teams[side]} size="sm" />
-              <span className="truncate">เพิ่ม — {teams[side].name}</span>
-            </p>
-            <div className="flex flex-wrap gap-1.5">
-              <button type="button" disabled={pending} onClick={() => open({ kind: "goal", side, fromList: true }, { minute: "" })} className={`${actionBtn} bg-emerald-600 text-white hover:bg-emerald-500`}>
-                <Plus className="h-3.5 w-3.5" /> ประตู
-              </button>
-              <button type="button" disabled={pending} onClick={() => open({ kind: "card", side, cardType: "YELLOW", fromList: true }, { minute: "" })} className={`${actionBtn} bg-amber-400 text-amber-950 hover:bg-amber-300`}>
-                <Plus className="h-3.5 w-3.5" /> ใบเหลือง
-              </button>
-              <button type="button" disabled={pending} onClick={() => open({ kind: "card", side, cardType: "RED", fromList: true }, { minute: "" })} className={`${actionBtn} bg-red-600 text-white hover:bg-red-500`}>
-                <Plus className="h-3.5 w-3.5" /> ใบแดง
-              </button>
-              <button type="button" disabled={pending} onClick={() => open({ kind: "sub", side, fromList: true }, { minute: "" })} className={`${actionBtn} bg-sky-500 text-white hover:bg-sky-400`}>
-                <Plus className="h-3.5 w-3.5" /> เปลี่ยนตัว
-              </button>
-            </div>
+    {/* เหตุการณ์ในเกม แยก 3 หมวด — ประตู / เปลี่ยนตัว / ใบเหลือง-แดง · แต่ละหมวดเรียงตามเวลา แก้ไข/ลบได้ และเพิ่มย้อนหลังได้ (ไม่ต้องใช้นาฬิกาเกม) */}
+    {error && !dialog && (
+      <p role="alert" className="flex items-center gap-1.5 rounded-xl bg-red-50 px-4 py-2.5 text-xs font-medium text-red-700 ring-1 ring-red-200">
+        <AlertCircle className="h-3.5 w-3.5" />
+        {error}
+      </p>
+    )}
+    {(
+      [
+        {
+          kind: "goal" as const,
+          title: "ประตู",
+          en: "Goals",
+          icon: <BallIcon className="h-4.5 w-4.5" />,
+          tone: "bg-emerald-50 text-emerald-600",
+          empty: "ยังไม่มีประตู",
+        },
+        {
+          kind: "sub" as const,
+          title: "เปลี่ยนตัว",
+          en: "Substitutions",
+          icon: <ArrowLeftRight className="h-4 w-4" />,
+          tone: "bg-sky-50 text-sky-600",
+          empty: "ยังไม่มีการเปลี่ยนตัว",
+        },
+        {
+          kind: "card" as const,
+          title: "ใบเหลือง / ใบแดง",
+          en: "Cards",
+          icon: (
+            <span className="flex gap-0.5">
+              <span className="h-4 w-3 rounded-[2px] bg-amber-400" />
+              <span className="h-4 w-3 rounded-[2px] bg-red-600" />
+            </span>
+          ),
+          tone: "bg-amber-50",
+          empty: "ยังไม่มีใบเหลือง/ใบแดง",
+        },
+      ]
+    ).map((sec) => {
+      const rows = timeline.filter((ev) => ev.kind === sec.kind);
+      return (
+        <div key={sec.kind} className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <div className="flex items-center gap-2.5 border-b border-slate-100 px-5 py-3.5 sm:px-6">
+            <div className={`flex h-9 w-9 items-center justify-center rounded-xl ${sec.tone}`}>{sec.icon}</div>
+            <h2 className="font-semibold text-slate-900">
+              {sec.title} <span className="font-normal text-slate-400">/ {sec.en}</span>
+            </h2>
+            <span className="ml-auto rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-bold text-slate-600">{rows.length}</span>
           </div>
-        ))}
-      </div>
-    </div>
+
+          {rows.length === 0 ? (
+            <p className="px-6 py-5 text-center text-sm text-slate-400">{sec.empty}</p>
+          ) : (
+            <ul className="divide-y divide-slate-100">
+              {rows.map((ev) => {
+                const side = sideOf(ev.teamId);
+                return (
+                  <li key={`${ev.kind}-${ev.raw.id}`} className="flex items-center gap-3 px-4 py-2.5 sm:px-6">
+                    <span className="w-14 flex-none text-center font-mono text-sm font-black text-g15-700">
+                      {formatMinute(ev.raw.minute, ev.raw.addedMinute) || "-"}
+                    </span>
+                    {ev.kind === "card" && (
+                      <span className={`h-5 w-3.5 flex-none rounded-[3px] ${ev.raw.cardType === "RED" ? "bg-red-600" : "bg-amber-400"}`} />
+                    )}
+                    <span className="min-w-0 flex-1">
+                      {ev.kind === "goal" ? (
+                        <>
+                          <span className="block truncate text-sm font-semibold text-slate-900">
+                            {ev.raw.playerName}
+                            {ev.raw.isOwnGoal && <span className="ml-1 text-xs font-bold text-red-500">(OG)</span>}
+                          </span>
+                          {ev.raw.assistName && <span className="block truncate text-xs text-slate-400">แอสซิสต์: {ev.raw.assistName}</span>}
+                        </>
+                      ) : ev.kind === "card" ? (
+                        <>
+                          <span className="block truncate text-sm font-semibold text-slate-900">
+                            {ev.raw.holderName}
+                            {ev.raw.holderRole === "OFFICIAL" && <span className="ml-1 text-xs font-normal text-slate-400">(เจ้าหน้าที่)</span>}
+                          </span>
+                          {ev.raw.reason && <span className="block truncate text-xs text-slate-400">{ev.raw.reason}</span>}
+                        </>
+                      ) : (
+                        <span className="block min-w-0 text-sm">
+                          <span className="block truncate font-semibold text-emerald-700">▲ {ev.raw.playerInName}</span>
+                          <span className="block truncate text-xs text-red-500">▼ {ev.raw.playerOutName}</span>
+                        </span>
+                      )}
+                    </span>
+                    <span className="hidden max-w-40 flex-none items-center gap-1.5 text-xs text-slate-500 md:flex" title={teams[side].name}>
+                      <TeamBadge team={teams[side]} size="sm" />
+                      <span className="truncate">{teams[side].name}</span>
+                    </span>
+                    <span className="flex-none md:hidden">
+                      <TeamBadge team={teams[side]} size="sm" />
+                    </span>
+                    <button
+                      type="button"
+                      disabled={pending}
+                      onClick={() => editEvent(ev)}
+                      aria-label="แก้ไข"
+                      className="flex h-9 w-9 flex-none items-center justify-center rounded-lg text-slate-500 ring-1 ring-slate-200 transition-colors hover:bg-g15-50 hover:text-g15-700 disabled:opacity-40"
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </button>
+                    <button
+                      type="button"
+                      disabled={pending}
+                      onClick={() => removeEvent(ev)}
+                      aria-label="ลบ"
+                      className="flex h-9 w-9 flex-none items-center justify-center rounded-lg text-slate-400 ring-1 ring-slate-200 transition-colors hover:bg-red-50 hover:text-red-600 disabled:opacity-40"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+
+          {/* เพิ่มในหมวดนี้ แยกตามทีม */}
+          <div className="flex flex-wrap gap-2 border-t border-slate-100 bg-slate-50/60 px-4 py-3 sm:px-6">
+            {(["home", "away"] as const).map((side) =>
+              sec.kind === "card" ? (
+                <span key={side} className="flex flex-wrap items-center gap-1.5">
+                  <TeamBadge team={teams[side]} size="sm" />
+                  <button type="button" disabled={pending} onClick={() => open({ kind: "card", side, cardType: "YELLOW", fromList: true }, { minute: "" })} className={`${actionBtn} bg-amber-400 text-amber-950 hover:bg-amber-300`}>
+                    <Plus className="h-3.5 w-3.5" /> ใบเหลือง
+                  </button>
+                  <button type="button" disabled={pending} onClick={() => open({ kind: "card", side, cardType: "RED", fromList: true }, { minute: "" })} className={`${actionBtn} bg-red-600 text-white hover:bg-red-500`}>
+                    <Plus className="h-3.5 w-3.5" /> ใบแดง
+                  </button>
+                </span>
+              ) : (
+                <button
+                  key={side}
+                  type="button"
+                  disabled={pending}
+                  onClick={() => (sec.kind === "goal" ? open({ kind: "goal", side, fromList: true }, { minute: "" }) : open({ kind: "sub", side, fromList: true }, { minute: "" }))}
+                  className={`${actionBtn} min-w-0 max-w-full bg-white text-slate-700 ring-1 ring-slate-200 hover:bg-slate-50`}
+                >
+                  <Plus className={`h-3.5 w-3.5 flex-none ${sec.kind === "goal" ? "text-emerald-600" : "text-sky-500"}`} />
+                  <TeamBadge team={teams[side]} size="sm" />
+                  <span className="truncate">
+                    {sec.kind === "goal" ? "ประตู" : "เปลี่ยนตัว"} {teams[side].name}
+                  </span>
+                </button>
+              ),
+            )}
+          </div>
+        </div>
+      );
+    })}
     </>
   );
 }
