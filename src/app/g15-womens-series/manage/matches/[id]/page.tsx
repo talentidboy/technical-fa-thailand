@@ -32,6 +32,7 @@ import { QuickScoreRow } from "@/components/g15/QuickScoreRow";
 import { OfficialCountdown } from "@/components/g15/OfficialCountdown";
 import { LiveMatchControl, type LiveRoster } from "@/components/g15/LiveMatchControl";
 import { PlayerOfMatchPicker } from "@/components/g15/PlayerOfMatchPicker";
+import { ManageDialogButton } from "@/components/g15/ManageDialogButton";
 import { formatMatchDateTime } from "@/lib/g15";
 import { withStage, stageInfo, isLive, type G15Stage } from "@/lib/g15-stage";
 import { LOGO_URL } from "@/lib/brand";
@@ -312,6 +313,7 @@ export default async function G15ManageMatchPage({
   };
   const awaySplit = splitByLineupStatus(eligibleAwayPlayers, awayInLineup.size > 0);
 
+  const potmPlayer = rosterPlayers.find((p) => p.id === match.playerOfMatchId);
   // ตัวเลือก Player of the Match — คนในไลน์อัพนัดนี้ (ตัวจริงก่อน) ถ้ายังไม่มีไลน์อัพใช้ทั้งทีม
   const potmCandidates = (players: (RosterPlayer & { photoUrl: string | null })[]) =>
     players
@@ -391,25 +393,58 @@ export default async function G15ManageMatchPage({
           subAction={recordLiveSub}
         />
 
-        {/* ผู้เล่นยอดเยี่ยมประจำนัด */}
-        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-          <div className="flex items-center gap-2 border-b border-slate-100 px-6 py-4">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-50 text-amber-500">
-              <Star className="h-4 w-4 fill-amber-400" />
-            </div>
-            <h2 className="font-semibold text-slate-900">
-              Player of the Match <span className="font-normal text-slate-400">/ ผู้เล่นยอดเยี่ยมประจำนัด</span>
-            </h2>
-          </div>
-          <PlayerOfMatchPicker
-            matchId={match.id}
-            selectedId={match.playerOfMatchId}
-            action={setPlayerOfMatch}
-            teams={[
-              { team: match.homeTeam, players: potmCandidates(eligibleHomePlayers) },
-              { team: match.awayTeam, players: potmCandidates(eligibleAwayPlayers) },
-            ]}
-          />
+        {/* ไลน์อัพ + ผู้เล่นยอดเยี่ยมประจำนัด — ปุ่มการ์ด กดแล้วเปิดป็อปอัพ */}
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <ManageDialogButton
+            title="ไลน์อัพ"
+            subtitle="Lineups"
+            tone="sky"
+            icon={<Users className="h-5 w-5" />}
+            summary={
+              match.lineups.length > 0
+                ? `${match.homeTeam.name} ${homeInLineup.size} คน · ${match.awayTeam.name} ${awayInLineup.size} คน`
+                : "ยังไม่ได้บันทึกไลน์อัพ"
+            }
+          >
+              <FormWithToast action={updateLineup} className="p-6">
+                <input type="hidden" name="matchId" value={match.id} />
+                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                  <LineupTeamTable team={match.homeTeam} teamId={match.homeTeamId} players={homePlayers} lineupByPlayerId={lineupByPlayerId} />
+                  <LineupTeamTable team={match.awayTeam} teamId={match.awayTeamId} players={awayPlayers} lineupByPlayerId={lineupByPlayerId} />
+                </div>
+                <div className="sticky bottom-0 -mx-6 -mb-6 mt-5 border-t border-slate-100 bg-white/95 px-6 py-3 backdrop-blur">
+                <button
+                  type="submit"
+                  className="inline-flex items-center gap-2 rounded-lg bg-sky-600 px-5 py-2.5 text-sm font-medium text-white shadow-sm shadow-sky-200 transition-colors hover:bg-sky-700"
+                >
+                  บันทึกไลน์อัพ
+                </button>
+                </div>
+              </FormWithToast>
+          </ManageDialogButton>
+          <ManageDialogButton
+            title="Player of the Match"
+            subtitle="ผู้เล่นยอดเยี่ยม"
+            tone="amber"
+            icon={<Star className="h-5 w-5 fill-amber-400" />}
+            summary={
+              potmPlayer
+                ? `${potmPlayer.firstNameTh} ${potmPlayer.lastNameTh} · ${teamById(potmPlayer.teamId).name}`
+                : match.playerOfMatchId
+                  ? "เลือกแล้ว"
+                  : "ยังไม่ได้เลือก"
+            }
+          >
+              <PlayerOfMatchPicker
+                matchId={match.id}
+                selectedId={match.playerOfMatchId}
+                action={setPlayerOfMatch}
+                teams={[
+                  { team: match.homeTeam, players: potmCandidates(eligibleHomePlayers) },
+                  { team: match.awayTeam, players: potmCandidates(eligibleAwayPlayers) },
+                ]}
+              />
+          </ManageDialogButton>
         </div>
 
         {/* แก้ผลด้วยตนเอง — สำหรับกรอกผลย้อนหลัง/แก้สกอร์ (ไม่ได้ใช้นาฬิกาเกมสด) */}
@@ -451,29 +486,6 @@ export default async function G15ManageMatchPage({
             matchLabel={`${match.matchNo != null ? `Match ${match.matchNo} · ` : ""}${match.round}`}
           />
         )}
-
-        {/* ไลน์อัพ */}
-        <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
-          <div className="flex items-center gap-2 border-b border-slate-100 px-6 py-4">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-sky-50 text-sky-600">
-              <Users className="h-4 w-4" />
-            </div>
-            <h2 className="font-semibold text-slate-900">ไลน์อัพ ({match.lineups.length})</h2>
-          </div>
-          <FormWithToast action={updateLineup} className="p-6">
-            <input type="hidden" name="matchId" value={match.id} />
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-              <LineupTeamTable team={match.homeTeam} teamId={match.homeTeamId} players={homePlayers} lineupByPlayerId={lineupByPlayerId} />
-              <LineupTeamTable team={match.awayTeam} teamId={match.awayTeamId} players={awayPlayers} lineupByPlayerId={lineupByPlayerId} />
-            </div>
-            <button
-              type="submit"
-              className="mt-5 inline-flex items-center gap-2 rounded-lg bg-sky-600 px-5 py-2.5 text-sm font-medium text-white shadow-sm shadow-sky-200 transition-colors hover:bg-sky-700"
-            >
-              บันทึกไลน์อัพ
-            </button>
-          </FormWithToast>
-        </div>
 
         {/* ทีมงานผู้ตัดสิน + สกอร์แยกครึ่งเวลา */}
         <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
