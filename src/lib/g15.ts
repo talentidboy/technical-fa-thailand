@@ -346,7 +346,7 @@ export function getNationalBracket(
   return [
     build("SF1", MATCH_NO_SEMI_1, ROUND_SEMI, ["ที่ 1 กลุ่ม A", "Winner Group A", groupPos("A", 1)], ["ที่ 2 กลุ่ม B", "Runner-up Group B", groupPos("B", 2)]),
     build("SF2", MATCH_NO_SEMI_2, ROUND_SEMI, ["ที่ 1 กลุ่ม B", "Winner Group B", groupPos("B", 1)], ["ที่ 2 กลุ่ม A", "Runner-up Group A", groupPos("A", 2)]),
-    build("THIRD", MATCH_NO_THIRD, ROUND_THIRD, ["ผู้แพ้นัดที่ 13", "Loser Match 13", resultOf(MATCH_NO_SEMI_1, "loser")], ["ผู้แพ้นัดที่ 14", "Loser Match 14", resultOf(MATCH_NO_SEMI_2, "loser")]),
-    build("FINAL", MATCH_NO_FINAL, ROUND_FINAL, ["ผู้ชนะนัดที่ 13", "Winner Match 13", resultOf(MATCH_NO_SEMI_1, "winner")], ["ผู้ชนะนัดที่ 14", "Winner Match 14", resultOf(MATCH_NO_SEMI_2, "winner")]),
+    build("THIRD", MATCH_NO_THIRD, ROUND_THIRD, ["ผู้แพ้รอบรองฯ คู่ที่ 1", "Loser Semi-final 1", resultOf(MATCH_NO_SEMI_1, "loser")], ["ผู้แพ้รอบรองฯ คู่ที่ 2", "Loser Semi-final 2", resultOf(MATCH_NO_SEMI_2, "loser")]),
+    build("FINAL", MATCH_NO_FINAL, ROUND_FINAL, ["ผู้ชนะรอบรองฯ คู่ที่ 1", "Winner Semi-final 1", resultOf(MATCH_NO_SEMI_1, "winner")], ["ผู้ชนะรอบรองฯ คู่ที่ 2", "Winner Semi-final 2", resultOf(MATCH_NO_SEMI_2, "winner")]),
   ];
 }

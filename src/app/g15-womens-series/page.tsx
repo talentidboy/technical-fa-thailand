@@ -20,6 +20,7 @@ import {
   hasPenalties,
   isLive,
   needsLiveSync,
+  matchdayMap,
   hasLiveScore,
   projectLive,
   matchWinnerId,
@@ -177,6 +178,7 @@ export default async function G15WomensSeriesPage({
   const nextMatch = matches
     .filter((m) => m.status === "SCHEDULED" && m.matchDate && m.matchDate.getTime() > now.getTime())
     .sort((a, b) => a.matchDate!.getTime() - b.matchDate!.getTime())[0];
+  const matchdays = matchdayMap(matches);
   const spotlightMatches = liveMatches.length > 0 ? liveMatches : [nextMatch ?? recentResults[0]].filter((m) => m != null);
   const spotlightMode = liveMatches.length > 0 ? "live" : nextMatch ? "upcoming" : "result";
 
@@ -308,7 +310,7 @@ export default async function G15WomensSeriesPage({
           <Reveal delay={200}>
             <div className={`mt-8 grid gap-6 ${spotlightMatches.length > 1 ? "lg:grid-cols-2" : ""}`}>
               {spotlightMatches.map((m) => (
-                <MatchSpotlight key={m.id} match={m} mode={spotlightMode} serverNow={now.getTime()} />
+                <MatchSpotlight key={m.id} match={{ ...m, matchNo: matchdays.get(m.id) ?? null }} mode={spotlightMode} serverNow={now.getTime()} />
               ))}
             </div>
           </Reveal>

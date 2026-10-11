@@ -12,6 +12,7 @@ import {
   withStage,
   isLive,
   needsLiveSync,
+  matchdayMap,
   hasLiveScore,
   type G15Stage,
 } from "@/lib/g15-stage";
@@ -126,6 +127,7 @@ export default async function G15MatchDetailPage({
     return Array.from(byName.entries()).map(([name, mins]) => `${name}${mins.length ? ` ${mins.map((m) => `${m}'`).join(", ")}` : ""}`);
   };
   const style = roundStyle(match.round);
+  const matchday = matchdayMap(allMatches).get(match.id) ?? null;
   const stage = match.stage as G15Stage;
 
   // ผู้ทำประตูใต้ชื่อทีมบนสกอร์บอร์ด — รวมนาทีต่อคน เช่น "ณพิชญา แสนปาง 8', 34'"
@@ -239,7 +241,7 @@ export default async function G15MatchDetailPage({
                 )}
               </span>
               <span className={`rounded-full px-3 py-1 text-[11px] font-bold text-white ${style.bg}`}>
-                {match.matchNo != null && `นัดที่ ${match.matchNo} · `}
+                {matchday != null && `นัดที่ ${matchday} · `}
                 {match.round}
                 {roundEn(match.round) && <span className="font-medium opacity-80"> / {roundEn(match.round)}</span>}
               </span>
@@ -253,7 +255,7 @@ export default async function G15MatchDetailPage({
                     kind: isFinished ? "result" : "matchday",
                     round: match.round,
                     roundEn: roundEn(match.round),
-                    matchNo: match.matchNo,
+                    matchNo: matchday,
                     dateLabel: formatMatchDateTime(match.matchDate),
                     venue: match.venue,
                     homeTeam: { name: match.homeTeam.name, logoUrl: match.homeTeam.logoUrl },

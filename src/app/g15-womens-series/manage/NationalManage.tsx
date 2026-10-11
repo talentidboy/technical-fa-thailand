@@ -19,6 +19,7 @@ import {
   matchWinnerId,
   isLive,
   TEAM_OF_ROUND_SLOTS,
+  matchdayMap,
 } from "@/lib/g15-stage";
 import {
   updateMatchScore,
@@ -167,7 +168,7 @@ export async function NationalManage() {
           ))}
         </select>
       </label>
-      <Field label="นัดที่" name="matchNo" type="number" defaultValue={m?.matchNo != null ? String(m.matchNo) : ""} />
+      <Field label="เลขคู่ตามผัง (1–16 ใช้จับคู่สายน็อกเอาต์)" name="matchNo" type="number" defaultValue={m?.matchNo != null ? String(m.matchNo) : ""} />
       <label className="flex flex-col gap-1.5">
         <span className="text-sm font-medium text-slate-700">
           ทีมเหย้า<span className="text-red-500"> *</span>
@@ -205,6 +206,7 @@ export async function NationalManage() {
     </>
   );
 
+  const matchdays = matchdayMap(matches);
   const matchRow = (m: (typeof matches)[number]) => (
     <QuickScoreRow
       key={`${m.id}-${m.homeScore}-${m.awayScore}-${m.homePenalty}-${m.awayPenalty}-${m.status}`}
@@ -213,7 +215,7 @@ export async function NationalManage() {
       match={{
         id: m.id,
         round: m.round,
-        matchNo: m.matchNo,
+        matchNo: matchdays.get(m.id) ?? null,
         status: m.status,
         homeScore: m.homeScore,
         awayScore: m.awayScore,
@@ -227,7 +229,7 @@ export async function NationalManage() {
       }}
       extra={
         <ModalTrigger
-          label={`แก้ไขนัด${m.matchNo != null ? `ที่ ${m.matchNo}` : ""}: ${m.homeTeam.name} vs ${m.awayTeam.name}`}
+          label={`แก้ไขนัด${matchdays.has(m.id) ? `ที่ ${matchdays.get(m.id)}` : ""}: ${m.homeTeam.name} vs ${m.awayTeam.name}`}
           buttonContent={<Pencil className="h-3.5 w-3.5" />}
           buttonClassName="inline-flex items-center justify-center rounded-lg border border-slate-200 p-2 text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-900"
         >
@@ -265,7 +267,7 @@ export async function NationalManage() {
       <div className="flex items-center gap-2">
         <Wand2 className="h-4 w-4 text-g15-600" />
         <h4 className="text-sm font-semibold text-slate-900">
-          {phase === "SEMI" ? "สร้างคู่รอบรองชนะเลิศ (นัดที่ 13-14)" : "สร้างนัดชิงที่ 3 และชิงชนะเลิศ (นัดที่ 15-16)"}
+          {phase === "SEMI" ? "สร้างคู่รอบรองชนะเลิศ (คู่ที่ 13-14 ตามผัง)" : "สร้างนัดชิงที่ 3 และชิงชนะเลิศ (คู่ที่ 15-16 ตามผัง)"}
         </h4>
       </div>
       <p className="mt-1 text-xs text-slate-500">{hint}</p>
@@ -273,7 +275,7 @@ export async function NationalManage() {
         {ties.map((t) => (
           <div key={t.key} className="rounded-xl bg-slate-50 p-3">
             <p className="text-xs font-semibold text-slate-700">
-              นัดที่ {t.matchNo} · {t.round}:{" "}
+              คู่ที่ {t.matchNo} · {t.round}:{" "}
               <span className={t.home.team ? "text-slate-900" : "text-slate-400"}>{t.home.team?.name ?? t.home.placeholder}</span>
               {" vs "}
               <span className={t.away.team ? "text-slate-900" : "text-slate-400"}>{t.away.team?.name ?? t.away.placeholder}</span>

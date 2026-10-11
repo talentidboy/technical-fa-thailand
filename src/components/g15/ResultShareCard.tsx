@@ -145,7 +145,7 @@ export function ResultShareCard({ data, fileName }: { data: ShareCardData; fileN
             <div>
               <div style={{ fontSize: 26, fontWeight: 800, letterSpacing: 0.5, whiteSpace: "nowrap" }}>FA THAILAND G15 WOMEN&apos;S FOOTBALL SERIES 2026</div>
               <div style={{ fontSize: 28, color: "#d2c4f3", marginTop: 6 }}>
-                {data.matchNo != null && `Match ${data.matchNo} · `}
+                {data.matchNo != null && `Matchday ${data.matchNo} · `}
                 {data.round} / {data.roundEn}
               </div>
             </div>

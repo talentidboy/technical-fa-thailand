@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { LOGO_URL } from "@/lib/brand";
 import { OfficialCountdown } from "@/components/g15/OfficialCountdown";
+import { matchdayMap } from "@/lib/g15-stage";
 import { ArrowLeft, ClipboardList } from "lucide-react";
 
 const BANGKOK_TZ = "Asia/Bangkok";
@@ -27,6 +28,7 @@ export default async function G15CountdownPage() {
   });
 
   const now = new Date();
+  const matchdays = matchdayMap(matches);
   // นัดถัดไป = นัดแรกที่ยังไม่จบและเวลาเตะยังไม่ผ่านไปเกิน 2 ชั่วโมง (เผื่อกำลังแข่งอยู่)
   const nextMatch = matches.find(
     (m) => m.status !== "FINISHED" && m.matchDate!.getTime() + 2 * 3600_000 > now.getTime(),
@@ -99,8 +101,8 @@ export default async function G15CountdownPage() {
                   homeTeam={m.homeTeam.name}
                   awayTeam={m.awayTeam.name}
                   venue={m.venue}
-                  matchLabel={`${m.matchNo != null ? `Match ${m.matchNo} · ` : ""}${m.round}`}
-                  title={`${m.matchNo != null ? `นัด ${m.matchNo} · ` : ""}${m.homeTeam.name} vs ${m.awayTeam.name}`}
+                  matchLabel={`${matchdays.has(m.id) ? `Matchday ${matchdays.get(m.id)} · ` : ""}${m.round}`}
+                  title={`${matchdays.has(m.id) ? `นัด ${matchdays.get(m.id)} · ` : ""}${m.homeTeam.name} vs ${m.awayTeam.name}`}
                 />
               ))}
             </section>

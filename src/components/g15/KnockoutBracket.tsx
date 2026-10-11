@@ -93,9 +93,8 @@ function TieCard({ tie, variant }: { tie: BracketTie; variant: Variant }) {
         <div className={`flex items-center justify-between gap-2 px-4 py-2.5 ${v.header}`}>
           <span className="flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider">
             {variant === "final" ? <Trophy className="h-4 w-4" /> : variant === "third" ? <Medal className="h-4 w-4" /> : <Swords className="h-3.5 w-3.5" />}
-            นัดที่ {tie.matchNo}
+            {title}
           </span>
-          <span className={`text-[11px] font-semibold ${v.sub}`}>{title}</span>
         </div>
         <div className="divide-y divide-slate-100">
           <SideRow side={tie.home} decided={decided} variant={variant} />

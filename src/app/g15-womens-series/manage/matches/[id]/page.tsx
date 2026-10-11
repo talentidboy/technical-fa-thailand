@@ -34,7 +34,7 @@ import { LiveMatchControl, type LiveRoster } from "@/components/g15/LiveMatchCon
 import { PlayerOfMatchPicker } from "@/components/g15/PlayerOfMatchPicker";
 import { ManageDialogButton } from "@/components/g15/ManageDialogButton";
 import { formatMatchDateTime } from "@/lib/g15";
-import { withStage, stageInfo, isLive, type G15Stage } from "@/lib/g15-stage";
+import { withStage, stageInfo, isLive, matchdayMap, type G15Stage } from "@/lib/g15-stage";
 import { LOGO_URL } from "@/lib/brand";
 import { ArrowLeft, ClipboardList, Target, LogIn, Trash2, ChevronDown, ExternalLink, Users, Star } from "lucide-react";
 
@@ -243,6 +243,12 @@ export default async function G15ManageMatchPage({
     secondHalfAddedTime: match.secondHalfAddedTime,
   };
   const serverNow = new Date().getTime();
+  // "นัดที่" = วันแข่งของรอบแบ่งกลุ่ม (คำนวณจากวันที่ของทุกนัดในรอบเดียวกัน)
+  const stageMatchDates = await prisma.g15Match.findMany({
+    where: { stage: match.stage },
+    select: { id: true, stage: true, round: true, matchDate: true },
+  });
+  const matchday = matchdayMap(stageMatchDates).get(match.id) ?? null;
 
   const [rosterPlayers, rosterOfficials] = await Promise.all([
     // คนที่ไม่อยู่ในรายชื่อปัจจุบันไม่ต้องให้เลือก ยกเว้นคนที่อยู่ในไลน์อัพนัดนี้อยู่แล้ว (นัดรอบก่อน) — ไม่งั้นกดบันทึกไลน์อัพซ้ำแล้วคนนั้นจะหลุด
@@ -363,7 +369,7 @@ export default async function G15ManageMatchPage({
             <TeamBadge team={match.awayTeam} size="sm" />
           </div>
           <p className="mt-1 flex items-center gap-1.5 text-sm text-slate-500">
-            {stageInfo(match.stage as G15Stage).label} · {match.matchNo != null && `นัดที่ ${match.matchNo} · `}
+            {stageInfo(match.stage as G15Stage).label} · {matchday != null && `นัดที่ ${matchday} · `}
             {match.round} · ไลน์อัพ ทีมงานผู้ตัดสิน ผู้ทำประตู เปลี่ยนตัว และใบเหลือง-ใบแดง ของนัดนี้
             <Link
               href={`/g15-womens-series/matches/${match.id}`}
@@ -461,7 +467,7 @@ export default async function G15ManageMatchPage({
             match={{
               id: match.id,
               round: match.round,
-              matchNo: match.matchNo,
+              matchNo: matchday,
               status: match.status,
               homeScore: match.homeScore,
               awayScore: match.awayScore,
@@ -483,7 +489,7 @@ export default async function G15ManageMatchPage({
             homeTeam={match.homeTeam.name}
             awayTeam={match.awayTeam.name}
             venue={match.venue}
-            matchLabel={`${match.matchNo != null ? `Match ${match.matchNo} · ` : ""}${match.round}`}
+            matchLabel={`${matchday != null ? `Matchday ${matchday} · ` : ""}${match.round}`}
           />
         )}
 

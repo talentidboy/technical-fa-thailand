@@ -172,3 +172,13 @@ export function needsLiveSync(m: LiveInput, now: Date = new Date()) {
   if (m.status === "FINISHED" || m.clockPhase === "FULL_TIME" || !m.matchDate) return false;
   return Math.abs(m.matchDate.getTime() - now.getTime()) < SYNC_WINDOW_MS;
 }
+
+// "นัดที่" ที่แสดงบนเว็บ = วันแข่งของรอบแบ่งกลุ่ม (นัด 1 = วันแรก, นัด 2 = วันที่สอง, ...) — ทุกคู่ที่เตะวันเดียวกันเป็นนัดเดียวกัน
+// คนละอย่างกับ matchNo ในฐานข้อมูล (เลขคู่ตามผังทางการ 1–16 ที่ใช้จับคู่สายน็อกเอาต์) ซึ่งไม่แสดงให้ผู้ชมเห็นแล้ว
+// รอบน็อกเอาต์ไม่มีเลขนัด (แสดงชื่อรอบแทน) → ไม่อยู่ใน Map
+const bangkokDay = (d: Date) => new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Bangkok" }).format(d);
+export function matchdayMap(matches: { id: number; stage: string; round: string; matchDate: Date | null }[]) {
+  const group = matches.filter((m) => m.stage === "NATIONAL" && isGroupRound(m.round) && m.matchDate);
+  const days = [...new Set(group.map((m) => bangkokDay(m.matchDate!)))].sort();
+  return new Map(group.map((m) => [m.id, days.indexOf(bangkokDay(m.matchDate!)) + 1]));
+}

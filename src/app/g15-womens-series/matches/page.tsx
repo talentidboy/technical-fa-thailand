@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { REGION_ORDER } from "@/lib/g15-region";
-import { parseStage, NATIONAL_ROUNDS, needsLiveSync } from "@/lib/g15-stage";
+import { parseStage, NATIONAL_ROUNDS, needsLiveSync, matchdayMap } from "@/lib/g15-stage";
 import { LiveSync } from "@/components/g15/LiveSync";
 import { G15Chrome } from "@/components/g15/G15Chrome";
 import { HeroArt } from "@/components/g15/HeroArt";
@@ -57,7 +57,10 @@ export default async function G15MatchesPage({
             {/* key ตามรอบ — สลับรอบแล้วให้บอร์ดเลือกวันเริ่มต้นใหม่ ไม่ค้างวันที่ของอีกรอบ */}
             <PublicMatchesBoard
               key={stage}
-              matches={matches}
+              matches={(() => {
+                const md = matchdayMap(matches);
+                return matches.map((m) => ({ ...m, matchNo: md.get(m.id) ?? null }));
+              })()}
               regionOrder={stage === "NATIONAL" ? NATIONAL_ROUNDS : REGION_ORDER}
             />
           </div>
