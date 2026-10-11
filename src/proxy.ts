@@ -23,6 +23,7 @@ export function proxy(request: NextRequest) {
     "/g15-womens-series/stats",
     "/g15-womens-series/teams",
     "/g15-womens-series/stadium",
+    "/g15-womens-series/gallery",
   ];
 
   const isPublic =

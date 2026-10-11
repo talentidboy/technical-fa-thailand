@@ -1300,3 +1300,48 @@ export async function deleteLiveEvent(formData: FormData): Promise<ActionResult>
     revalidateG15(undefined, matchId);
   });
 }
+
+// ===== แกลเลอรีภาพ =====
+// รูปถูกย่อในเบราว์เซอร์แล้ว (ภาพเต็ม ≤ 2000px + ภาพย่อ ≤ 640px เป็น WebP) จึงส่งทีละรูปได้ไม่ติดลิมิตขนาด
+export async function uploadGalleryPhoto(formData: FormData): Promise<ActionResult> {
+  await requireAdminOrStaff();
+  return attempt(async () => {
+    const file = formData.get("photo");
+    const thumb = formData.get("thumb");
+    if (!(file instanceof File) || !(thumb instanceof File)) throw new Error("ไม่พบไฟล์รูป");
+    const matchId = int(formData, "matchId");
+    let stage = String(formData.get("stage") ?? "NATIONAL") === "REGIONAL" ? "REGIONAL" : "NATIONAL";
+    if (matchId) {
+      const match = await prisma.g15Match.findUnique({ where: { id: matchId }, select: { stage: true } });
+      if (!match) throw new Error("ไม่พบนัดการแข่งขัน");
+      stage = match.stage;
+    }
+    const [url, thumbUrl] = await Promise.all([saveUploadedPhoto(file), saveUploadedPhoto(thumb)]);
+    if (!url || !thumbUrl) throw new Error("อัปโหลดรูปไม่สำเร็จ");
+    await prisma.g15Photo.create({
+      data: {
+        stage,
+        matchId: matchId ?? null,
+        url,
+        thumbUrl,
+        width: int(formData, "width"),
+        height: int(formData, "height"),
+        caption: str(formData, "caption"),
+      },
+    });
+    revalidatePath("/g15-womens-series/gallery");
+    if (matchId) revalidatePath(`/g15-womens-series/matches/${matchId}`);
+  });
+}
+
+export async function deleteGalleryPhoto(formData: FormData): Promise<ActionResult> {
+  await requireAdminOrStaff();
+  return attempt(async () => {
+    const id = Number(formData.get("id"));
+    const photo = await prisma.g15Photo.findUnique({ where: { id }, select: { matchId: true } });
+    if (!photo) throw new Error("ไม่พบรูปนี้");
+    await prisma.g15Photo.delete({ where: { id } });
+    revalidatePath("/g15-womens-series/gallery");
+    if (photo.matchId) revalidatePath(`/g15-womens-series/matches/${photo.matchId}`);
+  });
+}

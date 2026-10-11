@@ -5,7 +5,7 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { G15_IMAGE_URL } from "@/lib/brand";
 import { withStage, DEFAULT_STAGE, type G15Stage } from "@/lib/g15-stage";
-import { ArrowLeft, Settings, LogIn, Home, CalendarDays, Trophy, BarChart3, Users, MapPin } from "lucide-react";
+import { ArrowLeft, Settings, LogIn, Home, CalendarDays, Trophy, BarChart3, Users, MapPin, Images } from "lucide-react";
 
 const NAV_LINKS = [
   { href: "/g15-womens-series", label: "หน้าแรก", short: "หน้าแรก", en: "Home", icon: Home },
@@ -14,6 +14,7 @@ const NAV_LINKS = [
   { href: "/g15-womens-series/stats", label: "สถิติ", short: "สถิติ", en: "Statistics", icon: BarChart3 },
   { href: "/g15-womens-series/teams", label: "ทีมที่เข้าร่วม", short: "ทีม", en: "Teams", icon: Users },
   { href: "/g15-womens-series/stadium", label: "สนามแข่งขัน", short: "สนาม", en: "Stadium", icon: MapPin },
+  { href: "/g15-womens-series/gallery", label: "แกลเลอรี", short: "รูปภาพ", en: "Gallery", icon: Images },
 ];
 
 const headerButton =
@@ -96,7 +97,7 @@ export function G15Chrome({ user, stage = DEFAULT_STAGE }: { user: { role: strin
         aria-label="เมนู G15"
         className="fixed inset-x-0 bottom-0 z-30 border-t border-white/10 bg-g15-950/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden"
       >
-        <div className="grid grid-cols-6">
+        <div className="grid grid-cols-7">
           {NAV_LINKS.map(({ href, short, icon: Icon }) => {
             const active = isActive(href);
             return (
