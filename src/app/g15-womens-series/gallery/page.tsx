@@ -1,16 +1,16 @@
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { formatMatchDateShort } from "@/lib/g15";
-import { parseStage, stageInfo, matchdayMap } from "@/lib/g15-stage";
+import { parseStage, matchdayMap } from "@/lib/g15-stage";
 import { G15Chrome } from "@/components/g15/G15Chrome";
 import { HeroArt } from "@/components/g15/HeroArt";
-import { StageSwitcher } from "@/components/g15/StageSwitcher";
 import { GalleryAlbumCard } from "@/components/g15/GalleryAlbumCard";
 import { GalleryLinkManager } from "@/components/g15/GalleryLinkManager";
 import { saveGalleryLink, deleteGalleryLink } from "../manage/actions";
 import { Images, Camera } from "lucide-react";
 
-// แกลเลอรี = รายการอัลบั้ม (หัวข้อ + ลิงก์ เช่น Google Drive) ล่าสุดก่อน · แอดมินเพิ่ม/แก้/ลบได้จากหน้านี้
+// แกลเลอรี = รายการอัลบั้ม (หัวข้อ + ลิงก์ เช่น Google Drive) ล่าสุดก่อน · ไม่แยกรอบ (รวมทุกอัลบั้มในหน้าเดียว)
+// แอดมินเพิ่ม/แก้/ลบได้จากหน้านี้ · stage ใน URL ใช้แค่ให้เมนูด้านบนพารอบเดิมไปหน้าอื่นต่อ
 export default async function G15GalleryPage({
   searchParams,
 }: {
@@ -19,9 +19,8 @@ export default async function G15GalleryPage({
   const stage = parseStage((await searchParams).stage);
   const [user, links, matches] = await Promise.all([
     getCurrentUser(),
-    prisma.g15GalleryLink.findMany({ where: { stage }, orderBy: [{ createdAt: "desc" }, { id: "desc" }] }),
+    prisma.g15GalleryLink.findMany({ orderBy: [{ createdAt: "desc" }, { id: "desc" }] }),
     prisma.g15Match.findMany({
-      where: { stage },
       orderBy: [{ matchDate: "asc" }, { id: "asc" }],
       include: { homeTeam: true, awayTeam: true },
     }),
@@ -30,7 +29,7 @@ export default async function G15GalleryPage({
   const matchdays = matchdayMap(matches);
   const matchById = new Map(matches.map((m) => [m.id, m]));
   const matchLabel = (m: (typeof matches)[number]) =>
-    `${matchdays.has(m.id) ? `นัดที่ ${matchdays.get(m.id)} · ` : ""}${m.round} · ${m.homeTeam.name} vs ${m.awayTeam.name}`;
+    `${m.stage === "REGIONAL" ? "รอบภูมิภาค · " : ""}${matchdays.has(m.id) ? `นัดที่ ${matchdays.get(m.id)} · ` : ""}${m.round} · ${m.homeTeam.name} vs ${m.awayTeam.name}`;
   const albums = links.map((l) => {
     const m = l.matchId != null ? matchById.get(l.matchId) : undefined;
     return {
@@ -56,11 +55,8 @@ export default async function G15GalleryPage({
             <Images className="h-3.5 w-3.5" />
             Gallery
           </div>
-          <h1 className="mt-1 text-2xl font-extrabold text-white sm:text-3xl">
-            แกลเลอรี <span className="text-base font-normal text-g15-200">/ {stageInfo(stage).label}</span>
-          </h1>
+          <h1 className="mt-1 text-2xl font-extrabold text-white sm:text-3xl">แกลเลอรี</h1>
           <p className="mt-1 text-sm text-g15-200">อัลบั้มภาพบรรยากาศการแข่งขัน — กดเพื่อเปิดดูภาพทั้งหมด</p>
-          <StageSwitcher stage={stage} basePath="/g15-womens-series/gallery" />
         </div>
       </section>
 
