@@ -25,7 +25,7 @@ import { MatchTimeline } from "@/components/g15/MatchTimeline";
 import { MatchLineups, MatchStatBars } from "@/components/g15/MatchLineups";
 import { BallIcon } from "@/components/g15/BallIcon";
 import { PlayerOfMatchCard } from "@/components/g15/PlayerOfMatchCard";
-import { isClockLive } from "@/lib/g15-clock";
+import { isClockLive, formatMinute, minuteOrder } from "@/lib/g15-clock";
 import { G15Chrome } from "@/components/g15/G15Chrome";
 import { HeroArt } from "@/components/g15/HeroArt";
 import { TeamBadge } from "@/components/g15/TeamBadge";
@@ -116,16 +116,20 @@ export default async function G15MatchDetailPage({
   const showCountdown = match.status === "SCHEDULED" && !!match.matchDate && match.matchDate.getTime() > now.getTime();
   const liveScore = hasLiveScore(match);
 
+  // ประตูเรียงตามเวลาจริง (45+2 ก่อน 46, 90+3 หลัง 90)
+  const sortedGoals = [...match.goals].sort(
+    (a, b) => minuteOrder(a.minute, a.addedMinute) - minuteOrder(b.minute, b.addedMinute) || a.id - b.id,
+  );
   // ผู้ทำประตูแต่ละฝั่งสำหรับภาพสรุปผล — รวมเป็น "ชื่อ 12', 45'" ต่อคน
   const scorerLines = (teamId: number) => {
-    const byName = new Map<string, number[]>();
-    for (const g of match.goals) {
+    const byName = new Map<string, string[]>();
+    for (const g of sortedGoals) {
       if (g.teamId !== teamId) continue;
       const label = g.isOwnGoal ? `${g.playerName} (OG)` : g.playerName;
       if (!byName.has(label)) byName.set(label, []);
-      if (g.minute != null) byName.get(label)!.push(g.minute);
+      if (g.minute != null) byName.get(label)!.push(formatMinute(g.minute, g.addedMinute));
     }
-    return Array.from(byName.entries()).map(([name, mins]) => `${name}${mins.length ? ` ${mins.map((m) => `${m}'`).join(", ")}` : ""}`);
+    return Array.from(byName.entries()).map(([name, mins]) => `${name}${mins.length ? ` ${mins.join(", ")}` : ""}`);
   };
   const style = roundStyle(match.round);
   const matchday = matchdayMap(allMatches).get(match.id) ?? null;
@@ -133,17 +137,17 @@ export default async function G15MatchDetailPage({
 
   // ผู้ทำประตูใต้ชื่อทีมบนสกอร์บอร์ด — รวมนาทีต่อคน เช่น "ณพิชญา แสนปาง 8', 34'"
   const scorerChips = (teamId: number) => {
-    const byName = new Map<string, { minutes: number[]; og: boolean }>();
-    for (const g of [...match.goals].sort((a, b) => (a.minute ?? 999) - (b.minute ?? 999))) {
+    const byName = new Map<string, { minutes: string[]; og: boolean }>();
+    for (const g of sortedGoals) {
       if (g.teamId !== teamId) continue;
       const key = `${g.playerName}|${g.isOwnGoal}`;
       if (!byName.has(key)) byName.set(key, { minutes: [], og: g.isOwnGoal });
-      if (g.minute != null) byName.get(key)!.minutes.push(g.minute);
+      if (g.minute != null) byName.get(key)!.minutes.push(formatMinute(g.minute, g.addedMinute));
     }
     return Array.from(byName.entries()).map(([key, v]) => ({
       name: key.split("|")[0],
       og: v.og,
-      minutes: v.minutes.map((m) => `${m}'`).join(", "),
+      minutes: v.minutes.join(", "),
     }));
   };
   const statRows = [

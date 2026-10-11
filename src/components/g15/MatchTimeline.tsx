@@ -1,14 +1,15 @@
+import { formatMinute, minuteOrder } from "@/lib/g15-clock";
 import { ArrowLeftRight, Flag } from "lucide-react";
 import { BallIcon } from "./BallIcon";
 
-type GoalEv = { id: number; teamId: number; minute: number | null; playerName: string; isOwnGoal?: boolean; assistName?: string | null };
-type CardEv = { id: number; teamId: number; minute: number | null; holderName: string; cardType: string };
-type SubEv = { id: number; teamId: number; minute: number | null; playerInName: string; playerOutName: string };
+type GoalEv = { id: number; teamId: number; minute: number | null; addedMinute?: number | null; playerName: string; isOwnGoal?: boolean; assistName?: string | null };
+type CardEv = { id: number; teamId: number; minute: number | null; addedMinute?: number | null; holderName: string; cardType: string };
+type SubEv = { id: number; teamId: number; minute: number | null; addedMinute?: number | null; playerInName: string; playerOutName: string };
 
 type Ev =
-  | { kind: "goal"; key: string; minute: number | null; side: "home" | "away"; title: string; score: string; og: boolean; assist: string | null }
-  | { kind: "card"; key: string; minute: number | null; side: "home" | "away"; title: string; red: boolean }
-  | { kind: "sub"; key: string; minute: number | null; side: "home" | "away"; inName: string; outName: string };
+  | { kind: "goal"; key: string; minute: number | null; addedMinute?: number | null; side: "home" | "away"; title: string; score: string; og: boolean; assist: string | null }
+  | { kind: "card"; key: string; minute: number | null; addedMinute?: number | null; side: "home" | "away"; title: string; red: boolean }
+  | { kind: "sub"; key: string; minute: number | null; addedMinute?: number | null; side: "home" | "away"; inName: string; outName: string };
 
 // ไทม์ไลน์เหตุการณ์ในเกม — นาทีอยู่กลาง ทีมเหย้าซ้าย ทีมเยือนขวา
 // กำลังแข่ง = ล่าสุดอยู่บน (แบบไลฟ์สกอร์), จบแล้ว = เรียงตามเวลา; มีเส้นคั่นพักครึ่ง (HT) และเริ่มเกม/จบเกม
@@ -30,7 +31,8 @@ export function MatchTimeline({
   halfTimeScore: string | null;
 }) {
   const sideOf = (teamId: number) => (teamId === homeTeamId ? "home" : "away") as "home" | "away";
-  const byMinute = <T extends { minute: number | null; id: number }>(a: T, b: T) => (a.minute ?? 999) - (b.minute ?? 999) || a.id - b.id;
+  const byMinute = <T extends { minute: number | null; addedMinute?: number | null; id: number }>(a: T, b: T) =>
+    minuteOrder(a.minute, a.addedMinute) - minuteOrder(b.minute, b.addedMinute) || a.id - b.id;
 
   // สกอร์หลังแต่ละประตู (เรียงตามนาที)
   let h = 0;
@@ -43,6 +45,7 @@ export function MatchTimeline({
       kind: "goal",
       key: `g${g.id}`,
       minute: g.minute,
+      addedMinute: g.addedMinute,
       side,
       title: g.playerName,
       score: `${h}-${a}`,
@@ -56,6 +59,7 @@ export function MatchTimeline({
       kind: "card" as const,
       key: `c${c.id}`,
       minute: c.minute,
+      addedMinute: c.addedMinute,
       side: sideOf(c.teamId),
       title: c.holderName,
       red: c.cardType === "RED",
@@ -64,11 +68,12 @@ export function MatchTimeline({
       kind: "sub" as const,
       key: `s${s.id}`,
       minute: s.minute,
+      addedMinute: s.addedMinute,
       side: sideOf(s.teamId),
       inName: s.playerInName,
       outName: s.playerOutName,
     })),
-  ].sort((x, y) => (x.minute ?? 999) - (y.minute ?? 999));
+  ].sort((x, y) => minuteOrder(x.minute, x.addedMinute) - minuteOrder(y.minute, y.addedMinute));
 
   if (events.length === 0 && !live) return null;
 
@@ -142,7 +147,7 @@ export function MatchTimeline({
                   r.kind === "goal" ? "bg-emerald-600 text-white" : "bg-slate-100 text-slate-600"
                 }`}
               >
-                {r.minute != null ? `${r.minute}'` : "-"}
+                {formatMinute(r.minute, r.addedMinute) || "-"}
               </span>
               <div className="flex min-w-0 justify-start">{r.side === "away" && body(r)}</div>
             </li>

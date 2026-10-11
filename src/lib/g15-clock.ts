@@ -45,21 +45,23 @@ export type ClockReading = {
   main: string;
   // เวลาทดที่กำลังเดิน เช่น "+2:13" (เฉพาะตอนเกินเวลาปกติของครึ่งนั้น)
   stoppage: string | null;
-  // นาทีตามแบบฟุตบอล (นาทีที่ 1 = 0:00-0:59 → 1) — ใช้เติมช่องนาทีของประตู/ใบเหลือง ฯลฯ; ทดเวลา 45+2 = 47
+  // นาทีตามแบบฟุตบอล (นาทีที่ 1 = 0:00-0:59 → 1) — ใช้เติมช่องนาทีของประตู/ใบเหลือง ฯลฯ; ช่วงทดเวลา minute = 45/90
   minute: number | null;
+  // นาทีทดเวลา (ช่วงเกิน 45/90) เช่น 90+3 → minute 90, added 3
+  added: number | null;
   // ทดเวลาที่ประกาศของครึ่งปัจจุบัน (ป้าย +3)
   announcedAdded: number | null;
 };
 
 export function readClock(state: ClockState, nowMs: number): ClockReading {
   const phase = asPhase(state.clockPhase);
-  if (phase === "PRE") return { phase, main: "00:00", stoppage: null, minute: null, announcedAdded: null };
-  if (phase === "HALF_TIME") return { phase, main: "HT", stoppage: null, minute: null, announcedAdded: state.firstHalfAddedTime };
-  if (phase === "FULL_TIME") return { phase, main: "FT", stoppage: null, minute: null, announcedAdded: state.secondHalfAddedTime };
+  if (phase === "PRE") return { phase, main: "00:00", stoppage: null, minute: null, added: null, announcedAdded: null };
+  if (phase === "HALF_TIME") return { phase, main: "HT", stoppage: null, minute: null, added: null, announcedAdded: state.firstHalfAddedTime };
+  if (phase === "FULL_TIME") return { phase, main: "FT", stoppage: null, minute: null, added: null, announcedAdded: state.secondHalfAddedTime };
 
   const first = phase === "FIRST_HALF";
   const start = ms(first ? state.firstHalfStartedAt : state.secondHalfStartedAt);
-  if (start == null) return { phase, main: first ? "00:00" : "45:00", stoppage: null, minute: null, announcedAdded: null };
+  if (start == null) return { phase, main: first ? "00:00" : "45:00", stoppage: null, minute: null, added: null, announcedAdded: null };
 
   const base = first ? 0 : HALF_MINUTES;
   const elapsedSec = Math.max(0, Math.floor((nowMs - start) / 1000));
@@ -73,6 +75,7 @@ export function readClock(state: ClockState, nowMs: number): ClockReading {
       main: `${pad(Math.floor(total / 60))}:${pad(total % 60)}`,
       stoppage: null,
       minute: Math.floor(total / 60) + 1,
+      added: null,
       announcedAdded,
     };
   }
@@ -81,7 +84,44 @@ export function readClock(state: ClockState, nowMs: number): ClockReading {
     phase,
     main: `${base + HALF_MINUTES}:00`,
     stoppage: `+${Math.floor(over / 60)}:${pad(over % 60)}`,
-    minute: base + HALF_MINUTES + Math.floor(over / 60) + 1,
+    minute: base + HALF_MINUTES,
+    added: Math.floor(over / 60) + 1,
     announcedAdded,
   };
+}
+
+// ===== นาทีของเหตุการณ์ (ประตู/ใบ/เปลี่ยนตัว) — รองรับทดเวลาแบบ 45+2 / 90+3 =====
+
+// แสดงผล: 90 + 3 → "90+3'" · ข้อมูลเก่าที่เก็บเป็น 93 (ไม่มี addedMinute) ก็แสดงเป็น "90+3'" เหมือนกัน
+export function formatMinute(minute: number | null | undefined, added?: number | null) {
+  if (minute == null) return "";
+  if (added) return `${minute}+${added}'`;
+  if (minute > 90) return `90+${minute - 90}'`;
+  return `${minute}'`;
+}
+
+// ลำดับเวลาจริงในเกม (45+2 มาก่อน 46, 90+3 มาหลัง 90) — ไม่มีนาทีไว้ท้ายสุด
+export function minuteOrder(minute: number | null | undefined, added?: number | null) {
+  if (minute == null) return 1_000_000;
+  if (added) return minute * 100 + added;
+  if (minute > 90) return 9000 + (minute - 90);
+  return minute * 100;
+}
+
+// อ่านค่าที่พิมพ์: "23" · "45+2" · "90+3" · "93" (เกิน 90 → 90+3 อัตโนมัติ)
+export function parseMinute(raw: string | null | undefined): { minute: number | null; addedMinute: number | null } {
+  const s = String(raw ?? "").replace(/\s|'/g, "");
+  if (!s) return { minute: null, addedMinute: null };
+  const m = s.match(/^(\d{1,3})(?:\+(\d{1,2}))?$/);
+  if (!m) return { minute: null, addedMinute: null };
+  const minute = Number(m[1]);
+  const added = m[2] != null ? Number(m[2]) : null;
+  if (added) return { minute, addedMinute: added };
+  if (minute > 90) return { minute: 90, addedMinute: minute - 90 };
+  return { minute, addedMinute: null };
+}
+
+// ค่าเริ่มต้นในช่องนาที (ตอนแก้ไขเหตุการณ์เดิม)
+export function minuteInputValue(minute: number | null | undefined, added?: number | null) {
+  return formatMinute(minute, added).replace("'", "");
 }

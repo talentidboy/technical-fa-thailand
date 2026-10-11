@@ -1,6 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
+import { parseMinute } from "@/lib/g15-clock";
 import { requireUser } from "@/lib/auth";
 import { saveUploadedPhoto } from "@/lib/upload";
 import { parseBangkokDateTimeLocal, getNationalBracket } from "@/lib/g15";
@@ -56,6 +57,11 @@ async function attempt(fn: () => Promise<void>): Promise<ActionResult> {
 function str(formData: FormData, key: string) {
   const v = String(formData.get(key) ?? "").trim();
   return v || null;
+}
+
+// ช่องนาทีของเหตุการณ์ — รับ "23", "45+2", "90+3" หรือ "93" (เกิน 90 แปลงเป็น 90+3)
+function minuteFields(formData: FormData, key = "minute") {
+  return parseMinute(String(formData.get(key) ?? ""));
 }
 
 function int(formData: FormData, key: string) {
@@ -596,7 +602,7 @@ export async function updateGoal(formData: FormData) {
 
   await prisma.g15Goal.update({
     where: { id },
-    data: { ...goalData, minute: int(formData, "minute") },
+    data: { ...goalData, ...minuteFields(formData) },
   });
 
   revalidateG15(undefined, matchId);
@@ -669,7 +675,7 @@ export async function updateSubstitution(formData: FormData) {
     where: { id },
     data: {
       teamId,
-      minute: int(formData, "minute"),
+      ...minuteFields(formData),
       playerInName,
       playerInNumber: int(formData, "playerInNumber"),
       playerOutName,
@@ -779,7 +785,7 @@ export async function updateCard(formData: FormData) {
       holderNumber: int(formData, "holderNumber"),
       holderRole: str(formData, "holderRole") ?? "PLAYER",
       cardType,
-      minute: int(formData, "minute"),
+      ...minuteFields(formData),
       reason: str(formData, "reason"),
     },
   });
@@ -1040,20 +1046,25 @@ export async function recordLiveGoal(formData: FormData): Promise<ActionResult> 
           playerId: scorer?.id ?? null,
           playerName: scorer ? playerName(scorer) : "ไม่ระบุผู้ทำประตู",
           jerseyNumber: scorer?.jerseyNumber ?? null,
-          minute: int(formData, "minute"),
+          ...minuteFields(formData),
           isOwnGoal: ownGoal,
           assistPlayerId: assist?.id ?? null,
           assistName: assist ? playerName(assist) : null,
         },
       }),
-      prisma.g15Match.update({
-        where: { id: matchId },
-        data: {
-          homeScore: (match.homeScore ?? 0) + (side === "home" ? 1 : 0),
-          awayScore: (match.awayScore ?? 0) + (side === "away" ? 1 : 0),
-          ...(match.clockPhase === "FULL_TIME" ? {} : { status: "LIVE" }),
-        },
-      }),
+      // bumpScore = "0" → เติมชื่อผู้ทำประตูให้สกอร์ที่กรอกไว้แล้ว (ผลย้อนหลัง) สกอร์คงเดิม
+      ...(String(formData.get("bumpScore") ?? "1") === "0"
+        ? []
+        : [
+            prisma.g15Match.update({
+              where: { id: matchId },
+              data: {
+                homeScore: (match.homeScore ?? 0) + (side === "home" ? 1 : 0),
+                awayScore: (match.awayScore ?? 0) + (side === "away" ? 1 : 0),
+                ...(match.clockPhase === "FULL_TIME" ? {} : { status: "LIVE" }),
+              },
+            }),
+          ]),
     ]);
     revalidateG15(undefined, matchId);
   });
@@ -1084,7 +1095,7 @@ export async function recordLiveCard(formData: FormData): Promise<ActionResult> 
     }
 
     await prisma.g15Card.create({
-      data: { matchId, teamId, cardType, minute: int(formData, "minute"), reason: str(formData, "reason"), ...data },
+      data: { matchId, teamId, cardType, ...minuteFields(formData), reason: str(formData, "reason"), ...data },
     });
     revalidateG15(undefined, matchId);
   });
@@ -1109,7 +1120,7 @@ export async function recordLiveSub(formData: FormData): Promise<ActionResult> {
       data: {
         matchId,
         teamId,
-        minute: int(formData, "minute"),
+        ...minuteFields(formData),
         playerOutName: playerName(out),
         playerOutNumber: out.jerseyNumber,
         playerInName: playerName(inn),
@@ -1142,5 +1153,137 @@ export async function setPlayerOfMatch(formData: FormData): Promise<ActionResult
     for (const pid of [playerId, match.playerOfMatchId]) {
       if (pid) revalidatePath(`/g15-womens-series/players/${pid}`);
     }
+  });
+}
+
+// ===== แก้ไข / ลบ เหตุการณ์ในเกม (รายการเหตุการณ์ในหน้าจัดการแมท) =====
+
+async function eventMatch(matchId: number) {
+  const match = await prisma.g15Match.findUnique({
+    where: { id: matchId },
+    select: { homeTeamId: true, awayTeamId: true, homeScore: true, awayScore: true },
+  });
+  if (!match) throw new Error("ไม่พบนัดการแข่งขัน");
+  return match;
+}
+
+// แก้ประตู — ทีมที่ได้ประตูคงเดิม (สกอร์ไม่เปลี่ยน) แก้ได้: ผู้ทำประตู / OG / แอสซิสต์ / นาที
+export async function updateLiveGoal(formData: FormData): Promise<ActionResult> {
+  await requireAdminOrStaff();
+  return attempt(async () => {
+    const matchId = Number(formData.get("id"));
+    const eventId = Number(formData.get("eventId"));
+    const goal = await prisma.g15Goal.findUnique({ where: { id: eventId } });
+    if (!goal || goal.matchId !== matchId) throw new Error("ไม่พบประตูนี้");
+    const match = await eventMatch(matchId);
+    const opponentId = goal.teamId === match.homeTeamId ? match.awayTeamId : match.homeTeamId;
+    const ownGoal = String(formData.get("ownGoal")) === "1";
+
+    const scorerId = int(formData, "scorerId");
+    const scorer = scorerId ? await prisma.g15Player.findUnique({ where: { id: scorerId } }) : null;
+    if (scorer && scorer.teamId !== (ownGoal ? opponentId : goal.teamId)) {
+      throw new Error(ownGoal ? "ประตูตัวเองต้องเลือกผู้เล่นของทีมตรงข้าม" : "ผู้ทำประตูต้องเป็นผู้เล่นของทีมนี้");
+    }
+    const assistId = ownGoal ? null : int(formData, "assistId");
+    const assist = assistId ? await prisma.g15Player.findUnique({ where: { id: assistId } }) : null;
+    if (assist && (assist.teamId !== goal.teamId || assist.id === scorer?.id)) throw new Error("ผู้จ่ายบอลไม่ถูกต้อง");
+
+    await prisma.g15Goal.update({
+      where: { id: eventId },
+      data: {
+        playerId: scorer?.id ?? null,
+        playerName: scorer ? playerName(scorer) : "ไม่ระบุผู้ทำประตู",
+        jerseyNumber: scorer?.jerseyNumber ?? null,
+        isOwnGoal: ownGoal,
+        assistPlayerId: assist?.id ?? null,
+        assistName: assist ? playerName(assist) : null,
+        ...minuteFields(formData),
+      },
+    });
+    revalidateG15(undefined, matchId);
+  });
+}
+
+export async function updateLiveCard(formData: FormData): Promise<ActionResult> {
+  await requireAdminOrStaff();
+  return attempt(async () => {
+    const matchId = Number(formData.get("id"));
+    const eventId = Number(formData.get("eventId"));
+    const card = await prisma.g15Card.findUnique({ where: { id: eventId } });
+    if (!card || card.matchId !== matchId) throw new Error("ไม่พบใบนี้");
+    const cardType = String(formData.get("cardType")) === "RED" ? "RED" : "YELLOW";
+    const holder = String(formData.get("holder") ?? "");
+    let data: { holderName: string; holderNumber: number | null; holderRole: string } | null = null;
+    if (holder.startsWith("player:")) {
+      const p = await prisma.g15Player.findUnique({ where: { id: Number(holder.slice(7)) } });
+      if (!p || p.teamId !== card.teamId) throw new Error("กรุณาเลือกผู้เล่นของทีมนี้");
+      data = { holderName: playerName(p), holderNumber: p.jerseyNumber, holderRole: "PLAYER" };
+    } else if (holder.startsWith("official:")) {
+      const o = await prisma.g15Official.findUnique({ where: { id: Number(holder.slice(9)) } });
+      if (!o || o.teamId !== card.teamId) throw new Error("กรุณาเลือกเจ้าหน้าที่ของทีมนี้");
+      data = { holderName: playerName(o), holderNumber: null, holderRole: "OFFICIAL" };
+    }
+    // ไม่ได้เลือกใหม่ (ชื่อเดิมไม่อยู่ในทะเบียน) = คงผู้รับใบเดิม
+    await prisma.g15Card.update({
+      where: { id: eventId },
+      data: { cardType, reason: str(formData, "reason"), ...minuteFields(formData), ...(data ?? {}) },
+    });
+    revalidateG15(undefined, matchId);
+  });
+}
+
+export async function updateLiveSub(formData: FormData): Promise<ActionResult> {
+  await requireAdminOrStaff();
+  return attempt(async () => {
+    const matchId = Number(formData.get("id"));
+    const eventId = Number(formData.get("eventId"));
+    const sub = await prisma.g15Substitution.findUnique({ where: { id: eventId } });
+    if (!sub || sub.matchId !== matchId) throw new Error("ไม่พบการเปลี่ยนตัวนี้");
+    const [out, inn] = await Promise.all([
+      int(formData, "outId") ? prisma.g15Player.findUnique({ where: { id: int(formData, "outId")! } }) : null,
+      int(formData, "inId") ? prisma.g15Player.findUnique({ where: { id: int(formData, "inId")! } }) : null,
+    ]);
+    if ((out && out.teamId !== sub.teamId) || (inn && inn.teamId !== sub.teamId) || (out && inn && out.id === inn.id)) {
+      throw new Error("ผู้เล่นที่เลือกไม่ถูกต้อง");
+    }
+    await prisma.g15Substitution.update({
+      where: { id: eventId },
+      data: {
+        ...minuteFields(formData),
+        ...(out ? { playerOutName: playerName(out), playerOutNumber: out.jerseyNumber } : {}),
+        ...(inn ? { playerInName: playerName(inn), playerInNumber: inn.jerseyNumber } : {}),
+      },
+    });
+    revalidateG15(undefined, matchId);
+  });
+}
+
+// ลบเหตุการณ์ — ลบประตูจะลดสกอร์ทีมนั้นลง 1 ด้วย ถ้าสกอร์ตรงกับจำนวนประตูที่บันทึก
+export async function deleteLiveEvent(formData: FormData): Promise<ActionResult> {
+  await requireAdminOrStaff();
+  return attempt(async () => {
+    const matchId = Number(formData.get("id"));
+    const eventId = Number(formData.get("eventId"));
+    const kind = String(formData.get("kind"));
+    if (kind === "goal") {
+      const goal = await prisma.g15Goal.findUnique({ where: { id: eventId } });
+      if (!goal || goal.matchId !== matchId) throw new Error("ไม่พบประตูนี้");
+      const match = await eventMatch(matchId);
+      const key = goal.teamId === match.homeTeamId ? "homeScore" : "awayScore";
+      // ลดสกอร์เฉพาะตอนจำนวนประตูที่บันทึกตรงกับสกอร์ (ถ้าสกอร์กรอกไว้มากกว่า แปลว่าแค่ลบชื่อผู้ทำประตูที่ผิด)
+      const recorded = await prisma.g15Goal.count({ where: { matchId, teamId: goal.teamId } });
+      const lower = recorded === (match[key] ?? 0);
+      await prisma.$transaction([
+        prisma.g15Goal.delete({ where: { id: eventId } }),
+        ...(lower ? [prisma.g15Match.update({ where: { id: matchId }, data: { [key]: Math.max(0, (match[key] ?? 0) - 1) } })] : []),
+      ]);
+    } else if (kind === "card") {
+      await prisma.g15Card.deleteMany({ where: { id: eventId, matchId } });
+    } else if (kind === "sub") {
+      await prisma.g15Substitution.deleteMany({ where: { id: eventId, matchId } });
+    } else {
+      throw new Error("ไม่รู้จักประเภทเหตุการณ์");
+    }
+    revalidateG15(undefined, matchId);
   });
 }

@@ -1,3 +1,4 @@
+import { formatMinute } from "@/lib/g15-clock";
 import Link from "next/link";
 import { ArrowDown, ArrowUp, UserRound } from "lucide-react";
 import { TeamBadge } from "./TeamBadge";
@@ -14,7 +15,7 @@ type LineupRow = {
 };
 type GoalRow = { teamId: number; playerId: number | null; isOwnGoal: boolean; assistPlayerId: number | null };
 type CardRow = { teamId: number; holderName: string; holderRole: string; cardType: string };
-type SubRow = { teamId: number; minute: number | null; playerInName: string; playerOutName: string };
+type SubRow = { teamId: number; minute: number | null; addedMinute?: number | null; playerInName: string; playerOutName: string };
 
 // ไอคอนเหตุการณ์ข้างชื่อผู้เล่น: ประตู (นับ OG ที่ผู้เล่นคนนี้ทำเข้าตัวเองแยก), แอสซิสต์, ใบเหลือง/แดง, เปลี่ยนตัวเข้า-ออก
 // ใบเหลือง/แดงและเปลี่ยนตัวเก็บเป็นชื่อ จึงจับคู่ด้วยชื่อ-นามสกุล (ในทีมเดียวกัน)
@@ -32,8 +33,8 @@ function EventIcons({
   assists: number;
   yellow: number;
   red: number;
-  subIn: number | null | undefined;
-  subOut: number | null | undefined;
+  subIn: string | null | undefined;
+  subOut: string | null | undefined;
 }) {
   return (
     <span className="flex flex-none items-center gap-1.5">
@@ -58,13 +59,13 @@ function EventIcons({
       {subIn !== undefined && (
         <span className="inline-flex items-center text-[11px] font-bold text-emerald-600" title="เปลี่ยนตัวเข้า">
           <ArrowUp className="h-3 w-3" />
-          {subIn != null && `${subIn}'`}
+          {subIn}
         </span>
       )}
       {subOut !== undefined && (
         <span className="inline-flex items-center text-[11px] font-bold text-red-500" title="เปลี่ยนตัวออก">
           <ArrowDown className="h-3 w-3" />
-          {subOut != null && `${subOut}'`}
+          {subOut}
         </span>
       )}
     </span>
@@ -135,8 +136,8 @@ function TeamLineup({
             assists={goals.filter((g) => g.assistPlayerId === l.playerId).length}
             yellow={teamCards.filter((c) => c.holderName === name && c.cardType === "YELLOW").length}
             red={teamCards.filter((c) => c.holderName === name && c.cardType === "RED").length}
-            subIn={inSub ? inSub.minute : undefined}
-            subOut={outSub ? outSub.minute : undefined}
+            subIn={inSub ? formatMinute(inSub.minute, inSub.addedMinute) || null : undefined}
+            subOut={outSub ? formatMinute(outSub.minute, outSub.addedMinute) || null : undefined}
           />
         </Link>
       </li>

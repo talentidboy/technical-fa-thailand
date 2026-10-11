@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useOptimistic, useRef, useState, useTransition } from "react";
-import { Play, Pause, Square, Undo2, Minus, Plus, Loader2, AlertCircle, Flag, X, ArrowLeftRight, Goal } from "lucide-react";
+import { Play, Pause, Square, Undo2, Minus, Plus, Loader2, AlertCircle, Flag, X, ArrowLeftRight, Goal, Pencil, Trash2, ListOrdered } from "lucide-react";
 import { LiveClock } from "./LiveClock";
 import { TeamBadge } from "./TeamBadge";
-import { asPhase, readClock, type ClockState } from "@/lib/g15-clock";
+import { asPhase, readClock, formatMinute, minuteOrder, minuteInputValue, type ClockState } from "@/lib/g15-clock";
+import { BallIcon } from "./BallIcon";
 import type { ActionResult } from "@/app/g15-womens-series/manage/actions";
 
 type Team = { name: string; logoUrl: string | null; groupName: string | null };
@@ -17,7 +18,41 @@ export type LivePlayer = { id: number; name: string; number: number | null; onPi
 export type LiveOfficial = { id: number; name: string; role: string | null };
 export type LiveRoster = { players: LivePlayer[]; officials: LiveOfficial[] };
 
-type Dialog = { kind: "goal"; side: Side } | { kind: "card"; side: Side; cardType: "YELLOW" | "RED" } | { kind: "sub"; side: Side } | null;
+// editId = แก้ไขเหตุการณ์เดิม (ไม่ใส่ = เพิ่มใหม่) · fromList = เปิดจากรายการเหตุการณ์ (เพิ่มย้อนหลังได้แม้ไม่ได้ใช้นาฬิกาเกม)
+type Dialog =
+  | { kind: "goal"; side: Side; editId?: number; fromList?: boolean }
+  | { kind: "card"; side: Side; cardType: "YELLOW" | "RED"; editId?: number; fromList?: boolean }
+  | { kind: "sub"; side: Side; editId?: number; fromList?: boolean }
+  | null;
+
+// เหตุการณ์ที่บันทึกแล้ว (สำหรับรายการแก้ไข/ลบ)
+export type EventGoal = {
+  id: number;
+  teamId: number;
+  minute: number | null;
+  addedMinute: number | null;
+  playerId: number | null;
+  playerName: string;
+  isOwnGoal: boolean;
+  assistPlayerId: number | null;
+  assistName: string | null;
+};
+export type EventCard = {
+  id: number;
+  teamId: number;
+  minute: number | null;
+  addedMinute: number | null;
+  holderName: string;
+  holderRole: string | null;
+  cardType: string;
+  reason: string | null;
+};
+export type EventSub = { id: number; teamId: number; minute: number | null; addedMinute: number | null; playerInName: string; playerOutName: string };
+export type MatchEvents = { goals: EventGoal[]; cards: EventCard[]; subs: EventSub[] };
+type TimelineRow =
+  | { kind: "goal"; teamId: number; raw: EventGoal }
+  | { kind: "card"; teamId: number; raw: EventCard }
+  | { kind: "sub"; teamId: number; raw: EventSub };
 
 const NEXT_STEP = {
   PRE: { op: "START_1", label: "เริ่มครึ่งแรก", sub: "Kick-off", icon: Play, tone: "bg-emerald-600 hover:bg-emerald-700" },
@@ -103,6 +138,12 @@ export function LiveMatchControl({
   goalAction,
   cardAction,
   subAction,
+  homeTeamId,
+  events,
+  editGoalAction,
+  editCardAction,
+  editSubAction,
+  deleteEventAction,
 }: {
   matchId: number;
   homeTeam: Team;
@@ -118,6 +159,12 @@ export function LiveMatchControl({
   goalAction: Action;
   cardAction: Action;
   subAction: Action;
+  homeTeamId: number;
+  events: MatchEvents;
+  editGoalAction: Action;
+  editCardAction: Action;
+  editSubAction: Action;
+  deleteEventAction: Action;
 }) {
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -143,14 +190,21 @@ export function LiveMatchControl({
   const [cardType, setCardType] = useState<"YELLOW" | "RED">("YELLOW");
   const [reason, setReason] = useState("");
 
-  const open = (d: NonNullable<Dialog>) => {
-    setOwnGoal(false);
-    setPickA(null);
-    setPickB(null);
-    setReason("");
+  const open = (
+    d: NonNullable<Dialog>,
+    preset?: { ownGoal?: boolean; pickA?: string | null; pickB?: string | null; minute?: string; reason?: string },
+  ) => {
+    setOwnGoal(preset?.ownGoal ?? false);
+    setPickA(preset?.pickA ?? null);
+    setPickB(preset?.pickB ?? null);
+    setReason(preset?.reason ?? "");
     if (d.kind === "card") setCardType(d.cardType);
-    const m = readClock(clock, Date.now() + skew.current).minute;
-    setMinute(m != null ? String(m) : "");
+    if (preset?.minute !== undefined) setMinute(preset.minute);
+    else {
+      // เติมนาทีจากนาฬิกาเกม — ช่วงทดเวลาเป็นแบบ 45+2 / 90+3
+      const r = readClock(clock, new Date().getTime() + skew.current);
+      setMinute(r.minute != null ? (r.added ? `${r.minute}+${r.added}` : String(r.minute)) : "");
+    }
     setError(null);
     setDialog(d);
   };
@@ -175,6 +229,70 @@ export function LiveMatchControl({
       else if (!opts?.optimistic) opts?.onDone?.();
     });
   };
+
+  const sideOf = (teamId: number): Side => (teamId === homeTeamId ? "home" : "away");
+  // เพิ่มประตูแล้วสกอร์ขึ้นด้วยไหม — ถ้าสกอร์ที่ตั้งไว้มากกว่าจำนวนประตูที่บันทึกชื่อแล้ว (กรอกผลย้อนหลัง) แค่เติมชื่อผู้ทำประตู สกอร์คงเดิม
+  const goalBumpsScore = (side: Side) => events.goals.filter((g) => sideOf(g.teamId) === side).length >= score[side];
+  const findPlayer = (side: Side, name: string) => rosters[side].players.find((p) => p.name === name);
+  const findOfficial = (side: Side, name: string) => rosters[side].officials.find((o) => o.name === name);
+
+  const editEvent = (ev: TimelineRow) => {
+    const side = sideOf(ev.teamId);
+    if (ev.kind === "goal") {
+      const g = ev.raw;
+      open(
+        { kind: "goal", side, editId: g.id },
+        {
+          ownGoal: g.isOwnGoal,
+          pickA: g.playerId != null ? String(g.playerId) : null,
+          pickB: g.assistPlayerId != null ? String(g.assistPlayerId) : null,
+          minute: minuteInputValue(g.minute, g.addedMinute),
+        },
+      );
+    } else if (ev.kind === "card") {
+      const c = ev.raw;
+      const p = c.holderRole === "OFFICIAL" ? null : findPlayer(side, c.holderName);
+      const o = p ? null : findOfficial(side, c.holderName);
+      open(
+        { kind: "card", side, cardType: c.cardType === "RED" ? "RED" : "YELLOW", editId: c.id },
+        {
+          pickA: p ? `player:${p.id}` : o ? `official:${o.id}` : null,
+          minute: minuteInputValue(c.minute, c.addedMinute),
+          reason: c.reason ?? "",
+        },
+      );
+    } else {
+      const x = ev.raw;
+      const out = findPlayer(side, x.playerOutName);
+      const inn = findPlayer(side, x.playerInName);
+      open(
+        { kind: "sub", side, editId: x.id },
+        { pickA: out ? String(out.id) : null, pickB: inn ? String(inn.id) : null, minute: minuteInputValue(x.minute, x.addedMinute) },
+      );
+    }
+  };
+
+  const removeEvent = (ev: TimelineRow) => {
+    const side = sideOf(ev.teamId);
+    const goalsOfSide = events.goals.filter((g) => sideOf(g.teamId) === side).length;
+    const msg =
+      ev.kind === "goal"
+        ? `ลบประตูของ ${ev.raw.playerName}?${goalsOfSide === score[side] ? ` สกอร์ ${teams[side].name} จะลดลงเหลือ ${Math.max(0, score[side] - 1)}` : ""}`
+        : ev.kind === "card"
+          ? `ลบ${ev.raw.cardType === "RED" ? "ใบแดง" : "ใบเหลือง"}ของ ${ev.raw.holderName}?`
+          : `ลบการเปลี่ยนตัว ${ev.raw.playerOutName} → ${ev.raw.playerInName}?`;
+    run(
+      deleteEventAction,
+      { kind: ev.kind, eventId: String(ev.raw.id) },
+      { confirm: msg, optimistic: ev.kind === "goal" && goalsOfSide === score[side] ? { side, delta: -1 } : undefined },
+    );
+  };
+
+  const timeline: TimelineRow[] = [
+    ...events.goals.map((g) => ({ kind: "goal" as const, teamId: g.teamId, raw: g })),
+    ...events.cards.map((c) => ({ kind: "card" as const, teamId: c.teamId, raw: c })),
+    ...events.subs.map((x) => ({ kind: "sub" as const, teamId: x.teamId, raw: x })),
+  ].sort((a, b) => minuteOrder(a.raw.minute, a.raw.addedMinute) - minuteOrder(b.raw.minute, b.raw.addedMinute) || a.raw.id - b.raw.id);
 
   const actionBtn = "inline-flex h-9 items-center gap-1.5 rounded-lg px-2.5 text-xs font-semibold transition-colors disabled:opacity-30";
 
@@ -260,17 +378,38 @@ export function LiveMatchControl({
     const other: Side = side === "home" ? "away" : "home";
     const team = teams[side];
     const minuteField = (
-      <label className="flex items-center gap-2 text-sm font-semibold text-slate-700">
-        นาที
-        <input
-          type="number"
-          min={0}
-          value={minute}
-          onChange={(e) => setMinute(e.target.value)}
-          className="h-10 w-20 rounded-lg border border-slate-200 px-2 text-center font-mono text-base font-bold focus:border-g15-400 focus:outline-none focus:ring-2 focus:ring-g15-100"
-        />
-        <span className="text-xs font-normal text-slate-400">(เติมจากนาฬิกาเกม แก้ได้)</span>
-      </label>
+      <div className="space-y-2">
+        <label className="flex flex-wrap items-center gap-2 text-sm font-semibold text-slate-700">
+          นาที
+          <input
+            type="text"
+            inputMode="tel"
+            value={minute}
+            onChange={(e) => setMinute(e.target.value.replace(/[^\d+]/g, ""))}
+            placeholder="เช่น 23"
+            className="h-10 w-24 rounded-lg border border-slate-200 px-2 text-center font-mono text-base font-bold focus:border-g15-400 focus:outline-none focus:ring-2 focus:ring-g15-100"
+          />
+          <span className="text-xs font-normal text-slate-400">ทดเวลาพิมพ์ 45+2 / 90+3 (พิมพ์ 93 ก็ได้ = 90+3)</span>
+        </label>
+        {/* ปุ่มลัดช่วงทดเวลา */}
+        <div className="flex flex-wrap gap-1.5">
+          {["45+", "90+"].map((base) =>
+            [1, 2, 3, 4, 5].map((a) => (
+              <button
+                key={base + a}
+                type="button"
+                onClick={() => setMinute(`${base}${a}`)}
+                className={`h-8 rounded-lg px-2 font-mono text-xs font-bold ring-1 transition-colors ${
+                  minute === `${base}${a}` ? "bg-g15-600 text-white ring-g15-600" : "bg-white text-slate-600 ring-slate-200 hover:bg-slate-50"
+                }`}
+              >
+                {base}
+                {a}
+              </button>
+            )),
+          )}
+        </div>
+      </div>
     );
 
     if (dialog.kind === "goal") {
@@ -282,7 +421,7 @@ export function LiveMatchControl({
       return {
         title: (
           <>
-            <Goal className="h-5 w-5 text-emerald-600" /> ประตู! {team.name}
+            <Goal className="h-5 w-5 text-emerald-600" /> {dialog.editId != null ? "แก้ไขประตู" : "ประตู!"} {team.name}
           </>
         ),
         body: (
@@ -323,13 +462,19 @@ export function LiveMatchControl({
             {minuteField}
           </div>
         ),
-        submit: () =>
-          run(
-            goalAction,
-            { side, ownGoal: ownGoal ? "1" : "0", scorerId: pickA ?? "", assistId: ownGoal ? "" : (pickB ?? ""), minute },
-            { onDone: close, optimistic: { side, delta: 1 } },
-          ),
-        submitLabel: "บันทึกประตู",
+        submit: () => {
+          const fields = { side, ownGoal: ownGoal ? "1" : "0", scorerId: pickA ?? "", assistId: ownGoal ? "" : (pickB ?? ""), minute };
+          if (dialog.editId != null) return run(editGoalAction, { ...fields, eventId: String(dialog.editId) }, { onDone: close });
+          const bump = goalBumpsScore(side);
+          run(goalAction, { ...fields, bumpScore: bump ? "1" : "0" }, { onDone: close, optimistic: bump ? { side, delta: 1 } : undefined });
+        },
+        note:
+          dialog.editId != null
+            ? "แก้ไขประตู — สกอร์ไม่เปลี่ยน"
+            : goalBumpsScore(side)
+              ? `สกอร์ ${team.name} จะเพิ่มเป็น ${score[side] + 1}`
+              : `สกอร์คงเดิม (สกอร์ ${score[side]} มีประตูที่ยังไม่ได้ระบุผู้ทำอยู่ — เพิ่มชื่อผู้ทำประตูอย่างเดียว)`,
+        submitLabel: dialog.editId != null ? "บันทึกการแก้ไข" : "บันทึกประตู",
         canSubmit: true,
       };
     }
@@ -343,6 +488,7 @@ export function LiveMatchControl({
         title: (
           <>
             <span className={`h-5 w-3.5 rounded-[3px] ${cardType === "RED" ? "bg-red-600" : "bg-amber-400"}`} />
+            {dialog.editId != null && "แก้ไข"}
             {cardType === "RED" ? "ใบแดง" : "ใบเหลือง"} — {team.name}
           </>
         ),
@@ -375,15 +521,21 @@ export function LiveMatchControl({
             {minuteField}
           </div>
         ),
-        submit: () => run(cardAction, { side, cardType, holder: pickA ?? "", minute, reason }, { onDone: close }),
-        submitLabel: `บันทึก${cardType === "RED" ? "ใบแดง" : "ใบเหลือง"}`,
-        canSubmit: pickA != null,
+        submit: () =>
+          dialog.editId != null
+            ? run(editCardAction, { eventId: String(dialog.editId), cardType, holder: pickA ?? "", minute, reason }, { onDone: close })
+            : run(cardAction, { side, cardType, holder: pickA ?? "", minute, reason }, { onDone: close }),
+        note: null,
+        submitLabel: dialog.editId != null ? "บันทึกการแก้ไข" : `บันทึก${cardType === "RED" ? "ใบแดง" : "ใบเหลือง"}`,
+        canSubmit: pickA != null || dialog.editId != null,
       };
     }
 
     // เปลี่ยนตัว
-    const outs = sortPitchFirst(rosters[side].players.filter((p) => p.onPitch)).map((p) => ({ key: String(p.id), name: p.name, number: p.number }));
-    const ins = sortPitchFirst(rosters[side].players.filter((p) => p.onBench && String(p.id) !== pickA), "bench").map((p) => ({
+    // แก้ไข/เพิ่มย้อนหลัง: เลือกได้ทุกคนในทีม (สถานะในสนามตอนนี้ไม่ตรงกับช่วงเวลาของเหตุการณ์นั้น)
+    const anyone = dialog.editId != null || !!dialog.fromList;
+    const outs = sortPitchFirst(rosters[side].players.filter((p) => anyone || p.onPitch)).map((p) => ({ key: String(p.id), name: p.name, number: p.number }));
+    const ins = sortPitchFirst(rosters[side].players.filter((p) => (anyone || p.onBench) && String(p.id) !== pickA), "bench").map((p) => ({
       key: String(p.id),
       name: p.name,
       number: p.number,
@@ -391,7 +543,7 @@ export function LiveMatchControl({
     return {
       title: (
         <>
-          <ArrowLeftRight className="h-5 w-5 text-sky-500" /> เปลี่ยนตัว — {team.name}
+          <ArrowLeftRight className="h-5 w-5 text-sky-500" /> {dialog.editId != null ? "แก้ไขการเปลี่ยนตัว" : "เปลี่ยนตัว"} — {team.name}
         </>
       ),
       body: (
@@ -411,14 +563,19 @@ export function LiveMatchControl({
           {minuteField}
         </div>
       ),
-      submit: () => run(subAction, { side, outId: pickA ?? "", inId: pickB ?? "", minute }, { onDone: close }),
-      submitLabel: "บันทึกการเปลี่ยนตัว",
-      canSubmit: pickA != null && pickB != null,
+      submit: () =>
+        dialog.editId != null
+          ? run(editSubAction, { eventId: String(dialog.editId), outId: pickA ?? "", inId: pickB ?? "", minute }, { onDone: close })
+          : run(subAction, { side, outId: pickA ?? "", inId: pickB ?? "", minute }, { onDone: close }),
+      note: null,
+      submitLabel: dialog.editId != null ? "บันทึกการแก้ไข" : "บันทึกการเปลี่ยนตัว",
+      canSubmit: dialog.editId != null || (pickA != null && pickB != null),
     };
   };
   const d = dialogBody();
 
   return (
+    <>
     <div className="overflow-hidden rounded-2xl bg-linear-to-br from-g15-950 via-g15-900 to-g15-700 text-white shadow-xl">
       <div className="flex items-center justify-between gap-2 border-b border-white/10 px-5 py-3">
         <p className="flex items-center gap-2 text-sm font-bold">
@@ -503,6 +660,7 @@ export function LiveMatchControl({
             </div>
             <div className="overflow-y-auto px-5 py-4">{d.body}</div>
             <div className="space-y-2 border-t border-slate-100 px-5 py-3.5">
+              {d.note && <p className="text-xs font-medium text-slate-500">{d.note}</p>}
               {error && (
                 <p role="alert" className="flex items-center gap-1.5 text-xs font-medium text-red-600">
                   <AlertCircle className="h-3.5 w-3.5" />
@@ -528,5 +686,116 @@ export function LiveMatchControl({
         </div>
       )}
     </div>
+
+    {/* รายการเหตุการณ์ในเกม — เรียงตามเวลา แตะดินสอเพื่อแก้ / ถังขยะเพื่อลบ; ปุ่มด้านล่างเพิ่มย้อนหลังได้ (ไม่ต้องใช้นาฬิกาเกม) */}
+    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+      <div className="flex items-center gap-2 border-b border-slate-100 px-5 py-4 sm:px-6">
+        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-g15-50 text-g15-600">
+          <ListOrdered className="h-4 w-4" />
+        </div>
+        <h2 className="font-semibold text-slate-900">
+          เหตุการณ์ในเกม <span className="font-normal text-slate-400">/ Match events ({timeline.length})</span>
+        </h2>
+      </div>
+      {error && !dialog && (
+        <p role="alert" className="mx-5 mt-3 flex items-center gap-1.5 rounded-lg bg-red-50 px-3 py-2 text-xs font-medium text-red-700 sm:mx-6">
+          <AlertCircle className="h-3.5 w-3.5" />
+          {error}
+        </p>
+      )}
+      {timeline.length === 0 ? (
+        <p className="px-6 py-8 text-center text-sm text-slate-400">ยังไม่มีเหตุการณ์ — กดปุ่มด้านล่างเพื่อเพิ่ม</p>
+      ) : (
+        <ul className="divide-y divide-slate-100">
+          {timeline.map((ev) => {
+            const side = sideOf(ev.teamId);
+            return (
+              <li key={`${ev.kind}-${ev.raw.id}`} className="flex items-center gap-3 px-4 py-2.5 sm:px-6">
+                <span className="w-14 flex-none text-center font-mono text-sm font-black text-g15-700">
+                  {formatMinute(ev.raw.minute, ev.raw.addedMinute) || "-"}
+                </span>
+                <span className="flex h-8 w-8 flex-none items-center justify-center rounded-lg bg-slate-50">
+                  {ev.kind === "goal" ? (
+                    <BallIcon className="h-4.5 w-4.5 text-emerald-600" />
+                  ) : ev.kind === "card" ? (
+                    <span className={`h-4.5 w-3.5 rounded-[3px] ${ev.raw.cardType === "RED" ? "bg-red-600" : "bg-amber-400"}`} />
+                  ) : (
+                    <ArrowLeftRight className="h-4 w-4 text-sky-500" />
+                  )}
+                </span>
+                <span className="min-w-0 flex-1">
+                  {ev.kind === "goal" ? (
+                    <>
+                      <span className="block truncate text-sm font-semibold text-slate-900">
+                        {ev.raw.playerName}
+                        {ev.raw.isOwnGoal && <span className="ml-1 text-xs font-bold text-red-500">(OG)</span>}
+                      </span>
+                      {ev.raw.assistName && <span className="block truncate text-xs text-slate-400">แอสซิสต์: {ev.raw.assistName}</span>}
+                    </>
+                  ) : ev.kind === "card" ? (
+                    <span className="block truncate text-sm font-semibold text-slate-900">
+                      {ev.raw.holderName}
+                      {ev.raw.holderRole === "OFFICIAL" && <span className="ml-1 text-xs font-normal text-slate-400">(เจ้าหน้าที่)</span>}
+                    </span>
+                  ) : (
+                    <span className="block min-w-0 text-sm">
+                      <span className="block truncate font-semibold text-emerald-700">▲ {ev.raw.playerInName}</span>
+                      <span className="block truncate text-xs text-red-500">▼ {ev.raw.playerOutName}</span>
+                    </span>
+                  )}
+                </span>
+                <span className="hidden flex-none sm:block" title={teams[side].name}>
+                  <TeamBadge team={teams[side]} size="sm" />
+                </span>
+                <button
+                  type="button"
+                  disabled={pending}
+                  onClick={() => editEvent(ev)}
+                  aria-label="แก้ไข"
+                  className="flex h-9 w-9 flex-none items-center justify-center rounded-lg text-slate-500 ring-1 ring-slate-200 transition-colors hover:bg-g15-50 hover:text-g15-700 disabled:opacity-40"
+                >
+                  <Pencil className="h-4 w-4" />
+                </button>
+                <button
+                  type="button"
+                  disabled={pending}
+                  onClick={() => removeEvent(ev)}
+                  aria-label="ลบ"
+                  className="flex h-9 w-9 flex-none items-center justify-center rounded-lg text-slate-400 ring-1 ring-slate-200 transition-colors hover:bg-red-50 hover:text-red-600 disabled:opacity-40"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+      {/* เพิ่มเหตุการณ์ย้อนหลัง แยกตามทีม */}
+      <div className="grid grid-cols-1 gap-3 border-t border-slate-100 bg-slate-50/60 px-4 py-4 sm:grid-cols-2 sm:px-6">
+        {(["home", "away"] as const).map((side) => (
+          <div key={side}>
+            <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-slate-600">
+              <TeamBadge team={teams[side]} size="sm" />
+              <span className="truncate">เพิ่ม — {teams[side].name}</span>
+            </p>
+            <div className="flex flex-wrap gap-1.5">
+              <button type="button" disabled={pending} onClick={() => open({ kind: "goal", side, fromList: true }, { minute: "" })} className={`${actionBtn} bg-emerald-600 text-white hover:bg-emerald-500`}>
+                <Plus className="h-3.5 w-3.5" /> ประตู
+              </button>
+              <button type="button" disabled={pending} onClick={() => open({ kind: "card", side, cardType: "YELLOW", fromList: true }, { minute: "" })} className={`${actionBtn} bg-amber-400 text-amber-950 hover:bg-amber-300`}>
+                <Plus className="h-3.5 w-3.5" /> ใบเหลือง
+              </button>
+              <button type="button" disabled={pending} onClick={() => open({ kind: "card", side, cardType: "RED", fromList: true }, { minute: "" })} className={`${actionBtn} bg-red-600 text-white hover:bg-red-500`}>
+                <Plus className="h-3.5 w-3.5" /> ใบแดง
+              </button>
+              <button type="button" disabled={pending} onClick={() => open({ kind: "sub", side, fromList: true }, { minute: "" })} className={`${actionBtn} bg-sky-500 text-white hover:bg-sky-400`}>
+                <Plus className="h-3.5 w-3.5" /> เปลี่ยนตัว
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+    </>
   );
 }

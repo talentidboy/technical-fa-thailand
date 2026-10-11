@@ -444,6 +444,8 @@ model G15Goal {
   playerName     String     @map("player_name")
   jerseyNumber   Int?       @map("jersey_number")
   minute         Int?
+  // ทดเวลาบาดเจ็บ เช่น 90+3 → minute = 90, addedMinute = 3 (ว่าง = ไม่ใช่ช่วงทดเวลา)
+  addedMinute Int? @map("added_minute")
   // ทำเข้าประตูตัวเอง — teamId = ทีมที่ได้ประตู, playerId/playerName = คนยิง (เป็นผู้เล่นทีมตรงข้าม)
   // ไม่นับเป็นประตูของคนยิงในดาวซัลโว/โปรไฟล์
   isOwnGoal      Boolean    @default(false) @map("is_own_goal")
@@ -463,6 +465,8 @@ model G15Substitution {
   teamId          Int      @map("team_id")
   team            G15Team  @relation(fields: [teamId], references: [id], onDelete: Cascade)
   minute          Int?
+  // ทดเวลาบาดเจ็บ เช่น 90+3 → minute = 90, addedMinute = 3 (ว่าง = ไม่ใช่ช่วงทดเวลา)
+  addedMinute Int? @map("added_minute")
   playerInName    String   @map("player_in_name")
   playerInNumber  Int?     @map("player_in_number")
   playerOutName   String   @map("player_out_name")
@@ -485,6 +489,8 @@ model G15Card {
   holderRole   String   @default("PLAYER") @map("holder_role")
   cardType     String   @map("card_type")
   minute       Int?
+  // ทดเวลาบาดเจ็บ เช่น 90+3 → minute = 90, addedMinute = 3 (ว่าง = ไม่ใช่ช่วงทดเวลา)
+  addedMinute Int? @map("added_minute")
   reason       String?
   createdAt    DateTime @default(now()) @map("created_at")
 

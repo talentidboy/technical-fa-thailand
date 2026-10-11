@@ -8,11 +8,11 @@ import { roundStyle, roundEn, hasPenalties, isLive, hasLiveScore } from "@/lib/g
 import { LivePill } from "./LivePill";
 import { StackedTeams } from "./StackedTeams";
 import { LiveClock } from "./LiveClock";
-import { isClockLive } from "@/lib/g15-clock";
+import { isClockLive, formatMinute, minuteOrder } from "@/lib/g15-clock";
 
 type Team = { id: number; name: string; logoUrl: string | null; groupName: string | null };
 
-type MatchGoal = { teamId: number; playerName: string; minute: number | null; isOwnGoal?: boolean };
+type MatchGoal = { teamId: number; playerName: string; minute: number | null; addedMinute?: number | null; isOwnGoal?: boolean };
 
 type Match = {
   id: number;
@@ -37,16 +37,22 @@ type Match = {
 
 // รวมผู้ทำประตูของทีมเดียวกันเป็นบรรทัดเดียว เช่น "ชิชา 9', 33' · อัญชฎา 20'"
 function scorerSummary(goals: MatchGoal[], teamId: number) {
-  const byPlayer = new Map<string, number[]>();
+  const byPlayer = new Map<string, MatchGoal[]>();
   for (const g of goals) {
     if (g.teamId !== teamId) continue;
     const label = g.isOwnGoal ? `${g.playerName} (OG)` : g.playerName;
     if (!byPlayer.has(label)) byPlayer.set(label, []);
-    if (g.minute != null) byPlayer.get(label)!.push(g.minute);
+    if (g.minute != null) byPlayer.get(label)!.push(g);
   }
   if (byPlayer.size === 0) return null;
   return Array.from(byPlayer.entries())
-    .map(([name, minutes]) => `${name} ${minutes.sort((a, b) => a - b).map((m) => `${m}'`).join(", ")}`)
+    .map(
+      ([name, gs]) =>
+        `${name} ${gs
+          .sort((a, b) => minuteOrder(a.minute, a.addedMinute) - minuteOrder(b.minute, b.addedMinute))
+          .map((g) => formatMinute(g.minute, g.addedMinute))
+          .join(", ")}`,
+    )
     .join(" · ");
 }
 

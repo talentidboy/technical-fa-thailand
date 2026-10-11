@@ -6,15 +6,6 @@ import { getCurrentUser } from "@/lib/auth";
 import {
   updateMatchOfficials,
   updateLineup,
-  createGoalsBulk,
-  updateGoal,
-  deleteGoal,
-  createSubstitutionsBulk,
-  updateSubstitution,
-  deleteSubstitution,
-  createCardsBulk,
-  updateCard,
-  deleteCard,
   updateMatchScore,
   controlMatchClock,
   setAddedTime,
@@ -23,10 +14,13 @@ import {
   recordLiveCard,
   recordLiveSub,
   setPlayerOfMatch,
+  updateLiveGoal,
+  updateLiveCard,
+  updateLiveSub,
+  deleteLiveEvent,
 } from "../../actions";
-import { Field, SelectField } from "@/components/FormField";
+import { Field } from "@/components/FormField";
 import { TeamBadge } from "@/components/g15/TeamBadge";
-import { GoalsBulkForm, SubstitutionsBulkForm, CardsBulkForm } from "@/components/g15/BulkStatForms";
 import { FormWithToast } from "@/components/g15/FormWithToast";
 import { QuickScoreRow } from "@/components/g15/QuickScoreRow";
 import { OfficialCountdown } from "@/components/g15/OfficialCountdown";
@@ -36,7 +30,7 @@ import { ManageDialogButton } from "@/components/g15/ManageDialogButton";
 import { formatMatchDateTime } from "@/lib/g15";
 import { withStage, stageInfo, isLive, matchdayMap, type G15Stage } from "@/lib/g15-stage";
 import { LOGO_URL } from "@/lib/brand";
-import { ArrowLeft, ClipboardList, Target, LogIn, Trash2, ChevronDown, ExternalLink, Users, Star } from "lucide-react";
+import { ArrowLeft, ClipboardList, ExternalLink, Users, Star } from "lucide-react";
 
 const LINEUP_STATUS_OPTIONS = [
   { value: "", label: "ไม่ลง", activeClass: "peer-checked:bg-slate-700 peer-checked:text-white" },
@@ -44,81 +38,12 @@ const LINEUP_STATUS_OPTIONS = [
   { value: "SUBSTITUTE", label: "สำรอง", activeClass: "peer-checked:bg-sky-500 peer-checked:text-white" },
 ] as const;
 
-const fieldClass =
-  "w-full flex-1 rounded-lg border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100";
-
-function TeamSelect({
-  name,
-  homeTeam,
-  awayTeam,
-  defaultValue,
-  required = true,
-}: {
-  name: string;
-  homeTeam: { id: number; name: string };
-  awayTeam: { id: number; name: string };
-  defaultValue?: number;
-  required?: boolean;
-}) {
-  return (
-    <label className="flex flex-col gap-1.5">
-      <span className="text-sm font-medium text-slate-700">
-        ทีม{required && <span className="text-red-500"> *</span>}
-      </span>
-      <select name={name} required={required} defaultValue={defaultValue ? String(defaultValue) : ""} className={fieldClass}>
-        <option value="">เลือกทีม...</option>
-        <option value={homeTeam.id}>{homeTeam.name} (เหย้า)</option>
-        <option value={awayTeam.id}>{awayTeam.name} (เยือน)</option>
-      </select>
-    </label>
-  );
-}
-
 type RosterPlayer = {
   id: number;
   firstNameTh: string;
   lastNameTh: string;
   jerseyNumber: number | null;
 };
-
-// เลือกผู้ทำประตูจากทะเบียนนักกีฬาของทั้งสองทีม — เลือกแล้วจะผูก player_id ให้อัตโนมัติ
-// เว้นว่างไว้ได้ถ้าหาไม่เจอในทะเบียน แล้วไปกรอกทีม/ชื่อเองด้านล่างแทน (ใช้กับฟอร์มแก้ไขรายการเดิม)
-function PlayerSelect({
-  homeTeam,
-  awayTeam,
-  homePlayers,
-  awayPlayers,
-  defaultValue,
-}: {
-  homeTeam: { id: number; name: string };
-  awayTeam: { id: number; name: string };
-  homePlayers: RosterPlayer[];
-  awayPlayers: RosterPlayer[];
-  defaultValue?: number | null;
-}) {
-  return (
-    <label className="flex flex-col gap-1.5">
-      <span className="text-sm font-medium text-slate-700">เลือกจากทะเบียนนักกีฬา</span>
-      <select name="playerId" defaultValue={defaultValue ? String(defaultValue) : ""} className={fieldClass}>
-        <option value="">— ไม่พบในทะเบียน / กรอกเองด้านล่าง —</option>
-        <optgroup label={homeTeam.name}>
-          {homePlayers.map((p) => (
-            <option key={p.id} value={p.id}>
-              #{p.jerseyNumber ?? "-"} {p.firstNameTh} {p.lastNameTh}
-            </option>
-          ))}
-        </optgroup>
-        <optgroup label={awayTeam.name}>
-          {awayPlayers.map((p) => (
-            <option key={p.id} value={p.id}>
-              #{p.jerseyNumber ?? "-"} {p.firstNameTh} {p.lastNameTh}
-            </option>
-          ))}
-        </optgroup>
-      </select>
-    </label>
-  );
-}
 
 // ตารางไลน์อัพของทีมเดียว — ตัวจริง/ตัวสำรอง เป็นปุ่มเลือกแบบ segmented (radio ที่ซ่อนไว้ + label สไตล์ปุ่ม) กัปตันเป็นไอคอนดาวกดติด/ดับ
 // อยู่ในฟอร์มเดียวกับอีกทีม บันทึกครั้งเดียวทั้งคู่
@@ -279,16 +204,6 @@ export default async function G15ManageMatchPage({
   const eligibleHomePlayers = homeInLineup.size > 0 ? homePlayers.filter((p) => homeInLineup.has(p.id)) : homePlayers;
   const eligibleAwayPlayers = awayInLineup.size > 0 ? awayPlayers.filter((p) => awayInLineup.has(p.id)) : awayPlayers;
 
-  // สำหรับฟอร์มเปลี่ยนตัว: "ออก" ควรเลือกได้แค่ตัวจริง (คนที่อยู่ในสนาม) "เข้า" ควรเลือกได้แค่ตัวสำรอง — กันเลือกผิดฝั่ง/ซ้ำกันเอง
-  // ถ้าทีมนั้นยังไม่ได้บันทึกสถานะไลน์อัพเลย ใช้รายชื่อทั้งหมดของทีมสำหรับทั้งสองช่องไปก่อน (ไม่รู้ใครเป็นตัวจริง/สำรอง จะแยกไม่ได้)
-  const splitByLineupStatus = (players: RosterPlayer[], hasLineup: boolean) =>
-    hasLineup
-      ? {
-          starters: players.filter((p) => lineupByPlayerId.get(p.id)?.status === "STARTING"),
-          subs: players.filter((p) => lineupByPlayerId.get(p.id)?.status === "SUBSTITUTE"),
-        }
-      : { starters: players, subs: players };
-  const homeSplit = splitByLineupStatus(eligibleHomePlayers, homeInLineup.size > 0);
 
   // รายชื่อสำหรับป็อปอัพในแผงควบคุมเกมสด — คำนวณว่าใครอยู่ในสนาม/บนม้านั่ง จากไลน์อัพ + การเปลี่ยนตัวที่บันทึกแล้ว
   // (การเปลี่ยนตัวเก็บเป็นชื่อ จึงจับคู่ด้วยชื่อ-นามสกุล) ทีมที่ยังไม่มีไลน์อัพ = ทุกคนที่ยังไม่ถูกเปลี่ยนออกเลือกได้หมด
@@ -317,7 +232,6 @@ export default async function G15ManageMatchPage({
     home: liveRoster(match.homeTeamId, homePlayers, homeOfficials),
     away: liveRoster(match.awayTeamId, awayPlayers, awayOfficials),
   };
-  const awaySplit = splitByLineupStatus(eligibleAwayPlayers, awayInLineup.size > 0);
 
   const potmPlayer = rosterPlayers.find((p) => p.id === match.playerOfMatchId);
   // ตัวเลือก Player of the Match — คนในไลน์อัพนัดนี้ (ตัวจริงก่อน) ถ้ายังไม่มีไลน์อัพใช้ทั้งทีม
@@ -397,6 +311,12 @@ export default async function G15ManageMatchPage({
           goalAction={recordLiveGoal}
           cardAction={recordLiveCard}
           subAction={recordLiveSub}
+          homeTeamId={match.homeTeamId}
+          events={{ goals: match.goals, cards: match.cards, subs: match.substitutions }}
+          editGoalAction={updateLiveGoal}
+          editCardAction={updateLiveCard}
+          editSubAction={updateLiveSub}
+          deleteEventAction={deleteLiveEvent}
         />
 
         {/* ไลน์อัพ / ผู้เล่นยอดเยี่ยมประจำนัด / ทีมงานผู้ตัดสิน — ปุ่มการ์ด กดแล้วเปิดป็อปอัพ */}
@@ -551,295 +471,6 @@ export default async function G15ManageMatchPage({
             matchLabel={`${matchday != null ? `Matchday ${matchday} · ` : ""}${match.round}`}
           />
         )}
-
-        {/* ผู้ทำประตู */}
-        <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
-          <div className="flex items-center gap-2 border-b border-slate-100 px-6 py-4">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
-              <Target className="h-4 w-4" />
-            </div>
-            <h2 className="font-semibold text-slate-900">ผู้ทำประตู ({match.goals.length})</h2>
-          </div>
-
-          {match.goals.length > 0 && (
-            <ul className="divide-y divide-slate-100 border-b border-slate-100">
-              {match.goals.map((g) => (
-                <li key={g.id}>
-                  <details className="group">
-                    <summary className="flex cursor-pointer list-none items-center gap-3 px-6 py-3 hover:bg-slate-50 [&::-webkit-details-marker]:hidden">
-                      <ChevronDown className="h-3.5 w-3.5 flex-none text-slate-400 transition-transform group-open:rotate-180" />
-                      <span className="w-9 flex-none text-center text-xs font-bold text-emerald-600">
-                        {g.minute != null ? `${g.minute}'` : "-"}
-                      </span>
-                      <span className="min-w-0 flex-1 truncate text-sm font-medium text-slate-900">
-                        {g.playerName}
-                        {g.jerseyNumber != null && <span className="ml-1.5 text-slate-400">#{g.jerseyNumber}</span>}
-                        {g.isOwnGoal && (
-                          <span className="ml-1.5 rounded-full bg-red-50 px-1.5 py-0.5 text-[10px] font-bold text-red-600">OG</span>
-                        )}
-                        {g.playerId == null && (
-                          <span className="ml-1.5 rounded-full bg-amber-50 px-1.5 py-0.5 text-[10px] font-medium text-amber-600">
-                            ไม่ได้ผูกทะเบียน
-                          </span>
-                        )}
-                        {g.assistName && <span className="ml-1.5 text-xs font-normal text-slate-400">แอสซิสต์: {g.assistName}</span>}
-                      </span>
-                      <span className="hidden flex-none text-xs text-slate-400 sm:block">{teamById(g.teamId).name}</span>
-                    </summary>
-                    <div className="border-t border-slate-100 px-6 py-4">
-                      <form id={`goal-form-${g.id}`} action={updateGoal} className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                        <input type="hidden" name="id" value={g.id} />
-                        <input type="hidden" name="matchId" value={match.id} />
-                        <div className="col-span-2 sm:col-span-4">
-                          <PlayerSelect
-                            homeTeam={match.homeTeam}
-                            awayTeam={match.awayTeam}
-                            homePlayers={homePlayers}
-                            awayPlayers={awayPlayers}
-                            defaultValue={g.playerId}
-                          />
-                        </div>
-                        <TeamSelect name="teamId" homeTeam={match.homeTeam} awayTeam={match.awayTeam} defaultValue={g.teamId} required={false} />
-                        <Field label="ชื่อผู้ทำประตู (กรอกเองถ้าไม่ได้เลือกจากทะเบียน)" name="playerName" defaultValue={g.playerName} />
-                        <Field label="เบอร์เสื้อ" name="jerseyNumber" type="number" defaultValue={g.jerseyNumber?.toString() ?? ""} />
-                        <Field label="นาที" name="minute" type="number" defaultValue={g.minute?.toString() ?? ""} />
-                      </form>
-                      <div className="mt-4 flex items-center justify-between gap-3 border-t border-slate-100 pt-3">
-                        <form action={deleteGoal}>
-                          <input type="hidden" name="id" value={g.id} />
-                          <input type="hidden" name="matchId" value={match.id} />
-                          <button
-                            type="submit"
-                            className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-medium text-red-500 transition-colors hover:bg-red-50"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                            ลบ
-                          </button>
-                        </form>
-                        <button
-                          type="submit"
-                          form={`goal-form-${g.id}`}
-                          className="rounded-lg bg-slate-900 px-5 py-2.5 text-xs font-medium text-white transition-colors hover:bg-slate-800"
-                        >
-                          บันทึก
-                        </button>
-                      </div>
-                    </div>
-                  </details>
-                </li>
-              ))}
-            </ul>
-          )}
-
-          <div className="border-b border-slate-100 px-6 pt-4">
-            <p className="text-xs text-slate-400">แยกตามทีม กดเพิ่มแถวเองตามจำนวนที่ต้องการ — เลือกจากไลน์อัพของนัดนี้</p>
-          </div>
-          <GoalsBulkForm
-            clock={clock}
-            serverNow={serverNow}
-            matchId={match.id}
-            action={createGoalsBulk}
-            homeTeam={match.homeTeam}
-            awayTeam={match.awayTeam}
-            homePlayers={eligibleHomePlayers}
-            awayPlayers={eligibleAwayPlayers}
-          />
-        </div>
-
-        {/* การเปลี่ยนตัวผู้เล่น */}
-        <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
-          <div className="flex items-center gap-2 border-b border-slate-100 px-6 py-4">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
-              <LogIn className="h-4 w-4" />
-            </div>
-            <h2 className="font-semibold text-slate-900">การเปลี่ยนตัวผู้เล่น ({match.substitutions.length})</h2>
-          </div>
-
-          {match.substitutions.length > 0 && (
-            <ul className="divide-y divide-slate-100 border-b border-slate-100">
-              {match.substitutions.map((s) => (
-                <li key={s.id}>
-                  <details className="group">
-                    <summary className="flex cursor-pointer list-none items-center gap-3 px-6 py-3 hover:bg-slate-50 [&::-webkit-details-marker]:hidden">
-                      <ChevronDown className="h-3.5 w-3.5 flex-none text-slate-400 transition-transform group-open:rotate-180" />
-                      <span className="w-9 flex-none text-center text-xs font-bold text-slate-500">
-                        {s.minute != null ? `${s.minute}'` : "-"}
-                      </span>
-                      <span className="min-w-0 flex-1 truncate text-sm text-slate-900">
-                        <span className="text-emerald-700">↑ {s.playerInName}</span>{" "}
-                        <span className="text-red-600">↓ {s.playerOutName}</span>
-                      </span>
-                      <span className="hidden flex-none text-xs text-slate-400 sm:block">{teamById(s.teamId).name}</span>
-                    </summary>
-                    <div className="border-t border-slate-100 px-6 py-4">
-                      <form
-                        id={`sub-form-${s.id}`}
-                        action={updateSubstitution}
-                        className="grid grid-cols-2 gap-3 sm:grid-cols-3"
-                      >
-                        <input type="hidden" name="id" value={s.id} />
-                        <input type="hidden" name="matchId" value={match.id} />
-                        <TeamSelect name="teamId" homeTeam={match.homeTeam} awayTeam={match.awayTeam} defaultValue={s.teamId} />
-                        <Field label="นาที" name="minute" type="number" defaultValue={s.minute?.toString() ?? ""} />
-                        <div />
-                        <Field label="ผู้เล่นเข้า" name="playerInName" required defaultValue={s.playerInName} />
-                        <Field
-                          label="เบอร์เสื้อ (เข้า)"
-                          name="playerInNumber"
-                          type="number"
-                          defaultValue={s.playerInNumber?.toString() ?? ""}
-                        />
-                        <div />
-                        <Field label="ผู้เล่นออก" name="playerOutName" required defaultValue={s.playerOutName} />
-                        <Field
-                          label="เบอร์เสื้อ (ออก)"
-                          name="playerOutNumber"
-                          type="number"
-                          defaultValue={s.playerOutNumber?.toString() ?? ""}
-                        />
-                      </form>
-                      <div className="mt-4 flex items-center justify-between gap-3 border-t border-slate-100 pt-3">
-                        <form action={deleteSubstitution}>
-                          <input type="hidden" name="id" value={s.id} />
-                          <input type="hidden" name="matchId" value={match.id} />
-                          <button
-                            type="submit"
-                            className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-medium text-red-500 transition-colors hover:bg-red-50"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                            ลบ
-                          </button>
-                        </form>
-                        <button
-                          type="submit"
-                          form={`sub-form-${s.id}`}
-                          className="rounded-lg bg-slate-900 px-5 py-2.5 text-xs font-medium text-white transition-colors hover:bg-slate-800"
-                        >
-                          บันทึก
-                        </button>
-                      </div>
-                    </div>
-                  </details>
-                </li>
-              ))}
-            </ul>
-          )}
-
-          <div className="border-b border-slate-100 px-6 pt-4">
-            <p className="text-xs text-slate-400">
-              แยกตามทีม กดเพิ่มแถวเองตามจำนวนที่ต้องการ — &quot;เข้า&quot; เลือกได้เฉพาะตัวสำรอง &quot;ออก&quot; เลือกได้เฉพาะตัวจริง
-            </p>
-          </div>
-          <SubstitutionsBulkForm
-            clock={clock}
-            serverNow={serverNow}
-            matchId={match.id}
-            action={createSubstitutionsBulk}
-            homeTeam={match.homeTeam}
-            awayTeam={match.awayTeam}
-            homeInPlayers={homeSplit.subs}
-            homeOutPlayers={homeSplit.starters}
-            awayInPlayers={awaySplit.subs}
-            awayOutPlayers={awaySplit.starters}
-          />
-        </div>
-
-        {/* ใบเหลือง / ใบแดง */}
-        <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
-          <div className="flex items-center gap-2 border-b border-slate-100 px-6 py-4">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-50 text-amber-600">
-              <span className="h-3.5 w-2.5 rounded-sm bg-amber-400" />
-            </div>
-            <h2 className="font-semibold text-slate-900">ใบเหลือง / ใบแดง ({match.cards.length})</h2>
-          </div>
-
-          {match.cards.length > 0 && (
-            <ul className="divide-y divide-slate-100 border-b border-slate-100">
-              {match.cards.map((c) => (
-                <li key={c.id}>
-                  <details className="group">
-                    <summary className="flex cursor-pointer list-none items-center gap-3 px-6 py-3 hover:bg-slate-50 [&::-webkit-details-marker]:hidden">
-                      <ChevronDown className="h-3.5 w-3.5 flex-none text-slate-400 transition-transform group-open:rotate-180" />
-                      <span
-                        className={`h-4 w-3 flex-none rounded-sm ${c.cardType === "RED" ? "bg-red-600" : "bg-amber-400"}`}
-                      />
-                      <span className="min-w-0 flex-1 truncate text-sm font-medium text-slate-900">{c.holderName}</span>
-                      <span className="hidden flex-none text-xs text-slate-400 sm:block">{teamById(c.teamId).name}</span>
-                    </summary>
-                    <div className="border-t border-slate-100 px-6 py-4">
-                      <form id={`card-form-${c.id}`} action={updateCard} className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                        <input type="hidden" name="id" value={c.id} />
-                        <input type="hidden" name="matchId" value={match.id} />
-                        <TeamSelect name="teamId" homeTeam={match.homeTeam} awayTeam={match.awayTeam} defaultValue={c.teamId} />
-                        <Field label="ชื่อ" name="holderName" required defaultValue={c.holderName} />
-                        <Field label="เบอร์เสื้อ" name="holderNumber" type="number" defaultValue={c.holderNumber?.toString() ?? ""} />
-                        <SelectField
-                          label="สถานะ"
-                          name="holderRole"
-                          defaultValue={c.holderRole}
-                          options={[
-                            { value: "PLAYER", label: "นักกีฬา" },
-                            { value: "OFFICIAL", label: "เจ้าหน้าที่ทีม" },
-                          ]}
-                        />
-                        <SelectField
-                          label="ประเภทใบ"
-                          name="cardType"
-                          required
-                          defaultValue={c.cardType}
-                          options={[
-                            { value: "YELLOW", label: "ใบเหลือง" },
-                            { value: "RED", label: "ใบแดง" },
-                          ]}
-                        />
-                        <Field label="นาที" name="minute" type="number" defaultValue={c.minute?.toString() ?? ""} />
-                        <div className="col-span-2 sm:col-span-3">
-                          <Field label="เหตุผล" name="reason" defaultValue={c.reason ?? ""} />
-                        </div>
-                      </form>
-                      <div className="mt-4 flex items-center justify-between gap-3 border-t border-slate-100 pt-3">
-                        <form action={deleteCard}>
-                          <input type="hidden" name="id" value={c.id} />
-                          <input type="hidden" name="matchId" value={match.id} />
-                          <button
-                            type="submit"
-                            className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-medium text-red-500 transition-colors hover:bg-red-50"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                            ลบ
-                          </button>
-                        </form>
-                        <button
-                          type="submit"
-                          form={`card-form-${c.id}`}
-                          className="rounded-lg bg-slate-900 px-5 py-2.5 text-xs font-medium text-white transition-colors hover:bg-slate-800"
-                        >
-                          บันทึก
-                        </button>
-                      </div>
-                    </div>
-                  </details>
-                </li>
-              ))}
-            </ul>
-          )}
-
-          <div className="border-b border-slate-100 px-6 pt-4">
-            <p className="text-xs text-slate-400">แยกตามทีม กดเพิ่มแถวเองตามจำนวนที่ต้องการ — เลือกผู้รับได้ทั้งนักกีฬาในไลน์อัพและเจ้าหน้าที่ทีม</p>
-          </div>
-          <CardsBulkForm
-            clock={clock}
-            serverNow={serverNow}
-            matchId={match.id}
-            action={createCardsBulk}
-            homeTeam={match.homeTeam}
-            awayTeam={match.awayTeam}
-            homePlayers={eligibleHomePlayers}
-            awayPlayers={eligibleAwayPlayers}
-            homeOfficials={homeOfficials}
-            awayOfficials={awayOfficials}
-          />
-        </div>
       </div>
     </div>
   );
