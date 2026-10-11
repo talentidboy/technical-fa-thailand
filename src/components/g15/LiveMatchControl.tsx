@@ -192,6 +192,9 @@ export function LiveMatchControl({
   // เปลี่ยนตัวหลายคู่ในครั้งเดียว (ได้ทั้งสองทีม) — เลือกออก+เข้าครบคู่แล้วเข้าคิวอัตโนมัติ กดบันทึกทีเดียว
   const [subSide, setSubSide] = useState<Side>("home");
   const [subQueue, setSubQueue] = useState<{ side: Side; outId: string; inId: string }[]>([]);
+  // ช่องที่กำลังเลือก (คนออก → คนเข้า) และกำลังเพิ่มคู่ใหม่อยู่ไหม
+  const [subSlot, setSubSlot] = useState<"out" | "in">("out");
+  const [subBuilding, setSubBuilding] = useState(true);
 
   const open = (
     d: NonNullable<Dialog>,
@@ -204,6 +207,8 @@ export function LiveMatchControl({
     if (d.kind === "card") setCardType(d.cardType);
     setSubSide(d.side);
     setSubQueue([]);
+    setSubSlot("out");
+    setSubBuilding(true);
     if (preset?.minute !== undefined) setMinute(preset.minute);
     else {
       // เติมนาทีจากนาฬิกาเกม — ช่วงทดเวลาเป็นแบบ 45+2 / 90+3
@@ -566,26 +571,74 @@ export function LiveMatchControl({
       };
     }
 
-    // เพิ่มใหม่ — เลือกได้หลายคู่ สลับทีมได้ในป็อปอัพเดียว
+    // เพิ่มใหม่ — ทีละคู่: เลือกคนออก ⇄ คนเข้า แล้วกด "เปลี่ยนตัวเพิ่ม" ได้อีกหลายคู่ (ทั้งสองทีม) ก่อนบันทึกทีเดียว
     // เพิ่มย้อนหลัง (จากรายการ) เลือกได้ทุกคนในทีม เพราะสถานะในสนามตอนนี้ไม่ตรงกับช่วงเวลานั้น
     const anyone = !!dialog.fromList;
-    const queuedOut = new Set(subQueue.filter((q) => q.side === subSide).map((q) => q.outId));
-    const queuedIn = new Set(subQueue.filter((q) => q.side === subSide).map((q) => q.inId));
-    const outs = sortPitchFirst(rosters[subSide].players.filter((p) => (anyone || p.onPitch) && !queuedOut.has(String(p.id)) && !queuedIn.has(String(p.id)))).map((p) => ({
-      key: String(p.id),
-      name: p.name,
-      number: p.number,
-    }));
+    const queuedIds = new Set(subQueue.filter((q) => q.side === subSide).flatMap((q) => [q.outId, q.inId]));
+    const outs = sortPitchFirst(rosters[subSide].players.filter((p) => (anyone || p.onPitch) && !queuedIds.has(String(p.id)) && String(p.id) !== pickB)).map(
+      (p) => ({ key: String(p.id), name: p.name, number: p.number }),
+    );
     const ins = sortPitchFirst(
-      rosters[subSide].players.filter((p) => (anyone || p.onBench) && String(p.id) !== pickA && !queuedIn.has(String(p.id)) && !queuedOut.has(String(p.id))),
+      rosters[subSide].players.filter((p) => (anyone || p.onBench) && !queuedIds.has(String(p.id)) && String(p.id) !== pickA),
       "bench",
     ).map((p) => ({ key: String(p.id), name: p.name, number: p.number }));
-    const addPair = (outId: string, inId: string) => {
-      setSubQueue((q) => [...q, { side: subSide, outId, inId }]);
-      setPickA(null);
-      setPickB(null);
+    const playerOf = (sd: Side, id: string | null) => (id == null ? undefined : rosters[sd].players.find((p) => String(p.id) === id));
+    const pickOut = (k: string | null) => {
+      setPickA(k);
+      if (k && pickB) {
+        setSubQueue((q) => [...q, { side: subSide, outId: k, inId: pickB }]);
+        setPickA(null);
+        setPickB(null);
+        setSubBuilding(false);
+      } else if (k) setSubSlot("in");
     };
-    const nameOf = (sd: Side, id: string) => rosters[sd].players.find((p) => String(p.id) === id);
+    const pickIn = (k: string | null) => {
+      setPickB(k);
+      if (k && pickA) {
+        setSubQueue((q) => [...q, { side: subSide, outId: pickA, inId: k }]);
+        setPickA(null);
+        setPickB(null);
+        setSubBuilding(false);
+      } else if (k) setSubSlot("out");
+    };
+    const outP = playerOf(subSide, pickA);
+    const inP = playerOf(subSide, pickB);
+    const slotBox = (slot: "out" | "in", pl: { name: string; number: number | null } | undefined) => {
+      const isOut = slot === "out";
+      const active = subSlot === slot;
+      return (
+        <button
+          type="button"
+          onClick={() => setSubSlot(slot)}
+          className={`flex min-w-0 flex-1 flex-col items-center gap-1 rounded-2xl border-2 px-2 py-3 text-center transition-colors ${
+            active
+              ? isOut
+                ? "border-red-500 bg-red-50"
+                : "border-emerald-500 bg-emerald-50"
+              : "border-dashed border-slate-200 bg-white hover:border-slate-300"
+          }`}
+        >
+          <span className={`text-[11px] font-black uppercase tracking-wide ${isOut ? "text-red-600" : "text-emerald-600"}`}>
+            {isOut ? "▼ ออก / OFF" : "▲ เข้า / ON"}
+          </span>
+          {pl ? (
+            <>
+              <span
+                className={`flex h-10 w-10 items-center justify-center rounded-xl text-lg font-black text-white ${isOut ? "bg-red-500" : "bg-emerald-500"}`}
+              >
+                {pl.number ?? "-"}
+              </span>
+              <span className="line-clamp-2 text-xs font-bold leading-tight text-slate-800">{pl.name}</span>
+            </>
+          ) : (
+            <>
+              <span className="flex h-10 w-10 items-center justify-center rounded-xl border-2 border-dashed border-slate-300 text-lg font-black text-slate-300">?</span>
+              <span className="text-[11px] text-slate-400">{active ? "เลือกด้านล่าง" : "แตะเพื่อเลือก"}</span>
+            </>
+          )}
+        </button>
+      );
+    };
     return {
       title: (
         <>
@@ -594,81 +647,117 @@ export function LiveMatchControl({
       ),
       body: (
         <div className="space-y-4">
-          {/* เลือกทีม — สลับไปเพิ่มของอีกทีมได้เลย คู่ที่เลือกแล้วยังอยู่ในคิว */}
-          <div className="flex gap-1.5 rounded-xl bg-slate-100 p-1">
-            {(["home", "away"] as const).map((sd) => (
-              <button
-                key={sd}
-                type="button"
-                onClick={() => {
-                  setSubSide(sd);
-                  setPickA(null);
-                  setPickB(null);
-                }}
-                className={`flex min-w-0 flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-2 text-xs font-bold transition-colors ${
-                  subSide === sd ? "bg-white text-slate-900 shadow" : "text-slate-500"
-                }`}
-              >
-                <TeamBadge team={teams[sd]} size="sm" />
-                <span className="truncate">{teams[sd].name}</span>
-                {subQueue.some((q) => q.side === sd) && (
-                  <span className="flex-none rounded-full bg-sky-500 px-1.5 text-[10px] text-white">{subQueue.filter((q) => q.side === sd).length}</span>
-                )}
-              </button>
-            ))}
-          </div>
-
+          {/* คู่ที่เลือกแล้ว */}
           {subQueue.length > 0 && (
-            <div className="space-y-1.5 rounded-xl bg-sky-50 p-2.5 ring-1 ring-sky-100">
-              <p className="px-1 text-[11px] font-bold text-sky-700">จะบันทึก {subQueue.length} คู่</p>
-              {subQueue.map((q, i) => (
-                <div key={i} className="flex items-center gap-2 rounded-lg bg-white px-2 py-1.5 text-xs shadow-sm">
-                  <TeamBadge team={teams[q.side]} size="sm" />
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate font-semibold text-red-600">▼ {nameOf(q.side, q.outId)?.name}</span>
-                    <span className="block truncate font-semibold text-emerald-700">▲ {nameOf(q.side, q.inId)?.name}</span>
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => setSubQueue((all) => all.filter((_, j) => j !== i))}
-                    aria-label="เอาคู่นี้ออก"
-                    className="flex h-8 w-8 flex-none items-center justify-center rounded-lg text-slate-400 hover:bg-red-50 hover:text-red-600"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-                </div>
-              ))}
+            <div className="space-y-2">
+              {subQueue.map((q, i) => {
+                const o = playerOf(q.side, q.outId);
+                const n = playerOf(q.side, q.inId);
+                return (
+                  <div key={i} className="flex items-center gap-2 rounded-2xl bg-white p-2.5 shadow-sm ring-1 ring-slate-200">
+                    <span className="flex w-10 flex-none flex-col items-center gap-0.5">
+                      <TeamBadge team={teams[q.side]} size="sm" />
+                      <span className="text-[10px] font-bold text-slate-400">คู่ {i + 1}</span>
+                    </span>
+                    <span className="flex min-w-0 flex-1 items-center gap-2 rounded-xl bg-red-50 px-2 py-1.5">
+                      <span className="flex h-7 w-7 flex-none items-center justify-center rounded-lg bg-red-500 text-xs font-black text-white">{o?.number ?? "-"}</span>
+                      <span className="min-w-0">
+                        <span className="block text-[10px] font-bold text-red-600">▼ ออก</span>
+                        <span className="line-clamp-2 text-xs font-semibold leading-tight text-slate-800">{o?.name}</span>
+                      </span>
+                    </span>
+                    <ArrowLeftRight className="h-4 w-4 flex-none text-slate-400" />
+                    <span className="flex min-w-0 flex-1 items-center gap-2 rounded-xl bg-emerald-50 px-2 py-1.5">
+                      <span className="flex h-7 w-7 flex-none items-center justify-center rounded-lg bg-emerald-500 text-xs font-black text-white">{n?.number ?? "-"}</span>
+                      <span className="min-w-0">
+                        <span className="block text-[10px] font-bold text-emerald-600">▲ เข้า</span>
+                        <span className="line-clamp-2 text-xs font-semibold leading-tight text-slate-800">{n?.name}</span>
+                      </span>
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setSubQueue((all) => all.filter((_, j) => j !== i))}
+                      aria-label="เอาคู่นี้ออก"
+                      className="flex h-8 w-8 flex-none items-center justify-center rounded-lg text-slate-400 hover:bg-red-50 hover:text-red-600"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                );
+              })}
             </div>
           )}
 
-          <div>
-            <p className="mb-2 text-xs font-bold text-red-600">▼ ออก {anyone ? "" : "(อยู่ในสนาม)"}</p>
-            <PlayerGrid
-              players={outs}
-              value={pickA}
-              onChange={(k) => {
-                if (k && pickB) addPair(k, pickB);
-                else setPickA(k);
+          {subBuilding ? (
+            <div className="space-y-3 rounded-2xl bg-slate-50 p-3 ring-1 ring-slate-200">
+              <p className="text-xs font-bold text-slate-600">{subQueue.length > 0 ? `คู่ที่ ${subQueue.length + 1}` : "เลือกคู่เปลี่ยนตัว"}</p>
+              {/* ทีม */}
+              <div className="flex gap-1.5 rounded-xl bg-white p-1 ring-1 ring-slate-200">
+                {(["home", "away"] as const).map((sd) => (
+                  <button
+                    key={sd}
+                    type="button"
+                    onClick={() => {
+                      setSubSide(sd);
+                      setPickA(null);
+                      setPickB(null);
+                      setSubSlot("out");
+                    }}
+                    className={`flex min-w-0 flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-2 text-xs font-bold transition-colors ${
+                      subSide === sd ? "bg-g15-600 text-white" : "text-slate-500 hover:bg-slate-50"
+                    }`}
+                  >
+                    <TeamBadge team={teams[sd]} size="sm" />
+                    <span className="truncate">{teams[sd].name}</span>
+                  </button>
+                ))}
+              </div>
+              {/* ออก ⇄ เข้า */}
+              <div className="flex items-stretch gap-2">
+                {slotBox("out", outP)}
+                <span className="flex flex-none items-center">
+                  <ArrowLeftRight className="h-6 w-6 text-slate-400" />
+                </span>
+                {slotBox("in", inP)}
+              </div>
+              <div>
+                <p className={`mb-2 text-xs font-bold ${subSlot === "out" ? "text-red-600" : "text-emerald-600"}`}>
+                  {subSlot === "out" ? `แตะคนที่ออก${anyone ? "" : " (อยู่ในสนาม)"}` : `แตะคนที่เข้า${anyone ? "" : " (ตัวสำรอง)"}`}
+                </p>
+                {(subSlot === "out" ? outs : ins).length === 0 ? (
+                  <p className="text-xs text-slate-400">{subSlot === "out" ? "ไม่มีผู้เล่นให้เลือก" : "ไม่มีตัวสำรองเหลือ"}</p>
+                ) : subSlot === "out" ? (
+                  <PlayerGrid players={outs} value={pickA} onChange={pickOut} tone="red" />
+                ) : (
+                  <PlayerGrid players={ins} value={pickB} onChange={pickIn} tone="emerald" />
+                )}
+              </div>
+              {subQueue.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSubBuilding(false);
+                    setPickA(null);
+                    setPickB(null);
+                  }}
+                  className="text-xs font-semibold text-slate-500 hover:text-slate-800"
+                >
+                  ยกเลิกคู่นี้
+                </button>
+              )}
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => {
+                setSubBuilding(true);
+                setSubSlot("out");
               }}
-              tone="red"
-            />
-          </div>
-          <div>
-            <p className="mb-2 text-xs font-bold text-emerald-600">▲ เข้า {anyone ? "" : "(ตัวสำรอง)"}</p>
-            {ins.length === 0 ? (
-              <p className="text-xs text-slate-400">ไม่มีตัวสำรองเหลือ</p>
-            ) : (
-              <PlayerGrid
-                players={ins}
-                value={pickB}
-                onChange={(k) => {
-                  if (k && pickA) addPair(pickA, k);
-                  else setPickB(k);
-                }}
-                tone="emerald"
-              />
-            )}
-          </div>
+              className="flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-sky-300 bg-sky-50 py-3.5 text-sm font-bold text-sky-700 transition-colors hover:bg-sky-100"
+            >
+              <Plus className="h-4 w-4" /> เปลี่ยนตัวเพิ่ม
+            </button>
+          )}
           {minuteField}
         </div>
       ),
@@ -678,11 +767,12 @@ export function LiveMatchControl({
           { pairs: JSON.stringify(subQueue.map((q) => ({ side: q.side, outId: Number(q.outId), inId: Number(q.inId) }))), minute },
           { onDone: close },
         ),
-      note: subQueue.length === 0 ? "แตะคนออก แล้วแตะคนเข้า = 1 คู่ (เพิ่มได้หลายคู่ ทั้งสองทีม แล้วกดบันทึกทีเดียว)" : null,
+      note: subQueue.length === 0 ? "เลือกคนออก แล้วคนเข้า = 1 คู่ · เปลี่ยนหลายคนกด “เปลี่ยนตัวเพิ่ม” (ได้ทั้งสองทีม) แล้วบันทึกทีเดียว" : null,
       submitLabel: subQueue.length > 1 ? `บันทึกการเปลี่ยนตัว (${subQueue.length} คู่)` : "บันทึกการเปลี่ยนตัว",
       canSubmit: subQueue.length > 0,
     };
   };
+
   const d = dialogBody();
 
   return (
