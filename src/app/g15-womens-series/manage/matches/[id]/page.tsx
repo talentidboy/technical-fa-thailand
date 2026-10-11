@@ -30,7 +30,7 @@ import { ManageDialogButton } from "@/components/g15/ManageDialogButton";
 import { formatMatchDateTime } from "@/lib/g15";
 import { withStage, stageInfo, isLive, matchdayMap, type G15Stage } from "@/lib/g15-stage";
 import { LOGO_URL } from "@/lib/brand";
-import { ArrowLeft, ClipboardList, ExternalLink, Users, Star } from "lucide-react";
+import { ArrowLeft, ClipboardList, ExternalLink, Users, Star, FileText } from "lucide-react";
 
 const LINEUP_STATUS_OPTIONS = [
   { value: "", label: "ไม่ลง", activeClass: "peer-checked:bg-slate-700 peer-checked:text-white" },
@@ -293,6 +293,14 @@ export default async function G15ManageMatchPage({
               ดูหน้าสาธารณะ <ExternalLink className="h-3 w-3" />
             </Link>
           </p>
+          <Link
+            href={`/g15-womens-series/manage/matches/${match.id}/report`}
+            target="_blank"
+            className="mt-3 inline-flex h-10 items-center gap-2 rounded-xl bg-g15-600 px-4 text-sm font-bold text-white shadow-sm transition-colors hover:bg-g15-700"
+          >
+            <FileText className="h-4 w-4" />
+            รายงานการแข่งขัน (PDF)
+          </Link>
         </div>
 
         {/* ควบคุมเกมสด — นาฬิกา/ทดเวลา/สกอร์ ขึ้นหน้าเว็บแบบเรียลไทม์ */}
