@@ -25,7 +25,7 @@ export default async function G15StatsPage({
   const stage = parseStage((await searchParams).stage);
 
   // ทุกอย่างกรองตามรอบ — รอบชิงแชมป์ประเทศเริ่มนับประตู/คลีนชีต/ดาวซัลโวใหม่จากศูนย์ ไม่รวมผลรอบภูมิภาค
-  const [user, allTeams, matches, goals, allStars, assistGoals, cards] = await Promise.all([
+  const [user, allTeams, matches, goals, allStars, assistGoals, cards, keeperStarts] = await Promise.all([
     getCurrentUser(),
     prisma.g15Team.findMany({ orderBy: [{ groupName: "asc" }, { name: "asc" }] }),
     prisma.g15Match.findMany({
@@ -53,6 +53,26 @@ export default async function G15StatsPage({
       include: { team: true },
     }),
     prisma.g15Card.findMany({ where: { match: { stage }, holderRole: "PLAYER" }, include: { team: true } }),
+    // ผู้รักษาประตูตัวจริงของนัดที่จบแล้ว — ใช้นับคลีนชีตรายบุคคล (ตำแหน่งในทะเบียนกรอกเป็นไทย เช่น "ผู้รักษาประตู")
+    prisma.g15Lineup.findMany({
+      where: {
+        status: "STARTING",
+        match: { stage, status: "FINISHED" },
+        player: {
+          OR: [
+            { position: { contains: "ผู้รักษาประตู" } },
+            { position: "ประตู" },
+            { position: { contains: "GK", mode: "insensitive" } },
+            { position: { contains: "goalkeeper", mode: "insensitive" } },
+          ],
+        },
+      },
+      include: {
+        team: true,
+        match: { select: { homeTeamId: true, homeScore: true, awayScore: true } },
+        player: { select: { firstNameTh: true, lastNameTh: true, firstNameEn: true, lastNameEn: true, photoUrl: true } },
+      },
+    }),
   ]);
   const teams = stage === "NATIONAL" ? allTeams.filter((t) => t.nationalGroup) : allTeams;
 
@@ -152,6 +172,24 @@ export default async function G15StatsPage({
     );
   const yellowRows = cardRows("YELLOW");
   const redRows = cardRows("RED");
+  // คลีนชีตผู้รักษาประตู — ลงตัวจริงในนัดที่ทีมตัวเองไม่เสียประตูเลย (นับเฉพาะนัดที่จบแล้วและมีไลน์อัพ)
+  const keeperCleanSheetRows = tally(
+    keeperStarts
+      .filter((l) => {
+        const conceded = l.teamId === l.match.homeTeamId ? l.match.awayScore : l.match.homeScore;
+        return conceded === 0;
+      })
+      .map((l) => ({
+        key: `p${l.playerId}`,
+        build: () => ({
+          playerId: l.playerId,
+          nameTh: `${l.player.firstNameTh} ${l.player.lastNameTh}`,
+          nameEn: enName(l.player),
+          photoUrl: l.player.photoUrl,
+          team: teamOf(l.team),
+        }),
+      })),
+  );
   // ผู้เล่นยอดเยี่ยมประจำนัด — นับจำนวนนัดที่ได้รับเลือก
   const potmRows = tally(
     matches.flatMap((m) => {
@@ -208,6 +246,7 @@ export default async function G15StatsPage({
     { title: "Player of the Match", th: "ผู้เล่นยอดเยี่ยมประจำนัด", rows: potmRows, unit: "Awards", unitTh: "ครั้ง" },
     { title: "Top Scorers", th: "ดาวซัลโว", rows: topScorerRows, unit: "Goals", unitTh: "ประตู" },
     { title: "Top Assists", th: "แอสซิสต์สูงสุด", rows: assistRows, unit: "Assists", unitTh: "แอสซิสต์" },
+    { title: "Clean Sheets", th: "ผู้รักษาประตูไม่เสียประตู", rows: keeperCleanSheetRows, unit: "Clean sheets", unitTh: "นัด" },
     { title: "Yellow Cards", th: "ใบเหลือง", rows: yellowRows, unit: "Yellow", unitTh: "ใบเหลือง" },
     { title: "Red Cards", th: "ใบแดง", rows: redRows, unit: "Red", unitTh: "ใบแดง" },
   ].filter((b) => b.rows.length > 0);
