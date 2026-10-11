@@ -1118,3 +1118,28 @@ export async function recordLiveSub(formData: FormData): Promise<ActionResult> {
     revalidateG15(undefined, matchId);
   });
 }
+
+// ผู้เล่นยอดเยี่ยมประจำนัด (Player of the Match) — playerId ว่าง = ล้างค่า; ต้องเป็นนักกีฬาของสองทีมในนัดนี้เท่านั้น
+export async function setPlayerOfMatch(formData: FormData): Promise<ActionResult> {
+  await requireAdminOrStaff();
+  return attempt(async () => {
+    const matchId = Number(formData.get("id"));
+    const playerId = int(formData, "playerId");
+    const match = await prisma.g15Match.findUnique({
+      where: { id: matchId },
+      select: { homeTeamId: true, awayTeamId: true, playerOfMatchId: true },
+    });
+    if (!match) throw new Error("ไม่พบนัดการแข่งขัน");
+    if (playerId) {
+      const player = await prisma.g15Player.findUnique({ where: { id: playerId }, select: { teamId: true } });
+      if (!player || (player.teamId !== match.homeTeamId && player.teamId !== match.awayTeamId)) {
+        throw new Error("นักกีฬาที่เลือกไม่ได้อยู่ในสองทีมของนัดนี้");
+      }
+    }
+    await prisma.g15Match.update({ where: { id: matchId }, data: { playerOfMatchId: playerId ?? null } });
+    revalidateG15(undefined, matchId);
+    for (const pid of [playerId, match.playerOfMatchId]) {
+      if (pid) revalidatePath(`/g15-womens-series/players/${pid}`);
+    }
+  });
+}

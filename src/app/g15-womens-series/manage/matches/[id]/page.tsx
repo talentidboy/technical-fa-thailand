@@ -22,6 +22,7 @@ import {
   recordLiveGoal,
   recordLiveCard,
   recordLiveSub,
+  setPlayerOfMatch,
 } from "../../actions";
 import { Field, SelectField } from "@/components/FormField";
 import { TeamBadge } from "@/components/g15/TeamBadge";
@@ -30,6 +31,7 @@ import { FormWithToast } from "@/components/g15/FormWithToast";
 import { QuickScoreRow } from "@/components/g15/QuickScoreRow";
 import { OfficialCountdown } from "@/components/g15/OfficialCountdown";
 import { LiveMatchControl, type LiveRoster } from "@/components/g15/LiveMatchControl";
+import { PlayerOfMatchPicker } from "@/components/g15/PlayerOfMatchPicker";
 import { formatMatchDateTime } from "@/lib/g15";
 import { withStage, stageInfo, isLive, type G15Stage } from "@/lib/g15-stage";
 import { LOGO_URL } from "@/lib/brand";
@@ -249,7 +251,7 @@ export default async function G15ManageMatchPage({
         OR: [{ isActive: true }, { lineups: { some: { matchId: id } } }],
       },
       orderBy: [{ jerseyNumber: { sort: "asc", nulls: "last" } }, { no: "asc" }],
-      select: { id: true, teamId: true, firstNameTh: true, lastNameTh: true, jerseyNumber: true },
+      select: { id: true, teamId: true, firstNameTh: true, lastNameTh: true, jerseyNumber: true, photoUrl: true },
     }),
     prisma.g15Official.findMany({
       where: { teamId: { in: [match.homeTeamId, match.awayTeamId] }, isActive: true },
@@ -309,6 +311,18 @@ export default async function G15ManageMatchPage({
     away: liveRoster(match.awayTeamId, awayPlayers, awayOfficials),
   };
   const awaySplit = splitByLineupStatus(eligibleAwayPlayers, awayInLineup.size > 0);
+
+  // ตัวเลือก Player of the Match — คนในไลน์อัพนัดนี้ (ตัวจริงก่อน) ถ้ายังไม่มีไลน์อัพใช้ทั้งทีม
+  const potmCandidates = (players: (RosterPlayer & { photoUrl: string | null })[]) =>
+    players
+      .map((p) => ({
+        id: p.id,
+        name: `${p.firstNameTh} ${p.lastNameTh}`,
+        number: p.jerseyNumber,
+        photoUrl: p.photoUrl,
+        starter: lineupByPlayerId.get(p.id)?.status !== "SUBSTITUTE",
+      }))
+      .sort((a, b) => Number(b.starter) - Number(a.starter));
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -376,6 +390,27 @@ export default async function G15ManageMatchPage({
           cardAction={recordLiveCard}
           subAction={recordLiveSub}
         />
+
+        {/* ผู้เล่นยอดเยี่ยมประจำนัด */}
+        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <div className="flex items-center gap-2 border-b border-slate-100 px-6 py-4">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-50 text-amber-500">
+              <Star className="h-4 w-4 fill-amber-400" />
+            </div>
+            <h2 className="font-semibold text-slate-900">
+              Player of the Match <span className="font-normal text-slate-400">/ ผู้เล่นยอดเยี่ยมประจำนัด</span>
+            </h2>
+          </div>
+          <PlayerOfMatchPicker
+            matchId={match.id}
+            selectedId={match.playerOfMatchId}
+            action={setPlayerOfMatch}
+            teams={[
+              { team: match.homeTeam, players: potmCandidates(eligibleHomePlayers) },
+              { team: match.awayTeam, players: potmCandidates(eligibleAwayPlayers) },
+            ]}
+          />
+        </div>
 
         {/* แก้ผลด้วยตนเอง — สำหรับกรอกผลย้อนหลัง/แก้สกอร์ (ไม่ได้ใช้นาฬิกาเกมสด) */}
         <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">

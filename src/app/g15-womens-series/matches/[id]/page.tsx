@@ -23,6 +23,7 @@ import { LiveClock } from "@/components/g15/LiveClock";
 import { MatchTimeline } from "@/components/g15/MatchTimeline";
 import { MatchLineups, MatchStatBars } from "@/components/g15/MatchLineups";
 import { BallIcon } from "@/components/g15/BallIcon";
+import { PlayerOfMatchCard } from "@/components/g15/PlayerOfMatchCard";
 import { isClockLive } from "@/lib/g15-clock";
 import { G15Chrome } from "@/components/g15/G15Chrome";
 import { HeroArt } from "@/components/g15/HeroArt";
@@ -75,6 +76,19 @@ export default async function G15MatchDetailPage({
         lineups: {
           include: { player: { select: { firstNameTh: true, lastNameTh: true, jerseyNumber: true, photoUrl: true } } },
           orderBy: [{ player: { jerseyNumber: { sort: "asc", nulls: "last" } } }],
+        },
+        playerOfMatch: {
+          select: {
+            id: true,
+            teamId: true,
+            firstNameTh: true,
+            lastNameTh: true,
+            firstNameEn: true,
+            lastNameEn: true,
+            jerseyNumber: true,
+            position: true,
+            photoUrl: true,
+          },
         },
       },
     }),
@@ -369,6 +383,20 @@ export default async function G15MatchDetailPage({
       </section>
 
       <div className="mx-auto max-w-5xl px-5 pb-20 sm:px-6">
+        {/* ผู้เล่นยอดเยี่ยมประจำนัด (แอดมินเลือกในหน้าจัดการแมท) */}
+        {match.playerOfMatch && (
+          <Reveal>
+            <section className="mt-8">
+              <PlayerOfMatchCard
+                player={match.playerOfMatch}
+                team={match.playerOfMatch.teamId === match.homeTeamId ? match.homeTeam : match.awayTeam}
+                goals={match.goals.filter((g) => g.playerId === match.playerOfMatchId && !g.isOwnGoal).length}
+                assists={match.goals.filter((g) => g.assistPlayerId === match.playerOfMatchId).length}
+              />
+            </section>
+          </Reveal>
+        )}
+
         {/* สรุปสถิติเกม */}
         {hasEvents && (
           <Reveal>

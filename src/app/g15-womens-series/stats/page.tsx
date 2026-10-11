@@ -28,7 +28,16 @@ export default async function G15StatsPage({
   const [user, allTeams, matches, goals, allStars, assistGoals, cards] = await Promise.all([
     getCurrentUser(),
     prisma.g15Team.findMany({ orderBy: [{ groupName: "asc" }, { name: "asc" }] }),
-    prisma.g15Match.findMany({ where: { stage }, include: { homeTeam: true, awayTeam: true } }),
+    prisma.g15Match.findMany({
+      where: { stage },
+      include: {
+        homeTeam: true,
+        awayTeam: true,
+        playerOfMatch: {
+          select: { id: true, firstNameTh: true, lastNameTh: true, firstNameEn: true, lastNameEn: true, photoUrl: true, team: true },
+        },
+      },
+    }),
     // ไม่นับประตูตัวเอง (OG) เป็นประตูของคนยิง
     prisma.g15Goal.findMany({
       where: { match: { stage }, isOwnGoal: false },
@@ -143,6 +152,25 @@ export default async function G15StatsPage({
     );
   const yellowRows = cardRows("YELLOW");
   const redRows = cardRows("RED");
+  // ผู้เล่นยอดเยี่ยมประจำนัด — นับจำนวนนัดที่ได้รับเลือก
+  const potmRows = tally(
+    matches.flatMap((m) => {
+      const p = m.playerOfMatch;
+      if (!p) return [];
+      return [
+        {
+          key: `p${p.id}`,
+          build: () => ({
+            playerId: p.id,
+            nameTh: `${p.firstNameTh} ${p.lastNameTh}`,
+            nameEn: enName(p),
+            photoUrl: p.photoUrl,
+            team: teamOf(p.team),
+          }),
+        },
+      ];
+    }),
+  );
 
   // ===== อันดับทีม (การ์ดแบบเดียวกับนักกีฬา) =====
   const teamById = new Map(teams.map((t) => [t.id, t]));
@@ -175,6 +203,23 @@ export default async function G15StatsPage({
     .filter((r) => r.value > 0)
     .sort(byValueDesc);
 
+  // สถิติที่ยังไม่มีข้อมูลเลย (เช่น ยังไม่มีใบแดง/แอสซิสต์/ผู้เล่นยอดเยี่ยม) ไม่ต้องโชว์การ์ดว่างๆ — มีข้อมูลเมื่อไหร่ขึ้นเอง
+  const playerBoards = [
+    { title: "Player of the Match", th: "ผู้เล่นยอดเยี่ยมประจำนัด", rows: potmRows, unit: "Awards", unitTh: "ครั้ง" },
+    { title: "Top Scorers", th: "ดาวซัลโว", rows: topScorerRows, unit: "Goals", unitTh: "ประตู" },
+    { title: "Top Assists", th: "แอสซิสต์สูงสุด", rows: assistRows, unit: "Assists", unitTh: "แอสซิสต์" },
+    { title: "Yellow Cards", th: "ใบเหลือง", rows: yellowRows, unit: "Yellow", unitTh: "ใบเหลือง" },
+    { title: "Red Cards", th: "ใบแดง", rows: redRows, unit: "Red", unitTh: "ใบแดง" },
+  ].filter((b) => b.rows.length > 0);
+  const teamBoards = [
+    { title: "Most Goals", th: "ทีมยิงประตูสูงสุด", rows: goalsForRows.filter((r) => r.value > 0), unit: "Goals", unitTh: "ประตูได้" },
+    { title: "Best Defence", th: "ทีมเสียประตูน้อยสุด", rows: defenceRows, unit: "Conceded", unitTh: "ประตูเสีย" },
+    { title: "Clean Sheets", th: "คลีนชีตมากที่สุด", rows: cleanSheetTeamRows, unit: "Clean sheets", unitTh: "นัด" },
+    { title: "Most Wins", th: "ชนะมากที่สุด", rows: winsRows, unit: "Wins", unitTh: "ชนะ" },
+  ].filter((b) => b.rows.length > 0);
+  const showBiggestWin = !!biggestWin && biggestWinMargin > 0;
+  const hasAnyStats = finishedMatches.length > 0 || playerBoards.length > 0;
+
   return (
     <div className="min-h-screen bg-slate-50">
       <G15Chrome user={user} stage={stage} />
@@ -196,15 +241,15 @@ export default async function G15StatsPage({
       </section>
 
       <div className="mx-auto max-w-6xl px-6 pb-20">
-        {finishedMatches.length === 0 ? (
+        {!hasAnyStats ? (
           <div className="relative z-10 -mt-10 rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-10 text-center shadow-xl shadow-g15-950/10 sm:-mt-14">
             <p className="text-sm text-slate-500">ยังไม่มีผลการแข่งขันใน{stageInfo(stage).label} จึงยังไม่มีสถิติให้แสดง</p>
             <p className="mt-0.5 text-xs text-slate-400">No {stageInfo(stage).en} results yet, so no statistics to show</p>
           </div>
         ) : (
           <div className="space-y-8">
-            {/* แถบสถิติ — ลอยทับขอบล่างของฮีโร่ */}
-            <div className="relative z-10 -mt-10 sm:-mt-14">
+            {/* แถบสถิติ — ลอยทับขอบล่างของฮีโร่ (ยังไม่มีนัดที่จบ = ไม่ต้องโชว์ตัวเลขศูนย์) */}
+            <div className={`relative z-10 -mt-10 sm:-mt-14 ${finishedMatches.length === 0 ? "hidden" : ""}`}>
               <div className="grid grid-cols-2 gap-px overflow-hidden rounded-3xl bg-slate-200 shadow-xl shadow-g15-950/10 ring-1 ring-black/5 sm:grid-cols-4">
                 {[
                   { label: "ทีมทั้งหมด", en: "Teams", value: teams.length, decimals: 0, icon: Users, color: "bg-g15-50 text-g15-600" },
@@ -242,17 +287,13 @@ export default async function G15StatsPage({
             </div>
 
             {/* อันดับรายบุคคล — การ์ดแบบ leaderboard (อันดับ 1 เป็นแบนเนอร์ใหญ่) */}
+            {playerBoards.length > 0 && (
             <section>
               <h2 className={`${display.className} mb-4 text-4xl uppercase leading-none text-g15-900`}>
                 Player Stats <span className="font-sans text-base font-semibold normal-case text-slate-400">/ สถิตินักกีฬา</span>
               </h2>
               <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
-                {[
-                  { title: "Top Scorers", th: "ดาวซัลโว", rows: topScorerRows, unit: "Goals", unitTh: "ประตู" },
-                  { title: "Top Assists", th: "แอสซิสต์สูงสุด", rows: assistRows, unit: "Assists", unitTh: "แอสซิสต์" },
-                  { title: "Yellow Cards", th: "ใบเหลือง", rows: yellowRows, unit: "Yellow", unitTh: "ใบเหลือง" },
-                  ...(redRows.length > 0 ? [{ title: "Red Cards", th: "ใบแดง", rows: redRows, unit: "Red", unitTh: "ใบแดง" }] : []),
-                ].map((b, i) => (
+                {playerBoards.map((b, i) => (
                   <Reveal key={b.title} delay={i * 60} className="h-full">
                     <div className="flex h-full flex-col">
                       <p className="mb-2 flex items-baseline gap-2">
@@ -267,19 +308,16 @@ export default async function G15StatsPage({
                 ))}
               </div>
             </section>
+            )}
 
             {/* อันดับทีม — การ์ดแบบเดียวกับนักกีฬา (อันดับ 1 เป็นแบนเนอร์ + โลโก้ใหญ่) */}
+            {(teamBoards.length > 0 || showBiggestWin) && (
             <section>
               <h2 className={`${display.className} mb-4 text-4xl uppercase leading-none text-g15-900`}>
                 Team Stats <span className="font-sans text-base font-semibold normal-case text-slate-400">/ สถิติทีม</span>
               </h2>
               <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
-                {[
-                  { title: "Most Goals", th: "ทีมยิงประตูสูงสุด", rows: goalsForRows, unit: "Goals", unitTh: "ประตูได้" },
-                  { title: "Best Defence", th: "ทีมเสียประตูน้อยสุด", rows: defenceRows, unit: "Conceded", unitTh: "ประตูเสีย" },
-                  { title: "Clean Sheets", th: "คลีนชีตมากที่สุด", rows: cleanSheetTeamRows, unit: "Clean sheets", unitTh: "นัด" },
-                  { title: "Most Wins", th: "ชนะมากที่สุด", rows: winsRows, unit: "Wins", unitTh: "ชนะ" },
-                ].map((b, i) => (
+                {teamBoards.map((b, i) => (
                   <Reveal key={b.title} delay={i * 60} className="h-full">
                     <div className="flex h-full flex-col">
                       <p className="mb-2 flex items-baseline gap-2">
@@ -294,8 +332,8 @@ export default async function G15StatsPage({
                 ))}
 
                 {/* ชนะขาดลอยที่สุด — แบนเนอร์สองโลโก้ + สกอร์ บนฉากสนามแบบเดียวกัน */}
-                {biggestWin && (
-                  <Reveal delay={240}>
+                {showBiggestWin && (
+                  <Reveal delay={teamBoards.length * 60}>
                     <div className="flex flex-col">
                       <p className="mb-2 flex items-baseline gap-2">
                         <span className={`${display.className} text-2xl uppercase text-g15-700`}>Biggest Win</span>
@@ -340,6 +378,7 @@ export default async function G15StatsPage({
                 )}
               </div>
             </section>
+            )}
 
             {allStars.length > 0 && (
               <Reveal>

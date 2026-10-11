@@ -12,27 +12,27 @@ datasource db {
 
 // ข้อมูลประจำตัวผู้ฝึกสอน
 model Coach {
-  id             Int       @id @default(autoincrement())
-  afcId          String?   @unique @map("afc_id")
-  nameTh         String    @map("name_th")
-  surnameTh      String    @map("surname_th")
-  nameEn         String?   @map("name_en")
-  familyNameEn   String?   @map("family_name_en")
-  gender         String?
-  dob            DateTime?
-  idNumber       String?   @map("id_number")
-  passportNumber String?   @map("passport_number")
-  email          String?
-  telNo          String?   @map("tel_no")
-  nationality    String? // ข้อมูลเดิมเป็นข้อความอิสระ — ใช้ nationalityCode แทนสำหรับข้อมูลใหม่
-  residence      String? // ข้อมูลเดิมเป็นข้อความอิสระ — ใช้ provinceCode/districtCode/subdistrictCode แทนสำหรับข้อมูลใหม่
-  nationalityCode String?  @map("nationality_code") // ISO 3166-1 alpha-2 เช่น "TH"
-  provinceCode    String?  @map("province_code") // รหัสจังหวัดจาก geothai
-  districtCode    String?  @map("district_code") // รหัสอำเภอจาก geothai
-  subdistrictCode String?  @map("subdistrict_code") // รหัสตำบลจาก geothai
-  photoUrl       String?   @map("photo_url")
-  createdAt      DateTime  @default(now()) @map("created_at")
-  updatedAt      DateTime  @updatedAt @map("updated_at")
+  id              Int       @id @default(autoincrement())
+  afcId           String?   @unique @map("afc_id")
+  nameTh          String    @map("name_th")
+  surnameTh       String    @map("surname_th")
+  nameEn          String?   @map("name_en")
+  familyNameEn    String?   @map("family_name_en")
+  gender          String?
+  dob             DateTime?
+  idNumber        String?   @map("id_number")
+  passportNumber  String?   @map("passport_number")
+  email           String?
+  telNo           String?   @map("tel_no")
+  nationality     String? // ข้อมูลเดิมเป็นข้อความอิสระ — ใช้ nationalityCode แทนสำหรับข้อมูลใหม่
+  residence       String? // ข้อมูลเดิมเป็นข้อความอิสระ — ใช้ provinceCode/districtCode/subdistrictCode แทนสำหรับข้อมูลใหม่
+  nationalityCode String?   @map("nationality_code") // ISO 3166-1 alpha-2 เช่น "TH"
+  provinceCode    String?   @map("province_code") // รหัสจังหวัดจาก geothai
+  districtCode    String?   @map("district_code") // รหัสอำเภอจาก geothai
+  subdistrictCode String?   @map("subdistrict_code") // รหัสตำบลจาก geothai
+  photoUrl        String?   @map("photo_url")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
 
   licenseRecords      LicenseRecord[]
   employments         Employment[]
@@ -47,19 +47,19 @@ model Coach {
 // licenseType: PRO, A, B, C, G, ELITE_YOUTH, GK, VDO
 // recordType: TRAINING, EQUALIZATION
 model LicenseRecord {
-  id            Int       @id @default(autoincrement()) @map("record_id")
-  coachId       Int       @map("coach_id")
-  coach         Coach     @relation(fields: [coachId], references: [id], onDelete: Cascade)
-  licenseType   String    @map("license_type")
-  recordType    String    @map("record_type")
-  isLevelUp     Boolean   @default(false) @map("is_level_up")
-  certificateNo String?   @map("certificate_no")
-  issueDate     DateTime? @map("issue_date")
-  expireDate    DateTime? @map("expire_date")
-  confirmedBy   String?   @map("confirmed_by")
-  instructorId  Int?      @map("instructor_id")
+  id            Int         @id @default(autoincrement()) @map("record_id")
+  coachId       Int         @map("coach_id")
+  coach         Coach       @relation(fields: [coachId], references: [id], onDelete: Cascade)
+  licenseType   String      @map("license_type")
+  recordType    String      @map("record_type")
+  isLevelUp     Boolean     @default(false) @map("is_level_up")
+  certificateNo String?     @map("certificate_no")
+  issueDate     DateTime?   @map("issue_date")
+  expireDate    DateTime?   @map("expire_date")
+  confirmedBy   String?     @map("confirmed_by")
+  instructorId  Int?        @map("instructor_id")
   instructor    Instructor? @relation(fields: [instructorId], references: [id], onDelete: SetNull)
-  createdAt     DateTime  @default(now()) @map("created_at")
+  createdAt     DateTime    @default(now()) @map("created_at")
 
   @@map("license_records")
 }
@@ -67,20 +67,20 @@ model LicenseRecord {
 // ข้อมูลวิทยากรผู้สอนหลักสูตรอบรมผู้ฝึกสอน
 // maxLevel: ระดับสูงสุดที่สอนได้ (PRO, A, B, C, G, ELITE_YOUTH, GK, VDO)
 model Instructor {
-  id              Int      @id @default(autoincrement())
-  name            String
-  email           String?
-  telNo           String?  @map("tel_no")
-  photoUrl        String?  @map("photo_url")
-  affiliation     String?
-  afcInstructorId String?  @map("afc_instructor_id")
-  maxLevel        String?  @map("max_level")
-  teachesCore       Boolean @default(false) @map("teaches_core")
-  teachesGoalkeeper Boolean @default(false) @map("teaches_goalkeeper")
-  teachesFitness    Boolean @default(false) @map("teaches_fitness")
-  note            String?
-  createdAt       DateTime @default(now()) @map("created_at")
-  updatedAt       DateTime @updatedAt @map("updated_at")
+  id                Int      @id @default(autoincrement())
+  name              String
+  email             String?
+  telNo             String?  @map("tel_no")
+  photoUrl          String?  @map("photo_url")
+  affiliation       String?
+  afcInstructorId   String?  @map("afc_instructor_id")
+  maxLevel          String?  @map("max_level")
+  teachesCore       Boolean  @default(false) @map("teaches_core")
+  teachesGoalkeeper Boolean  @default(false) @map("teaches_goalkeeper")
+  teachesFitness    Boolean  @default(false) @map("teaches_fitness")
+  note              String?
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
 
   licenseRecords LicenseRecord[]
 
@@ -89,13 +89,13 @@ model Instructor {
 
 // ประวัติการทำงานปัจจุบัน
 model Employment {
-  id         Int      @id @default(autoincrement()) @map("employment_id")
-  coachId    Int      @map("coach_id")
-  coach      Coach    @relation(fields: [coachId], references: [id], onDelete: Cascade)
-  clubName   String   @map("club_name")
-  division   String?
-  position   String?
-  createdAt  DateTime @default(now()) @map("created_at")
+  id        Int      @id @default(autoincrement()) @map("employment_id")
+  coachId   Int      @map("coach_id")
+  coach     Coach    @relation(fields: [coachId], references: [id], onDelete: Cascade)
+  clubName  String   @map("club_name")
+  division  String?
+  position  String?
+  createdAt DateTime @default(now()) @map("created_at")
 
   @@map("employments")
 }
@@ -122,16 +122,16 @@ model SystemUser {
 
 // ข่าวประกาศที่แสดงบนหน้าหลักสาธารณะ
 model Announcement {
-  id        Int        @id @default(autoincrement())
+  id        Int         @id @default(autoincrement())
   title     String
   excerpt   String
-  content   String     @default("")
-  imageUrl  String?    @map("image_url")
-  linkUrl   String?    @map("link_url")
+  content   String      @default("")
+  imageUrl  String?     @map("image_url")
+  linkUrl   String?     @map("link_url")
   tag       String?
-  authorId  Int?       @map("author_id")
+  authorId  Int?        @map("author_id")
   author    SystemUser? @relation(fields: [authorId], references: [id], onDelete: SetNull)
-  createdAt DateTime   @default(now()) @map("created_at")
+  createdAt DateTime    @default(now()) @map("created_at")
 
   @@map("announcements")
 }
@@ -139,17 +139,17 @@ model Announcement {
 // บทความวิเคราะห์เทคนิคของหมวด Training Centre
 // area: THE_GAME, PRACTICE, ENVIRONMENT
 model TrainingArticle {
-  id            Int        @id @default(autoincrement())
+  id            Int         @id @default(autoincrement())
   title         String
   area          String
   theme         String?
-  ageGroup      String?    @map("age_group")
+  ageGroup      String?     @map("age_group")
   excerpt       String
-  content       String     @default("")
-  coverImageUrl String?    @map("cover_image_url")
-  authorId      Int?       @map("author_id")
+  content       String      @default("")
+  coverImageUrl String?     @map("cover_image_url")
+  authorId      Int?        @map("author_id")
   author        SystemUser? @relation(fields: [authorId], references: [id], onDelete: SetNull)
-  createdAt     DateTime   @default(now()) @map("created_at")
+  createdAt     DateTime    @default(now()) @map("created_at")
 
   @@map("training_articles")
 }
@@ -168,14 +168,14 @@ model Session {
 // คำขอแก้ไขข้อมูลจากโค้ช ที่รออนุมัติจากแอดมิน
 // status: PENDING, APPROVED, REJECTED
 model ProfileEditRequest {
-  id          Int       @id @default(autoincrement())
-  coachId     Int       @map("coach_id")
-  coach       Coach     @relation(fields: [coachId], references: [id], onDelete: Cascade)
-  payload     String
-  message     String?
-  status      String    @default("PENDING")
-  createdAt   DateTime  @default(now()) @map("created_at")
-  resolvedAt  DateTime? @map("resolved_at")
+  id         Int       @id @default(autoincrement())
+  coachId    Int       @map("coach_id")
+  coach      Coach     @relation(fields: [coachId], references: [id], onDelete: Cascade)
+  payload    String
+  message    String?
+  status     String    @default("PENDING")
+  createdAt  DateTime  @default(now()) @map("created_at")
+  resolvedAt DateTime? @map("resolved_at")
 
   @@map("profile_edit_requests")
 }
@@ -254,18 +254,18 @@ model Event {
 
 // ทีมที่เข้าร่วม G15 Women's Football Series
 model G15Team {
-  id        Int      @id @default(autoincrement())
-  name      String
-  logoUrl   String?  @map("logo_url")
-  groupName String?  @map("group_name")
+  id            Int      @id @default(autoincrement())
+  name          String
+  logoUrl       String?  @map("logo_url")
+  groupName     String?  @map("group_name")
   // รอบชิงแชมป์ประเทศ (National Round) — 8 ทีมตัวแทนภาค แบ่ง 2 กลุ่ม (A/B) ลำดับ 1-4 ตามผังการแข่งขันทางการ
   // แยกจาก groupName (กลุ่มรอบภูมิภาค) เพื่อให้ข้อมูลรอบภูมิภาคเดิมยังอยู่ครบ ไม่ปนกัน — null = ไม่ได้เข้ารอบ
   nationalGroup String?  @map("national_group")
   nationalSeed  Int?     @map("national_seed")
-  createdAt DateTime @default(now()) @map("created_at")
+  createdAt     DateTime @default(now()) @map("created_at")
 
-  homeMatches   G15Match[] @relation("G15HomeTeam")
-  awayMatches   G15Match[] @relation("G15AwayTeam")
+  homeMatches   G15Match[]        @relation("G15HomeTeam")
+  awayMatches   G15Match[]        @relation("G15AwayTeam")
   players       G15Player[]
   officials     G15Official[]
   goals         G15Goal[]
@@ -304,9 +304,10 @@ model G15Player {
   photoUrl       String?   @map("photo_url")
   createdAt      DateTime  @default(now()) @map("created_at")
 
-  goals    G15Goal[]
-  lineups  G15Lineup[]
-  allStars G15AllStar[]
+  goals               G15Goal[]
+  lineups             G15Lineup[]
+  allStars            G15AllStar[]
+  playerOfMatchAwards G15Match[]   @relation("G15PlayerOfMatch")
 
   @@map("g15_players")
 }
@@ -356,23 +357,23 @@ model G15Official {
 // stage: REGIONAL (รอบภูมิภาค — round = ชื่อภาค), NATIONAL (รอบชิงแชมป์ประเทศ — round = กลุ่ม A/B, รอบรองฯ, ชิงที่ 3, ชิงชนะเลิศ)
 // สถิติทุกอย่าง (ตารางคะแนน/ดาวซัลโว/คลีนชีต ฯลฯ) นับแยกตาม stage เสมอ ไม่รวมข้ามรอบ
 model G15Match {
-  id         Int       @id @default(autoincrement())
-  stage      String    @default("REGIONAL")
-  matchNo    Int?      @map("match_no")
-  round      String
-  matchDate  DateTime? @map("match_date")
-  venue      String?
-  homeTeamId Int       @map("home_team_id")
-  awayTeamId Int       @map("away_team_id")
-  homeTeam   G15Team   @relation("G15HomeTeam", fields: [homeTeamId], references: [id], onDelete: Cascade)
-  awayTeam   G15Team   @relation("G15AwayTeam", fields: [awayTeamId], references: [id], onDelete: Cascade)
-  homeScore  Int?      @map("home_score")
-  awayScore  Int?      @map("away_score")
+  id          Int       @id @default(autoincrement())
+  stage       String    @default("REGIONAL")
+  matchNo     Int?      @map("match_no")
+  round       String
+  matchDate   DateTime? @map("match_date")
+  venue       String?
+  homeTeamId  Int       @map("home_team_id")
+  awayTeamId  Int       @map("away_team_id")
+  homeTeam    G15Team   @relation("G15HomeTeam", fields: [homeTeamId], references: [id], onDelete: Cascade)
+  awayTeam    G15Team   @relation("G15AwayTeam", fields: [awayTeamId], references: [id], onDelete: Cascade)
+  homeScore   Int?      @map("home_score")
+  awayScore   Int?      @map("away_score")
   // ดวลจุดโทษ — ใช้เฉพาะรอบน็อกเอาต์ที่เสมอกันในเวลา (ไม่นับเป็นประตูในสถิติ ใช้ตัดสินผู้ชนะอย่างเดียว)
-  homePenalty Int?     @map("home_penalty")
-  awayPenalty Int?     @map("away_penalty")
-  status     String    @default("SCHEDULED")
-  createdAt  DateTime  @default(now()) @map("created_at")
+  homePenalty Int?      @map("home_penalty")
+  awayPenalty Int?      @map("away_penalty")
+  status      String    @default("SCHEDULED")
+  createdAt   DateTime  @default(now()) @map("created_at")
 
   // นาฬิกาเกมสด (แอดมินกดเริ่ม/จบแต่ละครึ่ง) — clockPhase: PRE, FIRST_HALF, HALF_TIME, SECOND_HALF, FULL_TIME
   // เวลาในเกมคำนวณจากเวลาที่กดเริ่มครึ่งนั้น (ไม่ได้เก็บนาทีที่เดินอยู่) — ทุกเครื่องเห็นเวลาตรงกัน แม้แอดมินปิดหน้าจอไป
@@ -401,6 +402,10 @@ model G15Match {
   secondHalfHomeScore Int? @map("second_half_home_score")
   secondHalfAwayScore Int? @map("second_half_away_score")
 
+  // ผู้เล่นยอดเยี่ยมประจำนัด (Player of the Match) — แอดมินเลือกในหน้าจัดการแมท, นับรวมในหน้าสถิติ
+  playerOfMatchId Int?       @map("player_of_match_id")
+  playerOfMatch   G15Player? @relation("G15PlayerOfMatch", fields: [playerOfMatchId], references: [id], onDelete: SetNull)
+
   goals         G15Goal[]
   substitutions G15Substitution[]
   cards         G15Card[]
@@ -428,23 +433,23 @@ model G15Lineup {
 
 // ผู้ทำประตูในแต่ละนัด (จากใบรายงานผู้ตัดสิน หัวข้อ "7. ผู้ทำประตู")
 model G15Goal {
-  id           Int      @id @default(autoincrement())
-  matchId      Int      @map("match_id")
-  match        G15Match @relation(fields: [matchId], references: [id], onDelete: Cascade)
-  teamId       Int      @map("team_id")
-  team         G15Team  @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  playerId     Int?     @map("player_id")
-  player       G15Player? @relation(fields: [playerId], references: [id], onDelete: SetNull)
-  playerName   String   @map("player_name")
-  jerseyNumber Int?     @map("jersey_number")
-  minute       Int?
+  id             Int        @id @default(autoincrement())
+  matchId        Int        @map("match_id")
+  match          G15Match   @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  teamId         Int        @map("team_id")
+  team           G15Team    @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  playerId       Int?       @map("player_id")
+  player         G15Player? @relation(fields: [playerId], references: [id], onDelete: SetNull)
+  playerName     String     @map("player_name")
+  jerseyNumber   Int?       @map("jersey_number")
+  minute         Int?
   // ทำเข้าประตูตัวเอง — teamId = ทีมที่ได้ประตู, playerId/playerName = คนยิง (เป็นผู้เล่นทีมตรงข้าม)
   // ไม่นับเป็นประตูของคนยิงในดาวซัลโว/โปรไฟล์
-  isOwnGoal    Boolean  @default(false) @map("is_own_goal")
+  isOwnGoal      Boolean    @default(false) @map("is_own_goal")
   // ผู้จ่ายบอล (ไม่บังคับ) — เก็บชื่อไว้ด้วย เผื่อนักกีฬาถูกลบ/ซ่อนจากทะเบียนภายหลัง
-  assistPlayerId Int?   @map("assist_player_id")
-  assistName   String?  @map("assist_name")
-  createdAt    DateTime @default(now()) @map("created_at")
+  assistPlayerId Int?       @map("assist_player_id")
+  assistName     String?    @map("assist_name")
+  createdAt      DateTime   @default(now()) @map("created_at")
 
   @@map("g15_goals")
 }
@@ -504,4 +509,3 @@ model PlayAndLearnCenter {
 
   @@map("play_and_learn_centers")
 }
-
