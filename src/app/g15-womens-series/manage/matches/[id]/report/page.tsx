@@ -277,7 +277,17 @@ export default async function G15MatchReportPage({ params }: { params: Promise<{
               {goals.map((g) => (
                 <tr key={g.id}>
                   <td className={`${td} text-center font-bold`}>{min(g)}</td>
-                  <td className={td}>{teamName(g.teamId)}</td>
+                  <td className={td}>
+                    {/* OG: ทีมของผู้เล่นที่ทำเข้าประตูตัวเอง + ระบุทีมที่ได้ประตู */}
+                    {g.isOwnGoal ? (
+                      <>
+                        {teamName(g.teamId === match.homeTeamId ? match.awayTeamId : match.homeTeamId)}
+                        <span className="block text-[10px] text-slate-500">ประตูให้ {teamName(g.teamId)}</span>
+                      </>
+                    ) : (
+                      teamName(g.teamId)
+                    )}
+                  </td>
                   <td className={`${td} text-center`}>{g.jerseyNumber ?? "-"}</td>
                   <td className={td}>
                     {g.playerName}

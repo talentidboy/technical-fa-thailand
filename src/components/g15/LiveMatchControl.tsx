@@ -944,7 +944,9 @@ export function LiveMatchControl({
           ) : (
             <ul className="divide-y divide-slate-100">
               {rows.map((ev) => {
-                const side = sideOf(ev.teamId);
+                // ทำเข้าประตูตัวเอง: แสดงทีมของผู้เล่นคนนั้น (ทีมตรงข้ามกับทีมที่ได้ประตู)
+                const credited = sideOf(ev.teamId);
+                const side: Side = ev.kind === "goal" && ev.raw.isOwnGoal ? (credited === "home" ? "away" : "home") : credited;
                 return (
                   <li key={`${ev.kind}-${ev.raw.id}`} className="flex items-center gap-3 px-4 py-2.5 sm:px-6">
                     <span className="w-14 flex-none text-center font-mono text-sm font-black text-g15-700">
@@ -960,6 +962,9 @@ export function LiveMatchControl({
                             {ev.raw.playerName}
                             {ev.raw.isOwnGoal && <span className="ml-1 text-xs font-bold text-red-500">(OG)</span>}
                           </span>
+                          {ev.raw.isOwnGoal && (
+                            <span className="block truncate text-xs text-red-500">ทำเข้าประตูตัวเอง · ประตูให้ {teams[credited].name}</span>
+                          )}
                           {ev.raw.assistName && <span className="block truncate text-xs text-slate-400">แอสซิสต์: {ev.raw.assistName}</span>}
                         </>
                       ) : ev.kind === "card" ? (
