@@ -30,14 +30,13 @@ export function NewsSection({ items }: { items: NewsItem[] }) {
   const moreItems = rest.slice(3);
 
   return (
-    <section id="news" className="mx-auto max-w-6xl px-6 py-16">
-      <div className="flex items-center gap-2">
-        <Megaphone className="h-5 w-5 text-indigo-600" />
-        <h2 className="text-xl font-bold text-slate-900">ข่าวประกาศ</h2>
-      </div>
-      <p className="mt-1 text-sm text-slate-500">
-        ความเคลื่อนไหวและประกาศล่าสุดจากศูนย์พัฒนาผู้ฝึกสอน
+    <section id="news" className="mx-auto max-w-6xl scroll-mt-24 px-6 py-16">
+      <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-[0.2em] text-amber-600">
+        <Megaphone className="h-3.5 w-3.5" />
+        News &amp; Announcements
       </p>
+      <h2 className="mt-1 text-2xl font-extrabold text-slate-900 sm:text-3xl">ข่าวประกาศ</h2>
+      <p className="mt-1 text-sm text-slate-500">ความเคลื่อนไหวและประกาศล่าสุดจากฝ่ายเทคนิค สมาคมกีฬาฟุตบอลแห่งประเทศไทย</p>
 
       {!featured ? (
         <p className="mt-8 text-sm text-slate-400">ยังไม่มีข่าวประกาศ</p>
