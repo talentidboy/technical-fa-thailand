@@ -1,12 +1,14 @@
 import Link from "next/link";
 import { requireCoach } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { LICENSE_TYPES, RECORD_TYPES, GENDER_OPTIONS, labelFor } from "@/lib/constants";
+import { LICENSE_TYPES, RECORD_TYPES, GENDER_OPTIONS, CORE_LICENSE_PROGRESSION, labelFor } from "@/lib/constants";
 import { getLicenseStatus, LICENSE_STATUS_STYLES } from "@/lib/license-status";
+import { getHighestCoreLevel, getNextCoreLevel } from "@/lib/license-rank";
 import { getCountryByCode, getFlagEmoji } from "@/lib/countries";
 import { formatThaiAddress } from "@/lib/thai-address";
+import { coreProgramSteps } from "@/components/CoursesSection";
 import { Reveal } from "@/components/g15/Reveal";
-import { AnimatedCounter } from "@/components/g15/AnimatedCounter";
+import { applyToSession } from "./courses/actions";
 import {
   Mail,
   Phone,
@@ -16,294 +18,530 @@ import {
   FileBadge,
   Pencil,
   GraduationCap,
-  ShieldCheck,
-  Clock3,
-  AlertTriangle,
   CheckCircle2,
   UserCircle2,
   Briefcase,
+  CalendarDays,
+  Users,
+  Lock,
+  ArrowRight,
+  Sparkles,
+  Clock,
+  AlertCircle,
+  BookOpen,
 } from "lucide-react";
 
 function formatDate(date: Date | null) {
   if (!date) return "-";
-  return date.toLocaleDateString("th-TH", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
+  return date.toLocaleDateString("th-TH", { year: "numeric", month: "short", day: "numeric" });
 }
+const shortDate = (date: Date | null) =>
+  date ? date.toLocaleDateString("th-TH", { day: "numeric", month: "short", year: "2-digit" }) : null;
 
-export default async function MyProfilePage({
+const APP_STATUS: Record<string, { label: string; className: string }> = {
+  PENDING: { label: "รอตรวจสอบ", className: "bg-amber-50 text-amber-700 ring-amber-200" },
+  APPROVED: { label: "อนุมัติแล้ว", className: "bg-emerald-50 text-emerald-700 ring-emerald-200" },
+  REJECTED: { label: "ไม่ผ่าน", className: "bg-red-50 text-red-700 ring-red-200" },
+  CANCELLED: { label: "ยกเลิก", className: "bg-slate-100 text-slate-500 ring-slate-200" },
+};
+
+// หน้าแรกของผู้ฝึกสอน — หลักสูตรอบรมขึ้นก่อน (รุ่นที่เปิดรับ + เส้นทางใบอนุญาต) แล้วจึงเป็นใบอนุญาต/ประวัติของฉัน
+export default async function CoachHomePage({
   searchParams,
 }: {
-  searchParams: Promise<{ saved?: string }>;
+  searchParams: Promise<{ saved?: string; applied?: string; error?: string }>;
 }) {
   const user = await requireCoach();
   const coachId = user.coachId!;
-  const { saved } = await searchParams;
+  const { saved, applied, error } = await searchParams;
 
-  const coach = await prisma.coach.findUnique({
-    where: { id: coachId },
-    include: {
-      licenseRecords: { orderBy: { issueDate: "desc" } },
-      employments: { orderBy: { createdAt: "desc" } },
-    },
-  });
+  const [coach, sessions, myApplications] = await Promise.all([
+    prisma.coach.findUnique({
+      where: { id: coachId },
+      include: {
+        licenseRecords: { orderBy: { issueDate: "desc" } },
+        employments: { orderBy: { createdAt: "desc" } },
+      },
+    }),
+    prisma.courseSession.findMany({
+      where: { status: "OPEN" },
+      include: { course: true, _count: { select: { applications: true } } },
+      orderBy: [{ startDate: "asc" }, { id: "asc" }],
+    }),
+    prisma.application.findMany({
+      where: { coachId },
+      include: { courseSession: { include: { course: true } } },
+      orderBy: { appliedAt: "desc" },
+      take: 5,
+    }),
+  ]);
 
   if (!coach) {
     return <p className="text-sm text-red-600">ไม่พบข้อมูลผู้ฝึกสอนของคุณ</p>;
   }
 
-  const licenseStatuses = coach.licenseRecords.map((r) =>
-    getLicenseStatus(r.expireDate)
+  const currentLevel = getHighestCoreLevel(coach.licenseRecords);
+  const nextLevel = getNextCoreLevel(currentLevel);
+  const currentIdx = currentLevel ? CORE_LICENSE_PROGRESSION.indexOf(currentLevel) : -1;
+  const appliedIds = new Set(
+    myApplications.filter((a) => a.status === "PENDING" || a.status === "APPROVED").map((a) => a.courseSessionId),
   );
-  const stats = [
-    {
-      label: "ใบอนุญาตทั้งหมด",
-      value: coach.licenseRecords.length,
-      icon: FileBadge,
-      className: "bg-indigo-50 text-indigo-600",
-    },
-    {
-      label: "ใช้งานได้",
-      value: licenseStatuses.filter((s) => s === "active").length,
-      icon: ShieldCheck,
-      className: "bg-emerald-50 text-emerald-600",
-    },
-    {
-      label: "ใกล้หมดอายุ",
-      value: licenseStatuses.filter((s) => s === "expiring").length,
-      icon: Clock3,
-      className: "bg-amber-50 text-amber-600",
-    },
-    {
-      label: "หมดอายุแล้ว",
-      value: licenseStatuses.filter((s) => s === "expired").length,
-      icon: AlertTriangle,
-      className: "bg-red-50 text-red-600",
-    },
-  ];
+  const now = new Date();
 
+  // รุ่นที่สมัครได้ขึ้นก่อน (อบรมทั่วไป หรือหลักสูตรระดับถัดไปของฉัน)
+  const sessionRows = sessions
+    .map((s) => {
+      const isGeneral = s.course.courseType === "GENERAL";
+      const eligible = isGeneral || s.course.licenseType === nextLevel;
+      const full = s.capacity != null && s._count.applications >= s.capacity;
+      const deadlinePassed = s.applicationDeadline != null && s.applicationDeadline < now;
+      const notYetOpen = s.applicationOpenDate != null && s.applicationOpenDate > now;
+      const applied = appliedIds.has(s.id);
+      const canApply = eligible && !applied && !full && !deadlinePassed && !notYetOpen;
+      // หลักสูตรระดับที่ผ่านมาแล้ว (หรือต่ำกว่าระดับปัจจุบัน)
+      const levelIdx = s.course.licenseType ? CORE_LICENSE_PROGRESSION.indexOf(s.course.licenseType) : -1;
+      const passed = !isGeneral && levelIdx !== -1 && levelIdx <= currentIdx;
+      const reason = passed
+        ? "ผ่านระดับนี้แล้ว"
+        : !eligible
+          ? `ต้องผ่านระดับก่อนหน้าก่อน`
+        : full
+          ? "เต็มแล้ว"
+          : notYetOpen
+            ? `เปิดรับ ${shortDate(s.applicationOpenDate)}`
+            : deadlinePassed
+              ? "หมดเขตสมัคร"
+              : null;
+      return { s, isGeneral, eligible, applied, canApply, reason, passed };
+    })
+    .sort(
+      (a, b) =>
+        Number(b.canApply) - Number(a.canApply) || Number(b.eligible) - Number(a.eligible) || Number(a.passed) - Number(b.passed),
+    );
+
+  const licenseStatuses = coach.licenseRecords.map((r) => getLicenseStatus(r.expireDate));
+  const counts = {
+    total: coach.licenseRecords.length,
+    active: licenseStatuses.filter((s) => s === "active").length,
+    expiring: licenseStatuses.filter((s) => s === "expiring").length,
+    expired: licenseStatuses.filter((s) => s === "expired").length,
+  };
   const country = getCountryByCode(coach.nationalityCode);
   const fullNameEn = [coach.nameEn, coach.familyNameEn].filter(Boolean).join(" ");
+  const job = coach.employments[0];
+  const nextStep = coreProgramSteps.find((c) => c.level === nextLevel) ?? null;
 
   return (
-    <div className="space-y-6">
-      {/* Profile header */}
+    <div className="space-y-8">
+      {/* ===== ส่วนหัว: ทักทาย + ระดับปัจจุบัน + ปุ่มลัด ===== */}
       <Reveal>
-        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-          <div className="relative h-24 overflow-hidden bg-linear-to-r from-indigo-700 via-indigo-600 to-indigo-800">
-            <div className="absolute inset-x-0 top-0 h-1 animate-shimmer-slide bg-linear-to-r from-amber-600 via-amber-200 via-50% to-amber-600 bg-size-[200%_100%]" />
-          </div>
-          <div className="flex flex-wrap items-start justify-between gap-4 px-6 pb-6">
-            <div className="-mt-12 flex items-end gap-4">
-              {coach.photoUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={coach.photoUrl}
-                  alt=""
-                  className="h-24 w-24 rounded-full object-cover ring-4 ring-white"
-                />
-              ) : (
-                <div className="flex h-24 w-24 items-center justify-center rounded-full bg-indigo-100 text-3xl font-semibold text-indigo-700 ring-4 ring-white">
-                  {coach.nameTh.charAt(0)}
-                </div>
-              )}
-              <div className="pb-1">
-                <h1 className="text-xl font-bold text-slate-900">
-                  {coach.nameTh} {coach.surnameTh}
-                </h1>
-                {fullNameEn && <p className="text-sm text-slate-400">{fullNameEn}</p>}
-                <p className="mt-0.5 text-sm font-medium text-indigo-600">
-                  {coach.afcId ?? "ไม่มี AFC ID"}
-                </p>
-                {coach.employments[0] && (
-                  <p className="text-sm text-slate-500">
-                    {coach.employments[0].clubName}
-                    {coach.employments[0].position &&
-                      ` · ${coach.employments[0].position}`}
-                  </p>
+        <section className="relative isolate overflow-hidden rounded-3xl bg-linear-to-br from-indigo-950 via-indigo-900 to-indigo-700 p-6 text-white shadow-xl shadow-indigo-950/20 sm:p-8">
+          <div className="absolute inset-x-0 top-0 h-1 animate-shimmer-slide bg-linear-to-r from-amber-600 via-amber-200 via-50% to-amber-600 bg-size-[200%_100%]" />
+          <div aria-hidden className="absolute -right-20 -top-24 -z-10 h-72 w-72 rounded-full bg-amber-400/20 blur-3xl" />
+          <div
+            aria-hidden
+            className="absolute inset-0 -z-10 opacity-[0.06]"
+            style={{
+              backgroundImage: "linear-gradient(white 1px, transparent 1px), linear-gradient(90deg, white 1px, transparent 1px)",
+              backgroundSize: "30px 30px",
+            }}
+          />
+
+          <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
+            {coach.photoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={coach.photoUrl} alt="" className="h-24 w-24 flex-none rounded-2xl object-cover ring-4 ring-white/20 sm:h-28 sm:w-28" />
+            ) : (
+              <div className="flex h-24 w-24 flex-none items-center justify-center rounded-2xl bg-white/10 text-4xl font-bold text-amber-300 ring-4 ring-white/15 sm:h-28 sm:w-28">
+                {coach.nameTh.charAt(0)}
+              </div>
+            )}
+            <div className="min-w-0 flex-1">
+              <p className="text-sm text-indigo-200">สวัสดี, ยินดีต้อนรับสู่ศูนย์อบรมผู้ฝึกสอน</p>
+              <h1 className="mt-0.5 text-2xl font-extrabold leading-tight sm:text-3xl">
+                {coach.nameTh} {coach.surnameTh}
+              </h1>
+              {fullNameEn && <p className="text-sm text-indigo-200">{fullNameEn}</p>}
+              <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
+                <span className="rounded-full bg-white/10 px-3 py-1 font-semibold ring-1 ring-white/15">{coach.afcId ? `AFC ID ${coach.afcId}` : "ยังไม่มี AFC ID"}</span>
+                <span className="rounded-full bg-amber-400 px-3 py-1 font-bold text-amber-950">
+                  {currentLevel ? `ใบอนุญาตระดับ ${currentLevel}` : "ยังไม่มีใบอนุญาต"}
+                </span>
+                {job && (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-white/10 px-3 py-1 ring-1 ring-white/15">
+                    <Briefcase className="h-3 w-3" />
+                    {job.clubName}
+                    {job.position && ` · ${job.position}`}
+                  </span>
                 )}
               </div>
             </div>
-            <div className="flex flex-wrap gap-2 pt-2">
-              <Link
-                href="/me/courses"
-                className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm shadow-indigo-200 transition-all duration-300 hover:-translate-y-0.5 hover:bg-indigo-700 hover:shadow-md"
-              >
-                <GraduationCap className="h-4 w-4" />
-                สมัครเข้าอบรม
-              </Link>
-              <Link
-                href="/me/card"
-                className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition-all duration-300 hover:-translate-y-0.5 hover:bg-slate-50 hover:shadow-sm"
-              >
-                <IdCard className="h-4 w-4" />
-                บัตรประจำตัว
-              </Link>
-              <Link
-                href="/me/edit"
-                className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition-all duration-300 hover:-translate-y-0.5 hover:bg-slate-50 hover:shadow-sm"
-              >
-                <Pencil className="h-4 w-4" />
-                แก้ไขข้อมูล
-              </Link>
-            </div>
           </div>
 
-          {(country || coach.gender) && (
-            <div className="flex flex-wrap items-center gap-2 border-t border-slate-100 px-6 py-3">
-              {country && (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-50 px-3 py-1 text-xs font-medium text-slate-600">
-                  {getFlagEmoji(coach.nationalityCode)} {country.nameTh}
-                </span>
-              )}
-              {coach.gender && (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-50 px-3 py-1 text-xs font-medium text-slate-600">
-                  <UserCircle2 className="h-3.5 w-3.5" />
-                  {labelFor(GENDER_OPTIONS, coach.gender)}
-                </span>
-              )}
-            </div>
-          )}
-
-          <dl className="grid grid-cols-1 gap-3 border-t border-slate-100 px-6 py-5 sm:grid-cols-3">
-            <div className="flex items-center gap-2.5 text-sm">
-              <Mail className="h-4 w-4 flex-none text-slate-400" />
-              <span className="truncate text-slate-600">
-                {coach.email ?? "-"}
-              </span>
-            </div>
-            <div className="flex items-center gap-2.5 text-sm">
-              <Phone className="h-4 w-4 flex-none text-slate-400" />
-              <span className="text-slate-600">{coach.telNo ?? "-"}</span>
-            </div>
-            <div className="flex items-center gap-2.5 text-sm">
-              <MapPin className="h-4 w-4 flex-none text-slate-400" />
-              <span className="text-slate-600">
-                {formatThaiAddress(coach) ?? coach.residence ?? "-"}
-              </span>
-            </div>
-          </dl>
-        </div>
+          <div className="mt-6 grid grid-cols-3 gap-2 sm:flex sm:flex-wrap">
+            <Link
+              href="/me/courses"
+              className="inline-flex flex-col items-center justify-center gap-1 rounded-xl bg-amber-400 px-4 py-2.5 text-xs font-bold text-amber-950 shadow-sm transition-colors hover:bg-amber-300 sm:flex-row sm:gap-2 sm:text-sm"
+            >
+              <GraduationCap className="h-4 w-4" />
+              สมัครเข้าอบรม
+            </Link>
+            <Link
+              href="/me/card"
+              className="inline-flex flex-col items-center justify-center gap-1 rounded-xl bg-white/10 px-4 py-2.5 text-xs font-semibold ring-1 ring-white/20 transition-colors hover:bg-white/20 sm:flex-row sm:gap-2 sm:text-sm"
+            >
+              <IdCard className="h-4 w-4" />
+              บัตรประจำตัว
+            </Link>
+            <Link
+              href="/me/edit"
+              className="inline-flex flex-col items-center justify-center gap-1 rounded-xl bg-white/10 px-4 py-2.5 text-xs font-semibold ring-1 ring-white/20 transition-colors hover:bg-white/20 sm:flex-row sm:gap-2 sm:text-sm"
+            >
+              <Pencil className="h-4 w-4" />
+              แก้ไขข้อมูล
+            </Link>
+          </div>
+        </section>
       </Reveal>
 
       {saved && (
-        <p className="flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+        <p className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
           <CheckCircle2 className="h-4 w-4 flex-none" />
           บันทึกข้อมูลเรียบร้อยแล้ว
         </p>
       )}
+      {applied && (
+        <p className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+          <CheckCircle2 className="h-4 w-4 flex-none" />
+          ส่งใบสมัครแล้ว รอเจ้าหน้าที่ตรวจสอบ
+        </p>
+      )}
+      {error && (
+        <p className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          <AlertCircle className="h-4 w-4 flex-none" />
+          {error}
+        </p>
+      )}
 
-      {/* Quick stats */}
-      <Reveal delay={80}>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {stats.map(({ label, value, icon: Icon, className }) => (
-            <div
-              key={label}
-              className="group flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md"
-            >
-              <div
-                className={`flex h-10 w-10 flex-none items-center justify-center rounded-xl transition-transform duration-300 group-hover:scale-110 ${className}`}
-              >
-                <Icon className="h-5 w-5" />
+      {/* ===== หลักสูตรอบรม (แสดงก่อน) ===== */}
+      <section>
+        <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-amber-600">Courses</p>
+            <h2 className="text-2xl font-extrabold text-slate-900">หลักสูตรอบรม</h2>
+            <p className="mt-0.5 text-sm text-slate-500">
+              {nextLevel ? (
+                <>
+                  ระดับถัดไปที่คุณสมัครได้: <b className="text-indigo-700">{nextLevel}</b>
+                </>
+              ) : (
+                "คุณผ่านระดับสูงสุด (PRO) แล้ว — สมัครอบรมทั่วไปได้เสมอ"
+              )}
+            </p>
+          </div>
+          <Link href="/me/courses" className="inline-flex items-center gap-1 text-sm font-semibold text-indigo-700 hover:text-indigo-900">
+            ดูทั้งหมด / ใบสมัครของฉัน <ArrowRight className="h-4 w-4" />
+          </Link>
+        </div>
+
+        {/* รุ่นที่เปิดรับสมัคร */}
+        {sessionRows.length > 0 ? (
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            {sessionRows.map(({ s, isGeneral, eligible, applied: done, canApply, reason, passed }) => (
+              <Reveal key={s.id}>
+                <div
+                  className={`flex h-full flex-col overflow-hidden rounded-3xl bg-white shadow-sm ring-1 transition-all hover:-translate-y-0.5 hover:shadow-lg ${
+                    canApply ? "ring-amber-300" : "ring-slate-200"
+                  }`}
+                >
+                  <div className={`flex items-center gap-3 px-5 py-4 ${eligible ? "bg-linear-to-r from-indigo-800 to-indigo-600 text-white" : "bg-slate-100 text-slate-600"}`}>
+                    <span
+                      className={`flex h-12 w-12 flex-none items-center justify-center rounded-xl text-lg font-black ${
+                        eligible ? "bg-amber-400 text-amber-950" : "bg-white text-slate-400"
+                      }`}
+                    >
+                      {isGeneral ? <BookOpen className="h-5 w-5" /> : s.course.licenseType}
+                    </span>
+                    <div className="min-w-0">
+                      <p className="line-clamp-2 font-bold leading-snug">{s.course.title}</p>
+                      <p className={`text-xs ${eligible ? "text-indigo-200" : "text-slate-400"}`}>
+                        {isGeneral ? "อบรมทั่วไป · เปิดรับทุกระดับ" : `หลักสูตรระดับ ${s.course.licenseType}`} · {s.name}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex flex-1 flex-col gap-2 px-5 py-4 text-sm text-slate-600">
+                    {(s.startDate || s.endDate) && (
+                      <p className="flex items-center gap-2">
+                        <CalendarDays className="h-4 w-4 flex-none text-indigo-500" />
+                        {formatDate(s.startDate)} – {formatDate(s.endDate)}
+                      </p>
+                    )}
+                    {s.venue && (
+                      <p className="flex items-center gap-2">
+                        <MapPin className="h-4 w-4 flex-none text-indigo-500" />
+                        {s.venue}
+                      </p>
+                    )}
+                    {s.capacity != null && (
+                      <div>
+                        <p className="flex items-center gap-2">
+                          <Users className="h-4 w-4 flex-none text-indigo-500" />
+                          สมัครแล้ว {s._count.applications}/{s.capacity} คน
+                        </p>
+                        <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-slate-100">
+                          <div
+                            className="h-full rounded-full bg-indigo-500"
+                            style={{ width: `${Math.min(100, (s._count.applications / s.capacity) * 100)}%` }}
+                          />
+                        </div>
+                      </div>
+                    )}
+                    {(s.applicationOpenDate || s.applicationDeadline) && (
+                      <p className="flex items-center gap-2 text-xs text-slate-400">
+                        <Clock className="h-3.5 w-3.5 flex-none" />
+                        รับสมัคร {shortDate(s.applicationOpenDate) ?? "ตั้งแต่วันนี้"} – {shortDate(s.applicationDeadline) ?? "ไม่กำหนด"}
+                      </p>
+                    )}
+                    <div className="mt-auto pt-3">
+                      {done ? (
+                        <span className="inline-flex w-full items-center justify-center gap-1.5 rounded-xl bg-indigo-50 py-2.5 text-sm font-semibold text-indigo-700">
+                          <CheckCircle2 className="h-4 w-4" /> สมัครแล้ว
+                        </span>
+                      ) : canApply ? (
+                        <form action={applyToSession}>
+                          <input type="hidden" name="courseSessionId" value={s.id} />
+                          <input type="hidden" name="from" value="home" />
+                          <button
+                            type="submit"
+                            className="inline-flex w-full items-center justify-center gap-1.5 rounded-xl bg-amber-400 py-2.5 text-sm font-bold text-amber-950 shadow-sm transition-colors hover:bg-amber-300"
+                          >
+                            <GraduationCap className="h-4 w-4" /> สมัครรุ่นนี้
+                          </button>
+                        </form>
+                      ) : (
+                        <span className="inline-flex w-full items-center justify-center gap-1.5 rounded-xl bg-slate-100 py-2.5 text-sm font-medium text-slate-500">
+                          {passed ? <CheckCircle2 className="h-4 w-4 text-emerald-500" /> : !eligible && <Lock className="h-4 w-4" />}
+                          {reason ?? "สมัครไม่ได้"}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </Reveal>
+            ))}
+          </div>
+        ) : (
+          <div className="flex flex-col items-center gap-2 rounded-3xl border border-dashed border-slate-300 bg-white px-6 py-8 text-center">
+            <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600">
+              <CalendarDays className="h-6 w-6" />
+            </span>
+            <p className="font-semibold text-slate-700">ยังไม่มีรุ่นอบรมที่เปิดรับสมัครในขณะนี้</p>
+            <p className="text-sm text-slate-500">เมื่อมีรุ่นใหม่เปิดรับ จะแสดงที่นี่และสมัครได้ทันที</p>
+          </div>
+        )}
+
+        {/* เส้นทางใบอนุญาตของฉัน G → C → B → A → PRO */}
+        <Reveal>
+          <div className="mt-6 rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200 sm:p-6">
+            <p className="mb-4 flex items-center gap-2 font-bold text-slate-900">
+              <Sparkles className="h-4 w-4 text-amber-500" />
+              เส้นทางใบอนุญาตของฉัน <span className="hidden text-sm font-normal text-slate-400 sm:inline">/ AFC Coaching Pathway</span>
+            </p>
+            <ol className="grid grid-cols-5 gap-1.5 sm:gap-3">
+              {CORE_LICENSE_PROGRESSION.map((level, i) => {
+                const done = i <= currentIdx;
+                const isNext = level === nextLevel;
+                const step = coreProgramSteps.find((c) => c.level === level);
+                return (
+                  <li key={level} className="relative">
+                    {i > 0 && (
+                      <span
+                        aria-hidden
+                        className={`absolute right-1/2 top-6 h-1 w-full -translate-y-1/2 rounded-full sm:top-7 ${i <= currentIdx ? "bg-emerald-400" : "bg-slate-200"}`}
+                      />
+                    )}
+                    <div className="relative z-10 flex flex-col items-center text-center">
+                      <span
+                        className={`flex h-12 w-12 items-center justify-center rounded-2xl text-base font-black ring-4 ring-white sm:h-14 sm:w-14 sm:text-lg ${
+                          done
+                            ? "bg-emerald-500 text-white"
+                            : isNext
+                              ? "bg-amber-400 text-amber-950 shadow-lg shadow-amber-400/40"
+                              : "bg-slate-100 text-slate-400"
+                        }`}
+                      >
+                        {done ? <CheckCircle2 className="h-6 w-6" /> : level}
+                      </span>
+                      <span className={`mt-2 text-xs font-bold sm:text-sm ${isNext ? "text-amber-700" : done ? "text-emerald-700" : "text-slate-400"}`}>
+                        {level}
+                      </span>
+                      <span className="hidden text-[11px] text-slate-400 sm:block">
+                        {done ? "ผ่านแล้ว" : isNext ? "ระดับถัดไป" : step ? `${step.days} วัน` : ""}
+                      </span>
+                    </div>
+                  </li>
+                );
+              })}
+            </ol>
+            {nextStep && (
+              <div className="mt-5 flex flex-col gap-3 rounded-2xl bg-amber-50 p-4 ring-1 ring-amber-200 sm:flex-row sm:items-center">
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-bold text-amber-700">ระดับถัดไปของคุณ</p>
+                  <p className="font-bold text-slate-900">{nextStep.title}</p>
+                  <p className="mt-0.5 text-xs text-slate-600">
+                    {nextStep.ageGroup} · {nextStep.totalHours} ชั่วโมง · {nextStep.days} วัน
+                  </p>
+                </div>
+                <Link
+                  href="/courses"
+                  className="inline-flex flex-none items-center justify-center gap-1.5 rounded-xl bg-white px-4 py-2 text-sm font-semibold text-amber-800 ring-1 ring-amber-300 hover:bg-amber-100"
+                >
+                  รายละเอียดหลักสูตร <ArrowRight className="h-4 w-4" />
+                </Link>
               </div>
-              <div className="min-w-0">
-                <p className="text-xl font-bold leading-tight text-slate-900">
-                  <AnimatedCounter value={value} />
-                </p>
-                <p className="truncate text-xs text-slate-500">{label}</p>
-              </div>
+            )}
+          </div>
+        </Reveal>
+
+        {/* ใบสมัครล่าสุดของฉัน */}
+        {myApplications.length > 0 && (
+          <div className="mt-6 overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-slate-200">
+            <p className="flex items-center gap-2 border-b border-slate-100 px-5 py-3.5 font-bold text-slate-900">
+              <Clock className="h-4 w-4 text-indigo-500" />
+              ใบสมัครของฉัน
+            </p>
+            <ul className="divide-y divide-slate-100">
+              {myApplications.map((app) => {
+                const st = APP_STATUS[app.status] ?? APP_STATUS.PENDING;
+                return (
+                  <li key={app.id} className="flex items-center justify-between gap-3 px-5 py-3">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold text-slate-900">
+                        {app.courseSession.course.title} · {app.courseSession.name}
+                      </p>
+                      <p className="text-xs text-slate-400">สมัครเมื่อ {formatDate(app.appliedAt)}</p>
+                    </div>
+                    <span className={`flex-none rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ${st.className}`}>{st.label}</span>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        )}
+      </section>
+
+      {/* ===== ใบอนุญาตของฉัน ===== */}
+      <section>
+        <div className="mb-4">
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-amber-600">My Licenses</p>
+          <h2 className="text-2xl font-extrabold text-slate-900">ใบอนุญาตของฉัน</h2>
+        </div>
+        <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {[
+            { label: "ใบอนุญาตทั้งหมด", value: counts.total, tone: "bg-indigo-50 text-indigo-700" },
+            { label: "ใช้งานได้", value: counts.active, tone: "bg-emerald-50 text-emerald-700" },
+            { label: "ใกล้หมดอายุ", value: counts.expiring, tone: "bg-amber-50 text-amber-700" },
+            { label: "หมดอายุแล้ว", value: counts.expired, tone: "bg-red-50 text-red-700" },
+          ].map((c) => (
+            <div key={c.label} className={`rounded-2xl px-4 py-3 ${c.tone}`}>
+              <p className="text-2xl font-extrabold leading-none">{c.value}</p>
+              <p className="mt-1 text-xs font-medium opacity-80">{c.label}</p>
             </div>
           ))}
         </div>
-      </Reveal>
-
-      {/* Licenses */}
-      <Reveal delay={120}>
-        <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
-          <div className="flex items-center gap-2 border-b border-slate-100 px-6 py-4">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
-              <FileBadge className="h-4 w-4" />
-            </div>
-            <h2 className="font-semibold text-slate-900">ใบอนุญาตของฉัน</h2>
+        {coach.licenseRecords.length === 0 ? (
+          <div className="flex flex-col items-center gap-2 rounded-3xl border border-dashed border-slate-300 bg-white px-6 py-8 text-center">
+            <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 text-slate-400">
+              <FileBadge className="h-6 w-6" />
+            </span>
+            <p className="font-semibold text-slate-700">ยังไม่มีใบอนุญาตในระบบ</p>
+            <p className="text-sm text-slate-500">เริ่มต้นจากหลักสูตรระดับ G — เมื่อผ่านการอบรม ใบอนุญาตจะแสดงที่นี่</p>
           </div>
-          {coach.licenseRecords.length === 0 ? (
-            <p className="px-6 py-10 text-center text-sm text-slate-400">
-              ยังไม่มีใบอนุญาต
-            </p>
-          ) : (
-            <div className="grid grid-cols-1 gap-4 p-6 sm:grid-cols-2">
-              {coach.licenseRecords.map((record) => {
-                const status = getLicenseStatus(record.expireDate);
-                const style = LICENSE_STATUS_STYLES[status];
-                return (
-                  <div
-                    key={record.id}
-                    className="flex flex-col gap-3 rounded-xl border border-slate-200 p-4 transition-all duration-300 hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-md"
-                  >
+        ) : (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            {coach.licenseRecords.map((record) => {
+              const style = LICENSE_STATUS_STYLES[getLicenseStatus(record.expireDate)];
+              return (
+                <div key={record.id} className="flex gap-4 rounded-3xl bg-white p-4 shadow-sm ring-1 ring-slate-200 transition-all hover:-translate-y-0.5 hover:shadow-md">
+                  <span className="flex h-14 w-14 flex-none items-center justify-center rounded-2xl bg-linear-to-br from-indigo-700 to-indigo-900 text-lg font-black text-amber-300">
+                    {labelFor(LICENSE_TYPES, record.licenseType)}
+                  </span>
+                  <div className="min-w-0 flex-1">
                     <div className="flex items-start justify-between gap-2">
-                      <div>
-                        <p className="font-medium text-slate-900">
-                          {labelFor(LICENSE_TYPES, record.licenseType)}
-                        </p>
-                        <p className="text-xs text-slate-400">
-                          {labelFor(RECORD_TYPES, record.recordType)}
-                        </p>
+                      <div className="min-w-0">
+                        <p className="font-bold text-slate-900">ใบอนุญาตระดับ {labelFor(LICENSE_TYPES, record.licenseType)}</p>
+                        <p className="text-xs text-slate-400">{labelFor(RECORD_TYPES, record.recordType)}</p>
                       </div>
-                      <span
-                        className={`inline-flex flex-none items-center rounded-full px-2.5 py-1 text-xs font-medium ${style.className}`}
-                      >
-                        {style.label}
-                      </span>
+                      <span className={`flex-none rounded-full px-2.5 py-1 text-xs font-medium ${style.className}`}>{style.label}</span>
                     </div>
+                    <p className="mt-2 text-xs text-slate-500">เลขที่ {record.certificateNo ?? "-"}</p>
                     <p className="text-xs text-slate-500">
-                      เลขที่ใบประกาศ: {record.certificateNo ?? "-"}
-                    </p>
-                    <p className="text-xs text-slate-500">
-                      ออก {formatDate(record.issueDate)} · หมดอายุ{" "}
-                      {formatDate(record.expireDate)}
+                      ออก {formatDate(record.issueDate)} · หมดอายุ {formatDate(record.expireDate)}
                     </p>
                     <a
                       href={`/me/certificate/${record.id}`}
-                      className="mt-auto inline-flex w-fit items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 transition-colors hover:bg-slate-50"
+                      className="mt-2.5 inline-flex items-center gap-1.5 rounded-lg bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700 transition-colors hover:bg-indigo-100"
                     >
                       <Download className="h-3.5 w-3.5" />
-                      ใบประกาศ
+                      ดาวน์โหลดใบประกาศ
                     </a>
                   </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      </Reveal>
-
-      {/* Employment history */}
-      <Reveal delay={160}>
-        <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
-          <div className="flex items-center gap-2 border-b border-slate-100 px-6 py-4">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-50 text-amber-600">
-              <Briefcase className="h-4 w-4" />
-            </div>
-            <h2 className="font-semibold text-slate-900">ประวัติการทำงาน</h2>
+                </div>
+              );
+            })}
           </div>
-          {coach.employments.length === 0 ? (
-            <p className="px-6 py-10 text-center text-sm text-slate-400">
-              ยังไม่มีประวัติการทำงาน
+        )}
+      </section>
+
+      {/* ===== ข้อมูลส่วนตัว + ประวัติการทำงาน ===== */}
+      <section className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <div className="overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-slate-200">
+          <div className="flex items-center justify-between gap-2 border-b border-slate-100 px-5 py-3.5">
+            <p className="flex items-center gap-2 font-bold text-slate-900">
+              <UserCircle2 className="h-4 w-4 text-indigo-500" />
+              ข้อมูลของฉัน
             </p>
+            <Link href="/me/edit" className="inline-flex items-center gap-1 text-xs font-semibold text-indigo-700 hover:text-indigo-900">
+              <Pencil className="h-3.5 w-3.5" /> แก้ไข
+            </Link>
+          </div>
+          <dl className="divide-y divide-slate-100 text-sm">
+            {[
+              { icon: Mail, label: "อีเมล", value: coach.email ?? "-" },
+              { icon: Phone, label: "โทรศัพท์", value: coach.telNo ?? "-" },
+              { icon: MapPin, label: "ที่อยู่", value: formatThaiAddress(coach) ?? coach.residence ?? "-" },
+              {
+                icon: UserCircle2,
+                label: "สัญชาติ / เพศ",
+                value:
+                  [country ? `${getFlagEmoji(coach.nationalityCode) ?? ""} ${country.nameTh}`.trim() : null, coach.gender ? labelFor(GENDER_OPTIONS, coach.gender) : null]
+                    .filter(Boolean)
+                    .join(" · ") || "-",
+              },
+            ].map(({ icon: Icon, label, value }) => (
+              <div key={label} className="flex items-start gap-3 px-5 py-3">
+                <Icon className="mt-0.5 h-4 w-4 flex-none text-slate-400" />
+                <dt className="w-24 flex-none text-slate-400">{label}</dt>
+                <dd className="min-w-0 flex-1 wrap-break-word text-slate-700">{value}</dd>
+              </div>
+            ))}
+          </dl>
+        </div>
+
+        <div className="overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-slate-200">
+          <p className="flex items-center gap-2 border-b border-slate-100 px-5 py-3.5 font-bold text-slate-900">
+            <Briefcase className="h-4 w-4 text-amber-500" />
+            ประวัติการทำงาน
+          </p>
+          {coach.employments.length === 0 ? (
+            <p className="px-5 py-8 text-center text-sm text-slate-400">ยังไม่มีประวัติการทำงาน</p>
           ) : (
             <ul className="divide-y divide-slate-100">
               {coach.employments.map((emp) => (
-                <li
-                  key={emp.id}
-                  className="flex flex-wrap items-center justify-between gap-2 px-6 py-4 transition-colors hover:bg-slate-50"
-                >
-                  <div>
-                    <p className="font-medium text-slate-900">{emp.clubName}</p>
-                    <p className="text-xs text-slate-500">
-                      {[emp.division, emp.position].filter(Boolean).join(" · ") || "-"}
-                    </p>
+                <li key={emp.id} className="flex flex-wrap items-center justify-between gap-2 px-5 py-3">
+                  <div className="min-w-0">
+                    <p className="font-semibold text-slate-900">{emp.clubName}</p>
+                    <p className="text-xs text-slate-500">{[emp.division, emp.position].filter(Boolean).join(" · ") || "-"}</p>
                   </div>
                   <span className="text-xs text-slate-400">{formatDate(emp.createdAt)}</span>
                 </li>
@@ -311,7 +549,7 @@ export default async function MyProfilePage({
             </ul>
           )}
         </div>
-      </Reveal>
+      </section>
     </div>
   );
 }

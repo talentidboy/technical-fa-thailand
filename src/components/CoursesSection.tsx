@@ -1,7 +1,7 @@
 import { GraduationCap, ShieldCheck, HeartPulse, ExternalLink } from "lucide-react";
 import { CourseStep, type CoreStep } from "./CourseStep";
 
-const coreProgramSteps: CoreStep[] = [
+export const coreProgramSteps: CoreStep[] = [
   {
     level: "G",
     title: "FA Thailand \"G\" Diploma",

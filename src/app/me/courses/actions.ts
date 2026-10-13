@@ -10,22 +10,26 @@ export async function applyToSession(formData: FormData) {
   const user = await requireCoach();
   const coachId = user.coachId!;
   const courseSessionId = Number(formData.get("courseSessionId"));
+  // สมัครจากหน้าแรกของโค้ช (/me) ให้กลับไปหน้าเดิม ไม่งั้นกลับหน้าสมัครอบรม
+  const base = formData.get("from") === "home" ? "/me" : "/me/courses";
+  // ระบุชนิดของตัวแปรตรงๆ (never) เพื่อให้ TypeScript รู้ว่าโค้ดหลังเรียก back() จะไม่ทำงานต่อ
+  const back: (query: string) => never = (query) => redirect(`${base}?${query}`);
 
   const session = await prisma.courseSession.findUnique({
     where: { id: courseSessionId },
     include: { course: true, _count: { select: { applications: true } } },
   });
   if (!session || session.status !== "OPEN") {
-    redirect("/me/courses?error=" + encodeURIComponent("รุ่นอบรมนี้ไม่เปิดรับสมัครแล้ว"));
+    back("error=" + encodeURIComponent("รุ่นอบรมนี้ไม่เปิดรับสมัครแล้ว"));
   }
   if (session.applicationOpenDate && session.applicationOpenDate > new Date()) {
-    redirect("/me/courses?error=" + encodeURIComponent("ยังไม่เปิดรับสมัคร"));
+    back("error=" + encodeURIComponent("ยังไม่เปิดรับสมัคร"));
   }
   if (session.applicationDeadline && session.applicationDeadline < new Date()) {
-    redirect("/me/courses?error=" + encodeURIComponent("หมดเขตรับสมัครแล้ว"));
+    back("error=" + encodeURIComponent("หมดเขตรับสมัครแล้ว"));
   }
   if (session.capacity != null && session._count.applications >= session.capacity) {
-    redirect("/me/courses?error=" + encodeURIComponent("รุ่นอบรมนี้เต็มแล้ว"));
+    back("error=" + encodeURIComponent("รุ่นอบรมนี้เต็มแล้ว"));
   }
 
   // หลักสูตรอบรมทั่วไป (GENERAL) เปิดรับทุกระดับ ไม่ต้องตรวจสอบลำดับขั้นใบอนุญาต
@@ -36,10 +40,7 @@ export async function applyToSession(formData: FormData) {
     });
     const nextLevel = getNextCoreLevel(getHighestCoreLevel(licenseRecords));
     if (session.course.licenseType !== nextLevel) {
-      redirect(
-        "/me/courses?error=" +
-          encodeURIComponent("คุณยังไม่มีคุณสมบัติสมัครหลักสูตรนี้ ต้องเรียงตามลำดับขั้น"),
-      );
+      back("error=" + encodeURIComponent("คุณยังไม่มีคุณสมบัติสมัครหลักสูตรนี้ ต้องเรียงตามลำดับขั้น"));
     }
   }
 
@@ -47,7 +48,7 @@ export async function applyToSession(formData: FormData) {
     where: { coachId_courseSessionId: { coachId, courseSessionId } },
   });
   if (existing && existing.status !== "REJECTED" && existing.status !== "CANCELLED") {
-    redirect("/me/courses?error=" + encodeURIComponent("คุณสมัครรุ่นนี้ไปแล้ว"));
+    back("error=" + encodeURIComponent("คุณสมัครรุ่นนี้ไปแล้ว"));
   }
 
   if (existing) {
@@ -62,5 +63,6 @@ export async function applyToSession(formData: FormData) {
   }
 
   revalidatePath("/me/courses");
-  redirect("/me/courses?applied=1");
+  revalidatePath("/me");
+  back("applied=1");
 }

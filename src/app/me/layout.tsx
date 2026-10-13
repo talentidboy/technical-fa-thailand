@@ -3,7 +3,8 @@ import Link from "next/link";
 import { requireCoach } from "@/lib/auth";
 import { logout } from "@/app/login/actions";
 import { LOGO_URL } from "@/lib/brand";
-import { Home, LogOut } from "lucide-react";
+import { MeNav } from "@/components/MeNav";
+import { LogOut } from "lucide-react";
 
 export default async function MeLayout({
   children,
@@ -14,38 +15,23 @@ export default async function MeLayout({
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <header className="sticky top-0 z-20 border-b border-white/10 bg-indigo-950/80 backdrop-blur">
-        <div className="mx-auto flex max-w-4xl items-center justify-between gap-3 px-6 py-4">
-          <div className="flex items-center gap-2">
-            <Image
-              src={LOGO_URL}
-              alt="FA Thailand"
-              width={36}
-              height={36}
-              className="h-9 w-9 rounded-lg object-cover"
-            />
-            <div>
-              <p className="text-sm font-bold text-white">
-                FA Thailand Technical
-              </p>
-              <p className="text-[11px] text-indigo-300">โปรไฟล์ของฉัน</p>
+      <header className="sticky top-0 z-20 border-b border-white/10 bg-indigo-950/90 backdrop-blur">
+        <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
+          <Link href="/me" className="flex min-w-0 items-center gap-2.5">
+            <Image src={LOGO_URL} alt="FA Thailand" width={36} height={36} className="h-9 w-9 flex-none rounded-lg object-cover" />
+            <div className="min-w-0">
+              <p className="truncate text-sm font-bold text-white">ศูนย์อบรมผู้ฝึกสอน</p>
+              <p className="truncate text-[11px] text-indigo-300">FA Thailand Technical</p>
             </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Link
-              href="/"
-              aria-label="กลับหน้าแรก"
-              title="กลับหน้าแรก"
-              className="inline-flex items-center justify-center rounded-lg border border-white/15 p-2.5 text-indigo-200 transition-colors hover:bg-white/10 hover:text-white"
-            >
-              <Home className="h-4 w-4" />
-            </Link>
+          </Link>
+          <div className="flex items-center gap-1.5">
+            <MeNav />
             <form action={logout}>
               <button
                 type="submit"
                 aria-label="ออกจากระบบ"
                 title="ออกจากระบบ"
-                className="inline-flex items-center justify-center rounded-lg border border-white/15 p-2.5 text-indigo-200 transition-colors hover:bg-white/10 hover:text-white"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-white/15 text-indigo-200 transition-colors hover:bg-white/10 hover:text-white"
               >
                 <LogOut className="h-4 w-4" />
               </button>
@@ -53,7 +39,7 @@ export default async function MeLayout({
           </div>
         </div>
       </header>
-      <main className="mx-auto max-w-4xl px-6 py-10">{children}</main>
+      <main className="mx-auto max-w-5xl px-4 py-6 sm:px-6 sm:py-10">{children}</main>
     </div>
   );
 }
