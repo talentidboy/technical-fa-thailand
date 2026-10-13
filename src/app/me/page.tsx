@@ -29,6 +29,7 @@ import {
   Clock,
   AlertCircle,
   BookOpen,
+  Settings,
 } from "lucide-react";
 
 function formatDate(date: Date | null) {
@@ -194,11 +195,11 @@ export default async function CoachHomePage({
               บัตรประจำตัว
             </Link>
             <Link
-              href="/me/edit"
+              href="/me/settings"
               className="inline-flex flex-col items-center justify-center gap-1 rounded-xl bg-white/10 px-4 py-2.5 text-xs font-semibold ring-1 ring-white/20 transition-colors hover:bg-white/20 sm:flex-row sm:gap-2 sm:text-sm"
             >
-              <Pencil className="h-4 w-4" />
-              แก้ไขข้อมูล
+              <Settings className="h-4 w-4" />
+              ตั้งค่า
             </Link>
           </div>
         </section>
@@ -501,7 +502,7 @@ export default async function CoachHomePage({
               <UserCircle2 className="h-4 w-4 text-indigo-500" />
               ข้อมูลของฉัน
             </p>
-            <Link href="/me/edit" className="inline-flex items-center gap-1 text-xs font-semibold text-indigo-700 hover:text-indigo-900">
+            <Link href="/me/settings" className="inline-flex items-center gap-1 text-xs font-semibold text-indigo-700 hover:text-indigo-900">
               <Pencil className="h-3.5 w-3.5" /> แก้ไข
             </Link>
           </div>

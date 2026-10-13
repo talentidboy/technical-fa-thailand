@@ -43,5 +43,7 @@ export async function updateMyProfile(formData: FormData) {
   });
 
   revalidatePath("/me");
-  redirect("/me?saved=1");
+  revalidatePath("/me/settings");
+  // บันทึกจากหน้าตั้งค่า → กลับไปหน้าตั้งค่า
+  redirect(formData.get("from") === "settings" ? "/me/settings?saved=profile" : "/me?saved=1");
 }
