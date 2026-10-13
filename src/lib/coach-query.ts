@@ -122,7 +122,9 @@ const BASE_CTE = Prisma.sql`
       ce.division,
       ce.position
     FROM coaches c
-    LEFT JOIN current_license cl ON cl.coach_id = c.id
+    -- นับเฉพาะผู้ที่มีใบอนุญาตอย่างน้อย 1 รายการ (ทุกคนที่มีใบอนุญาตจะมีแถวใน current_license เสมอ)
+    -- คนที่สมัครบัญชีอย่างเดียวแต่ยังไม่มีใบอนุญาต ไม่นับในสถิติ/รายงาน
+    JOIN current_license cl ON cl.coach_id = c.id
     LEFT JOIN current_employment ce ON ce.coach_id = c.id
   )
 `;
@@ -667,8 +669,14 @@ export async function getHeroSummary(
     latestYear,
     trainedLatestYear,
     pyramid: coreTiers.map((tier) => ({ tier, count: pyramidMap.get(tier) ?? 0 })),
-    sideCounts: sideTiers
-      .map((tier) => ({ tier, count: pyramidMap.get(tier) ?? 0 }))
-      .filter((d) => d.count > 0),
+    // ใบอนุญาตเฉพาะทาง = ทุกระดับที่ไม่อยู่ในลำดับหลัก (รวมประเภทที่ไม่อยู่ในรายการค่าคงที่ เช่น GK_I, SC_I)
+    sideCounts: [
+      ...sideTiers.map((tier) => ({ tier, count: pyramidMap.get(tier) ?? 0 })),
+      ...pyramidRaw
+        .filter((r) => !coreTiers.includes(r.tier) && !sideTiers.includes(r.tier))
+        .map((r) => ({ tier: r.tier, count: Number(r.count) })),
+    ]
+      .filter((d) => d.count > 0)
+      .sort((a, b) => b.count - a.count),
   };
 }

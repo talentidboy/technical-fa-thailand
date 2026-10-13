@@ -36,7 +36,8 @@ export default async function AdminLayout({
           include: { coach: true },
         })
       : Promise.resolve([]),
-    prisma.coach.count(),
+    // นับเฉพาะผู้ที่มีใบอนุญาต — คนที่สมัครบัญชีอย่างเดียวไม่นับ
+    prisma.coach.count({ where: { licenseRecords: { some: {} } } }),
     prisma.instructor.count(),
     user.role === "ADMIN" ? prisma.courseSession.count() : Promise.resolve(0),
     prisma.licenseRecord.findMany({

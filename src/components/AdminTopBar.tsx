@@ -183,7 +183,7 @@ export function AdminTopBar({
 
       {/* การ์ดสถิติ — กดเพื่อไปหน้านั้น · ตัวที่ต้องจัดการ (ใกล้หมดอายุ/คำขอ) เน้นสีเมื่อมีรายการ */}
       <div className={`grid grid-cols-2 gap-3 sm:grid-cols-3 [&>*:last-child]:col-span-2 sm:[&>*:last-child]:col-span-1 ${role === "ADMIN" ? "lg:grid-cols-5" : ""}`}>
-        <StatCard icon={Users} label="ผู้ฝึกสอนทั้งหมด" value={coachCount} href="/coaches" tone="indigo" />
+        <StatCard icon={Users} label="ผู้ฝึกสอน (มีใบอนุญาต)" value={coachCount} href="/coaches" tone="indigo" />
         <StatCard icon={GraduationCap} label="วิทยากรทั้งหมด" value={instructorCount} href="/instructors" tone="emerald" />
         <StatCard
           icon={AlertTriangle}

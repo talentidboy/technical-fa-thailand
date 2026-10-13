@@ -25,9 +25,10 @@ export function DashboardHero({ summary }: { summary: HeroSummary }) {
     count: d.count,
   }));
   const max = Math.max(...rawPyramidData.map((d) => d.count), 1);
-  const tierTotal = rawPyramidData.reduce((sum, d) => sum + d.count, 0);
+  // สัดส่วนเทียบกับผู้ฝึกสอนที่มีใบอนุญาตทั้งหมด (รวมใบอนุญาตเฉพาะทางที่แสดงใต้กราฟ)
+  const tierTotal = total;
   const sideCounts = summary.sideCounts.map((d) => ({
-    label: LICENSE_LABEL_MAP[d.tier] ?? d.tier,
+    label: LICENSE_LABEL_MAP[d.tier] ?? d.tier.replace(/_/g, " "),
     count: d.count,
   }));
 
@@ -35,7 +36,7 @@ export function DashboardHero({ summary }: { summary: HeroSummary }) {
     {
       icon: Users,
       value: total.toLocaleString(),
-      label: "ผู้ฝึกสอนทั้งหมดในระบบ",
+      label: "ผู้ฝึกสอนที่มีใบอนุญาต",
     },
     {
       icon: IdCard,
@@ -75,7 +76,7 @@ export function DashboardHero({ summary }: { summary: HeroSummary }) {
             <p className="mb-1.5 text-[11px] font-bold uppercase tracking-[0.2em] text-amber-300">FAT · Coaching Education Report</p>
             <h1 className="text-xl font-extrabold leading-snug sm:text-2xl">สรุปข้อมูลผู้ฝึกสอนฟุตบอลไทย จากฐานข้อมูลใบอนุญาต AFC/FAT</h1>
             <p className="mt-2 text-xs leading-relaxed text-indigo-200 sm:text-sm">
-              นับทุกแถวที่มีชื่อในระบบ (รวมผู้ที่ยังไม่ได้รับเลข ID AFC) — ดูรายละเอียดและกรองข้อมูลได้ที่แท็บ &quot;รายงานเชิงลึก&quot;
+              นับเฉพาะผู้ที่มีใบอนุญาตผู้ฝึกสอน (รวมผู้ที่ยังไม่ได้รับเลข ID AFC) · ผู้ที่สมัครบัญชีอย่างเดียวไม่นับ — ดูรายละเอียดและกรองข้อมูลได้ที่แท็บ &quot;รายงานเชิงลึก&quot;
             </p>
           </div>
           <div className="flex flex-wrap gap-2 print:hidden">
