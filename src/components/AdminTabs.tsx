@@ -13,6 +13,8 @@ const TABS = [
 
 export function AdminTabs() {
   const pathname = usePathname();
+  // แท็บนี้สลับมุมมองของแดชบอร์ดเท่านั้น — หน้าอื่น (รายชื่อผู้ฝึกสอน ฯลฯ) ไม่ต้องแสดง
+  if (!pathname.startsWith("/dashboard")) return null;
 
   return (
     <div className="inline-flex items-center gap-1 rounded-xl border border-slate-200 bg-white p-1 shadow-sm">
@@ -24,7 +26,7 @@ export function AdminTabs() {
             href={href}
             className={`inline-flex items-center gap-2 rounded-lg px-3.5 py-2 text-sm font-medium transition-colors ${
               active
-                ? "bg-indigo-600 text-white shadow-sm shadow-indigo-200"
+                ? "bg-indigo-700 text-white shadow-sm shadow-indigo-200"
                 : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
             }`}
           >

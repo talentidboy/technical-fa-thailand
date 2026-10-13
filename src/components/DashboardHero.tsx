@@ -87,54 +87,58 @@ export function DashboardHero({ summary }: { summary: HeroSummary }) {
   ];
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div className="max-w-2xl">
-          <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.2em] text-indigo-600">
-            FAT · Coaching Education Report
-          </p>
-          <h1 className="text-xl font-bold leading-snug text-slate-900 sm:text-2xl">
-            สรุปข้อมูลผู้ฝึกสอนฟุตบอลไทย จากฐานข้อมูลใบอนุญาต AFC/FAT
-          </h1>
-          <p className="mt-2 text-xs leading-relaxed text-slate-500 sm:text-sm">
-            นับทุกแถวที่มีชื่อในระบบ (รวมผู้ที่ยังไม่ได้รับเลข ID AFC) — เลื่อนหน้าลงเพื่อกรองและสำรวจข้อมูลเชิงลึกได้ตามต้องการ
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <button
-            onClick={() => window.print()}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-600 transition-colors hover:bg-slate-50"
-          >
-            <Printer className="h-3.5 w-3.5" />
-            พิมพ์ / บันทึก PDF
-          </button>
-          {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- file download endpoint, not a page route */}
-          <a
-            href="/coaches/export"
-            className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-xs font-semibold text-white shadow-sm shadow-indigo-200 transition-colors hover:bg-indigo-700"
-          >
-            <Download className="h-3.5 w-3.5" />
-            ส่งออก Excel (ทั้งหมด)
-          </a>
-        </div>
-      </div>
-
-      <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        {badges.map((b) => (
-          <div
-            key={b.label}
-            className="rounded-xl border border-slate-100 bg-slate-50 p-4"
-          >
-            <b.icon className="h-4 w-4 text-indigo-400" strokeWidth={2} />
-            <div className="mt-2 text-xl font-bold text-slate-900 sm:text-2xl">
-              {b.value}
-            </div>
-            <div className="mt-0.5 text-[11px] text-slate-500">{b.label}</div>
+    <div className="overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-slate-200">
+      {/* หัวรายงาน — พื้นกรมท่า + ตัวเลขสรุปเป็นการ์ดโปร่ง */}
+      <div className="relative isolate overflow-hidden bg-linear-to-br from-indigo-900 via-indigo-800 to-indigo-700 p-6 text-white sm:p-8">
+        <div aria-hidden className="absolute -right-16 -top-20 -z-10 h-64 w-64 rounded-full bg-amber-400/20 blur-3xl" />
+        <div
+          aria-hidden
+          className="absolute inset-0 -z-10 opacity-[0.06]"
+          style={{
+            backgroundImage: "linear-gradient(white 1px, transparent 1px), linear-gradient(90deg, white 1px, transparent 1px)",
+            backgroundSize: "28px 28px",
+          }}
+        />
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="max-w-2xl">
+            <p className="mb-1.5 text-[11px] font-bold uppercase tracking-[0.2em] text-amber-300">FAT · Coaching Education Report</p>
+            <h1 className="text-xl font-extrabold leading-snug sm:text-2xl">สรุปข้อมูลผู้ฝึกสอนฟุตบอลไทย จากฐานข้อมูลใบอนุญาต AFC/FAT</h1>
+            <p className="mt-2 text-xs leading-relaxed text-indigo-200 sm:text-sm">
+              นับทุกแถวที่มีชื่อในระบบ (รวมผู้ที่ยังไม่ได้รับเลข ID AFC) — ดูรายละเอียดและกรองข้อมูลได้ที่แท็บ &quot;รายงานเชิงลึก&quot;
+            </p>
           </div>
-        ))}
+          <div className="flex flex-wrap gap-2 print:hidden">
+            <button
+              onClick={() => window.print()}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-white/10 px-4 py-2.5 text-xs font-semibold text-white ring-1 ring-white/20 transition-colors hover:bg-white/20"
+            >
+              <Printer className="h-3.5 w-3.5" />
+              พิมพ์ / บันทึก PDF
+            </button>
+            {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- file download endpoint, not a page route */}
+            <a
+              href="/coaches/export"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-amber-400 px-4 py-2.5 text-xs font-bold text-amber-950 shadow-sm transition-colors hover:bg-amber-300"
+            >
+              <Download className="h-3.5 w-3.5" />
+              ส่งออก Excel (ทั้งหมด)
+            </a>
+          </div>
+        </div>
+
+        <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {badges.map((b) => (
+            <div key={b.label} className="rounded-2xl bg-white/10 p-4 ring-1 ring-white/15 backdrop-blur-sm">
+              <b.icon className="h-4.5 w-4.5 text-amber-300" strokeWidth={2} />
+              <div className="mt-2 text-2xl font-extrabold leading-none sm:text-3xl">{b.value}</div>
+              <div className="mt-1.5 text-[11px] leading-snug text-indigo-200">{b.label}</div>
+            </div>
+          ))}
+        </div>
       </div>
 
-      <div className="mt-8 flex flex-wrap items-center gap-8 border-t border-slate-100 pt-8">
+      <div className="p-6 sm:p-8">
+      <div className="flex flex-wrap items-center justify-center gap-8 lg:justify-start">
         {(() => {
           const n = pyramidData.length;
           const halfWidthAt = (i: number) => {
@@ -232,6 +236,7 @@ export function DashboardHero({ summary }: { summary: HeroSummary }) {
             </p>
           )}
         </div>
+      </div>
       </div>
     </div>
   );

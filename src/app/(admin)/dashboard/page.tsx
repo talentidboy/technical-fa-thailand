@@ -1,13 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import {
-  Users,
-  FileBadge,
-  AlertTriangle,
-  ArrowUpRight,
-  Plus,
-  Bell,
-} from "lucide-react";
+import { Users, ArrowUpRight, Bell } from "lucide-react";
 import { DashboardHero } from "@/components/DashboardHero";
 import { LICENSE_TYPES, labelFor, CORE_LICENSE_PROGRESSION } from "@/lib/constants";
 import { getLicenseStatus, LICENSE_STATUS_STYLES } from "@/lib/license-status";
@@ -31,23 +24,10 @@ export default async function Home({
   const alertWindowMonths = params.window === "6" ? 6 : 3;
 
   const now = new Date();
-  const ninetyDaysFromNow = new Date(now.getTime() + 1000 * 60 * 60 * 24 * 90);
   const alertWindowDate = new Date(now);
   alertWindowDate.setMonth(alertWindowDate.getMonth() + alertWindowMonths);
 
-  const [
-    coachCount,
-    licenseCount,
-    expiringSoonCount,
-    recentCoaches,
-    expiringLicenses,
-    heroSummary,
-  ] = await Promise.all([
-    prisma.coach.count(),
-    prisma.licenseRecord.count(),
-    prisma.licenseRecord.count({
-      where: { expireDate: { gte: now, lte: ninetyDaysFromNow } },
-    }),
+  const [recentCoaches, expiringLicenses, heroSummary] = await Promise.all([
     prisma.coach.findMany({
       orderBy: { createdAt: "desc" },
       take: 5,
@@ -62,74 +42,22 @@ export default async function Home({
     getHeroSummary(CORE_TIERS_TOP_DOWN, SIDE_LICENSE_TYPES),
   ]);
 
-  const stats = [
-    {
-      label: "ผู้ฝึกสอนทั้งหมด",
-      value: coachCount,
-      icon: Users,
-      accent: "bg-indigo-50 text-indigo-600",
-    },
-    {
-      label: "ใบอนุญาตทั้งหมด",
-      value: licenseCount,
-      icon: FileBadge,
-      accent: "bg-slate-100 text-slate-600",
-    },
-    {
-      label: "ใบอนุญาตใกล้หมดอายุ (90 วัน)",
-      value: expiringSoonCount,
-      icon: AlertTriangle,
-      accent: "bg-amber-50 text-amber-600",
-    },
-  ];
-
   return (
     <div className="space-y-8">
       <DashboardHero summary={heroSummary} />
 
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">
-            แดชบอร์ดภาพรวม
-          </h1>
-          <p className="mt-1 text-sm text-slate-500">
-            สรุปข้อมูลผู้ฝึกสอนและใบอนุญาตทั้งหมดในระบบ
-          </p>
-        </div>
-        <Link
-          href="/coaches"
-          className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm shadow-indigo-200 transition-colors hover:bg-indigo-700"
-        >
-          <Plus className="h-4 w-4" />
-          เพิ่มผู้ฝึกสอน
-        </Link>
-      </div>
-
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        {stats.map(({ label, value, icon: Icon, accent }) => (
-          <div
-            key={label}
-            className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md"
-          >
-            <div className={`inline-flex rounded-xl p-2.5 ${accent}`}>
-              <Icon className="h-5 w-5" />
-            </div>
-            <p className="mt-4 text-sm text-slate-500">{label}</p>
-            <p className="mt-1 text-3xl font-bold text-slate-900">{value}</p>
-          </div>
-        ))}
-      </div>
-
-      {/* Alert dashboard */}
-      <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-5">
+      {/* ใบอนุญาตใกล้หมดอายุ */}
+      <div id="expiring" className="scroll-mt-24 overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-slate-200 xl:col-span-3">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-6 py-4">
           <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-50 text-amber-600">
-              <Bell className="h-4 w-4" />
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
+              <Bell className="h-4.5 w-4.5" />
             </div>
-            <h2 className="font-semibold text-slate-900">
-              ใบอนุญาตที่ใกล้หมดอายุ
-            </h2>
+            <div>
+              <h2 className="font-bold text-slate-900">ใบอนุญาตใกล้หมดอายุ</h2>
+              <p className="text-xs text-slate-400">{expiringLicenses.length} รายการ ภายใน {alertWindowMonths} เดือน</p>
+            </div>
           </div>
           <div className="flex items-center gap-1 rounded-lg bg-slate-100 p-1 text-sm">
             <Link
@@ -160,7 +88,7 @@ export default async function Home({
             ไม่มีใบอนุญาตที่ใกล้หมดอายุภายใน {alertWindowMonths} เดือนนี้
           </p>
         ) : (
-          <ul className="divide-y divide-slate-100">
+          <ul className="max-h-128 divide-y divide-slate-100 overflow-y-auto overscroll-contain">
             {expiringLicenses.map((record) => {
               const style =
                 LICENSE_STATUS_STYLES[getLicenseStatus(record.expireDate)];
@@ -172,22 +100,26 @@ export default async function Home({
                 <li key={record.id}>
                   <Link
                     href={`/coaches/${record.coachId}`}
-                    className="flex items-center justify-between px-6 py-3 hover:bg-slate-50/60"
+                    className="flex items-center gap-3 px-6 py-3 transition-colors hover:bg-slate-50"
                   >
-                    <div>
-                      <p className="text-sm font-medium text-slate-900">
+                    <span
+                      className={`flex h-11 w-11 flex-none flex-col items-center justify-center rounded-xl leading-none ${
+                        daysLeft <= 30 ? "bg-red-50 text-red-600" : daysLeft <= 90 ? "bg-amber-50 text-amber-700" : "bg-slate-100 text-slate-600"
+                      }`}
+                    >
+                      <span className="text-base font-extrabold">{daysLeft}</span>
+                      <span className="text-[9px] font-semibold">วัน</span>
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-semibold text-slate-900">
                         {record.coach.nameTh} {record.coach.surnameTh}
                       </p>
-                      <p className="text-xs text-slate-400">
-                        {labelFor(LICENSE_TYPES, record.licenseType)} · เหลือ{" "}
-                        {daysLeft} วัน
+                      <p className="truncate text-xs text-slate-400">
+                        {labelFor(LICENSE_TYPES, record.licenseType)} · หมดอายุ{" "}
+                        {record.expireDate!.toLocaleDateString("th-TH", { day: "numeric", month: "short", year: "numeric" })}
                       </p>
                     </div>
-                    <span
-                      className={`rounded-full px-2.5 py-1 text-xs font-medium ${style.className}`}
-                    >
-                      {style.label}
-                    </span>
+                    <span className={`flex-none rounded-full px-2.5 py-1 text-xs font-medium ${style.className}`}>{style.label}</span>
                   </Link>
                 </li>
               );
@@ -196,9 +128,15 @@ export default async function Home({
         )}
       </div>
 
-      <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
+      {/* ผู้ฝึกสอนที่เพิ่มล่าสุด */}
+      <div className="overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-slate-200 xl:col-span-2">
         <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
-          <h2 className="font-semibold text-slate-900">ผู้ฝึกสอนล่าสุด</h2>
+          <div className="flex items-center gap-2">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
+              <Users className="h-4.5 w-4.5" />
+            </div>
+            <h2 className="font-bold text-slate-900">ผู้ฝึกสอนที่เพิ่มล่าสุด</h2>
+          </div>
           <Link
             href="/coaches"
             className="inline-flex items-center gap-1 text-sm font-medium text-indigo-600 hover:text-indigo-700"
@@ -217,13 +155,13 @@ export default async function Home({
             {recentCoaches.map((coach) => (
               <li
                 key={coach.id}
-                className="flex items-center justify-between px-6 py-4"
+                className="flex items-center justify-between gap-3 px-6 py-3.5 transition-colors hover:bg-slate-50"
               >
                 <Link
                   href={`/coaches/${coach.id}`}
-                  className="flex items-center gap-3"
+                  className="flex min-w-0 items-center gap-3"
                 >
-                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-indigo-100 text-sm font-semibold text-indigo-700">
+                  <div className="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-linear-to-br from-indigo-600 to-indigo-800 text-sm font-bold text-white">
                     {coach.nameTh.charAt(0)}
                   </div>
                   <div>
@@ -242,6 +180,7 @@ export default async function Home({
             ))}
           </ul>
         )}
+      </div>
       </div>
     </div>
   );

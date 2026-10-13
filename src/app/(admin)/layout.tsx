@@ -51,14 +51,14 @@ export default async function AdminLayout({
   ]);
 
   return (
-    <div className="flex h-full">
+    <div className="min-h-full bg-slate-50 lg:flex lg:h-full">
       <Sidebar
         email={user.email}
         role={user.role}
         pendingRequestCount={pendingRequestCount}
       />
-      <main className="flex-1 overflow-y-auto">
-        <div className="mx-auto max-w-6xl px-8 py-10">
+      <main className="min-w-0 lg:h-screen lg:flex-1 lg:overflow-y-auto">
+        <div className="mx-auto max-w-6xl px-4 py-6 sm:px-8 sm:py-8">
           <AdminTopBar
             role={user.role}
             coachCount={coachCount}
