@@ -26,6 +26,9 @@ export async function GET(
     recordTypeLabel: labelFor(RECORD_TYPES, record.recordType) ?? record.recordType,
     certificateNo: record.certificateNo,
     issueDate: record.issueDate,
+    licenseType: record.licenseType,
+    coachNameEn: [record.coach.nameEn, record.coach.familyNameEn].filter(Boolean).join(" ") || null,
+    dob: record.coach.dob,
   });
 
   return new NextResponse(Buffer.from(pdfBytes), {

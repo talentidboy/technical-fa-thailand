@@ -2,6 +2,7 @@ import { PDFDocument, rgb } from "pdf-lib";
 import fontkit from "@pdf-lib/fontkit";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
+import { AFC_DIPLOMA_TITLES, generateAfcDiplomaPdf } from "./certificate-afc";
 
 const FONT_DIR = path.join(
   process.cwd(),
@@ -17,7 +18,23 @@ export async function generateCertificatePdf(params: {
   recordTypeLabel: string;
   certificateNo: string | null;
   issueDate: Date | null;
+  // สำหรับแบบ AFC (C / B / A / PRO)
+  licenseType?: string;
+  coachNameEn?: string | null;
+  dob?: Date | null;
 }) {
+  // ระดับ C / B / A / PRO ใช้แบบใบประกาศ AFC Coaching Convention — ระดับอื่น (G, GK ฯลฯ) ใช้แบบเดิมด้านล่าง
+  if (params.licenseType && AFC_DIPLOMA_TITLES[params.licenseType]) {
+    return generateAfcDiplomaPdf({
+      licenseType: params.licenseType,
+      nameTh: params.coachName,
+      nameEn: params.coachNameEn ?? null,
+      dob: params.dob ?? null,
+      issueDate: params.issueDate,
+      certificateNo: params.certificateNo,
+    });
+  }
+
   const doc = await PDFDocument.create();
   doc.registerFontkit(fontkit);
 
