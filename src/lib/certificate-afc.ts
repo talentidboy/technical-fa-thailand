@@ -4,11 +4,10 @@ import {
   type PDFFont,
   type PDFImage,
   type PDFPage,
+  type RGB,
   pushGraphicsState,
   popGraphicsState,
-  moveTo,
-  appendBezierCurve,
-  closePath,
+  rectangle,
   clip,
   endPath,
 } from "pdf-lib";
@@ -16,156 +15,244 @@ import fontkit from "@pdf-lib/fontkit";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 
-// ใบประกาศนียบัตรผู้ฝึกสอนระดับ C / B / A / PRO ตามแบบ AFC Coaching Convention
-// พื้นหลัง (เส้นโค้งกรมท่า-ทอง, โลโก้ AFC Coaching Convention, เส้นลงนาม) มาจากไฟล์ต้นฉบับของ AFC โดยตรง
-// (src/assets/certificates/afc-diploma-template.pdf — ลบข้อความตัวอย่างและวงกลมใส่โลโก้ออกแล้ว) แล้ววางข้อความจริงทับ
-// พิกัดทั้งหมดอ้างอิงตำแหน่งข้อความในไฟล์ต้นฉบับ (หน่วย pt, จุดกำเนิดมุมซ้ายล่าง, หน้า 623.6 x 870.2)
+// ใบประกาศผู้ฝึกสอนระดับ C / B / A / PRO ตามแบบของสมาคม (Main Cer Diploma / Main Cer Licence)
+//   - Diploma = A4 แนวตั้ง 1 หน้า
+//   - Licence = A4 แนวนอน 2 หน้า (หน้า: รูป + ข้อมูลใบอนุญาต, หลัง: ข้อความรับรอง AFC + ลายเซ็น)
+// พื้นหลังเส้นโค้งกรมท่า-ทองเป็นเวกเตอร์จากไฟล์ต้นฉบับ AFC Coaching Convention (fat-backgrounds.pdf)
+// ตำแหน่ง/ขนาดตัวอักษรอ้างอิงจากไฟล์ Word ต้นแบบ (หน่วย pt, จุดกำเนิดมุมซ้ายล่าง)
 
-export const AFC_DIPLOMA_TITLES: Record<string, string> = {
-  PRO: "AFC PRO Diploma",
-  A: "AFC A Diploma",
-  B: "AFC B Diploma",
-  C: "AFC C Diploma",
-};
+export const AFC_LEVELS: Record<string, string> = { PRO: "PRO", A: "A", B: "B", C: "C" };
 
-// ผู้ลงนาม 3 ตำแหน่งตามแบบ — ใส่ชื่อจริงที่นี่เมื่อได้รับยืนยัน (เว้นว่าง = แสดงเฉพาะตำแหน่ง)
-const SIGNATORIES = [
-  { role: "President", name: "" },
-  { role: "General Secretary", name: "" },
-  { role: "Technical Director", name: "" },
+export const SIGNATORIES = [
+  // height/bottom = ขนาดและตำแหน่งลายเซ็นบน Diploma (ให้อยู่ระหว่างชื่อตำแหน่งกับเส้น และทับเส้นเล็กน้อยเหมือนเซ็นจริง)
+  { role: "President", name: "Mrs. Nualphan Lamsam", sig: "sig-president.png", width: 80, height: 29, bottom: 178 },
+  { role: "General Secretary", name: "Mr. Ekapol Polnavee", sig: "sig-general-secretary.png", width: 44, height: 35, bottom: 172 },
+  { role: "Technical Director", name: "Mr. Songyos Klinsrisuk", sig: "sig-technical-director.png", width: 104, height: 19, bottom: 180 },
 ];
 const ASSOCIATION = "Football Association of Thailand";
 const PLACE = "Bangkok";
 
+const A4 = { w: 595.32, h: 841.92 };
 const ASSET_DIR = path.join(process.cwd(), "src", "assets", "certificates");
-const FONT_DIR = path.join(process.cwd(), "node_modules", "@fontsource", "noto-sans-thai", "files");
+const THAI_FONT_DIR = path.join(process.cwd(), "node_modules", "@fontsource", "noto-sans-thai", "files");
 
-const NAVY = rgb(0.122, 0.165, 0.365);
-const MUTED = rgb(0.38, 0.42, 0.52);
+const NAVY = rgb(0.122, 0.165, 0.357);
+const INK = rgb(0.2, 0.22, 0.27);
+const LINE = rgb(0.11, 0.13, 0.27);
 
-const LEFT = 98.37;
-const MAX_TEXT_WIDTH = 470;
-const SIGN_CENTERS = [158.59, 319.16, 472.56];
-const LOGO = { cx: 527.88, cy: 745.66, r: 40.6 };
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const bkk = (d: Date) => new Date(d.toLocaleString("en-US", { timeZone: "Asia/Bangkok" }));
+const pad = (n: number) => String(n).padStart(2, "0");
+const dotDate = (d: Date) => {
+  const x = bkk(d);
+  return `${pad(x.getDate())}.${pad(x.getMonth() + 1)}.${x.getFullYear()}`;
+};
+const longDate = (d: Date) => {
+  const x = bkk(d);
+  return `${x.getDate()} ${MONTHS[x.getMonth()]} ${x.getFullYear()}`;
+};
 
 const isThai = (s: string) => /[฀-๿]/.test(s);
-// ตัดอักขระที่ฟอนต์ไม่มี (อักขระควบคุม/อักขระมองไม่เห็นที่ติดมากับข้อมูลนำเข้า) ไม่งั้นจะขึ้นเป็นกล่องสี่เหลี่ยม
-// ขีดแบบยูนิโคด (‐ – — −) แปลงเป็น "-" ธรรมดาก่อน
+// ตัดอักขระที่ฟอนต์ไม่มี (อักขระมองไม่เห็นที่ติดมากับข้อมูลนำเข้า) — ขีดแบบยูนิโคดแปลงเป็น "-" ธรรมดา
 const clean = (s: string) =>
   s
     .replace(/[‐-―−]/g, "-")
     .replace(/[^\x20-\x7EÀ-ſ฀-๿’]/g, "")
     .replace(/\s+/g, " ")
     .trim();
-const pad = (n: number) => String(n).padStart(2, "0");
-const dotDate = (d: Date) => {
-  const local = new Date(d.toLocaleString("en-US", { timeZone: "Asia/Bangkok" }));
-  return `${pad(local.getDate())}.${pad(local.getMonth() + 1)}.${local.getFullYear()}`;
-};
-// ชื่ออังกฤษที่เก็บเป็นตัวพิมพ์ใหญ่ทั้งหมด → แปลงเป็นแบบขึ้นต้นตัวใหญ่ (ตามแบบ "Name Surname")
-const titleCase = (s: string) =>
-  s === s.toUpperCase() ? s.toLowerCase().replace(/(^|[\s'-])(\p{L})/gu, (_, p, c: string) => p + c.toUpperCase()) : s;
 
-// วาดรูปลงในวงกลม (ตัดขอบเป็นวงกลมเหมือนช่องโลโก้ในแบบ)
-function drawCircleImage(page: PDFPage, image: PDFImage, cx: number, cy: number, r: number) {
-  const k = 0.5523 * r;
-  page.pushOperators(
-    pushGraphicsState(),
-    moveTo(cx + r, cy),
-    appendBezierCurve(cx + r, cy + k, cx + k, cy + r, cx, cy + r),
-    appendBezierCurve(cx - k, cy + r, cx - r, cy + k, cx - r, cy),
-    appendBezierCurve(cx - r, cy - k, cx - k, cy - r, cx, cy - r),
-    appendBezierCurve(cx + k, cy - r, cx + r, cy - k, cx + r, cy),
-    closePath(),
-    clip(),
-    endPath(),
-  );
-  page.drawImage(image, { x: cx - r, y: cy - r, width: r * 2, height: r * 2 });
-  page.pushOperators(popGraphicsState());
-}
-
-export async function generateAfcDiplomaPdf(params: {
+export type CoachCertificateInput = {
   licenseType: string;
   nameTh: string;
   nameEn: string | null;
   dob: Date | null;
+  afcId: string | null;
   issueDate: Date | null;
+  expireDate: Date | null;
   certificateNo: string | null;
-}) {
-  const title = AFC_DIPLOMA_TITLES[params.licenseType];
-  if (!title) throw new Error(`ไม่มีแบบใบประกาศ AFC สำหรับระดับ ${params.licenseType}`);
+  photoUrl: string | null;
+};
 
-  const [templateBytes, logoBytes, latinLight, latinRegular, thaiLight, thaiRegular] = await Promise.all([
-    readFile(path.join(ASSET_DIR, "afc-diploma-template.pdf")),
-    readFile(path.join(ASSET_DIR, "fa-thailand-logo.jpg")),
-    readFile(path.join(FONT_DIR, "noto-sans-thai-latin-300-normal.woff")),
-    readFile(path.join(FONT_DIR, "noto-sans-thai-latin-400-normal.woff")),
-    readFile(path.join(FONT_DIR, "noto-sans-thai-thai-300-normal.woff")),
-    readFile(path.join(FONT_DIR, "noto-sans-thai-thai-400-normal.woff")),
-  ]);
+type Fonts = { regular: PDFFont; bold: PDFFont; title: PDFFont; thai: PDFFont };
+type Align = "left" | "center";
 
-  const doc = await PDFDocument.create();
-  doc.registerFontkit(fontkit);
-  doc.setTitle(`${title} — ${params.nameEn || params.nameTh}`);
-  doc.setAuthor(ASSOCIATION);
-
-  // คัดลอกหน้าแบบมาทั้งหน้า (คงการบีบอัดเดิมของไฟล์ — ไฟล์ผลลัพธ์เล็กกว่าการ embed เป็นภาพซ้อน)
-  const template = await PDFDocument.load(templateBytes);
-  const [page] = await doc.copyPages(template, [0]);
-  doc.addPage(page);
-
-  const fonts = {
-    light: await doc.embedFont(latinLight, { subset: true }),
-    regular: await doc.embedFont(latinRegular, { subset: true }),
-    thaiLight: await doc.embedFont(thaiLight, { subset: true }),
-    thaiRegular: await doc.embedFont(thaiRegular, { subset: true }),
-  };
-  const pick = (text: string, weight: "light" | "regular"): PDFFont =>
-    isThai(text) ? (weight === "light" ? fonts.thaiLight : fonts.thaiRegular) : fonts[weight];
-
-  // ข้อความชิดซ้าย/กึ่งกลาง ย่อขนาดอัตโนมัติถ้ายาวเกินความกว้างที่กำหนด
-  const text = (
+function writer(page: PDFPage, fonts: Fonts) {
+  return (
     value: string,
-    opts: { x: number; y: number; size: number; weight?: "light" | "regular"; align?: "left" | "center"; maxWidth?: number; color?: ReturnType<typeof rgb> },
+    o: { x: number; y: number; size: number; font?: keyof Fonts; align?: Align; maxWidth?: number; color?: RGB },
   ) => {
     value = clean(value);
     if (!value) return;
-    const font = pick(value, opts.weight ?? "regular");
-    let size = opts.size;
-    const maxWidth = opts.maxWidth ?? MAX_TEXT_WIDTH;
+    const font = isThai(value) ? fonts.thai : fonts[o.font ?? "regular"];
+    let size = o.size;
     const w = font.widthOfTextAtSize(value, size);
-    if (w > maxWidth) size = (size * maxWidth) / w;
+    if (o.maxWidth && w > o.maxWidth) size = (size * o.maxWidth) / w;
     const width = font.widthOfTextAtSize(value, size);
-    const x = opts.align === "center" ? opts.x - width / 2 : opts.x;
-    page.drawText(value, { x, y: opts.y, size, font, color: opts.color ?? NAVY });
+    page.drawText(value, { x: o.align === "center" ? o.x - width / 2 : o.x, y: o.y, size, font, color: o.color ?? NAVY });
   };
+}
 
-  // โลโก้สมาคม (ตำแหน่งเดียวกับวงกลม "Insert Member Association's Logo" ในแบบ)
-  drawCircleImage(page, await doc.embedJpg(logoBytes), LOGO.cx, LOGO.cy, LOGO.r);
+// รูปแบบ "ครอบเต็มกรอบ" (object-fit: cover) — ตัดส่วนเกินด้วย clipping path
+function drawCover(page: PDFPage, image: PDFImage, x: number, y: number, w: number, h: number) {
+  const scale = Math.max(w / image.width, h / image.height);
+  const dw = image.width * scale;
+  const dh = image.height * scale;
+  page.pushOperators(pushGraphicsState(), rectangle(x, y, w, h), clip(), endPath());
+  // ชิดด้านบนของรูป (หน้าคนมักอยู่ส่วนบน)
+  page.drawImage(image, { x: x + (w - dw) / 2, y: y + h - dh, width: dw, height: dh });
+  page.pushOperators(popGraphicsState());
+}
 
-  const nameEn = params.nameEn?.trim() ? titleCase(params.nameEn.trim()) : null;
-  text("This is to certify that:", { x: LEFT, y: 628.56, size: 16 });
-  text(nameEn ?? params.nameTh, { x: LEFT, y: 551.36, size: 26, weight: "light" });
-  let y = 534;
-  if (nameEn) {
-    text(params.nameTh, { x: LEFT, y, size: 13 });
-    y -= 17;
+async function loadPhoto(doc: PDFDocument, url: string | null): Promise<PDFImage | null> {
+  if (!url) return null;
+  try {
+    const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
+    if (!res.ok) return null;
+    const bytes = new Uint8Array(await res.arrayBuffer());
+    // ตรวจชนิดไฟล์จากส่วนหัว (pdf-lib รองรับ JPG/PNG เท่านั้น)
+    if (bytes[0] === 0xff && bytes[1] === 0xd8) return await doc.embedJpg(bytes);
+    if (bytes[0] === 0x89 && bytes[1] === 0x50) return await doc.embedPng(bytes);
+    return null;
+  } catch {
+    return null;
   }
-  if (params.dob) text(`Born on ${dotDate(params.dob)}`, { x: LEFT, y, size: 12 });
+}
 
-  text("has successfully completed the", { x: LEFT, y: 475.17, size: 16 });
-  text(ASSOCIATION, { x: LEFT, y: 434.14, size: 32, weight: "light" });
-  text(title, { x: LEFT, y: 393.1, size: 33, weight: "light" });
+async function setup(kind: "diploma" | "licence") {
+  const read = (f: string) => readFile(path.join(ASSET_DIR, f));
+  const [bg, afc, cc, crest, regular, bold, title, thai, ...sigs] = await Promise.all([
+    read("fat-backgrounds.pdf"),
+    read("afc-logo.png"),
+    read("coaching-convention.png"),
+    read("fa-thailand-crest.png"),
+    read("fonts/carlito-latin-400-normal.woff"),
+    read("fonts/carlito-latin-700-normal.woff"),
+    read("fonts/montserrat-latin-800-normal.woff"),
+    readFile(path.join(THAI_FONT_DIR, "noto-sans-thai-thai-400-normal.woff")),
+    ...SIGNATORIES.map((s) => read(s.sig)),
+  ]);
+  const doc = await PDFDocument.create();
+  doc.registerFontkit(fontkit);
+  doc.setAuthor(ASSOCIATION);
+  // หน้า 0 = พื้นหลังแนวตั้ง (Diploma), หน้า 1 / 2 = พื้นหลังแนวนอน (Licence หน้า/หลัง)
+  const backgrounds = await doc.embedPdf(bg, kind === "diploma" ? [0] : [1, 2]);
+  const fonts: Fonts = {
+    regular: await doc.embedFont(regular, { subset: true }),
+    bold: await doc.embedFont(bold, { subset: true }),
+    title: await doc.embedFont(title, { subset: true }),
+    thai: await doc.embedFont(thai, { subset: true }),
+  };
+  const images = {
+    afc: await doc.embedPng(afc),
+    cc: await doc.embedPng(cc),
+    crest: await doc.embedPng(crest),
+    sigs: await Promise.all(sigs.map((b) => doc.embedPng(b))),
+  };
+  return { doc, backgrounds, fonts, images };
+}
 
+const fitWidth = (img: PDFImage, width: number) => ({ width, height: (img.height / img.width) * width });
+
+function displayName(c: CoachCertificateInput) {
+  return clean(c.nameEn ?? "") ? clean(c.nameEn!).toUpperCase() : c.nameTh;
+}
+
+export async function generateAfcDiplomaPdf(c: CoachCertificateInput) {
+  const level = AFC_LEVELS[c.licenseType];
+  if (!level) throw new Error(`ไม่มีแบบใบประกาศ AFC สำหรับระดับ ${c.licenseType}`);
+  const { doc, backgrounds, fonts, images } = await setup("diploma");
+  doc.setTitle(`AFC ${level} Diploma — ${displayName(c)}`);
+  const page = doc.addPage([A4.w, A4.h]);
+  page.drawPage(backgrounds[0], { x: 0, y: 0, width: A4.w, height: A4.h });
+  const text = writer(page, fonts);
+
+  // โลโก้ AFC + COACHING CONVENTION + ตราสมาคม
+  page.drawImage(images.afc, { x: 127.9, y: 695.7, ...fitWidth(images.afc, 114.8) });
+  page.drawImage(images.cc, { x: 258.5, y: 691.5, ...fitWidth(images.cc, 148) });
+  page.drawImage(images.crest, { x: 439, y: 667.4, ...fitWidth(images.crest, 106.1) });
+
+  text("This is to certify that:", { x: 70.6, y: 569.9, size: 17 });
+  text(displayName(c), { x: 72.7, y: 498.9, size: 30, maxWidth: 440 });
+  if (c.dob) text(`Born on ${dotDate(c.dob)}`, { x: 75.3, y: 480.3, size: 12.96 });
+  text("has successfully completed the", { x: 76, y: 428.5, size: 15 });
+  text(ASSOCIATION, { x: 75.3, y: 392.6, size: 33, maxWidth: 440 });
+  text(`AFC ${level} Diploma`, { x: 79.2, y: 357.9, size: 27, font: "title", maxWidth: 440 });
+
+  // ลายเซ็น 3 ตำแหน่ง
+  const centers = [141, 297.4, 453.7];
   SIGNATORIES.forEach((s, i) => {
-    text(s.role, { x: SIGN_CENTERS[i], y: 273.97, size: 11.3, align: "center", maxWidth: 150 });
-    if (s.name) text(s.name, { x: SIGN_CENTERS[i], y: 206.2, size: 11.3, align: "center", maxWidth: 150 });
+    const cx = centers[i];
+    text(s.role, { x: cx, y: 213.9, size: 12, align: "center" });
+    const sig = images.sigs[i];
+    const size = { width: (sig.width / sig.height) * s.height, height: s.height };
+    page.drawImage(sig, { x: cx - size.width / 2, y: s.bottom, ...size });
+    page.drawRectangle({ x: cx - 58.5, y: 185, width: 117, height: 1.2, color: LINE });
+    text(s.name, { x: cx, y: 148.6, size: 12, align: "center" });
   });
 
-  text(params.issueDate ? `${PLACE}, ${dotDate(params.issueDate)}` : PLACE, { x: 94.44, y: 117.34, size: 14 });
-  if (params.certificateNo) {
-    text(`Certificate No. ${params.certificateNo}`, { x: 94.44, y: 99, size: 10, color: MUTED });
+  // ล่างซ้าย: สถานที่-วันที่ / เลขที่ใบประกาศ / AFC ID
+  const lines = [c.issueDate ? `${PLACE}, ${longDate(c.issueDate)}` : PLACE, c.certificateNo ?? "", c.afcId ?? ""].filter((l) => clean(l));
+  lines.forEach((l, i) => text(l, { x: 73.5, y: 78.9 - i * 16.8, size: 12.96 }));
+
+  return doc.save();
+}
+
+export async function generateAfcLicencePdf(c: CoachCertificateInput) {
+  const level = AFC_LEVELS[c.licenseType];
+  if (!level) throw new Error(`ไม่มีแบบใบอนุญาต AFC สำหรับระดับ ${c.licenseType}`);
+  const { doc, backgrounds, fonts, images } = await setup("licence");
+  doc.setTitle(`AFC ${level} Licence — ${displayName(c)}`);
+  const L = { w: A4.h, h: A4.w };
+
+  // ---------- หน้า (รูป + ข้อมูล) ----------
+  const front = doc.addPage([L.w, L.h]);
+  front.drawPage(backgrounds[0], { x: 0, y: 0, width: L.w, height: L.h });
+  const t1 = writer(front, fonts);
+  front.drawImage(images.afc, { x: 170.8, y: 438.1, ...fitWidth(images.afc, 136.5) });
+  front.drawImage(images.cc, { x: 326, y: 435.5, ...fitWidth(images.cc, 172) });
+  front.drawImage(images.crest, { x: 565.1, y: 416, ...fitWidth(images.crest, 106.4) });
+
+  const cx = L.w / 2;
+  t1(`${ASSOCIATION} Award`, { x: cx, y: 338.7, size: 45, align: "center", maxWidth: 760 });
+  t1(`AFC ${level} License`, { x: cx, y: 287.7, size: 40, font: "title", align: "center", maxWidth: 720 });
+
+  // รูปถ่าย (ไม่มีรูป/รูปชนิดที่ไม่รองรับ → กรอบเทาพร้อมข้อความ)
+  const photo = await loadPhoto(doc, c.photoUrl);
+  const P = { x: 76, y: 53.9, w: 150, h: 195.6 };
+  if (photo) drawCover(front, photo, P.x, P.y, P.w, P.h);
+  else {
+    front.drawRectangle({ x: P.x, y: P.y, width: P.w, height: P.h, color: rgb(0.72, 0.73, 0.78) });
+    t1("Photo", { x: P.x + P.w / 2, y: P.y + P.h / 2 - 5, size: 13, align: "center", color: rgb(1, 1, 1) });
   }
+
+  const ix = 420;
+  t1(displayName(c), { x: ix, y: 212.2, size: 28, align: "center", maxWidth: 380, color: INK });
+  if (c.dob) t1(`Birth date: ${dotDate(c.dob)}`, { x: ix, y: 160.3, size: 16, align: "center", color: INK });
+  if (c.certificateNo) t1(c.certificateNo, { x: ix, y: 91.6, size: 17, align: "center", color: INK });
+  if (c.afcId) t1(`AFC ID: ${c.afcId}`, { x: ix, y: 72.7, size: 15, align: "center", color: INK });
+  if (c.expireDate) t1(`Valid until: ${dotDate(c.expireDate)}`, { x: ix, y: 53.7, size: 15, align: "center", color: INK });
+
+  // ---------- หลัง (ข้อความรับรอง + ลายเซ็น) ----------
+  const back = doc.addPage([L.w, L.h]);
+  back.drawPage(backgrounds[1], { x: 0, y: 0, width: L.w, height: L.h });
+  const t2 = writer(back, fonts);
+  [
+    `The holder of this AFC ${level} licence is authorised to coach, in accordance with the`,
+    `AFC Coaching Convention, on the territory of ${ASSOCIATION}, as well as`,
+    "within all other associations which have signed the AFC Coaching Convention.",
+    "This licence may not be transferred to a third party.",
+  ].forEach((line, i) => t2(line, { x: cx, y: 452 - i * 19.2, size: 15.5, align: "center", maxWidth: 690, color: INK }));
+
+  const centers = [206, 420.6, 636];
+  SIGNATORIES.forEach((s, i) => {
+    const sx = centers[i];
+    t2(s.role, { x: sx, y: 286, size: 15, font: "bold", align: "center" });
+    const sig = images.sigs[i];
+    const size = fitWidth(sig, s.width * 1.15);
+    back.drawImage(sig, { x: sx - size.width / 2, y: 231, ...size });
+    back.drawRectangle({ x: sx - 69, y: 234.6, width: 138, height: 1.4, color: LINE });
+    t2(s.name, { x: sx, y: 203.7, size: 15, font: "bold", align: "center" });
+  });
 
   return doc.save();
 }

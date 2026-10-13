@@ -5,7 +5,7 @@ import { generateCertificatePdf } from "@/lib/certificate-pdf";
 import { LICENSE_TYPES, RECORD_TYPES, labelFor } from "@/lib/constants";
 
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ recordId: string }> },
 ) {
   const user = await requireCoach();
@@ -20,6 +20,8 @@ export async function GET(
     return NextResponse.json({ error: "ไม่พบใบอนุญาต" }, { status: 404 });
   }
 
+  // ?type=licence = บัตรใบอนุญาต (แนวนอน 2 หน้า), ค่าเริ่มต้น = ประกาศนียบัตร (Diploma)
+  const kind = new URL(request.url).searchParams.get("type") === "licence" ? "licence" : "diploma";
   const pdfBytes = await generateCertificatePdf({
     coachName: `${record.coach.nameTh} ${record.coach.surnameTh}`,
     licenseTypeLabel: labelFor(LICENSE_TYPES, record.licenseType) ?? record.licenseType,
@@ -29,12 +31,16 @@ export async function GET(
     licenseType: record.licenseType,
     coachNameEn: [record.coach.nameEn, record.coach.familyNameEn].filter(Boolean).join(" ") || null,
     dob: record.coach.dob,
+    afcId: record.coach.afcId,
+    expireDate: record.expireDate,
+    photoUrl: record.coach.photoUrl,
+    kind,
   });
 
   return new NextResponse(Buffer.from(pdfBytes), {
     headers: {
       "Content-Type": "application/pdf",
-      "Content-Disposition": `inline; filename=certificate-${record.id}.pdf`,
+      "Content-Disposition": `inline; filename=${kind}-${record.licenseType}-${record.id}.pdf`,
     },
   });
 }

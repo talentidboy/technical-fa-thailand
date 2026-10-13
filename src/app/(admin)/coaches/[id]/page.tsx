@@ -15,6 +15,7 @@ import {
   LICENSE_TYPES,
   RECORD_TYPES,
   GENDER_OPTIONS,
+  AFC_CERTIFICATE_LEVELS,
   labelFor,
 } from "@/lib/constants";
 import { getLicenseStatus, LICENSE_STATUS_STYLES } from "@/lib/license-status";
@@ -393,11 +394,22 @@ export default async function CoachDetailPage({
                         <div className="flex items-center justify-end gap-1">
                           <a
                             href={`/coaches/${coach.id}/certificate/${record.id}`}
-                            aria-label="ดาวน์โหลดใบประกาศ"
+                            aria-label="ดาวน์โหลดใบประกาศ (Diploma)"
+                            title="ดาวน์โหลดใบประกาศ (Diploma)"
                             className="inline-flex items-center justify-center rounded-lg p-2 text-slate-400 transition-colors hover:bg-indigo-50 hover:text-indigo-600"
                           >
                             <Download className="h-4 w-4" />
                           </a>
+                          {AFC_CERTIFICATE_LEVELS.includes(record.licenseType) && (
+                            <a
+                              href={`/coaches/${coach.id}/certificate/${record.id}?type=licence`}
+                              aria-label="ดาวน์โหลดบัตรใบอนุญาต (Licence)"
+                              title="ดาวน์โหลดบัตรใบอนุญาต (Licence)"
+                              className="inline-flex items-center justify-center rounded-lg p-2 text-slate-400 transition-colors hover:bg-amber-50 hover:text-amber-600"
+                            >
+                              <IdCard className="h-4 w-4" />
+                            </a>
+                          )}
                           {isAdmin && (
                             <form action={deleteLicenseRecord}>
                               <input

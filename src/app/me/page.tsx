@@ -1,7 +1,14 @@
 import Link from "next/link";
 import { requireCoach } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { LICENSE_TYPES, RECORD_TYPES, GENDER_OPTIONS, CORE_LICENSE_PROGRESSION, labelFor } from "@/lib/constants";
+import {
+  LICENSE_TYPES,
+  RECORD_TYPES,
+  GENDER_OPTIONS,
+  CORE_LICENSE_PROGRESSION,
+  AFC_CERTIFICATE_LEVELS,
+  labelFor,
+} from "@/lib/constants";
 import { getLicenseStatus, LICENSE_STATUS_STYLES } from "@/lib/license-status";
 import { getHighestCoreLevel, getNextCoreLevel } from "@/lib/license-rank";
 import { getCountryByCode, getFlagEmoji } from "@/lib/countries";
@@ -479,13 +486,32 @@ export default async function CoachHomePage({
                     <p className="text-xs text-slate-500">
                       ออก {formatDate(record.issueDate)} · หมดอายุ {formatDate(record.expireDate)}
                     </p>
-                    <a
-                      href={`/me/certificate/${record.id}`}
-                      className="mt-2.5 inline-flex items-center gap-1.5 rounded-lg bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700 transition-colors hover:bg-indigo-100"
-                    >
-                      <Download className="h-3.5 w-3.5" />
-                      ดาวน์โหลดใบประกาศ
-                    </a>
+                    {AFC_CERTIFICATE_LEVELS.includes(record.licenseType) ? (
+                      <div className="mt-2.5 flex flex-wrap gap-2">
+                        <a
+                          href={`/me/certificate/${record.id}`}
+                          className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700 transition-colors hover:bg-indigo-100"
+                        >
+                          <Download className="h-3.5 w-3.5" />
+                          Diploma
+                        </a>
+                        <a
+                          href={`/me/certificate/${record.id}?type=licence`}
+                          className="inline-flex items-center gap-1.5 rounded-lg bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-700 transition-colors hover:bg-amber-100"
+                        >
+                          <IdCard className="h-3.5 w-3.5" />
+                          Licence
+                        </a>
+                      </div>
+                    ) : (
+                      <a
+                        href={`/me/certificate/${record.id}`}
+                        className="mt-2.5 inline-flex items-center gap-1.5 rounded-lg bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700 transition-colors hover:bg-indigo-100"
+                      >
+                        <Download className="h-3.5 w-3.5" />
+                        ดาวน์โหลดใบประกาศ
+                      </a>
+                    )}
                   </div>
                 </div>
               );

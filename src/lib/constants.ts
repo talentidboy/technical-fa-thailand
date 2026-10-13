@@ -34,6 +34,9 @@ export const LICENSE_RANK_ORDER = [
 // เส้นทางการอัปเกรดระดับหลักของผู้ฝึกสอน (จากต่ำไปสูง) ตามมาตรฐาน AFC Core Program
 export const CORE_LICENSE_PROGRESSION = ["G", "C", "B", "A", "PRO"];
 
+// ระดับที่มีใบประกาศแบบ AFC Coaching Convention ให้ดาวน์โหลดทั้ง Diploma และ Licence
+export const AFC_CERTIFICATE_LEVELS = ["C", "B", "A", "PRO"];
+
 export const LICENSE_STATUS_OPTIONS = [
   { value: "ACTIVE", label: "ยังไม่หมดอายุ" },
   { value: "EXPIRED", label: "หมดอายุแล้ว" },

@@ -2,7 +2,7 @@ import { PDFDocument, rgb } from "pdf-lib";
 import fontkit from "@pdf-lib/fontkit";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
-import { AFC_DIPLOMA_TITLES, generateAfcDiplomaPdf } from "./certificate-afc";
+import { AFC_LEVELS, generateAfcDiplomaPdf, generateAfcLicencePdf } from "./certificate-afc";
 
 const FONT_DIR = path.join(
   process.cwd(),
@@ -22,17 +22,26 @@ export async function generateCertificatePdf(params: {
   licenseType?: string;
   coachNameEn?: string | null;
   dob?: Date | null;
+  afcId?: string | null;
+  expireDate?: Date | null;
+  photoUrl?: string | null;
+  // diploma = ประกาศนียบัตร (แนวตั้ง), licence = บัตรใบอนุญาต (แนวนอน 2 หน้า)
+  kind?: "diploma" | "licence";
 }) {
-  // ระดับ C / B / A / PRO ใช้แบบใบประกาศ AFC Coaching Convention — ระดับอื่น (G, GK ฯลฯ) ใช้แบบเดิมด้านล่าง
-  if (params.licenseType && AFC_DIPLOMA_TITLES[params.licenseType]) {
-    return generateAfcDiplomaPdf({
+  // ระดับ C / B / A / PRO ใช้แบบของสมาคมตาม AFC Coaching Convention — ระดับอื่น (G, GK ฯลฯ) ใช้แบบเดิมด้านล่าง
+  if (params.licenseType && AFC_LEVELS[params.licenseType]) {
+    const input = {
       licenseType: params.licenseType,
       nameTh: params.coachName,
       nameEn: params.coachNameEn ?? null,
       dob: params.dob ?? null,
+      afcId: params.afcId ?? null,
       issueDate: params.issueDate,
+      expireDate: params.expireDate ?? null,
       certificateNo: params.certificateNo,
-    });
+      photoUrl: params.photoUrl ?? null,
+    };
+    return params.kind === "licence" ? generateAfcLicencePdf(input) : generateAfcDiplomaPdf(input);
   }
 
   const doc = await PDFDocument.create();
