@@ -16,32 +16,6 @@ const TIER_COLORS: Record<string, string> = {
   A: "#142f57",
   PRO: "#c9a227",
 };
-// ระดับ PRO พื้นทอง ต้องใช้ตัวอักษรเข้มแทนขาวเพื่อความคมชัด (contrast 2.4:1 ไม่พอสำหรับตัวขาว)
-const TIER_TEXT_DARK = new Set(["PRO"]);
-
-const CONTAINER_W = 300;
-const TIER_H = 60;
-
-type Point = { x: number; y: number };
-
-// Catmull-Rom -> cubic Bezier, so the pyramid silhouette is one continuous
-// curve instead of straight-line trapezoid segments meeting at visible kinks.
-function smoothPathSegment(points: Point[]) {
-  let d = "";
-  for (let i = 0; i < points.length - 1; i++) {
-    const p0 = points[i - 1] ?? points[i];
-    const p1 = points[i];
-    const p2 = points[i + 1];
-    const p3 = points[i + 2] ?? p2;
-    const cp1x = p1.x + (p2.x - p0.x) / 6;
-    const cp1y = p1.y + (p2.y - p0.y) / 6;
-    const cp2x = p2.x - (p3.x - p1.x) / 6;
-    const cp2y = p2.y - (p3.y - p1.y) / 6;
-    d += ` C ${cp1x},${cp1y} ${cp2x},${cp2y} ${p2.x},${p2.y}`;
-  }
-  return d;
-}
-
 export function DashboardHero({ summary }: { summary: HeroSummary }) {
   const { total, withAfc, clubsCovered, latestYear, trainedLatestYear } = summary;
 
@@ -51,10 +25,7 @@ export function DashboardHero({ summary }: { summary: HeroSummary }) {
     count: d.count,
   }));
   const max = Math.max(...rawPyramidData.map((d) => d.count), 1);
-  const pyramidData = rawPyramidData.map((d) => ({
-    ...d,
-    widthPct: d.count === 0 ? 16 : 22 + (d.count / max) * 78,
-  }));
+  const tierTotal = rawPyramidData.reduce((sum, d) => sum + d.count, 0);
   const sideCounts = summary.sideCounts.map((d) => ({
     label: LICENSE_LABEL_MAP[d.tier] ?? d.tier,
     count: d.count,
@@ -138,104 +109,53 @@ export function DashboardHero({ summary }: { summary: HeroSummary }) {
       </div>
 
       <div className="p-6 sm:p-8">
-      <div className="flex flex-wrap items-center justify-center gap-8 lg:justify-start">
-        {(() => {
-          const n = pyramidData.length;
-          const halfWidthAt = (i: number) => {
-            if (i === 0) {
-              return (pyramidData[0].widthPct / 100) * (CONTAINER_W / 2) * 0.5;
-            }
-            return (pyramidData[i - 1].widthPct / 100) * (CONTAINER_W / 2);
-          };
-          const rightPoints: Point[] = Array.from({ length: n + 1 }, (_, i) => ({
-            x: CONTAINER_W / 2 + halfWidthAt(i),
-            y: i * TIER_H,
-          }));
-          const leftPointsRev: Point[] = Array.from({ length: n + 1 }, (_, i) => ({
-            x: CONTAINER_W / 2 - halfWidthAt(n - i),
-            y: (n - i) * TIER_H,
-          }));
-          const outlineD =
-            `M ${rightPoints[0].x},${rightPoints[0].y}` +
-            smoothPathSegment(rightPoints) +
-            ` L ${leftPointsRev[0].x},${leftPointsRev[0].y}` +
-            smoothPathSegment(leftPointsRev) +
-            " Z";
-          const totalH = n * TIER_H;
-
-          return (
-            <div className="relative w-75" style={{ height: totalH }}>
-              <svg
-                viewBox={`0 0 ${CONTAINER_W} ${totalH}`}
-                width={CONTAINER_W}
-                height={totalH}
-                className="block"
-              >
-                <defs>
-                  {pyramidData.map((d, i) => (
-                    <clipPath id={`tier-clip-${d.tier}`} key={d.tier}>
-                      <rect x={0} y={i * TIER_H} width={CONTAINER_W} height={TIER_H} />
-                    </clipPath>
-                  ))}
-                </defs>
-                {pyramidData.map((d) => (
-                  <path
-                    key={d.tier}
-                    d={outlineD}
-                    fill={TIER_COLORS[d.tier] ?? "#94a3b8"}
-                    clipPath={`url(#tier-clip-${d.tier})`}
-                  />
-                ))}
-                <path d={outlineD} fill="none" stroke="#ffffff" strokeWidth={2} />
-              </svg>
-              {pyramidData.map((d, i) => (
-                <div
-                  key={d.tier}
-                  className={`pointer-events-none absolute left-1/2 -translate-x-1/2 -translate-y-1/2 text-center ${
-                    TIER_TEXT_DARK.has(d.tier) ? "text-indigo-900" : "text-white"
-                  }`}
-                  style={{ top: (i + 0.5) * TIER_H }}
-                >
-                  <div className="text-base font-bold tabular-nums leading-tight">
-                    {d.count.toLocaleString()}
-                  </div>
-                  <div className="text-[11px] font-medium leading-tight opacity-90">
-                    {d.label}
-                  </div>
-                </div>
-              ))}
-            </div>
-          );
-        })()}
-
-        <div className="min-w-55 flex-1">
-          <p className="mb-2 text-xs font-semibold text-slate-400">
-            พีระมิดใบอนุญาตผู้ฝึกสอน (ภาพรวมทั้งระบบ)
-          </p>
-          <div className="flex flex-col gap-1.5">
-            {pyramidData.map((d) => (
-              <div
-                key={d.tier}
-                className="flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-sm"
-              >
-                <span
-                  className="h-3 w-3 flex-none rounded-sm"
-                  style={{ backgroundColor: TIER_COLORS[d.tier] ?? "#94a3b8" }}
-                />
-                <span className="flex-1 font-medium text-slate-700">{d.label}</span>
-                <span className="font-bold text-slate-900">
-                  {d.count.toLocaleString()}
-                </span>
-              </div>
-            ))}
-          </div>
-          {sideCounts.length > 0 && (
-            <p className="mt-3 text-[11px] leading-relaxed text-slate-400">
-              นับจากใบอนุญาตปัจจุบันของแต่ละคน (คอลัมน์ LICENSE) · ใบอนุญาตเฉพาะทางที่ไม่อยู่ในพีระมิดหลัก:{" "}
-              {sideCounts.map((d) => `${d.label} (${d.count})`).join(" · ")}
-            </p>
-          )}
+      {/* จำนวนผู้ฝึกสอนตามระดับใบอนุญาต — แท่งแนวนอน เรียงจากระดับสูงสุด (PRO) ลงมา
+          (เลิกใช้รูปพีระมิดโค้ง: ข้อมูลต่างกันมาก 68 กับ 5,794 ทำให้รูปทรงคอดกลางดูไม่เหมาะ และอ่านค่ายาก) */}
+      <div>
+        <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
+          <h2 className="text-sm font-bold text-slate-900">
+            จำนวนผู้ฝึกสอนตามระดับใบอนุญาต <span className="font-normal text-slate-400">(ใบอนุญาตปัจจุบัน · ทั้งระบบ)</span>
+          </h2>
+          <span className="text-xs text-slate-500">
+            รวม <b className="text-slate-900">{tierTotal.toLocaleString()}</b> คน
+          </span>
         </div>
+        <ul className="space-y-2">
+          {rawPyramidData.map((d) => {
+            const pct = tierTotal > 0 ? (d.count / tierTotal) * 100 : 0;
+            // ค่าน้อยมากยังเห็นแท่งเป็นขีดเล็กๆ (ไม่หายไปเลย) — ตัวเลขจริงอยู่ด้านขวาเสมอ
+            const width = d.count === 0 ? 0 : Math.max(1.5, (d.count / max) * 100);
+            const color = TIER_COLORS[d.tier] ?? "#94a3b8";
+            return (
+              <li
+                key={d.tier}
+                title={`${d.label}: ${d.count.toLocaleString()} คน (${pct.toFixed(1)}%)`}
+                className="group grid grid-cols-[4.5rem_minmax(0,1fr)_7.5rem] items-center gap-3 rounded-lg px-1.5 py-1 transition-colors hover:bg-slate-50 sm:grid-cols-[5.5rem_minmax(0,1fr)_8.5rem]"
+              >
+                <span className="flex items-center gap-2 text-sm font-semibold text-slate-700">
+                  <span className="h-3 w-3 flex-none rounded-sm" style={{ backgroundColor: color }} />
+                  {d.label}
+                </span>
+                <span className="relative h-6 overflow-hidden rounded-[4px] bg-slate-100">
+                  <span
+                    className="absolute inset-y-0 left-0 rounded-r-[4px] transition-opacity group-hover:opacity-85"
+                    style={{ width: `${width}%`, backgroundColor: color }}
+                  />
+                </span>
+                <span className="text-right text-sm tabular-nums">
+                  <b className="text-slate-900">{d.count.toLocaleString()}</b>
+                  <span className="ml-1.5 text-xs text-slate-400">{pct.toFixed(1)}%</span>
+                </span>
+              </li>
+            );
+          })}
+        </ul>
+        {sideCounts.length > 0 && (
+          <p className="mt-4 border-t border-slate-100 pt-3 text-[11px] leading-relaxed text-slate-400">
+            นับจากใบอนุญาตปัจจุบันของแต่ละคน (คอลัมน์ LICENSE) · ใบอนุญาตเฉพาะทางที่ไม่อยู่ในลำดับหลัก:{" "}
+            {sideCounts.map((d) => `${d.label} (${d.count})`).join(" · ")}
+          </p>
+        )}
       </div>
       </div>
     </div>
