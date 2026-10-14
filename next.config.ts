@@ -12,6 +12,7 @@ const nextConfig: NextConfig = {
     // แบบใบประกาศ AFC + โลโก้ + ฟอนต์ ที่อ่านด้วย fs ตอนสร้าง PDF ใบประกาศ
     "/me/certificate/**": ["./src/assets/certificates/**/*", "./node_modules/@fontsource/noto-sans-thai/files/*.woff"],
     "/coaches/**": ["./src/assets/certificates/**/*", "./node_modules/@fontsource/noto-sans-thai/files/*.woff"],
+    "/course-sessions/**": ["./src/assets/certificates/**/*", "./node_modules/@fontsource/noto-sans-thai/files/*.woff"],
   },
   // อัปโหลดรูปผ่าน Server Action (โลโก้ทีม/รูปนักกีฬา G15 ฯลฯ) — ค่าเริ่มต้น 1MB เล็กเกินสำหรับรูปถ่ายจากมือถือ
   // ตั้งไว้ 4MB (ต่ำกว่าขีดจำกัด request body 4.5MB ของ Vercel Functions)

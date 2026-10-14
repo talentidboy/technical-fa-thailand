@@ -151,17 +151,49 @@ async function setup(kind: "diploma" | "licence") {
   return { doc, backgrounds, fonts, images };
 }
 
+type Ctx = Awaited<ReturnType<typeof setup>>;
+
 const fitWidth = (img: PDFImage, width: number) => ({ width, height: (img.height / img.width) * width });
 
 function displayName(c: CoachCertificateInput) {
   return clean(c.nameEn ?? "") ? clean(c.nameEn!).toUpperCase() : c.nameTh;
 }
 
-export async function generateAfcDiplomaPdf(c: CoachCertificateInput) {
+function levelOf(c: CoachCertificateInput) {
   const level = AFC_LEVELS[c.licenseType];
   if (!level) throw new Error(`ไม่มีแบบใบประกาศ AFC สำหรับระดับ ${c.licenseType}`);
-  const { doc, backgrounds, fonts, images } = await setup("diploma");
-  doc.setTitle(`AFC ${level} Diploma — ${displayName(c)}`);
+  return level;
+}
+
+export async function generateAfcDiplomaPdf(c: CoachCertificateInput) {
+  const ctx = await setup("diploma");
+  ctx.doc.setTitle(`AFC ${levelOf(c)} Diploma — ${displayName(c)}`);
+  drawDiploma(ctx, c);
+  return ctx.doc.save();
+}
+
+export async function generateAfcLicencePdf(c: CoachCertificateInput) {
+  const ctx = await setup("licence");
+  ctx.doc.setTitle(`AFC ${levelOf(c)} Licence — ${displayName(c)}`);
+  await drawLicence(ctx, c);
+  return ctx.doc.save();
+}
+
+// พิมพ์ทั้งรุ่นเป็นไฟล์เดียว — ใช้ฟอนต์/โลโก้/ลายเซ็นชุดเดียวกันทุกหน้า ไฟล์จึงเล็กกว่ารวมไฟล์ทีละคนมาก
+export async function generateAfcBatchPdf(kind: "diploma" | "licence", list: CoachCertificateInput[], title: string) {
+  const ctx = await setup(kind);
+  ctx.doc.setTitle(title);
+  // โหลดรูปถ่ายพร้อมกันทั้งรุ่นก่อน (แต่ละรูปรอได้ไม่เกิน 8 วินาที)
+  const photos = kind === "licence" ? await Promise.all(list.map((c) => loadPhoto(ctx.doc, c.photoUrl))) : [];
+  for (const [i, c] of list.entries()) {
+    if (kind === "diploma") drawDiploma(ctx, c);
+    else await drawLicence(ctx, c, photos[i]);
+  }
+  return ctx.doc.save();
+}
+
+function drawDiploma({ doc, backgrounds, fonts, images }: Ctx, c: CoachCertificateInput) {
+  const level = levelOf(c);
   const page = doc.addPage([A4.w, A4.h]);
   page.drawPage(backgrounds[0], { x: 0, y: 0, width: A4.w, height: A4.h });
   const text = writer(page, fonts);
@@ -193,15 +225,11 @@ export async function generateAfcDiplomaPdf(c: CoachCertificateInput) {
   // ล่างซ้าย: สถานที่-วันที่ / เลขที่ใบประกาศ / AFC ID
   const lines = [c.issueDate ? `${PLACE}, ${longDate(c.issueDate)}` : PLACE, c.certificateNo ?? "", c.afcId ?? ""].filter((l) => clean(l));
   lines.forEach((l, i) => text(l, { x: 73.5, y: 78.9 - i * 16.8, size: 12.96 }));
-
-  return doc.save();
 }
 
-export async function generateAfcLicencePdf(c: CoachCertificateInput) {
-  const level = AFC_LEVELS[c.licenseType];
-  if (!level) throw new Error(`ไม่มีแบบใบอนุญาต AFC สำหรับระดับ ${c.licenseType}`);
-  const { doc, backgrounds, fonts, images } = await setup("licence");
-  doc.setTitle(`AFC ${level} Licence — ${displayName(c)}`);
+// preloaded: รูปที่โหลดไว้แล้ว (พิมพ์ทั้งรุ่น) — undefined = โหลดเองจาก photoUrl
+async function drawLicence({ doc, backgrounds, fonts, images }: Ctx, c: CoachCertificateInput, preloaded?: PDFImage | null) {
+  const level = levelOf(c);
   const L = { w: A4.h, h: A4.w };
 
   // ---------- หน้า (รูป + ข้อมูล) ----------
@@ -217,7 +245,7 @@ export async function generateAfcLicencePdf(c: CoachCertificateInput) {
   t1(`AFC ${level} License`, { x: cx, y: 287.7, size: 40, font: "title", align: "center", maxWidth: 720 });
 
   // รูปถ่าย (ไม่มีรูป/รูปชนิดที่ไม่รองรับ → กรอบเทาพร้อมข้อความ)
-  const photo = await loadPhoto(doc, c.photoUrl);
+  const photo = preloaded === undefined ? await loadPhoto(doc, c.photoUrl) : preloaded;
   const P = { x: 76, y: 53.9, w: 150, h: 195.6 };
   if (photo) drawCover(front, photo, P.x, P.y, P.w, P.h);
   else {
@@ -253,6 +281,4 @@ export async function generateAfcLicencePdf(c: CoachCertificateInput) {
     back.drawRectangle({ x: sx - 69, y: 234.6, width: 138, height: 1.4, color: LINE });
     t2(s.name, { x: sx, y: 203.7, size: 15, font: "bold", align: "center" });
   });
-
-  return doc.save();
 }

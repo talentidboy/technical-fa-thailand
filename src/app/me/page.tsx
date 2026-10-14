@@ -14,6 +14,7 @@ import { getHighestCoreLevel, getNextCoreLevel } from "@/lib/license-rank";
 import { getCountryByCode, getFlagEmoji } from "@/lib/countries";
 import { formatThaiAddress } from "@/lib/thai-address";
 import { coreProgramSteps } from "@/components/CoursesSection";
+import { APPLICATION_STATUS, LIVE_APPLICATION_STATUSES } from "@/lib/course-workflow";
 import { Reveal } from "@/components/g15/Reveal";
 import { applyToSession } from "./courses/actions";
 import {
@@ -46,12 +47,7 @@ function formatDate(date: Date | null) {
 const shortDate = (date: Date | null) =>
   date ? date.toLocaleDateString("th-TH", { day: "numeric", month: "short", year: "2-digit" }) : null;
 
-const APP_STATUS: Record<string, { label: string; className: string }> = {
-  PENDING: { label: "รอตรวจสอบ", className: "bg-amber-50 text-amber-700 ring-amber-200" },
-  APPROVED: { label: "อนุมัติแล้ว", className: "bg-emerald-50 text-emerald-700 ring-emerald-200" },
-  REJECTED: { label: "ไม่ผ่าน", className: "bg-red-50 text-red-700 ring-red-200" },
-  CANCELLED: { label: "ยกเลิก", className: "bg-slate-100 text-slate-500 ring-slate-200" },
-};
+const APP_STATUS = APPLICATION_STATUS;
 
 // หน้าแรกของผู้ฝึกสอน — หลักสูตรอบรมขึ้นก่อน (รุ่นที่เปิดรับ + เส้นทางใบอนุญาต) แล้วจึงเป็นใบอนุญาต/ประวัติของฉัน
 export default async function CoachHomePage({
@@ -73,7 +69,10 @@ export default async function CoachHomePage({
     }),
     prisma.courseSession.findMany({
       where: { status: "OPEN" },
-      include: { course: true, _count: { select: { applications: true } } },
+      include: {
+        course: true,
+        _count: { select: { applications: { where: { status: { in: LIVE_APPLICATION_STATUSES } } } } },
+      },
       orderBy: [{ startDate: "asc" }, { id: "asc" }],
     }),
     prisma.application.findMany({
@@ -92,7 +91,7 @@ export default async function CoachHomePage({
   const nextLevel = getNextCoreLevel(currentLevel);
   const currentIdx = currentLevel ? CORE_LICENSE_PROGRESSION.indexOf(currentLevel) : -1;
   const appliedIds = new Set(
-    myApplications.filter((a) => a.status === "PENDING" || a.status === "APPROVED").map((a) => a.courseSessionId),
+    myApplications.filter((a) => LIVE_APPLICATION_STATUSES.includes(a.status)).map((a) => a.courseSessionId),
   );
   const now = new Date();
 

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { requireCoach } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getHighestCoreLevel, getNextCoreLevel } from "@/lib/license-rank";
+import { APPLICATION_STATUS, LIVE_APPLICATION_STATUSES } from "@/lib/course-workflow";
 import { applyToSession } from "./actions";
 import { CalendarDays, MapPin, Lock, CheckCircle2, Clock } from "lucide-react";
 
@@ -9,13 +10,6 @@ function formatDate(date: Date | null) {
   if (!date) return null;
   return date.toLocaleDateString("th-TH", { year: "numeric", month: "short", day: "numeric" });
 }
-
-const APP_STATUS_LABEL: Record<string, { label: string; className: string }> = {
-  PENDING: { label: "รอตรวจสอบ", className: "bg-amber-50 text-amber-600" },
-  APPROVED: { label: "อนุมัติแล้ว", className: "bg-emerald-50 text-emerald-600" },
-  REJECTED: { label: "ไม่ผ่าน", className: "bg-red-50 text-red-600" },
-  CANCELLED: { label: "ยกเลิก", className: "bg-slate-100 text-slate-500" },
-};
 
 type SessionRowData = {
   id: number;
@@ -134,7 +128,10 @@ export default async function MyCoursesPage({
     }),
     prisma.courseSession.findMany({
       where: { status: "OPEN" },
-      include: { course: true, _count: { select: { applications: true } } },
+      include: {
+        course: true,
+        _count: { select: { applications: { where: { status: { in: LIVE_APPLICATION_STATUSES } } } } },
+      },
       orderBy: { startDate: "asc" },
     }),
     prisma.application.findMany({
@@ -148,7 +145,7 @@ export default async function MyCoursesPage({
   const nextLevel = getNextCoreLevel(currentLevel);
   const appliedSessionIds = new Set(
     myApplications
-      .filter((a) => a.status === "PENDING" || a.status === "APPROVED")
+      .filter((a) => LIVE_APPLICATION_STATUSES.includes(a.status))
       .map((a) => a.courseSessionId),
   );
 
@@ -172,7 +169,7 @@ export default async function MyCoursesPage({
       )}
       {applied && (
         <p className="rounded-lg bg-emerald-50 px-4 py-3 text-sm text-emerald-600">
-          ส่งใบสมัครแล้ว รอแอดมินตรวจสอบ
+          ส่งใบสมัครแล้ว รอเจ้าหน้าที่อนุมัติ — เมื่อผ่านการอบรม ใบประกาศจะขึ้นที่หน้าแรกของคุณให้ดาวน์โหลดได้ทันที
         </p>
       )}
 
@@ -225,7 +222,7 @@ export default async function MyCoursesPage({
         ) : (
           <ul className="divide-y divide-slate-100">
             {myApplications.map((app) => {
-              const style = APP_STATUS_LABEL[app.status];
+              const style = APPLICATION_STATUS[app.status] ?? APPLICATION_STATUS.CANCELLED;
               return (
                 <li key={app.id} className="flex items-center justify-between px-6 py-3">
                   <div>
@@ -236,7 +233,7 @@ export default async function MyCoursesPage({
                       สมัครเมื่อ {formatDate(app.appliedAt)}
                     </p>
                   </div>
-                  <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${style.className}`}>
+                  <span className={`rounded-full px-2.5 py-1 text-xs font-medium ring-1 ${style.className}`}>
                     {style.label}
                   </span>
                 </li>

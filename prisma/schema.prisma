@@ -61,6 +61,9 @@ model LicenseRecord {
   instructor    Instructor? @relation(fields: [instructorId], references: [id], onDelete: SetNull)
   createdAt     DateTime    @default(now()) @map("created_at")
 
+  // ใบสมัครอบรมที่ออกใบอนุญาตนี้ (ยืนยันผลผ่านจากหน้าจัดการรุ่นอบรม) — null = บันทึกเอง/นำเข้า
+  application Application?
+
   @@map("license_records")
 }
 
@@ -219,7 +222,8 @@ model CourseSession {
 }
 
 // ใบสมัครเข้าอบรมของโค้ช
-// status: PENDING, APPROVED, REJECTED, CANCELLED
+// status: PENDING (รออนุมัติ) → APPROVED (อนุมัติเข้าอบรม) → PASSED (ผ่าน ออกใบอนุญาตแล้ว) / FAILED (ไม่ผ่าน)
+//         หรือ REJECTED (ไม่อนุมัติเข้าอบรม), CANCELLED
 model Application {
   id              Int           @id @default(autoincrement())
   coachId         Int           @map("coach_id")
@@ -231,6 +235,9 @@ model Application {
   reviewedAt      DateTime?     @map("reviewed_at")
   reviewedBy      String?       @map("reviewed_by")
   note            String?
+  // ใบอนุญาตที่ออกให้เมื่อยืนยันผลผ่าน (ลบใบอนุญาต = ผลถูกยกเลิก)
+  licenseRecordId Int?          @unique @map("license_record_id")
+  licenseRecord   LicenseRecord? @relation(fields: [licenseRecordId], references: [id], onDelete: SetNull)
 
   @@unique([coachId, courseSessionId])
   @@map("applications")

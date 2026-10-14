@@ -145,20 +145,29 @@ export default async function CoachCenterPage() {
                         </p>
                       )}
                     </div>
-                    <span
-                      className={`flex-none rounded-full px-2.5 py-1 text-xs font-medium ${
-                        isGeneral ? "bg-slate-100 text-slate-600" : "bg-indigo-50 text-indigo-600"
-                      }`}
-                    >
-                      {isGeneral ? "อบรมทั่วไป" : `License ${session.course.licenseType}`}
-                    </span>
+                    <div className="flex flex-none items-center gap-2">
+                      <span
+                        className={`rounded-full px-2.5 py-1 text-xs font-medium ${
+                          isGeneral ? "bg-slate-100 text-slate-600" : "bg-indigo-50 text-indigo-600"
+                        }`}
+                      >
+                        {isGeneral ? "อบรมทั่วไป" : `License ${session.course.licenseType}`}
+                      </span>
+                      <Link
+                        href={`/apply/${session.id}`}
+                        className="inline-flex items-center gap-1 rounded-lg bg-indigo-600 px-3.5 py-2 text-sm font-semibold text-white shadow-sm shadow-indigo-200 hover:bg-indigo-700"
+                      >
+                        สมัคร
+                        <ArrowRight className="h-3.5 w-3.5" />
+                      </Link>
+                    </div>
                   </li>
                 );
               })}
             </ul>
           )}
           <p className="border-t border-slate-100 px-6 py-3 text-center text-xs text-slate-400">
-            ต้องเข้าสู่ระบบด้วยบัญชีผู้ฝึกสอนเพื่อสมัครเข้าอบรม
+            ยังไม่มีบัญชีก็สมัครได้ — ระบบสร้างบัญชีให้พร้อมกับใบสมัคร
           </p>
         </div>
 

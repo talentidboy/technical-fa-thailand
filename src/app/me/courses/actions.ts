@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { requireCoach } from "@/lib/auth";
 import { getHighestCoreLevel, getNextCoreLevel } from "@/lib/license-rank";
+import { LIVE_APPLICATION_STATUSES } from "@/lib/course-workflow";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
@@ -17,7 +18,10 @@ export async function applyToSession(formData: FormData) {
 
   const session = await prisma.courseSession.findUnique({
     where: { id: courseSessionId },
-    include: { course: true, _count: { select: { applications: true } } },
+    include: {
+      course: true,
+      _count: { select: { applications: { where: { status: { in: LIVE_APPLICATION_STATUSES } } } } },
+    },
   });
   if (!session || session.status !== "OPEN") {
     back("error=" + encodeURIComponent("รุ่นอบรมนี้ไม่เปิดรับสมัครแล้ว"));
@@ -47,7 +51,7 @@ export async function applyToSession(formData: FormData) {
   const existing = await prisma.application.findUnique({
     where: { coachId_courseSessionId: { coachId, courseSessionId } },
   });
-  if (existing && existing.status !== "REJECTED" && existing.status !== "CANCELLED") {
+  if (existing && LIVE_APPLICATION_STATUSES.includes(existing.status)) {
     back("error=" + encodeURIComponent("คุณสมัครรุ่นนี้ไปแล้ว"));
   }
 
@@ -64,5 +68,6 @@ export async function applyToSession(formData: FormData) {
 
   revalidatePath("/me/courses");
   revalidatePath("/me");
+  revalidatePath(`/course-sessions/${courseSessionId}`);
   back("applied=1");
 }

@@ -29,6 +29,8 @@ export function proxy(request: NextRequest) {
   const isPublic =
     PUBLIC_PATHS.includes(pathname) ||
     pathname.startsWith("/verify/") ||
+    // หน้าสมัครอบรมของแต่ละรุ่น — คนที่ยังไม่มีบัญชีสมัคร + สร้างบัญชีได้ในฟอร์มเดียว
+    pathname.startsWith("/apply/") ||
     pathname.startsWith("/news/") ||
     G15_PUBLIC_PATHS.includes(pathname) ||
     pathname.startsWith("/g15-womens-series/teams/") ||

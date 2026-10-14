@@ -2,7 +2,8 @@ import { PDFDocument, rgb } from "pdf-lib";
 import fontkit from "@pdf-lib/fontkit";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
-import { AFC_LEVELS, generateAfcDiplomaPdf, generateAfcLicencePdf } from "./certificate-afc";
+import { AFC_LEVELS, generateAfcBatchPdf, generateAfcDiplomaPdf, generateAfcLicencePdf } from "./certificate-afc";
+import { LICENSE_TYPES, RECORD_TYPES, labelFor } from "./constants";
 
 const FONT_DIR = path.join(
   process.cwd(),
@@ -145,4 +146,70 @@ export async function generateCertificatePdf(params: {
   );
 
   return doc.save();
+}
+
+type RecordWithCoach = {
+  licenseType: string;
+  recordType: string;
+  certificateNo: string | null;
+  issueDate: Date | null;
+  expireDate: Date | null;
+  coach: {
+    nameTh: string;
+    surnameTh: string;
+    nameEn: string | null;
+    familyNameEn: string | null;
+    dob: Date | null;
+    afcId: string | null;
+    photoUrl: string | null;
+  };
+};
+
+function paramsFromRecord(record: RecordWithCoach, kind: "diploma" | "licence") {
+  return {
+    coachName: `${record.coach.nameTh} ${record.coach.surnameTh}`,
+    licenseTypeLabel: labelFor(LICENSE_TYPES, record.licenseType) ?? record.licenseType,
+    recordTypeLabel: labelFor(RECORD_TYPES, record.recordType) ?? record.recordType,
+    certificateNo: record.certificateNo,
+    issueDate: record.issueDate,
+    licenseType: record.licenseType,
+    coachNameEn: [record.coach.nameEn, record.coach.familyNameEn].filter(Boolean).join(" ") || null,
+    dob: record.coach.dob,
+    afcId: record.coach.afcId,
+    expireDate: record.expireDate,
+    photoUrl: record.coach.photoUrl,
+    kind,
+  };
+}
+
+// ใบประกาศทั้งรุ่นในไฟล์เดียว (เรียงตามลำดับที่ส่งมา) สำหรับสั่งพิมพ์ครั้งเดียว
+export async function generateCertificateBatchPdf(kind: "diploma" | "licence", records: RecordWithCoach[], title: string) {
+  if (records.length > 0 && records.every((r) => AFC_LEVELS[r.licenseType])) {
+    return generateAfcBatchPdf(
+      kind,
+      records.map((r) => {
+        const p = paramsFromRecord(r, kind);
+        return {
+          licenseType: r.licenseType,
+          nameTh: p.coachName,
+          nameEn: p.coachNameEn,
+          dob: p.dob,
+          afcId: p.afcId,
+          issueDate: p.issueDate,
+          expireDate: p.expireDate,
+          certificateNo: p.certificateNo,
+          photoUrl: p.photoUrl,
+        };
+      }),
+      title,
+    );
+  }
+  // ระดับอื่น (G ฯลฯ) ใช้แบบเดิม — สร้างทีละคนแล้วรวมหน้า
+  const merged = await PDFDocument.create();
+  merged.setTitle(title);
+  for (const r of records) {
+    const src = await PDFDocument.load(await generateCertificatePdf(paramsFromRecord(r, kind)));
+    for (const page of await merged.copyPages(src, src.getPageIndices())) merged.addPage(page);
+  }
+  return merged.save();
 }
