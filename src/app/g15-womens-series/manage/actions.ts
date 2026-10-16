@@ -805,62 +805,51 @@ export async function deleteCard(formData: FormData) {
 }
 
 // ===== ไลน์อัพ =====
-// เช็กบ็อกซ์เดียวครอบคลุมนักกีฬาทั้งสองทีม บันทึกครั้งเดียว — แทนที่ไลน์อัพเดิมของนัดนี้ทั้งหมดด้วยค่าที่ส่งมา
-export async function updateLineup(formData: FormData) {
+// บันทึกไลน์อัพทั้งสองทีมในครั้งเดียว — แทนที่ไลน์อัพเดิมของนัดนี้ทั้งหมดด้วยค่าที่ส่งมา
+// คืนผลเป็น ActionResult (ไม่ throw) ให้หน้าจอแสดงข้อความผิดพลาดได้จริงบน production
+export async function saveLineup(input: {
+  matchId: number;
+  entries: { playerId: number; status: string }[];
+  captains: { teamId: number; playerId: number }[];
+}): Promise<ActionResult> {
   await requireAdminOrStaff();
-  const matchId = Number(formData.get("matchId"));
-  if (!matchId) throw new Error("ไม่พบนัดการแข่งขัน");
+  return attempt(async () => {
+    const matchId = Number(input.matchId);
+    const match = await prisma.g15Match.findUnique({
+      where: { id: matchId },
+      select: { homeTeamId: true, awayTeamId: true },
+    });
+    if (!match) throw new Error("ไม่พบนัดการแข่งขัน");
 
-  const match = await prisma.g15Match.findUnique({
-    where: { id: matchId },
-    select: { homeTeamId: true, awayTeamId: true },
-  });
-  if (!match) throw new Error("ไม่พบนัดการแข่งขัน");
-
-  // ดึงรายชื่อนักกีฬาของทั้งสองทีมจากฐานข้อมูลเอง ไม่เชื่อ playerId ที่ส่งมาจากฟอร์ม
-  const players = await prisma.g15Player.findMany({
-    where: { teamId: { in: [match.homeTeamId, match.awayTeamId] } },
-    select: { id: true, teamId: true },
-  });
-
-  const statusByPlayerId = new Map<number, string>();
-  for (const p of players) {
-    const status = String(formData.get(`status_${p.id}`) ?? "");
-    if (status === "STARTING" || status === "SUBSTITUTE") statusByPlayerId.set(p.id, status);
-  }
-
-  // กัปตันเลือกทีละคนต่อทีม (select เดียว ไม่ใช่ checkbox แยกต่อผู้เล่น) — บังคับว่าต้องเป็นคนที่ตั้งสถานะตัวจริงไว้ในฟอร์มเดียวกันนี้เท่านั้น
-  const captainByTeamId = new Map<number, number>();
-  for (const teamId of [match.homeTeamId, match.awayTeamId]) {
-    const raw = String(formData.get(`captainPlayerId_${teamId}`) ?? "");
-    if (!raw) continue;
-    const captainId = Number(raw);
-    if (statusByPlayerId.get(captainId) !== "STARTING") {
-      throw new Error("กัปตันต้องเป็นผู้เล่นตัวจริงเท่านั้น กรุณาตั้งสถานะ \"ตัวจริง\" ให้ผู้เล่นคนนั้นก่อนบันทึก");
+    // ใช้รายชื่อนักกีฬาของสองทีมจากฐานข้อมูลเท่านั้น (playerId ที่ไม่ใช่ของสองทีมนี้ถูกตัดทิ้ง)
+    const players = await prisma.g15Player.findMany({
+      where: { teamId: { in: [match.homeTeamId, match.awayTeamId] } },
+      select: { id: true, teamId: true },
+    });
+    const teamOf = new Map(players.map((p) => [p.id, p.teamId]));
+    const statusById = new Map<number, string>();
+    for (const e of input.entries ?? []) {
+      if (teamOf.has(e.playerId) && (e.status === "STARTING" || e.status === "SUBSTITUTE")) statusById.set(e.playerId, e.status);
     }
-    captainByTeamId.set(teamId, captainId);
-  }
 
-  const rows = players.flatMap((p) => {
-    const status = statusByPlayerId.get(p.id);
-    if (!status) return [];
-    return [
-      {
-        matchId,
-        teamId: p.teamId,
-        playerId: p.id,
-        status,
-        isCaptain: captainByTeamId.get(p.teamId) === p.id,
-      },
-    ];
+    const captainByTeam = new Map<number, number>();
+    for (const c of input.captains ?? []) {
+      if (teamOf.get(c.playerId) !== c.teamId) continue;
+      if (statusById.get(c.playerId) !== "STARTING") throw new Error("กัปตันต้องเป็นผู้เล่นตัวจริงเท่านั้น");
+      captainByTeam.set(c.teamId, c.playerId);
+    }
+
+    const rows = [...statusById].map(([playerId, status]) => {
+      const teamId = teamOf.get(playerId)!;
+      return { matchId, teamId, playerId, status, isCaptain: captainByTeam.get(teamId) === playerId };
+    });
+
+    await prisma.$transaction([
+      prisma.g15Lineup.deleteMany({ where: { matchId } }),
+      ...(rows.length > 0 ? [prisma.g15Lineup.createMany({ data: rows })] : []),
+    ]);
+    revalidateG15(undefined, matchId);
   });
-
-  await prisma.$transaction([
-    prisma.g15Lineup.deleteMany({ where: { matchId } }),
-    ...(rows.length > 0 ? [prisma.g15Lineup.createMany({ data: rows })] : []),
-  ]);
-
-  revalidateG15(undefined, matchId);
 }
 
 // ===== ทีมยอดเยี่ยมประจำรอบ =====

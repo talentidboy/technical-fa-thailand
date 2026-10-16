@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import {
   updateMatchOfficials,
-  updateLineup,
+  saveLineup,
   updateMatchScore,
   controlMatchClock,
   setAddedTime,
@@ -28,17 +28,12 @@ import { QuickScoreRow } from "@/components/g15/QuickScoreRow";
 import { OfficialCountdown } from "@/components/g15/OfficialCountdown";
 import { LiveMatchControl, type LiveRoster } from "@/components/g15/LiveMatchControl";
 import { PlayerOfMatchPicker } from "@/components/g15/PlayerOfMatchPicker";
+import { LineupEditor } from "@/components/g15/LineupEditor";
 import { ManageDialogButton } from "@/components/g15/ManageDialogButton";
 import { formatMatchDateTime } from "@/lib/g15";
 import { withStage, stageInfo, isLive, matchdayMap, isKnockoutRound, type G15Stage } from "@/lib/g15-stage";
 import { LOGO_URL } from "@/lib/brand";
 import { ArrowLeft, ClipboardList, ExternalLink, Users, Star, FileText } from "lucide-react";
-
-const LINEUP_STATUS_OPTIONS = [
-  { value: "", label: "ไม่ลง", activeClass: "peer-checked:bg-slate-700 peer-checked:text-white" },
-  { value: "STARTING", label: "ตัวจริง", activeClass: "peer-checked:bg-emerald-500 peer-checked:text-white" },
-  { value: "SUBSTITUTE", label: "สำรอง", activeClass: "peer-checked:bg-sky-500 peer-checked:text-white" },
-] as const;
 
 type RosterPlayer = {
   id: number;
@@ -49,87 +44,6 @@ type RosterPlayer = {
 
 // ตารางไลน์อัพของทีมเดียว — ตัวจริง/ตัวสำรอง เป็นปุ่มเลือกแบบ segmented (radio ที่ซ่อนไว้ + label สไตล์ปุ่ม) กัปตันเป็นไอคอนดาวกดติด/ดับ
 // อยู่ในฟอร์มเดียวกับอีกทีม บันทึกครั้งเดียวทั้งคู่
-function LineupTeamTable({
-  team,
-  teamId,
-  players,
-  lineupByPlayerId,
-}: {
-  team: { name: string; logoUrl: string | null; groupName: string | null };
-  teamId: number;
-  players: RosterPlayer[];
-  lineupByPlayerId: Map<number, { status: string; isCaptain: boolean }>;
-}) {
-  const currentCaptainId = players.find((p) => lineupByPlayerId.get(p.id)?.isCaptain)?.id;
-
-  return (
-    <div>
-      <div className="mb-2.5 flex items-center gap-2">
-        <TeamBadge team={team} size="sm" />
-        <p className="text-sm font-semibold text-slate-900">{team.name}</p>
-        <span className="ml-auto flex-none text-[11px] text-slate-400">{players.length} คน</span>
-      </div>
-
-      <label className="mb-3 flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2">
-        <Star className="h-3.5 w-3.5 flex-none text-amber-500" />
-        <span className="flex-none text-xs font-medium text-slate-600">กัปตัน</span>
-        <select
-          name={`captainPlayerId_${teamId}`}
-          defaultValue={currentCaptainId ? String(currentCaptainId) : ""}
-          className="min-w-0 flex-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-900 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100"
-        >
-          <option value="">— ไม่ระบุ —</option>
-          {players.map((p) => (
-            <option key={p.id} value={p.id}>
-              #{p.jerseyNumber ?? "-"} {p.firstNameTh} {p.lastNameTh}
-            </option>
-          ))}
-        </select>
-      </label>
-      <p className="mb-2 -mt-1 px-1 text-[10px] text-slate-400">ต้องเลือกคนที่ตั้งสถานะเป็น &quot;ตัวจริง&quot; ด้านล่างด้วย ไม่งั้นบันทึกไม่ผ่าน</p>
-
-      <div className="overflow-hidden rounded-xl border border-slate-200">
-        {players.length === 0 ? (
-          <p className="px-4 py-6 text-center text-xs text-slate-400">ยังไม่มีนักกีฬาในทะเบียนของทีมนี้</p>
-        ) : (
-          <ul className="divide-y divide-slate-100">
-            {players.map((p) => {
-              const current = lineupByPlayerId.get(p.id);
-              return (
-                <li key={p.id} className="flex flex-wrap items-center gap-2.5 px-3 py-2 transition-colors hover:bg-slate-50">
-                  <span className="flex h-6 w-8 flex-none items-center justify-center rounded-md bg-slate-100 text-[11px] font-bold text-slate-500">
-                    #{p.jerseyNumber ?? "-"}
-                  </span>
-                  <span className="min-w-24 flex-1 truncate text-xs font-medium text-slate-700">
-                    {p.firstNameTh} {p.lastNameTh}
-                  </span>
-                  <div className="flex flex-none overflow-hidden rounded-full border border-slate-200">
-                    {LINEUP_STATUS_OPTIONS.map((opt) => (
-                      <label key={opt.value || "none"} className="cursor-pointer">
-                        <input
-                          type="radio"
-                          name={`status_${p.id}`}
-                          value={opt.value}
-                          defaultChecked={opt.value === "" ? !current : current?.status === opt.value}
-                          className="peer sr-only"
-                        />
-                        <span
-                          className={`block px-2.5 py-1 text-[11px] font-medium text-slate-400 transition-colors ${opt.activeClass}`}
-                        >
-                          {opt.label}
-                        </span>
-                      </label>
-                    ))}
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </div>
-    </div>
-  );
-}
 
 export default async function G15ManageMatchPage({
   params,
@@ -243,6 +157,8 @@ export default async function G15ManageMatchPage({
     away: liveRoster(match.awayTeamId, awayPlayers, awayOfficials),
   };
 
+  const lineupPlayer = (p: RosterPlayer) => ({ id: p.id, name: `${p.firstNameTh} ${p.lastNameTh}`, number: p.jerseyNumber });
+
   const potmPlayer = rosterPlayers.find((p) => p.id === match.playerOfMatchId);
   // ตัวเลือก Player of the Match — คนในไลน์อัพนัดนี้ (ตัวจริงก่อน) ถ้ายังไม่มีไลน์อัพใช้ทั้งทีม
   const potmCandidates = (players: (RosterPlayer & { photoUrl: string | null })[]) =>
@@ -354,21 +270,23 @@ export default async function G15ManageMatchPage({
                 : "ยังไม่ได้บันทึกไลน์อัพ"
             }
           >
-              <FormWithToast action={updateLineup} className="p-6">
-                <input type="hidden" name="matchId" value={match.id} />
-                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-                  <LineupTeamTable team={match.homeTeam} teamId={match.homeTeamId} players={homePlayers} lineupByPlayerId={lineupByPlayerId} />
-                  <LineupTeamTable team={match.awayTeam} teamId={match.awayTeamId} players={awayPlayers} lineupByPlayerId={lineupByPlayerId} />
-                </div>
-                <div className="sticky bottom-0 -mx-6 -mb-6 mt-5 border-t border-slate-100 bg-white/95 px-6 py-3 backdrop-blur">
-                <button
-                  type="submit"
-                  className="inline-flex items-center gap-2 rounded-lg bg-sky-600 px-5 py-2.5 text-sm font-medium text-white shadow-sm shadow-sky-200 transition-colors hover:bg-sky-700"
-                >
-                  บันทึกไลน์อัพ
-                </button>
-                </div>
-              </FormWithToast>
+              <LineupEditor
+                matchId={match.id}
+                action={saveLineup}
+                teams={[
+                  { teamId: match.homeTeamId, team: match.homeTeam, players: homePlayers.map(lineupPlayer) },
+                  { teamId: match.awayTeamId, team: match.awayTeam, players: awayPlayers.map(lineupPlayer) },
+                ]}
+                initialStatus={Object.fromEntries(
+                  match.lineups
+                    .filter((l) => l.status === "STARTING" || l.status === "SUBSTITUTE")
+                    .map((l) => [l.playerId, l.status as "STARTING" | "SUBSTITUTE"]),
+                )}
+                initialCaptains={{
+                  [match.homeTeamId]: match.lineups.find((l) => l.teamId === match.homeTeamId && l.isCaptain)?.playerId ?? null,
+                  [match.awayTeamId]: match.lineups.find((l) => l.teamId === match.awayTeamId && l.isCaptain)?.playerId ?? null,
+                }}
+              />
           </ManageDialogButton>
           <ManageDialogButton
             title="Player of the Match"
