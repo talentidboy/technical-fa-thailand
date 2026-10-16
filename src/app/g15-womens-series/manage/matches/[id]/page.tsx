@@ -20,6 +20,7 @@ import {
   deleteLiveEvent,
   recordPenaltyKick,
   undoPenaltyKick,
+  updateMatchLiveVideo,
 } from "../../actions";
 import { Field } from "@/components/FormField";
 import { TeamBadge } from "@/components/g15/TeamBadge";
@@ -29,11 +30,13 @@ import { OfficialCountdown } from "@/components/g15/OfficialCountdown";
 import { LiveMatchControl, type LiveRoster } from "@/components/g15/LiveMatchControl";
 import { PlayerOfMatchPicker } from "@/components/g15/PlayerOfMatchPicker";
 import { LineupEditor } from "@/components/g15/LineupEditor";
+import { ActionForm } from "@/components/g15/ActionForm";
+import { videoEmbed } from "@/lib/g15-video";
 import { ManageDialogButton } from "@/components/g15/ManageDialogButton";
 import { formatMatchDateTime } from "@/lib/g15";
 import { withStage, stageInfo, isLive, matchdayMap, isKnockoutRound, type G15Stage } from "@/lib/g15-stage";
 import { LOGO_URL } from "@/lib/brand";
-import { ArrowLeft, ClipboardList, ExternalLink, Users, Star, FileText } from "lucide-react";
+import { ArrowLeft, ClipboardList, ExternalLink, Users, Star, FileText, MonitorPlay } from "lucide-react";
 
 type RosterPlayer = {
   id: number;
@@ -310,6 +313,50 @@ export default async function G15ManageMatchPage({
                   { team: match.awayTeam, players: potmCandidates(eligibleAwayPlayers) },
                 ]}
               />
+          </ManageDialogButton>
+          <ManageDialogButton
+            title="ไลฟ์ / วิดีโอ"
+            subtitle="Live video"
+            tone="amber"
+            icon={<MonitorPlay className="h-5 w-5" />}
+            summary={match.liveVideoUrl ? `${videoEmbed(match.liveVideoUrl)?.provider === "youtube" ? "YouTube" : videoEmbed(match.liveVideoUrl)?.provider === "facebook" ? "Facebook" : "ลิงก์"} · ${match.liveVideoUrl}` : "ยังไม่ได้ใส่ลิงก์"}
+          >
+            <ActionForm action={updateMatchLiveVideo} successText="บันทึกลิงก์แล้ว — ขึ้นในหน้ารายละเอียดนัดทันที" className="space-y-4 p-6">
+              <input type="hidden" name="id" value={match.id} />
+              <label className="flex flex-col gap-1.5">
+                <span className="text-sm font-medium text-slate-700">ลิงก์ถ่ายทอดสด / วิดีโอของนัดนี้</span>
+                <input
+                  name="liveVideoUrl"
+                  type="url"
+                  inputMode="url"
+                  defaultValue={match.liveVideoUrl ?? ""}
+                  placeholder="https://www.youtube.com/live/... หรือ https://www.facebook.com/.../videos/..."
+                  className="rounded-lg border border-slate-200 px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100"
+                />
+                <span className="text-xs text-slate-400">
+                  ลิงก์ YouTube และ Facebook จะเล่นในหน้ารายละเอียดนัดได้เลย ลิงก์อื่นแสดงเป็นปุ่มเปิดลิงก์ · เว้นว่างแล้วบันทึก = ลบลิงก์
+                </span>
+              </label>
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="submit"
+                  className="inline-flex items-center gap-2 rounded-lg bg-amber-500 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-amber-600"
+                >
+                  บันทึกลิงก์
+                </button>
+                {match.liveVideoUrl && (
+                  <a
+                    href={`/g15-womens-series/matches/${match.id}#match-video`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3.5 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50"
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                    ดูในหน้าสาธารณะ
+                  </a>
+                )}
+              </div>
+            </ActionForm>
           </ManageDialogButton>
           <ManageDialogButton
             title="ทีมงานผู้ตัดสิน"

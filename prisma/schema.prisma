@@ -411,6 +411,9 @@ model G15Match {
   secondHalfAwayScore Int? @map("second_half_away_score")
 
   // ผู้เล่นยอดเยี่ยมประจำนัด (Player of the Match) — แอดมินเลือกในหน้าจัดการแมท, นับรวมในหน้าสถิติ
+  // ลิงก์ถ่ายทอดสด/วิดีโอของนัด (YouTube / Facebook ฯลฯ) — แสดงเป็นเครื่องเล่นในหน้ารายละเอียดนัด
+  liveVideoUrl String? @map("live_video_url")
+
   playerOfMatchId Int?       @map("player_of_match_id")
   playerOfMatch   G15Player? @relation("G15PlayerOfMatch", fields: [playerOfMatchId], references: [id], onDelete: SetNull)
 

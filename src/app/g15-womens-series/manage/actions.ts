@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { parseMinute } from "@/lib/g15-clock";
 import { shootoutState } from "@/lib/g15-penalties";
+import { normalizeVideoUrl } from "@/lib/g15-video";
 import { requireUser } from "@/lib/auth";
 import { saveUploadedPhoto } from "@/lib/upload";
 import { parseBangkokDateTimeLocal, getNationalBracket } from "@/lib/g15";
@@ -984,6 +985,18 @@ export async function controlMatchClock(formData: FormData): Promise<ActionResul
     }
 
     await prisma.g15Match.update({ where: { id }, data });
+    revalidateG15(undefined, id);
+  });
+}
+
+// ===== ลิงก์ถ่ายทอดสด/วิดีโอของนัด =====
+// เว้นว่างแล้วบันทึก = ลบลิงก์
+export async function updateMatchLiveVideo(formData: FormData): Promise<ActionResult> {
+  await requireAdminOrStaff();
+  return attempt(async () => {
+    const id = Number(formData.get("id"));
+    const liveVideoUrl = normalizeVideoUrl(String(formData.get("liveVideoUrl") ?? ""));
+    await prisma.g15Match.update({ where: { id }, data: { liveVideoUrl } });
     revalidateG15(undefined, id);
   });
 }

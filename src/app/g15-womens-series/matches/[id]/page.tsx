@@ -25,6 +25,7 @@ import { MatchTimeline } from "@/components/g15/MatchTimeline";
 import { MatchLineups, MatchStatBars } from "@/components/g15/MatchLineups";
 import { BallIcon } from "@/components/g15/BallIcon";
 import { PenaltyShootout } from "@/components/g15/PenaltyShootout";
+import { MatchVideo } from "@/components/g15/MatchVideo";
 import { PlayerOfMatchCard } from "@/components/g15/PlayerOfMatchCard";
 import { GalleryAlbumCard } from "@/components/g15/GalleryAlbumCard";
 import { isClockLive, formatMinute, minuteOrder } from "@/lib/g15-clock";
@@ -407,6 +408,15 @@ export default async function G15MatchDetailPage({
 
           {/* แถบล่าง: วันเวลา / สนาม */}
           <div className="mt-8 flex flex-wrap items-center justify-center gap-2 border-t border-white/10 pt-5">
+            {match.liveVideoUrl && (
+              <a
+                href="#match-video"
+                className="inline-flex items-center gap-1.5 rounded-full bg-red-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-lg shadow-red-900/30 transition-colors hover:bg-red-500"
+              >
+                <span className="h-0 w-0 border-y-4 border-l-[7px] border-y-transparent border-l-white" />
+                {live ? "ดูถ่ายทอดสด" : "ดูวิดีโอ"}
+              </a>
+            )}
             <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-xs font-medium text-g15-100">
               <Calendar className="h-3.5 w-3.5 flex-none text-amber-300" />
               {formatMatchDateTime(match.matchDate)}
@@ -422,6 +432,9 @@ export default async function G15MatchDetailPage({
       </section>
 
       <div className="mx-auto max-w-5xl px-5 pb-20 sm:px-6">
+        {/* ถ่ายทอดสด / วิดีโอของนัด */}
+        {match.liveVideoUrl && <MatchVideo url={match.liveVideoUrl} live={live} />}
+
         {/* ผู้เล่นยอดเยี่ยมประจำนัด (แอดมินเลือกในหน้าจัดการแมท) */}
         {match.playerOfMatch && (
           <Reveal>

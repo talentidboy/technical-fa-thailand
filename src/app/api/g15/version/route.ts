@@ -32,6 +32,7 @@ export async function GET(request: Request) {
         homeTeamId: true,
         awayTeamId: true,
         playerOfMatchId: true,
+        liveVideoUrl: true,
       },
     }),
     prisma.g15Goal.aggregate({ where: eventWhere, _count: { id: true }, _max: { id: true } }),
