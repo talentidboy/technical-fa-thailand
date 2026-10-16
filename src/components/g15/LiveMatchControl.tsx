@@ -4,7 +4,7 @@ import { useEffect, useOptimistic, useRef, useState, useTransition } from "react
 import { Play, Pause, Square, Undo2, Minus, Plus, Loader2, AlertCircle, Flag, X, ArrowLeftRight, Goal, Pencil, Trash2, Check, Trophy, Target } from "lucide-react";
 import { LiveClock } from "./LiveClock";
 import { TeamBadge } from "./TeamBadge";
-import { asPhase, readClock, formatMinute, minuteOrder, minuteInputValue, type ClockState } from "@/lib/g15-clock";
+import { asPhase, readClock, clockSkew, formatMinute, minuteOrder, minuteInputValue, type ClockState } from "@/lib/g15-clock";
 import { BallIcon } from "./BallIcon";
 import { PenaltyShootout } from "./PenaltyShootout";
 import { shootoutState, type ShootoutKick } from "@/lib/g15-penalties";
@@ -186,6 +186,15 @@ export function LiveMatchControl({
     (cur, { side, delta }: { side: Side; delta: number }) => ({ ...cur, [side]: Math.max(0, cur[side] + delta) }),
   );
   const [dialog, setDialog] = useState<Dialog>(null);
+  // ปุ่มนาฬิกาไม่รอให้งานบันทึกอื่นเสร็จ (เดิมล็อกปุ่มทุกครั้งที่มีอะไรกำลังบันทึก = ดีเลย์ตอนเน็ตช้า)
+  // กันแค่กดซ้ำเร็ว ๆ 1 วินาที (ปุ่มเปลี่ยนเป็นขั้นถัดไปทันที — กดเบิ้ลจะข้ามขั้นโดยไม่ตั้งใจ)
+  const [cooldown, setCooldown] = useState(false);
+  const clockPress = (fn: () => void) => {
+    if (cooldown) return;
+    setCooldown(true);
+    setTimeout(() => setCooldown(false), 1000);
+    fn();
+  };
   // ลูกจุดโทษขึ้นบนจอทันทีที่กด (optimistic) — ถ้าบันทึกไม่สำเร็จจะกลับเป็นค่าจริง
   const [kicks, applyKick] = useOptimistic(
     penaltyKicks,
@@ -195,9 +204,22 @@ export function LiveMatchControl({
   const tempKickId = useRef(-1);
   const skew = useRef(0);
   useEffect(() => {
-    skew.current = serverNow - Date.now();
+    skew.current = clockSkew(serverNow, Date.now());
   }, [serverNow]);
-  const phase = asPhase(clock.clockPhase);
+  // นาฬิกาบนจอแอดมินเปลี่ยนทันทีที่กด (optimistic) ไม่ต้องรอเซิร์ฟเวอร์บันทึก+โหลดหน้าใหม่ — เวลาที่กดถูกส่งไปบันทึกเป็นเวลาเริ่มครึ่งด้วย
+  const [clockState, applyClock] = useOptimistic(
+    clock,
+    (cur: ClockState, a: { to: string; at: string } | { half: string; minutes: number | null }): ClockState => {
+      if ("half" in a) return a.half === "1" ? { ...cur, firstHalfAddedTime: a.minutes } : { ...cur, secondHalfAddedTime: a.minutes };
+      const next: ClockState = { ...cur, clockPhase: a.to };
+      if (a.to === "FIRST_HALF" && cur.clockPhase === "PRE") next.firstHalfStartedAt = a.at;
+      if (a.to === "SECOND_HALF" && cur.clockPhase === "HALF_TIME") next.secondHalfStartedAt = a.at;
+      if (a.to === "PRE") next.firstHalfStartedAt = null;
+      if (a.to === "HALF_TIME" && cur.clockPhase === "SECOND_HALF") next.secondHalfStartedAt = null;
+      return next;
+    },
+  );
+  const phase = asPhase(clockState.clockPhase);
   const next = NEXT_STEP[phase];
   const teams: Record<Side, Team> = { home: homeTeam, away: awayTeam };
 
@@ -231,7 +253,7 @@ export function LiveMatchControl({
     if (preset?.minute !== undefined) setMinute(preset.minute);
     else {
       // เติมนาทีจากนาฬิกาเกม — ช่วงทดเวลาเป็นแบบ 45+2 / 90+3
-      const r = readClock(clock, new Date().getTime() + skew.current);
+      const r = readClock(clockState, new Date().getTime() + skew.current);
       setMinute(r.minute != null ? (r.added ? `${r.minute}+${r.added}` : String(r.minute)) : "");
     }
     setError(null);
@@ -239,10 +261,34 @@ export function LiveMatchControl({
   };
   const close = () => setDialog(null);
 
+  // ขั้นถัดไปของนาฬิกา (ใช้แสดงผลทันทีบนจอ — ค่าจริงยังคำนวณที่เซิร์ฟเวอร์)
+  const phaseAfter = (op: string) => {
+    const cur = clockState.clockPhase;
+    if (op === "UNDO") {
+      const back: Record<string, string> = {
+        FIRST_HALF: "PRE",
+        HALF_TIME: "FIRST_HALF",
+        SECOND_HALF: "HALF_TIME",
+        PENALTIES: "SECOND_HALF",
+        FULL_TIME: kicks.length > 0 ? "PENALTIES" : "SECOND_HALF",
+      };
+      return back[cur] ?? cur;
+    }
+    if (op === "END_2") return isKnockout && score.home === score.away ? "PENALTIES" : "FULL_TIME";
+    return { START_1: "FIRST_HALF", END_1: "HALF_TIME", START_2: "SECOND_HALF", END_PENS: "FULL_TIME" }[op] ?? cur;
+  };
+
   const run = (
     action: Action,
     fields: Record<string, string>,
-    opts?: { confirm?: string; onDone?: () => void; optimistic?: { side: Side; delta: number } },
+    opts?: {
+      confirm?: string;
+      onDone?: () => void;
+      optimistic?: { side: Side; delta: number };
+      // ปุ่มนาฬิกา: op = ขั้นที่กด / addedTime = ทดเวลา — ขึ้นจอทันที
+      clockOp?: string;
+      addedTime?: { half: string; minutes: number | null };
+    },
   ) => {
     if (opts?.confirm && !window.confirm(opts.confirm)) return;
     const fd = new FormData();
@@ -250,12 +296,19 @@ export function LiveMatchControl({
     for (const [k, v] of Object.entries(fields)) fd.set(k, v);
     setError(null);
     startTransition(async () => {
+      // เวลาที่กดจริงตามนาฬิกาเครื่อง — เซิร์ฟเวอร์ใช้เป็นเวลาเริ่มครึ่ง แม้คำขอจะไปถึงช้า (ถ้าเพี้ยนเกิน 15 วิ ใช้เวลาเซิร์ฟเวอร์)
+      // (callback นี้ทำงานทันทีตอนกด ก่อนส่งคำขอ)
+      if (opts?.clockOp) {
+        const at = new Date().getTime();
+        fd.set("at", String(at));
+        applyClock({ to: phaseAfter(opts.clockOp), at: new Date(at).toISOString() });
+      }
+      if (opts?.addedTime) applyClock(opts.addedTime);
       if (opts?.optimistic) bumpScore(opts.optimistic);
       // ป็อปอัพปิดทันที (ข้อมูลกำลังบันทึกเบื้องหลัง) — ถ้าผิดพลาดจะแสดงข้อความเตือนบนแผงควบคุม
-      if (opts?.optimistic) opts.onDone?.();
+      opts?.onDone?.();
       const res = await action(fd);
       if (!res.ok) setError(res.error);
-      else if (!opts?.optimistic) opts?.onDone?.();
     });
   };
 
@@ -344,7 +397,7 @@ export function LiveMatchControl({
           <span className="w-12 text-center font-mono text-5xl font-black tabular-nums text-white">{score ?? 0}</span>
           <button
             type="button"
-            disabled={pending || phase === "PRE" || phase === "PENALTIES"}
+            disabled={phase === "PRE" || phase === "PENALTIES"}
             onClick={() => open({ kind: "goal", side })}
             aria-label={`เพิ่มประตู ${team.name}`}
             className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500 text-white shadow-lg shadow-emerald-900/30 transition-colors hover:bg-emerald-400 disabled:opacity-30"
@@ -354,15 +407,15 @@ export function LiveMatchControl({
         </div>
         {/* ใบเหลือง / ใบแดง / เปลี่ยนตัว ของทีมนี้ */}
         <div className="flex flex-wrap justify-center gap-1.5">
-          <button type="button" disabled={pending || phase === "PRE"} onClick={() => open({ kind: "card", side, cardType: "YELLOW" })} className={`${actionBtn} bg-amber-400 text-amber-950 hover:bg-amber-300`}>
+          <button type="button" disabled={phase === "PRE"} onClick={() => open({ kind: "card", side, cardType: "YELLOW" })} className={`${actionBtn} bg-amber-400 text-amber-950 hover:bg-amber-300`}>
             <span className="h-3.5 w-2.5 rounded-[2px] bg-amber-950/20 ring-1 ring-amber-950/30" />
             ใบเหลือง
           </button>
-          <button type="button" disabled={pending || phase === "PRE"} onClick={() => open({ kind: "card", side, cardType: "RED" })} className={`${actionBtn} bg-red-600 text-white hover:bg-red-500`}>
+          <button type="button" disabled={phase === "PRE"} onClick={() => open({ kind: "card", side, cardType: "RED" })} className={`${actionBtn} bg-red-600 text-white hover:bg-red-500`}>
             <span className="h-3.5 w-2.5 rounded-[2px] bg-white/30 ring-1 ring-white/40" />
             ใบแดง
           </button>
-          <button type="button" disabled={pending || phase === "PRE"} onClick={() => open({ kind: "sub", side })} className={`${actionBtn} bg-sky-500 text-white hover:bg-sky-400`}>
+          <button type="button" disabled={phase === "PRE"} onClick={() => open({ kind: "sub", side })} className={`${actionBtn} bg-sky-500 text-white hover:bg-sky-400`}>
             <ArrowLeftRight className="h-3.5 w-3.5" />
             เปลี่ยนตัว
           </button>
@@ -382,8 +435,7 @@ export function LiveMatchControl({
           <button
             key={m}
             type="button"
-            disabled={pending}
-            onClick={() => run(addedTimeAction, { half, minutes: String(m) })}
+            onClick={() => run(addedTimeAction, { half, minutes: String(m) }, { addedTime: { half, minutes: m } })}
             className={`h-9 min-w-9 rounded-lg px-2 font-mono text-sm font-bold transition-colors ${
               value === m ? "bg-emerald-500 text-white" : "bg-white/10 text-white/80 hover:bg-white/20"
             }`}
@@ -392,7 +444,7 @@ export function LiveMatchControl({
           </button>
         ))}
         {value != null && (
-          <button type="button" disabled={pending} onClick={() => run(addedTimeAction, { half, minutes: "" })} className="h-9 rounded-lg px-2.5 text-xs text-white/50 hover:bg-white/10">
+          <button type="button" onClick={() => run(addedTimeAction, { half, minutes: "" }, { addedTime: { half, minutes: null } })} className="h-9 rounded-lg px-2.5 text-xs text-white/50 hover:bg-white/10">
             ล้าง
           </button>
         )}
@@ -497,6 +549,7 @@ export function LiveMatchControl({
             disabled={pending}
             onClick={() =>
               run(controlAction, { op: "END_PENS" }, {
+                clockOp: "END_PENS",
                 confirm: `ยืนยันจบเกม: ${score.home}-${score.away} (จุดโทษ ${shoot.homeScored}-${shoot.awayScored}) — ${teams[shoot.winner!].name} ชนะ`,
               })
             }
@@ -958,12 +1011,18 @@ export function LiveMatchControl({
         <p className="flex items-center gap-2 text-sm font-bold">
           <Flag className="h-4 w-4 text-amber-300" />
           ควบคุมเกมสด <span className="font-normal text-white/50">/ Live match control</span>
+          {pending && (
+            <span className="inline-flex items-center gap-1 text-[11px] font-normal text-white/60">
+              <Loader2 className="h-3 w-3 animate-spin" />
+              กำลังบันทึก…
+            </span>
+          )}
         </p>
         {phase !== "PRE" && (
           <button
             type="button"
-            disabled={pending}
-            onClick={() => run(controlAction, { op: "UNDO" }, { confirm: "ย้อนกลับขั้นล่าสุด? (ใช้เมื่อกดผิด)" })}
+            disabled={cooldown}
+            onClick={() => clockPress(() => run(controlAction, { op: "UNDO" }, { confirm: "ย้อนกลับขั้นล่าสุด? (ใช้เมื่อกดผิด)", clockOp: "UNDO" }))}
             className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs text-white/60 transition-colors hover:bg-white/10 hover:text-white"
           >
             <Undo2 className="h-3.5 w-3.5" />
@@ -976,7 +1035,7 @@ export function LiveMatchControl({
         <div className="flex items-start justify-between gap-3">
           {scoreBox("home", score.home)}
           <div className="flex-none pt-2">
-            <LiveClock state={clock} serverNow={serverNow} variant="big" />
+            <LiveClock state={clockState} serverNow={serverNow} variant="big" />
           </div>
           {scoreBox("away", score.away)}
         </div>
@@ -990,22 +1049,25 @@ export function LiveMatchControl({
             return (
               <button
                 type="button"
-                disabled={pending}
+                disabled={cooldown}
                 onClick={() =>
-                  run(controlAction, { op: next.op }, {
-                    confirm:
-                      next.op !== "END_2"
-                        ? undefined
-                        : toPens
-                          ? `จบ 90 นาที เสมอ ${score.home}-${score.away} — เข้าสู่การดวลจุดโทษ?`
-                          : `จบเกมด้วยสกอร์ ${score.home}-${score.away}? ผลนี้จะนับในตารางคะแนน`,
-                  })
+                  clockPress(() =>
+                    run(controlAction, { op: next.op }, {
+                      clockOp: next.op,
+                      confirm:
+                        next.op !== "END_2"
+                          ? undefined
+                          : toPens
+                            ? `จบ 90 นาที เสมอ ${score.home}-${score.away} — เข้าสู่การดวลจุดโทษ?`
+                            : `จบเกมด้วยสกอร์ ${score.home}-${score.away}? ผลนี้จะนับในตารางคะแนน`,
+                    }),
+                  )
                 }
                 className={`flex w-full items-center justify-center gap-3 rounded-2xl py-4 text-lg font-black shadow-lg transition-colors disabled:opacity-60 ${
                   toPens ? "bg-amber-500 hover:bg-amber-600" : next.tone
                 }`}
               >
-                {pending && !dialog ? <Loader2 className="h-6 w-6 animate-spin" /> : toPens ? <Target className="h-6 w-6" /> : <next.icon className="h-6 w-6" />}
+                {toPens ? <Target className="h-6 w-6" /> : <next.icon className="h-6 w-6" />}
                 {toPens ? "จบ 90 นาที → ดวลจุดโทษ" : next.label}
                 <span className="text-sm font-semibold opacity-75">/ {toPens ? "Penalties" : next.sub}</span>
               </button>
@@ -1030,8 +1092,8 @@ export function LiveMatchControl({
 
         {phase !== "PENALTIES" && (
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            {addedTime("1", clock.firstHalfAddedTime, "ครึ่งแรก")}
-            {addedTime("2", clock.secondHalfAddedTime, "ครึ่งหลัง")}
+            {addedTime("1", clockState.firstHalfAddedTime, "ครึ่งแรก")}
+            {addedTime("2", clockState.secondHalfAddedTime, "ครึ่งหลัง")}
           </div>
         )}
         <p className="text-[11px] text-white/45">
@@ -1188,7 +1250,6 @@ export function LiveMatchControl({
                     </span>
                     <button
                       type="button"
-                      disabled={pending}
                       onClick={() => editEvent(ev)}
                       aria-label="แก้ไข"
                       className="flex h-9 w-9 flex-none items-center justify-center rounded-lg text-slate-500 ring-1 ring-slate-200 transition-colors hover:bg-g15-50 hover:text-g15-700 disabled:opacity-40"
@@ -1216,10 +1277,10 @@ export function LiveMatchControl({
               sec.kind === "card" ? (
                 <span key={side} className="flex flex-wrap items-center gap-1.5">
                   <TeamBadge team={teams[side]} size="sm" />
-                  <button type="button" disabled={pending} onClick={() => open({ kind: "card", side, cardType: "YELLOW", fromList: true }, { minute: "" })} className={`${actionBtn} bg-amber-400 text-amber-950 hover:bg-amber-300`}>
+                  <button type="button" onClick={() => open({ kind: "card", side, cardType: "YELLOW", fromList: true }, { minute: "" })} className={`${actionBtn} bg-amber-400 text-amber-950 hover:bg-amber-300`}>
                     <Plus className="h-3.5 w-3.5" /> ใบเหลือง
                   </button>
-                  <button type="button" disabled={pending} onClick={() => open({ kind: "card", side, cardType: "RED", fromList: true }, { minute: "" })} className={`${actionBtn} bg-red-600 text-white hover:bg-red-500`}>
+                  <button type="button" onClick={() => open({ kind: "card", side, cardType: "RED", fromList: true }, { minute: "" })} className={`${actionBtn} bg-red-600 text-white hover:bg-red-500`}>
                     <Plus className="h-3.5 w-3.5" /> ใบแดง
                   </button>
                 </span>
@@ -1227,7 +1288,6 @@ export function LiveMatchControl({
                 <button
                   key={side}
                   type="button"
-                  disabled={pending}
                   onClick={() => (sec.kind === "goal" ? open({ kind: "goal", side, fromList: true }, { minute: "" }) : open({ kind: "sub", side, fromList: true }, { minute: "" }))}
                   className={`${actionBtn} min-w-0 max-w-full bg-white text-slate-700 ring-1 ring-slate-200 hover:bg-slate-50`}
                 >

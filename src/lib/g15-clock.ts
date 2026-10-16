@@ -38,6 +38,14 @@ export function isClockLive(phase: string) {
   return phase === "FIRST_HALF" || phase === "HALF_TIME" || phase === "SECOND_HALF" || phase === "PENALTIES";
 }
 
+// ส่วนต่างนาฬิกาเครื่องผู้ใช้กับเซิร์ฟเวอร์ (serverNow - Date.now() ตอนโหลดหน้า)
+// ค่าที่วัดได้รวมเวลาโหลดหน้าเข้าไปด้วย (มักไม่กี่วินาที) — ถ้าต่างไม่ถึง 10 วินาทีถือว่านาฬิกาเครื่องตรง ใช้เวลาเครื่องเลย
+// ปรับเฉพาะเครื่องที่ตั้งนาฬิกาผิดจริง ๆ — ไม่งั้นนาฬิกาเกมจะช้ากว่าจริงเท่ากับเวลาโหลดหน้า
+export function clockSkew(serverNow: number, clientNow: number) {
+  const d = serverNow - clientNow;
+  return Math.abs(d) < 10_000 ? 0 : d;
+}
+
 const pad = (n: number) => String(n).padStart(2, "0");
 const ms = (d: Date | string | null) => (d == null ? null : new Date(d).getTime());
 

@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { readClock, isClockRunning, PHASE_LABEL, type ClockState } from "@/lib/g15-clock";
+import { useEffect, useRef, useState } from "react";
+import { readClock, isClockRunning, clockSkew, PHASE_LABEL, type ClockState } from "@/lib/g15-clock";
 
 // นาฬิกาเกมสด — เดินทุกวินาทีจากเวลาเริ่มครึ่งที่เก็บในฐานข้อมูล
 // serverNow = เวลาฝั่งเซิร์ฟเวอร์ตอน render: ใช้ชดเชยนาฬิกาเครื่องผู้ชมที่เพี้ยน และให้ HTML รอบแรกตรงกันทั้งสองฝั่ง
@@ -14,16 +14,26 @@ export function LiveClock({
   serverNow: number;
   variant?: "pill" | "big";
 }) {
-  // ส่วนต่างนาฬิกาเครื่อง vs เซิร์ฟเวอร์ — วัดครั้งแรกตอน effect ทำงาน (ไม่ใช้ Date.now ตอน render)
+  // ส่วนต่างนาฬิกาเครื่อง vs เซิร์ฟเวอร์ — วัดทันทีที่ได้ serverNow ใหม่ (ไม่ใช้ Date.now ตอน render)
+  // เก็บแยกจากตัวนับเวลา: ตอนแอดมินกดเริ่มครึ่ง นาฬิกาเริ่มเดินทันที โดยไม่ใช้ serverNow เก่าของหน้าที่เปิดค้างไว้
   const [now, setNow] = useState(serverNow);
+  const skew = useRef<number | null>(null);
   const running = isClockRunning(state.clockPhase);
 
   useEffect(() => {
+    skew.current = clockSkew(serverNow, Date.now());
+  }, [serverNow]);
+
+  useEffect(() => {
     if (!running) return;
-    const skew = serverNow - Date.now();
-    const id = setInterval(() => setNow(Date.now() + skew), 1000);
-    return () => clearInterval(id);
-  }, [running, serverNow]);
+    const tick = () => setNow(Date.now() + (skew.current ?? 0));
+    const first = setTimeout(tick, 0);
+    const id = setInterval(tick, 500);
+    return () => {
+      clearTimeout(first);
+      clearInterval(id);
+    };
+  }, [running]);
 
   const r = readClock(state, running ? now : serverNow);
   const label = PHASE_LABEL[r.phase];

@@ -2,7 +2,7 @@
 
 import { useActionState, useEffect, useRef, useState } from "react";
 import { Plus, X, Check, Search } from "lucide-react";
-import { readClock, type ClockState } from "@/lib/g15-clock";
+import { readClock, clockSkew, type ClockState } from "@/lib/g15-clock";
 
 // ไม่ใส่ความกว้าง (w-*) ไว้ในนี้โดยตรง — ปล่อยให้แต่ละช่องกำหนดเอง (flex-1/w-16/ฯลฯ) เพราะ Tailwind ไม่ได้ generate CSS
 // ตามลำดับ className ที่เขียนในโค้ด ถ้าใส่ w-full ไว้ในนี้แล้วช่องไหนพยายาม override ด้วย w-16/flex-none ทีหลัง
@@ -161,7 +161,7 @@ function SearchableSelect({ name, options, placeholder = "— พิมพ์ค
 function useLiveMinute(clock?: ClockState | null, serverNow?: number) {
   const skew = useRef(0);
   useEffect(() => {
-    if (serverNow != null) skew.current = serverNow - Date.now();
+    if (serverNow != null) skew.current = clockSkew(serverNow, Date.now());
   }, [serverNow]);
   return () => (clock ? readClock(clock, Date.now() + skew.current).minute : null);
 }

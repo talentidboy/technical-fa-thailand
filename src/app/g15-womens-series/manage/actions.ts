@@ -903,14 +903,22 @@ const CLOCK_NEXT: Record<string, { from: string; to: string }> = {
   END_2: { from: "SECOND_HALF", to: "FULL_TIME" },
 };
 
+// เวลาที่แอดมินกดปุ่มจริง (ส่งมาจากหน้าจอ เทียบกับนาฬิกาเซิร์ฟเวอร์แล้ว) — ใช้แทนเวลาที่คำขอมาถึง
+// เพื่อให้เวลาเริ่มครึ่งตรงกับตอนกด แม้เน็ตช้า/คำสั่งต่อคิว/เซิร์ฟเวอร์ตื่นช้า · ค่าเพี้ยนเกิน 60 วินาทีใช้เวลาเซิร์ฟเวอร์แทน
+function pressedAt(formData: FormData) {
+  const at = Number(formData.get("at"));
+  const now = Date.now();
+  return Number.isFinite(at) && at > 0 && Math.abs(now - at) <= 60_000 ? new Date(Math.min(at, now)) : new Date(now);
+}
+
 export async function controlMatchClock(formData: FormData): Promise<ActionResult> {
   await requireAdminOrStaff();
   return attempt(async () => {
     const id = Number(formData.get("id"));
     const op = String(formData.get("op") ?? "");
+    const now = pressedAt(formData);
     const match = await prisma.g15Match.findUnique({ where: { id } });
     if (!match) throw new Error("ไม่พบนัดการแข่งขัน");
-    const now = new Date();
 
     const kickCount = await prisma.g15PenaltyKick.count({ where: { matchId: id } });
 
