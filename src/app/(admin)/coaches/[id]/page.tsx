@@ -11,6 +11,7 @@ import {
   deleteEmployment,
 } from "./actions";
 import { Field, SelectField, CheckboxField } from "@/components/FormField";
+import { CoachAccountPanel } from "@/components/CoachAccountPanel";
 import {
   LICENSE_TYPES,
   RECORD_TYPES,
@@ -66,6 +67,7 @@ export default async function CoachDetailPage({
           include: { instructor: true },
         },
         employments: { orderBy: { createdAt: "desc" } },
+        systemUser: { select: { email: true, isActive: true, lastLoginAt: true } },
       },
     }),
     getCurrentUser(),
@@ -78,6 +80,20 @@ export default async function CoachDetailPage({
   if (!coach) notFound();
   const isAdmin = user?.role === "ADMIN";
   const canConfirmUpgrade = user?.role === "ADMIN" || user?.role === "STAFF";
+
+  // ชื่อผู้ใช้ที่เสนอให้ตอนสร้างบัญชี: อีเมลของโค้ช (ถ้ายังไม่มีใครใช้) → เลขบัตรประชาชน → เบอร์โทร
+  let suggestedUsername = "";
+  if (isAdmin && !coach.systemUser) {
+    const candidates = [
+      coach.email?.trim().toLowerCase(),
+      coach.idNumber?.replace(/\D/g, ""),
+      coach.telNo?.replace(/\D/g, ""),
+    ].filter((v): v is string => Boolean(v && v.length >= 4));
+    const taken = new Set(
+      (await prisma.systemUser.findMany({ where: { email: { in: candidates } }, select: { email: true } })).map((u) => u.email),
+    );
+    suggestedUsername = candidates.find((c) => !taken.has(c)) ?? "";
+  }
 
   const currentCoreLevel = getHighestCoreLevel(coach.licenseRecords);
   const nextCoreLevel = getNextCoreLevel(currentCoreLevel);
@@ -194,6 +210,31 @@ export default async function CoachDetailPage({
           </div>
         </dl>
       </div>
+
+      {isAdmin && (
+        <CoachAccountPanel
+          coachId={coach.id}
+          coachName={`${coach.nameTh} ${coach.surnameTh}`}
+          suggestedUsername={suggestedUsername}
+          account={
+            coach.systemUser
+              ? {
+                  username: coach.systemUser.email,
+                  isActive: coach.systemUser.isActive,
+                  lastLogin: coach.systemUser.lastLoginAt
+                    ? coach.systemUser.lastLoginAt.toLocaleString("th-TH", {
+                        year: "numeric",
+                        month: "short",
+                        day: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })
+                    : null,
+                }
+              : null
+          }
+        />
+      )}
 
       {/* Level upgrade */}
       {canConfirmUpgrade && (

@@ -74,14 +74,17 @@ export default async function CoachLoginPage({
                           </Link>
                         </>
                       )
-                    : "อีเมลหรือรหัสผ่านไม่ถูกต้อง"}
+                    : "อีเมล/Username หรือรหัสผ่านไม่ถูกต้อง"}
               </p>
             )}
             <label className="flex flex-col gap-1.5">
-              <span className="text-sm font-medium text-slate-700">อีเมล</span>
+              <span className="text-sm font-medium text-slate-700">อีเมล / Username</span>
               <input
                 name="email"
-                type="email"
+                type="text"
+                autoComplete="username"
+                autoCapitalize="none"
+                spellCheck={false}
                 required
                 autoFocus
                 className="rounded-lg border border-slate-200 px-3.5 py-2.5 text-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100"
