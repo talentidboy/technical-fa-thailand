@@ -104,6 +104,15 @@ export default async function G15MatchDetailPage({
   ]);
   if (!match) notFound();
 
+  // เบอร์เสื้อสำหรับไทม์ไลน์ ("<teamId>|<ชื่อ นามสกุล>") — เหตุการณ์เก็บเป็นชื่อ จึงจับคู่ด้วยชื่อในทีมนั้น
+  const teamPlayers = await prisma.g15Player.findMany({
+    where: { teamId: { in: [match.homeTeamId, match.awayTeamId] }, jerseyNumber: { not: null } },
+    select: { teamId: true, firstNameTh: true, lastNameTh: true, jerseyNumber: true },
+  });
+  const jerseyNumbers = Object.fromEntries(
+    teamPlayers.map((p) => [`${p.teamId}|${p.firstNameTh} ${p.lastNameTh}`, p.jerseyNumber!]),
+  );
+
   const canManage = user?.role === "ADMIN" || user?.role === "STAFF";
   const isFinished = match.status === "FINISHED" && match.homeScore != null && match.awayScore != null;
   const now = new Date();
@@ -461,6 +470,7 @@ export default async function G15MatchDetailPage({
               )}
             </div>
             <MatchTimeline
+              numbers={jerseyNumbers}
               homeTeamId={match.homeTeamId}
               goals={match.goals}
               cards={match.cards}

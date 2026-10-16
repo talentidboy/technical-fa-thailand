@@ -316,6 +316,13 @@ export function LiveMatchControl({
   // เพิ่มประตูแล้วสกอร์ขึ้นด้วยไหม — ถ้าสกอร์ที่ตั้งไว้มากกว่าจำนวนประตูที่บันทึกชื่อแล้ว (กรอกผลย้อนหลัง) แค่เติมชื่อผู้ทำประตู สกอร์คงเดิม
   const goalBumpsScore = (side: Side) => events.goals.filter((g) => sideOf(g.teamId) === side).length >= score[side];
   const findPlayer = (side: Side, name: string) => rosters[side].players.find((p) => p.name === name);
+  // เบอร์เสื้อหน้าชื่อในรายการเหตุการณ์
+  const noBadge = (side: Side, name: string, tone = "bg-slate-100 text-slate-600") => {
+    const n = findPlayer(side, name)?.number;
+    return n == null ? null : (
+      <span className={`mr-1.5 inline-block rounded px-1.5 font-mono text-xs font-black leading-5 ${tone}`}>{n}</span>
+    );
+  };
   const findOfficial = (side: Side, name: string) => rosters[side].officials.find((o) => o.name === name);
 
   const editEvent = (ev: TimelineRow) => {
@@ -1218,6 +1225,7 @@ export function LiveMatchControl({
                       {ev.kind === "goal" ? (
                         <>
                           <span className="block truncate text-sm font-semibold text-slate-900">
+                            {noBadge(side, ev.raw.playerName)}
                             {ev.raw.playerName}
                             {ev.raw.isOwnGoal && <span className="ml-1 text-xs font-bold text-red-500">(OG)</span>}
                           </span>
@@ -1229,6 +1237,7 @@ export function LiveMatchControl({
                       ) : ev.kind === "card" ? (
                         <>
                           <span className="block truncate text-sm font-semibold text-slate-900">
+                            {ev.raw.holderRole !== "OFFICIAL" && noBadge(side, ev.raw.holderName)}
                             {ev.raw.holderName}
                             {ev.raw.holderRole === "OFFICIAL" && <span className="ml-1 text-xs font-normal text-slate-400">(เจ้าหน้าที่)</span>}
                           </span>
@@ -1236,8 +1245,14 @@ export function LiveMatchControl({
                         </>
                       ) : (
                         <span className="block min-w-0 text-sm">
-                          <span className="block truncate font-semibold text-emerald-700">▲ {ev.raw.playerInName}</span>
-                          <span className="block truncate text-xs text-red-500">▼ {ev.raw.playerOutName}</span>
+                          <span className="block truncate font-semibold text-emerald-700">
+                            ▲ {noBadge(side, ev.raw.playerInName, "bg-emerald-50 text-emerald-700")}
+                            {ev.raw.playerInName}
+                          </span>
+                          <span className="block truncate text-xs text-red-500">
+                            ▼ {noBadge(side, ev.raw.playerOutName, "bg-red-50 text-red-600")}
+                            {ev.raw.playerOutName}
+                          </span>
                         </span>
                       )}
                     </span>

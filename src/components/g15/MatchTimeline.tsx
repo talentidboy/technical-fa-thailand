@@ -7,9 +7,16 @@ type CardEv = { id: number; teamId: number; minute: number | null; addedMinute?:
 type SubEv = { id: number; teamId: number; minute: number | null; addedMinute?: number | null; playerInName: string; playerOutName: string };
 
 type Ev =
-  | { kind: "goal"; key: string; minute: number | null; addedMinute?: number | null; side: "home" | "away"; title: string; score: string; og: boolean; assist: string | null }
-  | { kind: "card"; key: string; minute: number | null; addedMinute?: number | null; side: "home" | "away"; title: string; red: boolean }
-  | { kind: "sub"; key: string; minute: number | null; addedMinute?: number | null; side: "home" | "away"; inName: string; outName: string };
+  | { kind: "goal"; key: string; minute: number | null; addedMinute?: number | null; side: "home" | "away"; title: string; no: number | null; score: string; og: boolean; assist: string | null }
+  | { kind: "card"; key: string; minute: number | null; addedMinute?: number | null; side: "home" | "away"; title: string; no: number | null; red: boolean }
+  | { kind: "sub"; key: string; minute: number | null; addedMinute?: number | null; side: "home" | "away"; inName: string; outName: string; inNo: number | null; outNo: number | null };
+
+// เบอร์เสื้อหน้าชื่อผู้เล่น
+function No({ n, tone = "slate" }: { n: number | null; tone?: "slate" | "emerald" | "red" }) {
+  if (n == null) return null;
+  const c = { slate: "bg-slate-100 text-slate-600", emerald: "bg-emerald-50 text-emerald-700", red: "bg-red-50 text-red-600" }[tone];
+  return <span className={`mr-1 inline-block rounded px-1 font-mono text-[11px] font-black leading-4 ${c}`}>{n}</span>;
+}
 
 // ไทม์ไลน์เหตุการณ์ในเกม — นาทีอยู่กลาง ทีมเหย้าซ้าย ทีมเยือนขวา
 // กำลังแข่ง = ล่าสุดอยู่บน (แบบไลฟ์สกอร์), จบแล้ว = เรียงตามเวลา; มีเส้นคั่นพักครึ่ง (HT) และเริ่มเกม/จบเกม
@@ -21,6 +28,7 @@ export function MatchTimeline({
   live,
   finished,
   halfTimeScore,
+  numbers,
 }: {
   homeTeamId: number;
   goals: GoalEv[];
@@ -29,8 +37,14 @@ export function MatchTimeline({
   live: boolean;
   finished: boolean;
   halfTimeScore: string | null;
+  // เบอร์เสื้อ: key = "<teamId>|<ชื่อ นามสกุล>"
+  numbers?: Record<string, number>;
 }) {
   const sideOf = (teamId: number) => (teamId === homeTeamId ? "home" : "away") as "home" | "away";
+  const noOf = (teamId: number | null, name: string) => (teamId != null ? (numbers?.[`${teamId}|${name}`] ?? null) : null);
+  const teamIds = [...new Set([...goals, ...cards, ...substitutions].map((e) => e.teamId))];
+  // ทำเข้าประตูตัวเอง: คนยิงเป็นผู้เล่นทีมตรงข้ามกับทีมที่ได้ประตู
+  const otherTeam = (teamId: number) => teamIds.find((t) => t !== teamId) ?? null;
   const byMinute = <T extends { minute: number | null; addedMinute?: number | null; id: number }>(a: T, b: T) =>
     minuteOrder(a.minute, a.addedMinute) - minuteOrder(b.minute, b.addedMinute) || a.id - b.id;
 
@@ -48,6 +62,7 @@ export function MatchTimeline({
       addedMinute: g.addedMinute,
       side,
       title: g.playerName,
+      no: noOf(g.isOwnGoal ? otherTeam(g.teamId) : g.teamId, g.playerName),
       score: `${h}-${a}`,
       og: !!g.isOwnGoal,
       assist: g.assistName ?? null,
@@ -62,6 +77,7 @@ export function MatchTimeline({
       addedMinute: c.addedMinute,
       side: sideOf(c.teamId),
       title: c.holderName,
+      no: noOf(c.teamId, c.holderName),
       red: c.cardType === "RED",
     })),
     ...substitutions.map((s) => ({
@@ -72,6 +88,8 @@ export function MatchTimeline({
       side: sideOf(s.teamId),
       inName: s.playerInName,
       outName: s.playerOutName,
+      inNo: noOf(s.teamId, s.playerInName),
+      outNo: noOf(s.teamId, s.playerOutName),
     })),
   ].sort((x, y) => minuteOrder(x.minute, x.addedMinute) - minuteOrder(y.minute, y.addedMinute));
 
@@ -98,7 +116,10 @@ export function MatchTimeline({
         <span className="flex items-center gap-2">
           <BallIcon className="h-4 w-4 flex-none text-emerald-600" />
           <span className="min-w-0">
-            <span className="block truncate text-sm font-bold text-slate-900">{e.title}</span>
+            <span className="block truncate text-sm font-bold text-slate-900">
+              <No n={e.no} />
+              {e.title}
+            </span>
             <span className="text-[11px] font-semibold text-emerald-600">
               {e.og ? "ทำเข้าประตูตัวเอง (OG)" : "ประตู!"} {e.score}
             </span>
@@ -111,7 +132,10 @@ export function MatchTimeline({
         <span className="flex items-center gap-2">
           <span className={`h-4 w-3 flex-none rounded-[2px] shadow-sm ${e.red ? "bg-red-500" : "bg-amber-400"}`} />
           <span className="min-w-0">
-            <span className="block truncate text-sm font-semibold text-slate-800">{e.title}</span>
+            <span className="block truncate text-sm font-semibold text-slate-800">
+              <No n={e.no} />
+              {e.title}
+            </span>
             <span className="text-[11px] text-slate-400">{e.red ? "ใบแดง / Red card" : "ใบเหลือง / Yellow card"}</span>
           </span>
         </span>
@@ -120,8 +144,14 @@ export function MatchTimeline({
       <span className="flex items-center gap-2">
         <ArrowLeftRight className="h-4 w-4 flex-none text-sky-500" />
         <span className="min-w-0 text-[13px] leading-snug">
-          <span className="block truncate font-semibold text-emerald-700">▲ {e.inName}</span>
-          <span className="block truncate text-red-500">▼ {e.outName}</span>
+          <span className="block truncate font-semibold text-emerald-700">
+            ▲ <No n={e.inNo} tone="emerald" />
+            {e.inName}
+          </span>
+          <span className="block truncate text-red-500">
+            ▼ <No n={e.outNo} tone="red" />
+            {e.outName}
+          </span>
         </span>
       </span>
     );
