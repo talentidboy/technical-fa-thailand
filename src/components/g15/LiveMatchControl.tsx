@@ -484,7 +484,7 @@ export function LiveMatchControl({
         )}
       </div>
 
-      <PenaltyShootout kicks={kicks} home={homeTeam} away={awayTeam} tone="dark" showKickers={false} />
+      <PenaltyShootout kicks={kicks} home={homeTeam} away={awayTeam} variant="compact" />
 
       {shoot.winner ? (
         <div className="space-y-3 rounded-xl bg-emerald-500/15 p-4 text-center ring-1 ring-emerald-400/40">
@@ -1013,7 +1013,7 @@ export function LiveMatchControl({
           })()
         ) : (
           <div className="space-y-3">
-            {kicks.length > 0 && <PenaltyShootout kicks={kicks} home={homeTeam} away={awayTeam} tone="dark" showKickers={false} />}
+            {kicks.length > 0 && <PenaltyShootout kicks={kicks} home={homeTeam} away={awayTeam} variant="compact" />}
             <p className="rounded-2xl bg-white/10 py-4 text-center text-sm font-semibold text-white/80">
               จบเกมแล้ว — ผล {homeScore ?? 0}-{awayScore ?? 0}
               {kicks.length > 0 && ` (จุดโทษ ${shoot.homeScored}-${shoot.awayScored})`} บันทึกเป็นผลทางการ (กด &quot;ย้อนขั้น&quot; ถ้าต้องแก้)

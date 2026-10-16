@@ -373,12 +373,9 @@ export default async function G15MatchDetailPage({
 
           {/* ดวลจุดโทษ (รอบน็อกเอาต์ที่เสมอใน 90 นาที) — อัปเดตทีละลูกแบบสด */}
           {(match.clockPhase === "PENALTIES" || match.penaltyKicks.length > 0) && (
-            <div className="mx-auto mt-8 max-w-xl rounded-2xl bg-white p-4 text-left shadow-xl shadow-black/20 sm:p-5">
-              <p className="mb-3 flex items-center justify-center gap-2 text-center text-sm font-black text-g15-900">
-                {match.clockPhase === "PENALTIES" && <span className="h-2 w-2 animate-pulse rounded-full bg-red-600" />}
-                ดวลจุดโทษ <span className="font-semibold text-slate-400">/ Penalty shoot-out</span>
-              </p>
+            <div className="mx-auto mt-8 max-w-2xl text-left">
               <PenaltyShootout
+                live={match.clockPhase === "PENALTIES"}
                 kicks={match.penaltyKicks.map((k) => ({
                   id: k.id,
                   side: k.teamId === match.homeTeamId ? ("home" as const) : ("away" as const),
