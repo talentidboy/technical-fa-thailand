@@ -419,8 +419,27 @@ model G15Match {
   cards         G15Card[]
   lineups       G15Lineup[]
   galleryLinks  G15GalleryLink[]
+  penaltyKicks  G15PenaltyKick[]
 
   @@map("g15_matches")
+}
+
+// ดวลจุดโทษ (รอบน็อกเอาต์ที่เสมอในเวลา) — บันทึกทีละลูกตามลำดับที่ยิงจริง
+// ลูกแรกที่บันทึก = ทีมที่ยิงก่อน · homePenalty/awayPenalty ของนัดคือจำนวนลูกที่ยิงเข้า (อัปเดตทุกครั้งที่บันทึก)
+// ไม่นับเป็นประตูในสถิติ/ดาวซัลโว
+model G15PenaltyKick {
+  id         Int      @id @default(autoincrement())
+  matchId    Int      @map("match_id")
+  match      G15Match @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  teamId     Int      @map("team_id")
+  playerId   Int?     @map("player_id")
+  playerName String?  @map("player_name")
+  scored     Boolean
+  order      Int
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([matchId, order])
+  @@map("g15_penalty_kicks")
 }
 
 // ไลน์อัพผู้เล่นของแต่ละนัด (จาก Starting List) — status: STARTING, SUBSTITUTE

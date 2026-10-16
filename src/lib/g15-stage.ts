@@ -131,7 +131,7 @@ type LiveInput = { status: string; matchDate: Date | null; clockPhase?: string }
 // กำลังแข่ง = แอดมินกดอัปเดตสกอร์สด (status LIVE) หรือยังไม่มีผลแต่อยู่ในช่วงเวลาแข่งตามโปรแกรม
 export function isLive(m: LiveInput, now: Date = new Date()) {
   // นาฬิกาเกมสดเป็นตัวบอกที่แม่นที่สุด — แอดมินกดเริ่มแล้วจนถึงก่อนจบเกม = กำลังแข่ง, จบเกมแล้ว = ไม่ใช่
-  if (m.clockPhase === "FIRST_HALF" || m.clockPhase === "HALF_TIME" || m.clockPhase === "SECOND_HALF") return true;
+  if (m.clockPhase === "FIRST_HALF" || m.clockPhase === "HALF_TIME" || m.clockPhase === "SECOND_HALF" || m.clockPhase === "PENALTIES") return true;
   if (m.clockPhase === "FULL_TIME") return false;
   if (m.status === "LIVE") return true;
   if (m.status !== "SCHEDULED" || !m.matchDate) return false;

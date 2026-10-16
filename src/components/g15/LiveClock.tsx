@@ -49,15 +49,20 @@ export function LiveClock({
 
   if (r.phase === "PRE") return null;
   const live = running;
+  const pens = r.phase === "PENALTIES";
   return (
     <span
       className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 font-mono text-sm font-black tabular-nums ${
-        live ? "bg-red-600 text-white" : r.phase === "HALF_TIME" ? "bg-amber-400 text-amber-950" : "bg-slate-900 text-white"
+        live || pens
+          ? "bg-red-600 text-white"
+          : r.phase === "HALF_TIME"
+            ? "bg-amber-400 text-amber-950"
+            : "bg-slate-900 text-white"
       }`}
       aria-label={`${label.th} ${r.main}`}
     >
-      {live && <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-white" />}
-      {r.main}
+      {(live || pens) && <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-white" />}
+      {pens ? "จุดโทษ" : r.main}
       {r.stoppage && <span className="text-amber-200">{r.stoppage}</span>}
       {r.announcedAdded != null && r.announcedAdded > 0 && live && (
         <span className="rounded bg-emerald-500 px-1 text-[10px] text-white">+{r.announcedAdded}</span>

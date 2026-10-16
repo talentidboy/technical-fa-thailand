@@ -18,6 +18,8 @@ import {
   updateLiveCard,
   updateLiveSub,
   deleteLiveEvent,
+  recordPenaltyKick,
+  undoPenaltyKick,
 } from "../../actions";
 import { Field } from "@/components/FormField";
 import { TeamBadge } from "@/components/g15/TeamBadge";
@@ -28,7 +30,7 @@ import { LiveMatchControl, type LiveRoster } from "@/components/g15/LiveMatchCon
 import { PlayerOfMatchPicker } from "@/components/g15/PlayerOfMatchPicker";
 import { ManageDialogButton } from "@/components/g15/ManageDialogButton";
 import { formatMatchDateTime } from "@/lib/g15";
-import { withStage, stageInfo, isLive, matchdayMap, type G15Stage } from "@/lib/g15-stage";
+import { withStage, stageInfo, isLive, matchdayMap, isKnockoutRound, type G15Stage } from "@/lib/g15-stage";
 import { LOGO_URL } from "@/lib/brand";
 import { ArrowLeft, ClipboardList, ExternalLink, Users, Star, FileText } from "lucide-react";
 
@@ -153,9 +155,17 @@ export default async function G15ManageMatchPage({
       substitutions: { orderBy: [{ minute: "asc" }, { id: "asc" }] },
       cards: { orderBy: [{ minute: "asc" }, { id: "asc" }] },
       lineups: true,
+      penaltyKicks: { orderBy: { order: "asc" } },
     },
   });
   if (!match) notFound();
+  const penaltyKicks = match.penaltyKicks.map((k) => ({
+    id: k.id,
+    side: k.teamId === match.homeTeamId ? ("home" as const) : ("away" as const),
+    scored: k.scored,
+    order: k.order,
+    playerName: k.playerName,
+  }));
 
   const teamById = (teamId: number) => (teamId === match.homeTeamId ? match.homeTeam : match.awayTeam);
   const manageHref = withStage("/g15-womens-series/manage", match.stage as G15Stage);
@@ -325,6 +335,10 @@ export default async function G15ManageMatchPage({
           editCardAction={updateLiveCard}
           editSubAction={updateLiveSub}
           deleteEventAction={deleteLiveEvent}
+          isKnockout={isKnockoutRound(match.round)}
+          penaltyKicks={penaltyKicks}
+          penaltyAction={recordPenaltyKick}
+          undoPenaltyAction={undoPenaltyKick}
         />
 
         {/* ไลน์อัพ / ผู้เล่นยอดเยี่ยมประจำนัด / ทีมงานผู้ตัดสิน — ปุ่มการ์ด กดแล้วเปิดป็อปอัพ */}

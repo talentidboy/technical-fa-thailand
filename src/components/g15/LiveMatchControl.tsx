@@ -1,11 +1,13 @@
 "use client";
 
 import { useEffect, useOptimistic, useRef, useState, useTransition } from "react";
-import { Play, Pause, Square, Undo2, Minus, Plus, Loader2, AlertCircle, Flag, X, ArrowLeftRight, Goal, Pencil, Trash2 } from "lucide-react";
+import { Play, Pause, Square, Undo2, Minus, Plus, Loader2, AlertCircle, Flag, X, ArrowLeftRight, Goal, Pencil, Trash2, Check, Trophy, Target } from "lucide-react";
 import { LiveClock } from "./LiveClock";
 import { TeamBadge } from "./TeamBadge";
 import { asPhase, readClock, formatMinute, minuteOrder, minuteInputValue, type ClockState } from "@/lib/g15-clock";
 import { BallIcon } from "./BallIcon";
+import { PenaltyShootout } from "./PenaltyShootout";
+import { shootoutState, type ShootoutKick } from "@/lib/g15-penalties";
 import type { ActionResult } from "@/app/g15-womens-series/manage/actions";
 
 type Team = { name: string; logoUrl: string | null; groupName: string | null };
@@ -59,6 +61,7 @@ const NEXT_STEP = {
   FIRST_HALF: { op: "END_1", label: "จบครึ่งแรก", sub: "Half-time", icon: Pause, tone: "bg-amber-500 hover:bg-amber-600" },
   HALF_TIME: { op: "START_2", label: "เริ่มครึ่งหลัง", sub: "Second half", icon: Play, tone: "bg-emerald-600 hover:bg-emerald-700" },
   SECOND_HALF: { op: "END_2", label: "จบเกม", sub: "Full-time", icon: Square, tone: "bg-red-600 hover:bg-red-700" },
+  PENALTIES: null,
   FULL_TIME: null,
 } as const;
 
@@ -144,6 +147,10 @@ export function LiveMatchControl({
   editCardAction,
   editSubAction,
   deleteEventAction,
+  isKnockout = false,
+  penaltyKicks = [],
+  penaltyAction,
+  undoPenaltyAction,
 }: {
   matchId: number;
   homeTeam: Team;
@@ -165,6 +172,11 @@ export function LiveMatchControl({
   editCardAction: Action;
   editSubAction: Action;
   deleteEventAction: Action;
+  // รอบน็อกเอาต์: เสมอเมื่อจบ 90 นาที → ดวลจุดโทษทันที (ไม่มีต่อเวลา)
+  isKnockout?: boolean;
+  penaltyKicks?: ShootoutKick[];
+  penaltyAction?: Action;
+  undoPenaltyAction?: Action;
 }) {
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -174,6 +186,13 @@ export function LiveMatchControl({
     (cur, { side, delta }: { side: Side; delta: number }) => ({ ...cur, [side]: Math.max(0, cur[side] + delta) }),
   );
   const [dialog, setDialog] = useState<Dialog>(null);
+  // ลูกจุดโทษขึ้นบนจอทันทีที่กด (optimistic) — ถ้าบันทึกไม่สำเร็จจะกลับเป็นค่าจริง
+  const [kicks, applyKick] = useOptimistic(
+    penaltyKicks,
+    (cur, a: { type: "add"; kick: ShootoutKick } | { type: "undo" }) => (a.type === "add" ? [...cur, a.kick] : cur.slice(0, -1)),
+  );
+  const [kicker, setKicker] = useState<Record<Side, string | null>>({ home: null, away: null });
+  const tempKickId = useRef(-1);
   const skew = useRef(0);
   useEffect(() => {
     skew.current = serverNow - Date.now();
@@ -315,7 +334,7 @@ export function LiveMatchControl({
         <div className="flex items-center gap-2">
           <button
             type="button"
-            disabled={pending || (score ?? 0) === 0}
+            disabled={pending || (score ?? 0) === 0 || phase === "PENALTIES"}
             onClick={() => run(scoreAction, { side, delta: "-1" }, { confirm: `ลดสกอร์ ${team.name} ลง 1? (ประตูล่าสุดของทีมนี้จะถูกลบด้วย)`, optimistic: { side, delta: -1 } })}
             aria-label={`ลดสกอร์ ${team.name}`}
             className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 text-white transition-colors hover:bg-white/20 disabled:opacity-30"
@@ -325,7 +344,7 @@ export function LiveMatchControl({
           <span className="w-12 text-center font-mono text-5xl font-black tabular-nums text-white">{score ?? 0}</span>
           <button
             type="button"
-            disabled={pending || phase === "PRE"}
+            disabled={pending || phase === "PRE" || phase === "PENALTIES"}
             onClick={() => open({ kind: "goal", side })}
             aria-label={`เพิ่มประตู ${team.name}`}
             className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500 text-white shadow-lg shadow-emerald-900/30 transition-colors hover:bg-emerald-400 disabled:opacity-30"
@@ -378,6 +397,163 @@ export function LiveMatchControl({
           </button>
         )}
       </div>
+    </div>
+  );
+
+  // ===== ดวลจุดโทษ =====
+  const shoot = shootoutState(kicks);
+  const level = score.home === score.away;
+  const kick = (side: Side, scored: boolean) => {
+    if (!penaltyAction) return;
+    const fd = new FormData();
+    fd.set("id", String(matchId));
+    fd.set("side", side);
+    fd.set("scored", scored ? "1" : "0");
+    const pid = kicker[side];
+    if (pid) fd.set("playerId", pid);
+    const name = pid ? (rosters[side].players.find((p) => String(p.id) === pid)?.name ?? null) : null;
+    const order = (kicks[kicks.length - 1]?.order ?? 0) + 1;
+    setError(null);
+    setKicker((k) => ({ ...k, [side]: null }));
+    startTransition(async () => {
+      applyKick({ type: "add", kick: { id: tempKickId.current--, side, scored, order, playerName: name } });
+      const res = await penaltyAction(fd);
+      if (!res.ok) setError(res.error);
+    });
+  };
+  const undoKick = () => {
+    if (!undoPenaltyAction || kicks.length === 0) return;
+    const last = kicks[kicks.length - 1];
+    if (!window.confirm(`ย้อนลูกล่าสุด (${teams[last.side].name} — ${last.scored ? "เข้า" : "พลาด"})?`)) return;
+    const fd = new FormData();
+    fd.set("id", String(matchId));
+    setError(null);
+    startTransition(async () => {
+      applyKick({ type: "undo" });
+      const res = await undoPenaltyAction(fd);
+      if (!res.ok) setError(res.error);
+    });
+  };
+
+  // ชิปเลือกคนยิง (ผู้เล่นที่อยู่ในสนามตอนจบเกม) — คนที่ยิงไปแล้วจางลง
+  const kickerChips = (side: Side) => {
+    const players = sortPitchFirst(rosters[side].players).filter((p) => p.onPitch);
+    const taken = new Set(kicks.filter((k) => k.side === side).map((k) => k.playerName));
+    return (
+      <div className="flex max-h-40 flex-wrap gap-1 overflow-y-auto">
+        {players.map((p) => {
+          const active = kicker[side] === String(p.id);
+          return (
+            <button
+              key={p.id}
+              type="button"
+              onClick={() => setKicker((k) => ({ ...k, [side]: active ? null : String(p.id) }))}
+              title={p.name}
+              className={`inline-flex max-w-full items-center gap-1 rounded-md px-1.5 py-1 text-[11px] font-semibold ring-1 transition-colors ${
+                active
+                  ? "bg-amber-400 text-amber-950 ring-amber-300"
+                  : `bg-white/5 text-white/80 ring-white/15 hover:bg-white/15 ${taken.has(p.name) ? "opacity-40" : ""}`
+              }`}
+            >
+              <span className="font-mono font-black">{p.number ?? "-"}</span>
+              <span className="max-w-24 truncate">{p.name.split(" ")[0]}</span>
+            </button>
+          );
+        })}
+      </div>
+    );
+  };
+
+  const shootoutPanel = (
+    <div className="space-y-4 rounded-2xl bg-black/20 p-4 ring-1 ring-amber-300/40">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="flex items-center gap-2 text-sm font-black text-amber-300">
+          <Target className="h-4 w-4" />
+          ดวลจุดโทษ <span className="font-semibold text-white/60">/ Penalty shoot-out · เสมอ {score.home}-{score.away} ใน 90 นาที</span>
+        </p>
+        {kicks.length > 0 && (
+          <button
+            type="button"
+            disabled={pending}
+            onClick={undoKick}
+            className="inline-flex items-center gap-1 rounded-lg bg-white/10 px-2.5 py-1.5 text-xs font-semibold text-white/80 hover:bg-white/20 disabled:opacity-40"
+          >
+            <Undo2 className="h-3.5 w-3.5" />
+            ย้อนลูกล่าสุด
+          </button>
+        )}
+      </div>
+
+      <PenaltyShootout kicks={kicks} home={homeTeam} away={awayTeam} tone="dark" showKickers={false} />
+
+      {shoot.winner ? (
+        <div className="space-y-3 rounded-xl bg-emerald-500/15 p-4 text-center ring-1 ring-emerald-400/40">
+          <p className="flex items-center justify-center gap-2 text-lg font-black text-emerald-200">
+            <Trophy className="h-5 w-5 text-amber-300" />
+            {teams[shoot.winner].name} ชนะจุดโทษ {Math.max(shoot.homeScored, shoot.awayScored)}-{Math.min(shoot.homeScored, shoot.awayScored)}
+          </p>
+          <button
+            type="button"
+            disabled={pending}
+            onClick={() =>
+              run(controlAction, { op: "END_PENS" }, {
+                confirm: `ยืนยันจบเกม: ${score.home}-${score.away} (จุดโทษ ${shoot.homeScored}-${shoot.awayScored}) — ${teams[shoot.winner!].name} ชนะ`,
+              })
+            }
+            className="flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-500 py-3.5 text-base font-black text-white shadow-lg hover:bg-emerald-600 disabled:opacity-60"
+          >
+            {pending ? <Loader2 className="h-5 w-5 animate-spin" /> : <Square className="h-5 w-5" />}
+            ยืนยันจบเกม / Full-time
+          </button>
+        </div>
+      ) : (
+        <>
+          {!shoot.first && (
+            <p className="rounded-lg bg-amber-400/15 px-3 py-2 text-center text-xs font-semibold text-amber-200">
+              ทีมไหนยิงก่อน กดที่ฝั่งทีมนั้นได้เลย — ระบบสลับตาให้เองหลังจากนั้น
+            </p>
+          )}
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            {(["home", "away"] as const).map((side) => {
+              const turn = shoot.nextSide === side || !shoot.first;
+              return (
+                <div
+                  key={side}
+                  className={`space-y-2.5 rounded-xl p-3 ring-1 transition-colors ${turn ? "bg-white/10 ring-amber-300/70" : "bg-white/5 ring-white/10 opacity-70"}`}
+                >
+                  <p className="flex items-center gap-2 text-sm font-bold text-white">
+                    <TeamBadge team={teams[side]} size="sm" />
+                    <span className="min-w-0 flex-1 truncate">{teams[side].name}</span>
+                    {shoot.nextSide === side && <span className="rounded bg-amber-400 px-1.5 py-0.5 text-[10px] font-black text-amber-950">ถึงตา</span>}
+                  </p>
+                  <div>
+                    <p className="mb-1 text-[11px] text-white/50">คนยิง (ไม่บังคับ)</p>
+                    {kickerChips(side)}
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => kick(side, true)}
+                      className="flex h-14 items-center justify-center gap-1.5 rounded-xl bg-emerald-500 text-base font-black text-white shadow-lg shadow-emerald-950/30 hover:bg-emerald-400 active:scale-[0.98]"
+                    >
+                      <Check className="h-5 w-5" strokeWidth={3} />
+                      เข้า
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => kick(side, false)}
+                      className="flex h-14 items-center justify-center gap-1.5 rounded-xl bg-red-500 text-base font-black text-white shadow-lg shadow-red-950/30 hover:bg-red-400 active:scale-[0.98]"
+                    >
+                      <X className="h-5 w-5" strokeWidth={3} />
+                      พลาด
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </>
+      )}
     </div>
   );
 
@@ -805,25 +981,44 @@ export function LiveMatchControl({
           {scoreBox("away", score.away)}
         </div>
 
-        {next ? (
-          <button
-            type="button"
-            disabled={pending}
-            onClick={() =>
-              run(controlAction, { op: next.op }, {
-                confirm: next.op === "END_2" ? `จบเกมด้วยสกอร์ ${score.home}-${score.away}? ผลนี้จะนับในตารางคะแนน` : undefined,
-              })
-            }
-            className={`flex w-full items-center justify-center gap-3 rounded-2xl py-4 text-lg font-black shadow-lg transition-colors disabled:opacity-60 ${next.tone}`}
-          >
-            {pending && !dialog ? <Loader2 className="h-6 w-6 animate-spin" /> : <next.icon className="h-6 w-6" />}
-            {next.label}
-            <span className="text-sm font-semibold opacity-75">/ {next.sub}</span>
-          </button>
+        {phase === "PENALTIES" ? (
+          shootoutPanel
+        ) : next ? (
+          (() => {
+            // รอบน็อกเอาต์ที่เสมอตอนจบ 90 นาที → ปุ่มพาเข้าสู่การดวลจุดโทษ
+            const toPens = next.op === "END_2" && isKnockout && level;
+            return (
+              <button
+                type="button"
+                disabled={pending}
+                onClick={() =>
+                  run(controlAction, { op: next.op }, {
+                    confirm:
+                      next.op !== "END_2"
+                        ? undefined
+                        : toPens
+                          ? `จบ 90 นาที เสมอ ${score.home}-${score.away} — เข้าสู่การดวลจุดโทษ?`
+                          : `จบเกมด้วยสกอร์ ${score.home}-${score.away}? ผลนี้จะนับในตารางคะแนน`,
+                  })
+                }
+                className={`flex w-full items-center justify-center gap-3 rounded-2xl py-4 text-lg font-black shadow-lg transition-colors disabled:opacity-60 ${
+                  toPens ? "bg-amber-500 hover:bg-amber-600" : next.tone
+                }`}
+              >
+                {pending && !dialog ? <Loader2 className="h-6 w-6 animate-spin" /> : toPens ? <Target className="h-6 w-6" /> : <next.icon className="h-6 w-6" />}
+                {toPens ? "จบ 90 นาที → ดวลจุดโทษ" : next.label}
+                <span className="text-sm font-semibold opacity-75">/ {toPens ? "Penalties" : next.sub}</span>
+              </button>
+            );
+          })()
         ) : (
-          <p className="rounded-2xl bg-white/10 py-4 text-center text-sm font-semibold text-white/80">
-            จบเกมแล้ว — ผล {homeScore ?? 0}-{awayScore ?? 0} บันทึกเป็นผลทางการ (กด &quot;ย้อนขั้น&quot; ถ้าต้องแก้)
-          </p>
+          <div className="space-y-3">
+            {kicks.length > 0 && <PenaltyShootout kicks={kicks} home={homeTeam} away={awayTeam} tone="dark" showKickers={false} />}
+            <p className="rounded-2xl bg-white/10 py-4 text-center text-sm font-semibold text-white/80">
+              จบเกมแล้ว — ผล {homeScore ?? 0}-{awayScore ?? 0}
+              {kicks.length > 0 && ` (จุดโทษ ${shoot.homeScored}-${shoot.awayScored})`} บันทึกเป็นผลทางการ (กด &quot;ย้อนขั้น&quot; ถ้าต้องแก้)
+            </p>
+          </div>
         )}
 
         {error && !dialog && (
@@ -833,10 +1028,12 @@ export function LiveMatchControl({
           </p>
         )}
 
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          {addedTime("1", clock.firstHalfAddedTime, "ครึ่งแรก")}
-          {addedTime("2", clock.secondHalfAddedTime, "ครึ่งหลัง")}
-        </div>
+        {phase !== "PENALTIES" && (
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            {addedTime("1", clock.firstHalfAddedTime, "ครึ่งแรก")}
+            {addedTime("2", clock.secondHalfAddedTime, "ครึ่งหลัง")}
+          </div>
+        )}
         <p className="text-[11px] text-white/45">
           นาฬิกาเดินจากเวลาที่กดเริ่ม แม้ปิดหน้านี้ไปก็ยังเดินต่อ · กด ＋ / ใบเหลือง / ใบแดง / เปลี่ยนตัว แล้วเลือกผู้เล่นในป็อปอัพ — บันทึกลงรายการด้านล่างและขึ้นหน้าเว็บทันที
         </p>

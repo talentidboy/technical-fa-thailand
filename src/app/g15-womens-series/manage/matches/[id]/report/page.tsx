@@ -42,6 +42,7 @@ export default async function G15MatchReportPage({ params }: { params: Promise<{
       substitutions: true,
       lineups: { include: { player: { select: { firstNameTh: true, lastNameTh: true, jerseyNumber: true, position: true } } } },
       playerOfMatch: { select: { firstNameTh: true, lastNameTh: true, jerseyNumber: true, teamId: true } },
+      penaltyKicks: { orderBy: { order: "asc" } },
     },
   });
   if (!match) notFound();
@@ -298,6 +299,35 @@ export default async function G15MatchReportPage({ params }: { params: Promise<{
               ))}
             </tbody>
           </table>
+        )}
+
+        {/* ดวลจุดโทษ (ลำดับการยิงจริง) */}
+        {match.penaltyKicks.length > 0 && (
+          <>
+            <h2 className={sectionTitle}>
+              ดวลจุดโทษ / Penalty Shoot-out — {match.homePenalty ?? 0}-{match.awayPenalty ?? 0}
+            </h2>
+            <table className="w-full border-collapse text-[11px]">
+              <thead>
+                <tr>
+                  <th className={`${th} w-14 text-center`}>ลูกที่</th>
+                  <th className={th}>ทีม</th>
+                  <th className={th}>ผู้ยิง</th>
+                  <th className={`${th} w-20 text-center`}>ผล</th>
+                </tr>
+              </thead>
+              <tbody>
+                {match.penaltyKicks.map((k, i) => (
+                  <tr key={k.id}>
+                    <td className={`${td} text-center font-bold`}>{i + 1}</td>
+                    <td className={td}>{teamName(k.teamId)}</td>
+                    <td className={td}>{k.playerName ?? "-"}</td>
+                    <td className={`${td} text-center font-bold`}>{k.scored ? "เข้า" : "พลาด"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </>
         )}
 
         {/* ใบเหลือง/ใบแดง */}

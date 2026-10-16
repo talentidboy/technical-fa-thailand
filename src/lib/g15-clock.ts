@@ -2,7 +2,8 @@
 // ไม่ได้เก็บ "นาทีปัจจุบัน" ไว้ที่ไหน ทุกเครื่องคำนวณเองจากเวลาเริ่ม → เห็นเวลาตรงกัน แม้แอดมินปิดหน้าจอไปแล้ว
 // ใช้ได้ทั้งฝั่งเซิร์ฟเวอร์และเบราว์เซอร์ (ไม่มี dependency)
 
-export type ClockPhase = "PRE" | "FIRST_HALF" | "HALF_TIME" | "SECOND_HALF" | "FULL_TIME";
+// PENALTIES = ดวลจุดโทษ (รอบน็อกเอาต์ที่เสมอเมื่อจบเวลาปกติ) — จบการดวลแล้วกลับเป็น FULL_TIME
+export type ClockPhase = "PRE" | "FIRST_HALF" | "HALF_TIME" | "SECOND_HALF" | "PENALTIES" | "FULL_TIME";
 
 export const HALF_MINUTES = 45;
 
@@ -19,11 +20,12 @@ export const PHASE_LABEL: Record<ClockPhase, { th: string; en: string }> = {
   FIRST_HALF: { th: "ครึ่งแรก", en: "1st Half" },
   HALF_TIME: { th: "พักครึ่ง", en: "Half-time" },
   SECOND_HALF: { th: "ครึ่งหลัง", en: "2nd Half" },
+  PENALTIES: { th: "ดวลจุดโทษ", en: "Penalties" },
   FULL_TIME: { th: "จบเกม", en: "Full-time" },
 };
 
 export function asPhase(p: string): ClockPhase {
-  return (["PRE", "FIRST_HALF", "HALF_TIME", "SECOND_HALF", "FULL_TIME"] as const).includes(p as ClockPhase)
+  return (["PRE", "FIRST_HALF", "HALF_TIME", "SECOND_HALF", "PENALTIES", "FULL_TIME"] as const).includes(p as ClockPhase)
     ? (p as ClockPhase)
     : "PRE";
 }
@@ -33,7 +35,7 @@ export function isClockRunning(phase: string) {
 }
 
 export function isClockLive(phase: string) {
-  return phase === "FIRST_HALF" || phase === "HALF_TIME" || phase === "SECOND_HALF";
+  return phase === "FIRST_HALF" || phase === "HALF_TIME" || phase === "SECOND_HALF" || phase === "PENALTIES";
 }
 
 const pad = (n: number) => String(n).padStart(2, "0");
@@ -58,6 +60,7 @@ export function readClock(state: ClockState, nowMs: number): ClockReading {
   if (phase === "PRE") return { phase, main: "00:00", stoppage: null, minute: null, added: null, announcedAdded: null };
   if (phase === "HALF_TIME") return { phase, main: "HT", stoppage: null, minute: null, added: null, announcedAdded: state.firstHalfAddedTime };
   if (phase === "FULL_TIME") return { phase, main: "FT", stoppage: null, minute: null, added: null, announcedAdded: state.secondHalfAddedTime };
+  if (phase === "PENALTIES") return { phase, main: "PEN", stoppage: null, minute: null, added: null, announcedAdded: null };
 
   const first = phase === "FIRST_HALF";
   const start = ms(first ? state.firstHalfStartedAt : state.secondHalfStartedAt);

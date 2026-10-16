@@ -58,9 +58,10 @@ export function MatchCard({ match, now, showDate = false }: { match: MatchCardDa
   const finished = match.status === "FINISHED" && match.homeScore != null && match.awayScore != null;
   const live = isLive(match, now);
   const liveScore = hasLiveScore(match);
-  const pens = finished && hasPenalties(match);
-  const homeWon = finished && (match.homeScore! > match.awayScore! || (pens && match.homePenalty! > match.awayPenalty!));
-  const awayWon = finished && (match.awayScore! > match.homeScore! || (pens && match.awayPenalty! > match.homePenalty!));
+  // จุดโทษแสดงทั้งตอนจบเกม และระหว่างดวลจุดโทษสด
+  const pens = (finished || liveScore) && hasPenalties(match);
+  const homeWon = finished && (match.homeScore! > match.awayScore! || (pens && match.homeScore === match.awayScore && match.homePenalty! > match.awayPenalty!));
+  const awayWon = finished && (match.awayScore! > match.homeScore! || (pens && match.homeScore === match.awayScore && match.awayPenalty! > match.homePenalty!));
   const showScore = finished || liveScore;
   const goals = match.goals ?? [];
   const homeGoals = showScore ? scorers(goals, match.homeTeam.id) : [];

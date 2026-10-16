@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { prisma } from "@/lib/prisma";
 
 // "ลายนิ้วมือ" ของข้อมูลเกมสด — หน้าเว็บคนดูเรียกทุก ~3 วินาที แล้วโหลดหน้าใหม่เฉพาะตอนค่านี้เปลี่ยน
-// (ยิงประตู/ใบเหลือง/เปลี่ยนตัว/เริ่ม-จบครึ่ง/ทดเวลา ฯลฯ) แทนการโหลดทั้งหน้าใหม่ทุกครั้ง
+// (ยิงประตู/ใบเหลือง/เปลี่ยนตัว/เริ่ม-จบครึ่ง/ทดเวลา/ดวลจุดโทษ ฯลฯ) แทนการโหลดทั้งหน้าใหม่ทุกครั้ง
 // ?match=<id> = นัดเดียว (หน้ารายละเอียดเกม) · ?stage=NATIONAL|REGIONAL = ทุกนัดในรอบ (หน้าแรก/หน้ารายการแข่ง/ตารางคะแนน)
 // แคชที่ CDN 2 วินาที: ไม่ว่าคนดูกี่คน ฐานข้อมูลถูกถามประมาณครั้งเดียวต่อ 2 วินาทีต่อ URL
 export async function GET(request: Request) {
@@ -12,7 +12,7 @@ export async function GET(request: Request) {
   const where = Number.isInteger(matchId) && matchId > 0 ? { id: matchId } : { stage };
   const eventWhere = Number.isInteger(matchId) && matchId > 0 ? { matchId } : { match: { stage } };
 
-  const [matches, goals, cards, subs, lineups] = await Promise.all([
+  const [matches, goals, cards, subs, lineups, kicks] = await Promise.all([
     prisma.g15Match.findMany({
       where,
       orderBy: { id: "asc" },
@@ -38,10 +38,12 @@ export async function GET(request: Request) {
     prisma.g15Card.aggregate({ where: eventWhere, _count: { id: true }, _max: { id: true } }),
     prisma.g15Substitution.aggregate({ where: eventWhere, _count: { id: true }, _max: { id: true } }),
     prisma.g15Lineup.aggregate({ where: eventWhere, _count: { id: true }, _max: { id: true } }),
+    // ดวลจุดโทษ — ลูกที่ยิงพลาดไม่เปลี่ยนสกอร์ จึงต้องนับจำนวนลูกด้วย
+    prisma.g15PenaltyKick.aggregate({ where: eventWhere, _count: { id: true }, _max: { id: true } }),
   ]);
 
   const v = createHash("sha1")
-    .update(JSON.stringify([matches, goals, cards, subs, lineups]))
+    .update(JSON.stringify([matches, goals, cards, subs, lineups, kicks]))
     .digest("hex")
     .slice(0, 16);
 

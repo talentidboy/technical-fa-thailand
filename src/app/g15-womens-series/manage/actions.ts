@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { parseMinute } from "@/lib/g15-clock";
+import { shootoutState } from "@/lib/g15-penalties";
 import { requireUser } from "@/lib/auth";
 import { saveUploadedPhoto } from "@/lib/upload";
 import { parseBangkokDateTimeLocal, getNationalBracket } from "@/lib/g15";
@@ -904,6 +905,7 @@ export async function setOfficialActive(formData: FormData) {
 
 // ===== นาฬิกาเกมสด =====
 // ลำดับ: PRE → (เริ่มครึ่งแรก) FIRST_HALF → (จบครึ่งแรก) HALF_TIME → (เริ่มครึ่งหลัง) SECOND_HALF → (จบเกม) FULL_TIME
+// รอบน็อกเอาต์ที่เสมอเมื่อจบ 90 นาที: SECOND_HALF → (จบเวลาปกติ) PENALTIES → (จบการดวลจุดโทษ) FULL_TIME — ไม่มีต่อเวลา
 // UNDO = ย้อนกลับหนึ่งขั้น (กดผิด) — เคลียร์เวลาของขั้นที่ย้อนออก
 const CLOCK_NEXT: Record<string, { from: string; to: string }> = {
   START_1: { from: "PRE", to: "FIRST_HALF" },
@@ -920,6 +922,37 @@ export async function controlMatchClock(formData: FormData): Promise<ActionResul
     const match = await prisma.g15Match.findUnique({ where: { id } });
     if (!match) throw new Error("ไม่พบนัดการแข่งขัน");
     const now = new Date();
+
+    const kickCount = await prisma.g15PenaltyKick.count({ where: { matchId: id } });
+
+    if (op === "UNDO" && match.clockPhase === "PENALTIES") {
+      if (kickCount > 0) throw new Error("มีการบันทึกลูกจุดโทษแล้ว — กด \"ย้อนลูกล่าสุด\" ให้หมดก่อน แล้วค่อยย้อนขั้น");
+      await prisma.g15Match.update({
+        where: { id },
+        data: { clockPhase: "SECOND_HALF", secondHalfEndedAt: null, status: "LIVE", homePenalty: null, awayPenalty: null },
+      });
+      revalidateG15(undefined, id);
+      return;
+    }
+    // จบเกมที่ตัดสินด้วยจุดโทษ → ย้อนกลับไปช่วงดวลจุดโทษ (ลูกที่บันทึกไว้ยังอยู่ครบ)
+    if (op === "UNDO" && match.clockPhase === "FULL_TIME" && kickCount > 0) {
+      await prisma.g15Match.update({ where: { id }, data: { clockPhase: "PENALTIES", status: "LIVE" } });
+      revalidateG15(undefined, id);
+      return;
+    }
+
+    // จบการดวลจุดโทษ = ผลทางการ (ต้องได้ผู้ชนะแล้ว)
+    if (op === "END_PENS") {
+      if (match.clockPhase !== "PENALTIES") throw new Error("สถานะเกมเปลี่ยนไปแล้ว — รีเฟรชหน้าแล้วลองอีกครั้ง");
+      const state = shootoutState(await shootoutKicks(match));
+      if (!state.winner) throw new Error("ยังไม่ได้ผู้ชนะการดวลจุดโทษ");
+      await prisma.g15Match.update({
+        where: { id },
+        data: { clockPhase: "FULL_TIME", status: "FINISHED", homePenalty: state.homeScored, awayPenalty: state.awayScored },
+      });
+      revalidateG15(undefined, id);
+      return;
+    }
 
     if (op === "UNDO") {
       const undo: Record<string, Parameters<typeof prisma.g15Match.update>[0]["data"]> = {
@@ -948,8 +981,82 @@ export async function controlMatchClock(formData: FormData): Promise<ActionResul
     if (op === "START_2") Object.assign(data, { secondHalfStartedAt: now });
     // จบเกม = ผลทางการ (นับในตารางคะแนน)
     if (op === "END_2") Object.assign(data, { secondHalfEndedAt: now, status: "FINISHED", homeScore: home, awayScore: away });
+    // รอบน็อกเอาต์เสมอเมื่อจบ 90 นาที → เข้าสู่การดวลจุดโทษทันที (ยังไม่จบเกม จนกว่าจะได้ผู้ชนะ)
+    if (op === "END_2" && isKnockoutRound(match.round) && home === away) {
+      Object.assign(data, { clockPhase: "PENALTIES", status: "LIVE", homePenalty: 0, awayPenalty: 0 });
+    }
 
     await prisma.g15Match.update({ where: { id }, data });
+    revalidateG15(undefined, id);
+  });
+}
+
+// ===== ดวลจุดโทษ =====
+
+async function shootoutKicks(match: { id: number; homeTeamId: number }) {
+  const kicks = await prisma.g15PenaltyKick.findMany({ where: { matchId: match.id }, orderBy: { order: "asc" } });
+  return kicks.map((k) => ({
+    id: k.id,
+    side: k.teamId === match.homeTeamId ? ("home" as const) : ("away" as const),
+    scored: k.scored,
+    order: k.order,
+    playerName: k.playerName,
+  }));
+}
+
+// จำนวนลูกที่ยิงเข้าของแต่ละทีม → เก็บที่ homePenalty/awayPenalty ของนัด (หน้าเว็บ/การ์ดแสดง "จุดโทษ x-y" ได้ทันที)
+async function syncPenaltyCounts(match: { id: number; homeTeamId: number }) {
+  const state = shootoutState(await shootoutKicks(match));
+  await prisma.g15Match.update({
+    where: { id: match.id },
+    data: { homePenalty: state.homeScored, awayPenalty: state.awayScored },
+  });
+  return state;
+}
+
+// บันทึกลูกจุดโทษ 1 ลูก: side = ทีมที่ยิง, scored = เข้า/พลาด, playerId = คนยิง (ไม่บังคับ)
+export async function recordPenaltyKick(formData: FormData): Promise<ActionResult> {
+  await requireAdminOrStaff();
+  return attempt(async () => {
+    const id = Number(formData.get("id"));
+    const match = await prisma.g15Match.findUnique({ where: { id } });
+    if (!match) throw new Error("ไม่พบนัดการแข่งขัน");
+    if (match.clockPhase !== "PENALTIES") throw new Error("ยังไม่อยู่ในช่วงดวลจุดโทษ — รีเฟรชหน้าแล้วลองอีกครั้ง");
+    const before = shootoutState(await shootoutKicks(match));
+    if (before.winner) throw new Error("ได้ผู้ชนะแล้ว — กดจบการดวลจุดโทษ หรือย้อนลูกล่าสุดถ้าบันทึกผิด");
+
+    const side = String(formData.get("side")) === "away" ? "away" : "home";
+    const teamId = side === "home" ? match.homeTeamId : match.awayTeamId;
+    const playerId = int(formData, "playerId");
+    const player = playerId != null ? await prisma.g15Player.findFirst({ where: { id: playerId, teamId } }) : null;
+    const last = await prisma.g15PenaltyKick.findFirst({ where: { matchId: id }, orderBy: { order: "desc" } });
+    await prisma.g15PenaltyKick.create({
+      data: {
+        matchId: id,
+        teamId,
+        playerId: player?.id ?? null,
+        playerName: player ? playerName(player) : null,
+        scored: String(formData.get("scored")) === "1",
+        order: (last?.order ?? 0) + 1,
+      },
+    });
+    await syncPenaltyCounts(match);
+    revalidateG15(undefined, id);
+  });
+}
+
+// ย้อนลูกล่าสุด (บันทึกผิด)
+export async function undoPenaltyKick(formData: FormData): Promise<ActionResult> {
+  await requireAdminOrStaff();
+  return attempt(async () => {
+    const id = Number(formData.get("id"));
+    const match = await prisma.g15Match.findUnique({ where: { id } });
+    if (!match) throw new Error("ไม่พบนัดการแข่งขัน");
+    if (match.clockPhase !== "PENALTIES") throw new Error("จบการดวลจุดโทษแล้ว — กด \"ย้อนขั้น\" ก่อนถ้าต้องแก้");
+    const last = await prisma.g15PenaltyKick.findFirst({ where: { matchId: id }, orderBy: { order: "desc" } });
+    if (!last) throw new Error("ยังไม่มีลูกที่บันทึก");
+    await prisma.g15PenaltyKick.delete({ where: { id: last.id } });
+    await syncPenaltyCounts(match);
     revalidateG15(undefined, id);
   });
 }

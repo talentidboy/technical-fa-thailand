@@ -113,7 +113,7 @@ export function MatchSpotlight({
                   ) : (
                     <LivePill />
                   ))}
-                {isFinished && hasPenalties(match) && (
+                {(isFinished || match.clockPhase === "PENALTIES") && hasPenalties(match) && (
                   <p className="text-xs font-semibold text-slate-500">
                     จุดโทษ {match.homePenalty}-{match.awayPenalty}
                   </p>

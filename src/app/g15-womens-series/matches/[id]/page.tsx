@@ -24,6 +24,7 @@ import { LiveClock } from "@/components/g15/LiveClock";
 import { MatchTimeline } from "@/components/g15/MatchTimeline";
 import { MatchLineups, MatchStatBars } from "@/components/g15/MatchLineups";
 import { BallIcon } from "@/components/g15/BallIcon";
+import { PenaltyShootout } from "@/components/g15/PenaltyShootout";
 import { PlayerOfMatchCard } from "@/components/g15/PlayerOfMatchCard";
 import { GalleryAlbumCard } from "@/components/g15/GalleryAlbumCard";
 import { isClockLive, formatMinute, minuteOrder } from "@/lib/g15-clock";
@@ -82,6 +83,7 @@ export default async function G15MatchDetailPage({
           orderBy: [{ player: { jerseyNumber: { sort: "asc", nulls: "last" } } }],
         },
         galleryLinks: { orderBy: [{ createdAt: "desc" }, { id: "desc" }] },
+        penaltyKicks: { orderBy: { order: "asc" } },
         playerOfMatch: {
           select: {
             id: true,
@@ -332,7 +334,7 @@ export default async function G15MatchDetailPage({
               ) : isFinished ? (
                 <span className="rounded-md bg-white/15 px-2.5 py-0.5 text-[11px] font-black uppercase tracking-widest text-white">FT</span>
               ) : null}
-              {isFinished && hasPenalties(match) && (
+              {(isFinished || match.clockPhase === "PENALTIES") && hasPenalties(match) && (
                 <span className="rounded-full bg-amber-400 px-3 py-0.5 text-[11px] font-bold text-amber-950">
                   จุดโทษ {match.homePenalty} - {match.awayPenalty}
                 </span>
@@ -368,6 +370,27 @@ export default async function G15MatchDetailPage({
                 </ul>
             </div>
           </div>
+
+          {/* ดวลจุดโทษ (รอบน็อกเอาต์ที่เสมอใน 90 นาที) — อัปเดตทีละลูกแบบสด */}
+          {(match.clockPhase === "PENALTIES" || match.penaltyKicks.length > 0) && (
+            <div className="mx-auto mt-8 max-w-xl rounded-2xl bg-white p-4 text-left shadow-xl shadow-black/20 sm:p-5">
+              <p className="mb-3 flex items-center justify-center gap-2 text-center text-sm font-black text-g15-900">
+                {match.clockPhase === "PENALTIES" && <span className="h-2 w-2 animate-pulse rounded-full bg-red-600" />}
+                ดวลจุดโทษ <span className="font-semibold text-slate-400">/ Penalty shoot-out</span>
+              </p>
+              <PenaltyShootout
+                kicks={match.penaltyKicks.map((k) => ({
+                  id: k.id,
+                  side: k.teamId === match.homeTeamId ? ("home" as const) : ("away" as const),
+                  scored: k.scored,
+                  order: k.order,
+                  playerName: k.playerName,
+                }))}
+                home={match.homeTeam}
+                away={match.awayTeam}
+              />
+            </div>
+          )}
 
           {showCountdown && (
             <div className="mx-auto mt-8 max-w-md rounded-2xl bg-white/10 px-4 py-5 ring-1 ring-white/15 backdrop-blur">
