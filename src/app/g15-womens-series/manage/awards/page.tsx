@@ -32,20 +32,22 @@ export default async function G15AwardsManagePage() {
 
   const anySaved = awards.size > 0 || xi.length > 0;
   // ยังไม่เคยบันทึก = ใส่ค่าแนะนำจากผลการแข่งขันไว้ให้ก่อน (แก้ได้ก่อนบันทึก)
-  const initialWinners: Record<string, number | null> = {};
+  const initialWinners: Record<string, number[]> = {};
   const initialNotes: Record<string, string> = {};
   for (const a of ALL_AWARDS) {
-    const saved = awards.get(a.key);
-    const sgId = a.kind === "team" ? (sugg.team[a.key] ?? null) : (sugg.people[a.key]?.id ?? null);
-    initialWinners[a.key] = saved ? (saved.playerId ?? saved.officialId ?? saved.teamId ?? null) : anySaved ? null : sgId;
-    initialNotes[a.key] = saved ? (saved.note ?? "") : anySaved ? "" : (sugg.people[a.key]?.note ?? "");
+    const saved = awards.get(a.key) ?? [];
+    const teamSg = sugg.team[a.key];
+    const sgIds = a.kind === "team" ? (teamSg != null ? [teamSg] : []) : (sugg.people[a.key]?.ids ?? []);
+    initialWinners[a.key] =
+      saved.length > 0 ? saved.map((r) => (r.playerId ?? r.officialId ?? r.teamId)!).filter((x) => x != null) : anySaved ? [] : sgIds;
+    initialNotes[a.key] = saved.length > 0 ? (saved[0].note ?? "") : anySaved ? "" : (sugg.people[a.key]?.note ?? "");
   }
   const initialXi = Object.fromEntries(BEST_XI_SLOTS.map((s) => [s.slot, xi.find((x) => x.slot === s.slot)?.playerId ?? null]));
   const suggestions = Object.fromEntries(
     ALL_AWARDS.map((a) => {
       if (a.kind === "team") {
         const id = sugg.team[a.key] ?? null;
-        return [a.key, id ? { id, note: null } : null];
+        return [a.key, id ? { ids: [id], note: null } : null];
       }
       return [a.key, sugg.people[a.key] ?? null];
     }),

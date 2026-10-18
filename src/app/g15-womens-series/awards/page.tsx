@@ -46,7 +46,7 @@ const ICON: Record<string, LucideIcon> = {
 const GOLD_TEXT = "bg-linear-to-b from-amber-50 via-amber-300 to-amber-600 bg-clip-text text-transparent";
 
 type Awards = Awaited<ReturnType<typeof loadAwards>>["awards"];
-type AwardRow = NonNullable<ReturnType<Awards["get"]>>;
+type AwardRow = NonNullable<ReturnType<Awards["get"]>>[number];
 type Team = { id: number; name: string; logoUrl: string | null; groupName: string | null };
 
 function SectionTitle({ en, th }: { en: string; th: string }) {
@@ -76,8 +76,20 @@ function winnerOf(a: AwardRow | undefined) {
   };
 }
 
-function Portrait({ w, size }: { w: NonNullable<ReturnType<typeof winnerOf>>; size: "md" | "xl" }) {
-  const box = size === "xl" ? "h-36 w-36 sm:h-44 sm:w-44 text-6xl" : "h-24 w-24 text-4xl";
+type Winner = NonNullable<ReturnType<typeof winnerOf>>;
+
+// ผู้ได้รับรางวัลทุกคนของรางวัลหนึ่ง (รางวัลร่วม = หลายคน)
+function winnersOf(rows: AwardRow[] | undefined): Winner[] {
+  return (rows ?? []).map(winnerOf).filter((w): w is Winner => w != null);
+}
+
+function Portrait({ w, size }: { w: Winner; size: "sm" | "md" | "lg" | "xl" }) {
+  const box = {
+    sm: "h-16 w-16 text-2xl",
+    md: "h-24 w-24 text-4xl",
+    lg: "h-28 w-28 sm:h-32 sm:w-32 text-5xl",
+    xl: "h-36 w-36 sm:h-44 sm:w-44 text-6xl",
+  }[size];
   return w.photoUrl ? (
     // eslint-disable-next-line @next/next/no-img-element
     <img src={w.photoUrl} alt="" className={`${box} rounded-full object-cover`} />
@@ -89,9 +101,11 @@ function Portrait({ w, size }: { w: NonNullable<ReturnType<typeof winnerOf>>; si
 }
 
 // การ์ดรางวัล (ขอบทองไล่เฉด + เหรียญไอคอนลอยด้านบน) — ยังไม่ประกาศ = เงาล็อก
-function AwardCard({ def, a, delay }: { def: AwardDef; a: AwardRow | undefined; delay: number }) {
+function AwardCard({ def, rows, delay }: { def: AwardDef; rows: AwardRow[] | undefined; delay: number }) {
   const Icon = ICON[def.key] ?? Award;
-  const w = winnerOf(a);
+  const all = winnersOf(rows);
+  const w = all[0] ?? null;
+  const joint = all.length > 1;
   return (
     <Reveal delay={delay} className="h-full">
       <div className={`group relative h-full rounded-3xl p-px ${w ? "bg-linear-to-b from-amber-200 via-amber-500/40 to-amber-900/30" : "bg-white/10"}`}>
@@ -108,7 +122,41 @@ function AwardCard({ def, a, delay }: { def: AwardDef; a: AwardRow | undefined; 
           <p className={`relative text-[11px] font-black uppercase tracking-[0.18em] ${w ? "text-amber-300" : "text-white/40"}`}>{def.en.replace(" Award", "")}</p>
           <p className="relative mt-1 text-sm font-semibold leading-snug text-white/80">{def.th}</p>
 
-          {w ? (
+          {joint ? (
+            <>
+              <span className="relative mt-4 rounded-full bg-amber-400/15 px-3 py-0.5 text-[11px] font-bold text-amber-200 ring-1 ring-amber-300/30">
+                รางวัลร่วม {all.length} คน · Joint winners
+              </span>
+              <div className={`relative mt-5 grid w-full gap-x-3 gap-y-5 ${all.length === 2 ? "grid-cols-2" : "grid-cols-3"}`}>
+                {all.map((x) => (
+                  <div key={x.href ?? x.name} className="flex min-w-0 flex-col items-center">
+                    <span className="rounded-full bg-linear-to-br from-amber-200 to-amber-600 p-1 shadow-[0_0_30px_rgba(252,211,77,0.25)]">
+                      <Portrait w={x} size="sm" />
+                    </span>
+                    {x.href ? (
+                      <Link href={x.href} className="mt-2 line-clamp-2 text-sm font-extrabold leading-tight text-white hover:text-amber-200">
+                        {x.name}
+                      </Link>
+                    ) : (
+                      <p className="mt-2 line-clamp-2 text-sm font-extrabold leading-tight text-white">{x.name}</p>
+                    )}
+                    {x.sub && <p className="text-[11px] text-amber-100/70">{x.sub}</p>}
+                    {x.team && (
+                      <span className="mt-1.5 inline-flex max-w-full items-center gap-1 text-[11px] text-white/60">
+                        <TeamBadge team={x.team} size="sm" />
+                        <span className="truncate">{x.team.name}</span>
+                      </span>
+                    )}
+                  </div>
+                ))}
+              </div>
+              {w?.note && (
+                <span className="relative mt-4 rounded-full bg-amber-400 px-3 py-1 text-xs font-black text-amber-950 shadow-lg shadow-amber-900/40">
+                  {w.note}
+                </span>
+              )}
+            </>
+          ) : w ? (
             <>
               <span className="relative mt-5 rounded-full bg-linear-to-br from-amber-200 to-amber-600 p-1 shadow-[0_0_40px_rgba(252,211,77,0.25)] transition-transform duration-500 group-hover:scale-105">
                 <Portrait w={w} size="md" />
@@ -216,12 +264,13 @@ export default async function G15AwardsPage() {
   ]);
   const canManage = user?.role === "ADMIN" || user?.role === "STAFF";
   const now = new Date();
-  const teamOf = (key: string) => awards.get(key)?.team ?? null;
+  const teamOf = (key: string) => awards.get(key)?.[0]?.team ?? null;
   const champion = teamOf("CHAMPION");
   const finalUpcoming = !!final?.matchDate && final.status !== "FINISHED" && final.matchDate > now;
 
   const mvpDef = INDIVIDUAL_AWARDS.find((a) => a.key === "MVP")!;
-  const mvp = winnerOf(awards.get("MVP"));
+  const mvps = winnersOf(awards.get("MVP"));
+  const mvp = mvps.length === 1 ? mvps[0] : null;
   const playerAwards = INDIVIDUAL_AWARDS.filter((a) => a.kind === "player" && a.key !== "MVP");
   const coachAwards = INDIVIDUAL_AWARDS.filter((a) => a.kind === "official");
 
@@ -351,11 +400,45 @@ export default async function G15AwardsPage() {
         <section>
           <SectionTitle en="Most Valuable Player" th={mvpDef.th} />
           <Reveal>
-            <div className={`relative mx-auto max-w-4xl rounded-[2rem] p-[1.5px] ${mvp ? "bg-linear-to-br from-amber-100 via-amber-500 to-amber-900" : "bg-white/10"}`}>
+            <div className={`relative mx-auto max-w-4xl rounded-[2rem] p-[1.5px] ${mvps.length > 0 ? "bg-linear-to-br from-amber-100 via-amber-500 to-amber-900" : "bg-white/10"}`}>
               <div className="relative overflow-hidden rounded-[calc(2rem-1.5px)] bg-linear-to-br from-[#26114f] via-[#150833] to-[#07040f] px-6 py-10 sm:px-12 sm:py-14">
                 <div aria-hidden className="pointer-events-none absolute -left-20 -top-20 h-80 w-80 rounded-full bg-[radial-gradient(circle,rgba(252,211,77,0.25),transparent_65%)]" />
                 <Star aria-hidden className="absolute right-8 top-8 h-24 w-24 text-amber-300/10" />
-                {mvp ? (
+                {mvps.length > 1 ? (
+                  // MVP ร่วม — เรียงรูปคู่กัน
+                  <div className="relative text-center">
+                    <p className={`${display.className} text-5xl leading-none sm:text-6xl ${GOLD_TEXT}`}>MVP</p>
+                    <p className="mt-1 text-xs font-black uppercase tracking-[0.25em] text-amber-200/70">Joint Most Valuable Players</p>
+                    <div className={`mt-10 grid grid-cols-2 gap-x-4 gap-y-10 sm:gap-x-8 ${mvps.length === 2 ? "" : "sm:grid-cols-3"}`}>
+                      {mvps.map((x) => (
+                        <div key={x.href ?? x.name} className="flex min-w-0 flex-col items-center">
+                          <span className="relative">
+                            <Crown className="absolute -top-8 left-1/2 h-8 w-8 -translate-x-1/2 text-amber-300 drop-shadow-[0_0_12px_rgba(252,211,77,0.9)]" />
+                            <span className="block rounded-full bg-linear-to-br from-amber-100 via-amber-400 to-amber-700 p-1.5 shadow-[0_0_50px_rgba(252,211,77,0.35)]">
+                              <Portrait w={x} size="lg" />
+                            </span>
+                          </span>
+                          {x.href ? (
+                            <Link href={x.href} className="mt-4 text-lg font-black sm:text-2xl leading-tight text-white hover:text-amber-200">
+                              {x.name}
+                            </Link>
+                          ) : (
+                            <p className="mt-4 text-lg font-black sm:text-2xl leading-tight text-white">{x.name}</p>
+                          )}
+                          {x.team && (
+                            <span className="mt-2 inline-flex max-w-full items-center gap-2 rounded-full bg-white/10 py-1 pl-1 pr-3 text-xs sm:text-sm text-white ring-1 ring-white/15">
+                              <TeamBadge team={x.team} size="sm" />
+                              <span className="truncate">{x.team.name}</span>
+                            </span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                    {mvps[0].note && (
+                      <span className="mt-8 inline-block rounded-full bg-amber-400 px-3.5 py-1.5 text-sm font-black text-amber-950">{mvps[0].note}</span>
+                    )}
+                  </div>
+                ) : mvp ? (
                   <div className="relative grid items-center gap-8 sm:grid-cols-[auto_1fr]">
                     <div className="relative mx-auto">
                       <span
@@ -410,7 +493,7 @@ export default async function G15AwardsPage() {
           <SectionTitle en="Player Awards" th="รางวัลส่วนบุคคล" />
           <div className="grid grid-cols-1 gap-x-5 gap-y-14 pt-7 sm:grid-cols-3">
             {playerAwards.map((def, i) => (
-              <AwardCard key={def.key} def={def} a={awards.get(def.key)} delay={i * 120} />
+              <AwardCard key={def.key} def={def} rows={awards.get(def.key)} delay={i * 120} />
             ))}
           </div>
         </section>
@@ -420,7 +503,7 @@ export default async function G15AwardsPage() {
           <SectionTitle en="Coaching Awards" th="รางวัลผู้ฝึกสอน" />
           <div className="grid grid-cols-1 gap-x-5 gap-y-14 pt-7 sm:grid-cols-3">
             {coachAwards.map((def, i) => (
-              <AwardCard key={def.key} def={def} a={awards.get(def.key)} delay={i * 120} />
+              <AwardCard key={def.key} def={def} rows={awards.get(def.key)} delay={i * 120} />
             ))}
           </div>
         </section>

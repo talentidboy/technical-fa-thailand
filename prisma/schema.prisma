@@ -572,9 +572,10 @@ model G15GalleryLink {
 // รางวัลประจำทัวร์นาเมนต์ (เลือกในหน้าจัดการ /g15-womens-series/manage/awards)
 // key: MVP, TOP_SCORER, GOLDEN_GLOVE, SPORTSMANSHIP, BEST_COACH, INSPIRATIONAL_COACH, INTL_DEV_COACH, CHAMPION, RUNNER_UP, THIRD_PLACE
 // ผู้รับรางวัลเป็นนักกีฬา / เจ้าหน้าที่ทีม (โค้ช) / ทีม อย่างใดอย่างหนึ่งตามชนิดรางวัล · ทีมยอดเยี่ยม (Best XI) เก็บใน G15AllStar stage = "TOURNAMENT"
+// 1 แถว = ผู้ได้รับรางวัล 1 คน — รางวัลส่วนบุคคลมีผู้ได้รับร่วมได้หลายคน (เช่น ดาวซัลโวยิงเท่ากัน) เรียงตาม id
 model G15Award {
   id         Int          @id @default(autoincrement())
-  key        String       @unique
+  key        String
   playerId   Int?         @map("player_id")
   player     G15Player?   @relation(fields: [playerId], references: [id], onDelete: SetNull)
   officialId Int?         @map("official_id")
@@ -585,5 +586,6 @@ model G15Award {
   note       String?
   updatedAt  DateTime     @updatedAt @map("updated_at")
 
+  @@index([key])
   @@map("g15_awards")
 }

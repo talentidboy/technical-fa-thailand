@@ -877,14 +877,21 @@ export async function saveTeamOfRound(formData: FormData): Promise<ActionResult>
 }
 
 // ===== รางวัลประจำทัวร์นาเมนต์ + ทีมยอดเยี่ยม (Best XI 4-3-3 holding) =====
-// ฟอร์มเดียว: winner_<KEY> (id ของนักกีฬา/เจ้าหน้าที่/ทีมตามชนิดรางวัล) + note_<KEY>, xi_<SLOT> = playerId · เว้นว่าง = ยังไม่ประกาศ
+// ฟอร์มเดียว: winner_<KEY> (ส่งซ้ำได้หลายค่า = ผู้ได้รับรางวัลร่วม) + note_<KEY>, xi_<SLOT> = playerId · ไม่มีค่า = ยังไม่ประกาศ
+// รางวัลทีม (ชนะเลิศ/รองฯ/ที่ 3) มีได้ทีมเดียว · รางวัลส่วนบุคคลมีผู้ได้รับร่วมได้ (เช่น ดาวซัลโวยิงเท่ากัน)
 export async function saveAwards(formData: FormData): Promise<ActionResult> {
   await requireAdminOrStaff();
   return attempt(async () => {
     const awards = ALL_AWARDS.map((a) => {
-      const id = int(formData, `winner_${a.key}`);
-      const note = str(formData, `note_${a.key}`);
-      return { def: a, id, note };
+      const ids = [
+        ...new Set(
+          formData
+            .getAll(`winner_${a.key}`)
+            .map((v) => Number(v))
+            .filter((n) => Number.isInteger(n) && n > 0),
+        ),
+      ];
+      return { def: a, ids: a.kind === "team" ? ids.slice(0, 1) : ids, note: str(formData, `note_${a.key}`) };
     });
 
     const xi = BEST_XI_SLOTS.flatMap(({ slot }) => {
@@ -895,7 +902,7 @@ export async function saveAwards(formData: FormData): Promise<ActionResult> {
     if (new Set(xiIds).size !== xiIds.length) throw new Error("ทีมยอดเยี่ยม: เลือกนักกีฬาคนเดียวกันซ้ำหลายตำแหน่ง");
 
     // ตรวจว่า id ที่ส่งมามีอยู่จริงตามชนิดรางวัล
-    const ids = (kind: string) => awards.filter((a) => a.def.kind === kind && a.id != null).map((a) => a.id!);
+    const ids = (kind: string) => awards.filter((a) => a.def.kind === kind).flatMap((a) => a.ids);
     const [players, officials, teams] = await Promise.all([
       prisma.g15Player.findMany({ where: { id: { in: [...ids("player"), ...xiIds] } }, select: { id: true } }),
       prisma.g15Official.findMany({ where: { id: { in: ids("official") } }, select: { id: true } }),
@@ -903,34 +910,27 @@ export async function saveAwards(formData: FormData): Promise<ActionResult> {
     ]);
     const exists = { player: new Set(players.map((p) => p.id)), official: new Set(officials.map((o) => o.id)), team: new Set(teams.map((t) => t.id)) };
     for (const a of awards) {
-      if (a.id != null && !exists[a.def.kind].has(a.id)) throw new Error(`${a.def.th}: ไม่พบรายชื่อที่เลือก`);
+      for (const id of a.ids) if (!exists[a.def.kind].has(id)) throw new Error(`${a.def.th}: ไม่พบรายชื่อที่เลือก`);
     }
     for (const id of xiIds) if (!exists.player.has(id)) throw new Error("ทีมยอดเยี่ยม: ไม่พบนักกีฬาที่เลือก");
 
-    const teamIds = awards.filter((a) => a.def.kind === "team" && a.id != null).map((a) => a.id!);
+    const teamIds = ids("team");
     if (new Set(teamIds).size !== teamIds.length) throw new Error("รางวัลทีม: เลือกทีมเดียวกันซ้ำหลายอันดับ");
 
+    // 1 แถวต่อผู้ได้รับรางวัล 1 คน (ข้อความประกอบใช้ร่วมกันทุกคนในรางวัลเดียวกัน)
+    const rows = awards.flatMap((a) =>
+      a.ids.map((id) => ({
+        key: a.def.key,
+        playerId: a.def.kind === "player" ? id : null,
+        officialId: a.def.kind === "official" ? id : null,
+        teamId: a.def.kind === "team" ? id : null,
+        note: a.note,
+      })),
+    );
+
     await prisma.$transaction([
-      ...awards.map((a) =>
-        a.id == null
-          ? prisma.g15Award.deleteMany({ where: { key: a.def.key } })
-          : prisma.g15Award.upsert({
-              where: { key: a.def.key },
-              create: {
-                key: a.def.key,
-                playerId: a.def.kind === "player" ? a.id : null,
-                officialId: a.def.kind === "official" ? a.id : null,
-                teamId: a.def.kind === "team" ? a.id : null,
-                note: a.note,
-              },
-              update: {
-                playerId: a.def.kind === "player" ? a.id : null,
-                officialId: a.def.kind === "official" ? a.id : null,
-                teamId: a.def.kind === "team" ? a.id : null,
-                note: a.note,
-              },
-            }),
-      ),
+      prisma.g15Award.deleteMany({ where: { key: { in: ALL_AWARDS.map((a) => a.key) } } }),
+      ...(rows.length > 0 ? [prisma.g15Award.createMany({ data: rows })] : []),
       prisma.g15AllStar.deleteMany({ where: { stage: BEST_XI_STAGE } }),
       ...(xi.length > 0 ? [prisma.g15AllStar.createMany({ data: xi })] : []),
     ]);

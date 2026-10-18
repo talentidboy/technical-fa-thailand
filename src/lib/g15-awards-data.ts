@@ -2,10 +2,11 @@ import { prisma } from "./prisma";
 import { getNationalBracket } from "./g15";
 import { BEST_XI_STAGE } from "./g15-awards";
 
-// รางวัลที่บันทึกแล้ว + ทีมยอดเยี่ยม (Best XI)
+// รางวัลที่บันทึกแล้ว (key → ผู้ได้รับรางวัลทุกคน เรียงตามลำดับที่บันทึก) + ทีมยอดเยี่ยม (Best XI)
 export async function loadAwards() {
-  const [awards, xi] = await Promise.all([
+  const [rows, xi] = await Promise.all([
     prisma.g15Award.findMany({
+      orderBy: { id: "asc" },
       include: {
         player: { include: { team: true } },
         official: { include: { team: true } },
@@ -17,15 +18,17 @@ export async function loadAwards() {
       include: { player: { include: { team: true } } },
     }),
   ]);
-  return { awards: new Map(awards.map((a) => [a.key, a])), xi };
+  const awards = new Map<string, typeof rows>();
+  for (const r of rows) awards.set(r.key, [...(awards.get(r.key) ?? []), r]);
+  return { awards, xi };
 }
 
-export type AwardSuggestion = { id: number; note: string | null };
+// ids = ทุกคนที่ได้ค่าสูงสุดเท่ากัน (เช่น ดาวซัลโวยิงเท่ากัน 2 คน)
+export type AwardSuggestion = { ids: number[]; note: string | null };
 
-const top = (counts: Map<number, number>) => {
-  let best: [number, number] | null = null;
-  for (const e of counts) if (!best || e[1] > best[1]) best = e;
-  return best;
+const leaders = (counts: Map<number, number>) => {
+  const max = Math.max(0, ...counts.values());
+  return max > 0 ? { ids: [...counts].filter(([, n]) => n === max).map(([id]) => id), max } : null;
 };
 
 // ค่าแนะนำจากผลการแข่งขันรอบชิงแชมป์ประเทศ (แอดมินแก้ได้ก่อนบันทึก)
@@ -71,18 +74,18 @@ export async function awardSuggestions() {
   const potmBy = new Map<number, number>();
   for (const m of matches) if (m.playerOfMatchId) potmBy.set(m.playerOfMatchId, (potmBy.get(m.playerOfMatchId) ?? 0) + 1);
 
-  const scorer = top(goalsBy);
-  const keeper = top(cleanBy);
-  const mvp = top(potmBy);
+  const scorer = leaders(goalsBy);
+  const keeper = leaders(cleanBy);
+  const mvp = leaders(potmBy);
   const team: Record<string, number | null> = {
     CHAMPION: winnerOf(final)?.id ?? null,
     RUNNER_UP: loserOf(final)?.id ?? null,
     THIRD_PLACE: winnerOf(third)?.id ?? null,
   };
   const people: Record<string, AwardSuggestion | null> = {
-    TOP_SCORER: scorer ? { id: scorer[0], note: `${scorer[1]} ประตู` } : null,
-    GOLDEN_GLOVE: keeper ? { id: keeper[0], note: `คลีนชีต ${keeper[1]} นัด` } : null,
-    MVP: mvp ? { id: mvp[0], note: `Player of the Match ${mvp[1]} นัด` } : null,
+    TOP_SCORER: scorer ? { ids: scorer.ids, note: `${scorer.max} ประตู` } : null,
+    GOLDEN_GLOVE: keeper ? { ids: keeper.ids, note: `คลีนชีต ${keeper.max} นัด` } : null,
+    MVP: mvp ? { ids: mvp.ids, note: `Player of the Match ${mvp.max} นัด` } : null,
   };
   return { team, people };
 }

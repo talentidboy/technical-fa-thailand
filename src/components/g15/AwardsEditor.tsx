@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Search, X, Plus, Trophy, Medal, Award, Users, Sparkles, RefreshCw, Check } from "lucide-react";
+import { Search, X, Plus, Trophy, Medal, Award, Users, Sparkles, RefreshCw, Check, UserPlus } from "lucide-react";
 import { TeamBadge } from "./TeamBadge";
 import {
   INDIVIDUAL_AWARDS,
@@ -23,7 +23,8 @@ export type EdPlayer = {
   active: boolean;
 };
 export type EdOfficial = { id: number; teamId: number; name: string; role: string | null; rank: number };
-export type EdSuggestion = { id: number; note: string | null } | null;
+// ids = ผู้ได้รับรางวัลที่แนะนำ (หลายคนได้ถ้าสถิติเท่ากัน เช่น ดาวซัลโวยิงเท่ากัน)
+export type EdSuggestion = { ids: number[]; note: string | null } | null;
 
 type Person = { id: number; teamId: number; name: string; sub: string | null; number: number | null; photoUrl: string | null; group: PositionGroup | null };
 
@@ -186,7 +187,7 @@ function PersonPicker({
                         </span>
                         <span className="flex items-center gap-1 truncate text-[11px] text-slate-500">
                           {t && <TeamBadge team={t} size="sm" />}
-                          <span className="truncate">{used && !selected ? `อยู่ในตำแหน่ง ${used} แล้ว` : [p.sub, t?.name].filter(Boolean).join(" · ")}</span>
+                          <span className="truncate">{used && !selected ? used : [p.sub, t?.name].filter(Boolean).join(" · ")}</span>
                         </span>
                       </span>
                       {selected && <Check className="h-4 w-4 flex-none text-g15-600" />}
@@ -211,7 +212,7 @@ function PersonPicker({
 }
 
 type Picker =
-  | { kind: "award"; key: string }
+  | { kind: "award"; key: string; index: number | null }
   | { kind: "team"; key: string }
   | { kind: "xi"; slot: string }
   | null;
@@ -229,7 +230,7 @@ export function AwardsEditor({
   teams: EdTeam[];
   players: EdPlayer[];
   officials: EdOfficial[];
-  initialWinners: Record<string, number | null>;
+  initialWinners: Record<string, number[]>;
   initialNotes: Record<string, string>;
   initialXi: Record<string, number | null>;
   suggestions: Record<string, EdSuggestion>;
@@ -264,7 +265,7 @@ export function AwardsEditor({
   const officialById = useMemo(() => new Map(officialPeople.map((p) => [p.id, p])), [officialPeople]);
   const xiUsed = useMemo(() => {
     const m = new Map<number, string>();
-    for (const s of BEST_XI_SLOTS) if (xi[s.slot] != null) m.set(xi[s.slot]!, s.en);
+    for (const s of BEST_XI_SLOTS) if (xi[s.slot] != null) m.set(xi[s.slot]!, `อยู่ในตำแหน่ง ${s.en} แล้ว`);
     return m;
   }, [xi]);
 
@@ -306,15 +307,27 @@ export function AwardsEditor({
   let dialog: React.ReactNode = null;
   if (picker?.kind === "award") {
     const def = INDIVIDUAL_AWARDS.find((a) => a.key === picker.key)!;
+    const current = winners[def.key] ?? [];
+    const editing = picker.index;
+    // คนที่ได้รางวัลนี้อยู่แล้ว (นอกจากช่องที่กำลังแก้) เลือกซ้ำไม่ได้
+    const already = new Map(current.filter((_, i) => i !== editing).map((id) => [id, "ได้รางวัลนี้แล้ว"]));
     dialog = (
       <PersonPicker
-        title={`เลือก: ${def.th}`}
+        title={`${editing == null && current.length > 0 ? "เพิ่มผู้ได้รับรางวัลร่วม" : "เลือก"}: ${def.th}`}
         people={def.kind === "official" ? officialPeople : playerPeople}
         teams={teams}
-        selectedId={winners[def.key] ?? null}
+        selectedId={editing != null ? (current[editing] ?? null) : null}
         defaultGroup={def.key === "GOLDEN_GLOVE" ? "GK" : null}
+        usedBy={already}
         onPick={(id) => {
-          setWinners((w) => ({ ...w, [def.key]: id }));
+          setWinners((w) => {
+            const list = [...(w[def.key] ?? [])];
+            if (id == null) {
+              if (editing != null) list.splice(editing, 1);
+            } else if (editing != null) list[editing] = id;
+            else list.push(id);
+            return { ...w, [def.key]: list };
+          });
           setPicker(null);
         }}
         onClose={() => setPicker(null)}
@@ -339,7 +352,7 @@ export function AwardsEditor({
     );
   } else if (picker?.kind === "team") {
     const def = TEAM_AWARDS.find((a) => a.key === picker.key)!;
-    const taken = new Map(TEAM_AWARDS.filter((a) => a.key !== def.key && winners[a.key] != null).map((a) => [winners[a.key]!, a.th]));
+    const taken = new Map(TEAM_AWARDS.filter((a) => a.key !== def.key && winners[a.key]?.[0] != null).map((a) => [winners[a.key][0], a.th]));
     dialog = (
       <div
         role="dialog"
@@ -356,7 +369,7 @@ export function AwardsEditor({
           </div>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
             {teams.map((t) => {
-              const sel = winners[def.key] === t.id;
+              const sel = winners[def.key]?.[0] === t.id;
               const other = taken.get(t.id);
               return (
                 <button
@@ -364,7 +377,7 @@ export function AwardsEditor({
                   type="button"
                   disabled={!!other}
                   onClick={() => {
-                    setWinners((w) => ({ ...w, [def.key]: t.id }));
+                    setWinners((w) => ({ ...w, [def.key]: [t.id] }));
                     setPicker(null);
                   }}
                   className={`flex flex-col items-center gap-2 rounded-xl p-3 text-center ring-1 transition-colors disabled:opacity-40 ${
@@ -382,7 +395,7 @@ export function AwardsEditor({
             <button
               type="button"
               onClick={() => {
-                setWinners((w) => ({ ...w, [def.key]: null }));
+                setWinners((w) => ({ ...w, [def.key]: [] }));
                 setPicker(null);
               }}
               className="rounded-lg px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50"
@@ -401,9 +414,9 @@ export function AwardsEditor({
   return (
     <div className="space-y-8">
       {/* ค่าที่ส่งไปบันทึก */}
-      {[...TEAM_AWARDS, ...INDIVIDUAL_AWARDS].map((a) => (
-        <input key={a.key} type="hidden" name={`winner_${a.key}`} value={winners[a.key] ?? ""} />
-      ))}
+      {[...TEAM_AWARDS, ...INDIVIDUAL_AWARDS].flatMap((a) =>
+        (winners[a.key] ?? []).map((id) => <input key={`${a.key}-${id}`} type="hidden" name={`winner_${a.key}`} value={id} />),
+      )}
       {BEST_XI_SLOTS.map((s) => (
         <input key={s.slot} type="hidden" name={`xi_${s.slot}`} value={xi[s.slot] ?? ""} />
       ))}
@@ -416,7 +429,7 @@ export function AwardsEditor({
         </h2>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           {TEAM_AWARDS.map((a) => {
-            const t = winners[a.key] != null ? teamById.get(winners[a.key]!) : null;
+            const t = winners[a.key]?.[0] != null ? teamById.get(winners[a.key][0]) : null;
             const sg = suggestions[a.key];
             return (
               <div key={a.key} className="flex flex-col gap-2">
@@ -432,14 +445,14 @@ export function AwardsEditor({
                   {t ? <TeamBadge team={t} size="md" /> : <Avatar p={null} size="md" />}
                   <span className={`min-w-0 flex-1 truncate text-sm font-bold ${t ? "text-slate-900" : "text-slate-400"}`}>{t?.name ?? "กดเพื่อเลือกทีม"}</span>
                 </button>
-                {sg && winners[a.key] !== sg.id && (
+                {sg && sg.ids[0] != null && winners[a.key]?.[0] !== sg.ids[0] && (
                   <button
                     type="button"
-                    onClick={() => setWinners((w) => ({ ...w, [a.key]: sg.id }))}
+                    onClick={() => setWinners((w) => ({ ...w, [a.key]: [sg.ids[0]] }))}
                     className="inline-flex w-fit items-center gap-1 text-[11px] font-semibold text-g15-600 hover:underline"
                   >
                     <Sparkles className="h-3 w-3" />
-                    ใช้ผลการแข่งขัน: {teamById.get(sg.id)?.name}
+                    ใช้ผลการแข่งขัน: {teamById.get(sg.ids[0])?.name}
                   </button>
                 )}
               </div>
@@ -456,36 +469,57 @@ export function AwardsEditor({
         </h2>
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
           {INDIVIDUAL_AWARDS.map((a, i) => {
-            const id = winners[a.key] ?? null;
-            const p = id != null ? (a.kind === "official" ? officialById.get(id) : playerById.get(id)) ?? null : null;
+            const ids = winners[a.key] ?? [];
+            const byId = a.kind === "official" ? officialById : playerById;
             const sg = suggestions[a.key];
-            const sgPerson = sg ? playerById.get(sg.id) : null;
+            const sgPeople = sg ? sg.ids.map((id) => playerById.get(id)).filter((x) => x != null) : [];
+            const sameAsSuggestion = !!sg && sg.ids.length === ids.length && sg.ids.every((id) => ids.includes(id));
             return (
               <div key={a.key} className="space-y-2.5 rounded-xl bg-slate-50 p-4 ring-1 ring-slate-200">
-                <p className="text-sm font-bold text-slate-900">
-                  {i + 1}. {a.th}
-                  <span className="block text-xs font-medium text-slate-400">{a.en}</span>
-                </p>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setPicker({ kind: "award", key: a.key })}
-                    className={`flex min-w-0 flex-1 items-center rounded-xl bg-white p-2.5 text-left ring-1 transition-colors hover:ring-g15-300 ${p ? "ring-amber-200" : "ring-slate-200"}`}
-                  >
-                    {personCard(p, p?.teamId ?? null)}
-                    <span className="ml-2 flex-none rounded-lg bg-g15-50 px-2.5 py-1 text-xs font-semibold text-g15-700">{p ? "เปลี่ยน" : "เลือก"}</span>
-                  </button>
-                  {p && (
-                    <button
-                      type="button"
-                      onClick={() => setWinners((w) => ({ ...w, [a.key]: null }))}
-                      aria-label={`ล้าง ${a.th}`}
-                      className="flex h-9 w-9 flex-none items-center justify-center rounded-lg text-slate-400 hover:bg-red-50 hover:text-red-600"
-                    >
-                      <X className="h-4 w-4" />
-                    </button>
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <p className="text-sm font-bold text-slate-900">
+                    {i + 1}. {a.th}
+                    <span className="block text-xs font-medium text-slate-400">{a.en}</span>
+                  </p>
+                  {ids.length > 1 && (
+                    <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-[11px] font-bold text-amber-800">รางวัลร่วม {ids.length} คน</span>
                   )}
                 </div>
+                {(ids.length > 0 ? ids : [null]).map((id, idx) => {
+                  const p = id != null ? (byId.get(id) ?? null) : null;
+                  return (
+                    <div key={id ?? "empty"} className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setPicker({ kind: "award", key: a.key, index: p ? idx : null })}
+                        className={`flex min-w-0 flex-1 items-center rounded-xl bg-white p-2.5 text-left ring-1 transition-colors hover:ring-g15-300 ${p ? "ring-amber-200" : "ring-slate-200"}`}
+                      >
+                        {personCard(p, p?.teamId ?? null)}
+                        <span className="ml-2 flex-none rounded-lg bg-g15-50 px-2.5 py-1 text-xs font-semibold text-g15-700">{p ? "เปลี่ยน" : "เลือก"}</span>
+                      </button>
+                      {p && (
+                        <button
+                          type="button"
+                          onClick={() => setWinners((w) => ({ ...w, [a.key]: (w[a.key] ?? []).filter((_, j) => j !== idx) }))}
+                          aria-label={`เอา ${p.name} ออกจาก ${a.th}`}
+                          className="flex h-9 w-9 flex-none items-center justify-center rounded-lg text-slate-400 hover:bg-red-50 hover:text-red-600"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
+                {ids.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setPicker({ kind: "award", key: a.key, index: null })}
+                    className="inline-flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-slate-300 bg-white py-2 text-xs font-semibold text-slate-600 hover:border-g15-300 hover:text-g15-700"
+                  >
+                    <UserPlus className="h-3.5 w-3.5" />
+                    เพิ่มผู้ได้รับรางวัลร่วม
+                  </button>
+                )}
                 <input
                   name={`note_${a.key}`}
                   value={notes[a.key] ?? ""}
@@ -493,18 +527,20 @@ export function AwardsEditor({
                   placeholder="ข้อความประกอบ (ไม่บังคับ) เช่น 7 ประตู"
                   className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-g15-400 focus:outline-none focus:ring-2 focus:ring-g15-100"
                 />
-                {sg && sgPerson && (winners[a.key] !== sg.id || (sg.note && notes[a.key] !== sg.note)) && (
+                {sg && sgPeople.length > 0 && (!sameAsSuggestion || (sg.note && notes[a.key] !== sg.note)) && (
                   <button
                     type="button"
                     onClick={() => {
-                      setWinners((w) => ({ ...w, [a.key]: sg.id }));
+                      setWinners((w) => ({ ...w, [a.key]: [...sg.ids] }));
                       if (sg.note) setNotes((n) => ({ ...n, [a.key]: sg.note! }));
                     }}
-                    className="inline-flex items-center gap-1 text-left text-[11px] font-semibold text-g15-600 hover:underline"
+                    className="inline-flex items-start gap-1 text-left text-[11px] font-semibold text-g15-600 hover:underline"
                   >
-                    <RefreshCw className="h-3 w-3 flex-none" />
-                    ใช้ค่าแนะนำจากสถิติ: {sgPerson.name}
-                    {sg.note ? ` (${sg.note})` : ""}
+                    <RefreshCw className="mt-0.5 h-3 w-3 flex-none" />
+                    <span>
+                      ใช้ค่าแนะนำจากสถิติ{sgPeople.length > 1 ? ` (เท่ากัน ${sgPeople.length} คน)` : ""}: {sgPeople.map((x) => x.name).join(" · ")}
+                      {sg.note ? ` (${sg.note})` : ""}
+                    </span>
                   </button>
                 )}
               </div>
