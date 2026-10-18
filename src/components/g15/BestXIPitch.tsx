@@ -15,12 +15,28 @@ export type BestXIPick = {
 };
 
 // ทีมยอดเยี่ยม (Best XI) บนสนามผัง 4-3-3 แบบมีกองกลางตัวรับ — แนวรุกบนสุด, DM อยู่หน้ากองหลังแถวเดียว, ผู้รักษาประตูล่างสุด
-export function BestXIPitch({ picks }: { picks: BestXIPick[] }) {
+// variant "night" = สนามกลางคืนใต้ไฟสปอตไลต์ (หน้า "รางวัล" พื้นมืด)
+export function BestXIPitch({ picks, variant = "day" }: { picks: BestXIPick[]; variant?: "day" | "night" }) {
   const bySlot = new Map(picks.map((p) => [p.slot, p.player]));
+  const night = variant === "night";
 
   return (
-    <div className="overflow-hidden rounded-3xl shadow-xl shadow-emerald-950/20 ring-1 ring-emerald-900/20">
-      <div className="relative bg-[repeating-linear-gradient(180deg,#059669_0px,#059669_56px,#047857_56px,#047857_112px)] px-2 py-7 sm:px-8 sm:py-9">
+    <div className={`overflow-hidden rounded-3xl ring-1 ${night ? "shadow-2xl shadow-black/60 ring-amber-300/20" : "shadow-xl shadow-emerald-950/20 ring-emerald-900/20"}`}>
+      <div
+        className={`relative px-2 py-7 sm:px-8 sm:py-9 ${
+          night
+            ? "bg-[repeating-linear-gradient(180deg,#065f46_0px,#065f46_56px,#064e3b_56px,#064e3b_112px)]"
+            : "bg-[repeating-linear-gradient(180deg,#059669_0px,#059669_56px,#047857_56px,#047857_112px)]"
+        }`}
+      >
+        {night && (
+          <>
+            {/* ไฟสปอตไลต์สนาม */}
+            <div aria-hidden className="pointer-events-none absolute -left-24 -top-24 h-96 w-96 rounded-full bg-[radial-gradient(circle,rgba(255,255,255,0.22),transparent_65%)]" />
+            <div aria-hidden className="pointer-events-none absolute -right-24 -top-24 h-96 w-96 rounded-full bg-[radial-gradient(circle,rgba(255,255,255,0.22),transparent_65%)]" />
+            <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 h-40 bg-linear-to-t from-black/40 to-transparent" />
+          </>
+        )}
         {/* เส้นสนาม */}
         <div aria-hidden className="pointer-events-none absolute inset-3 rounded-xl border-2 border-white/30" />
         <div aria-hidden className="pointer-events-none absolute inset-x-3 top-1/2 border-t-2 border-white/30" />
