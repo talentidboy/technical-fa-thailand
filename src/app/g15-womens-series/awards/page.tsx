@@ -6,7 +6,6 @@ import { G15Chrome } from "@/components/g15/G15Chrome";
 import { Reveal } from "@/components/g15/Reveal";
 import { TeamBadge } from "@/components/g15/TeamBadge";
 import { Countdown } from "@/components/g15/Countdown";
-import { TrophyArt } from "@/components/g15/TrophyArt";
 import { BestXIPitch } from "@/components/g15/BestXIPitch";
 import { INDIVIDUAL_AWARDS, type AwardDef } from "@/lib/g15-awards";
 import { loadAwards } from "@/lib/g15-awards-data";
@@ -233,7 +232,7 @@ export default async function G15AwardsPage() {
         {/* แสงหมุนหลังถ้วย */}
         <div
           aria-hidden
-          className="pointer-events-none absolute left-1/2 top-40 -z-10 h-[60rem] w-[60rem] -translate-x-1/2 -translate-y-1/2 animate-[spin_70s_linear_infinite] bg-[repeating-conic-gradient(from_0deg,rgba(252,211,77,0.09)_0deg_5deg,transparent_5deg_15deg)] mask-[radial-gradient(circle,black_8%,transparent_55%)]"
+          className="pointer-events-none absolute left-1/2 top-56 -z-10 h-[60rem] w-[60rem] -translate-x-1/2 -translate-y-1/2 animate-[spin_70s_linear_infinite] bg-[repeating-conic-gradient(from_0deg,rgba(252,211,77,0.09)_0deg_5deg,transparent_5deg_15deg)] mask-[radial-gradient(circle,black_8%,transparent_55%)]"
         />
         {/* ประกายดาว */}
         {[
@@ -257,9 +256,10 @@ export default async function G15AwardsPage() {
           <span key={c} aria-hidden className={`absolute h-1 w-1 animate-pulse rounded-full bg-amber-200 ${c}`} style={{ animationDelay: `${i * 0.4}s` }} />
         ))}
 
-        <div className="mx-auto flex max-w-4xl flex-col items-center px-6 text-center">
-          <TrophyArt className="animate-float-y h-40 w-auto drop-shadow-[0_0_45px_rgba(252,211,77,0.55)] sm:h-52" />
-          <p className="mt-6 text-[11px] font-black uppercase tracking-[0.4em] text-amber-300/90 sm:text-xs">Hall of Fame · 2026</p>
+        <div className="mx-auto flex max-w-4xl flex-col items-center px-6 pt-10 text-center sm:pt-16">
+          {/* แสงทองเรืองหลังชื่อหน้า */}
+          <div aria-hidden className="pointer-events-none absolute left-1/2 top-24 -z-10 h-72 w-[40rem] -translate-x-1/2 bg-[radial-gradient(closest-side,rgba(252,211,77,0.28),transparent)] sm:top-32" />
+          <p className="text-[11px] font-black uppercase tracking-[0.4em] text-amber-300/90 sm:text-xs">Hall of Fame · 2026</p>
           <h1
             className={`${display.className} animate-shimmer-slide mt-2 bg-[linear-gradient(90deg,#b45309,#fde68a,#f59e0b,#fff7d1,#f59e0b,#fde68a,#b45309)] bg-clip-text text-8xl leading-[0.85] tracking-wide text-transparent sm:text-[10rem]`}
           >
@@ -397,15 +397,13 @@ export default async function G15AwardsPage() {
           <SectionTitle en="Best XI" th="ทีมยอดเยี่ยมประจำทัวร์นาเมนต์ · 4-3-3" />
           <Reveal>
             <div className="relative mx-auto max-w-5xl">
-              <BestXIPitch variant="night" picks={xi.map((x) => ({ slot: x.slot, player: x.player }))} />
               {xi.length === 0 && (
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="rounded-full bg-black/60 px-5 py-2.5 text-sm font-bold text-amber-200 ring-1 ring-amber-300/30 backdrop-blur">
-                    <Lock className="mr-1.5 inline h-4 w-4" />
-                    ประกาศหลังจบการแข่งขัน
-                  </span>
-                </div>
+                <p className="mx-auto -mt-3 mb-5 w-fit rounded-full bg-white/5 px-5 py-2 text-sm font-bold text-amber-200 ring-1 ring-amber-300/30">
+                  <Lock className="mr-1.5 inline h-4 w-4" />
+                  ประกาศหลังจบการแข่งขัน
+                </p>
               )}
+              <BestXIPitch picks={xi.map((x) => ({ slot: x.slot, player: x.player }))} />
             </div>
           </Reveal>
         </section>
