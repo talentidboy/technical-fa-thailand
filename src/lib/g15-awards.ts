@@ -11,12 +11,6 @@ export const INDIVIDUAL_AWARDS: AwardDef[] = [
   { key: "SPORTSMANSHIP", kind: "player", th: "รางวัลน้ำใจนักกีฬา", en: "Sportsmanship Award" },
   { key: "BEST_COACH", kind: "official", th: "รางวัลผู้ฝึกสอนยอดเยี่ยมประจำการแข่งขัน", en: "Best Coach of the Tournament Award" },
   { key: "INSPIRATIONAL_COACH", kind: "official", th: "รางวัลผู้ฝึกสอนผู้สร้างแรงบันดาลใจ", en: "Inspirational Coach Award" },
-  {
-    key: "INTL_DEV_COACH",
-    kind: "official",
-    th: "รางวัลผู้ฝึกสอนผู้พัฒนาผู้เล่นสู่ระดับนานาชาติ",
-    en: "International Player Development Coach Award",
-  },
 ];
 
 export const TEAM_AWARDS: AwardDef[] = [

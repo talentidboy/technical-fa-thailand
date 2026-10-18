@@ -18,7 +18,6 @@ import {
   HeartHandshake,
   GraduationCap,
   Sparkles,
-  Globe2,
   Settings,
   Lock,
   Star,
@@ -40,7 +39,6 @@ const ICON: Record<string, LucideIcon> = {
   SPORTSMANSHIP: HeartHandshake,
   BEST_COACH: GraduationCap,
   INSPIRATIONAL_COACH: Sparkles,
-  INTL_DEV_COACH: Globe2,
 };
 
 const GOLD_TEXT = "bg-linear-to-b from-amber-50 via-amber-300 to-amber-600 bg-clip-text text-transparent";
@@ -501,7 +499,7 @@ export default async function G15AwardsPage() {
         {/* ===== รางวัลผู้ฝึกสอน ===== */}
         <section>
           <SectionTitle en="Coaching Awards" th="รางวัลผู้ฝึกสอน" />
-          <div className="grid grid-cols-1 gap-x-5 gap-y-14 pt-7 sm:grid-cols-3">
+          <div className="mx-auto grid max-w-3xl grid-cols-1 gap-x-5 gap-y-14 pt-7 sm:grid-cols-2">
             {coachAwards.map((def, i) => (
               <AwardCard key={def.key} def={def} rows={awards.get(def.key)} delay={i * 120} />
             ))}
