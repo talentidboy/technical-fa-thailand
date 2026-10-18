@@ -5,13 +5,14 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { G15_IMAGE_URL } from "@/lib/brand";
 import { withStage, DEFAULT_STAGE, type G15Stage } from "@/lib/g15-stage";
-import { ArrowLeft, Settings, LogIn, Home, CalendarDays, Trophy, BarChart3, Users, MapPin, Images } from "lucide-react";
+import { ArrowLeft, Settings, LogIn, Home, CalendarDays, Trophy, BarChart3, Users, MapPin, Images, Award } from "lucide-react";
 
 const NAV_LINKS = [
   { href: "/g15-womens-series", label: "หน้าแรก", short: "หน้าแรก", en: "Home", icon: Home },
   { href: "/g15-womens-series/matches", label: "การแข่งขันและผล", short: "แข่งขัน", en: "Matches & Results", icon: CalendarDays },
   { href: "/g15-womens-series/standings", label: "ตารางคะแนน", short: "ตาราง", en: "Standings", icon: Trophy },
   { href: "/g15-womens-series/stats", label: "สถิติ", short: "สถิติ", en: "Statistics", icon: BarChart3 },
+  { href: "/g15-womens-series/awards", label: "รางวัล", short: "รางวัล", en: "Awards", icon: Award },
   { href: "/g15-womens-series/teams", label: "ทีมที่เข้าร่วม", short: "ทีม", en: "Teams", icon: Users },
   { href: "/g15-womens-series/stadium", label: "สนามแข่งขัน", short: "สนาม", en: "Stadium", icon: MapPin },
   { href: "/g15-womens-series/gallery", label: "แกลเลอรี", short: "รูปภาพ", en: "Gallery", icon: Images },

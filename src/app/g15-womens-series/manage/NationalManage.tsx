@@ -38,7 +38,7 @@ import { KnockoutBracket } from "@/components/g15/KnockoutBracket";
 import { TeamBadge } from "@/components/g15/TeamBadge";
 import { Field } from "@/components/FormField";
 import { TeamOfRoundPitch } from "@/components/g15/TeamOfRoundPitch";
-import { Pencil, Trash2, CalendarDays, GitBranch, Users, Check, Trophy, ChevronRight, Plus, Wand2, Star } from "lucide-react";
+import { Pencil, Trash2, CalendarDays, GitBranch, Users, Check, Trophy, ChevronRight, Plus, Wand2, Star, Award } from "lucide-react";
 
 const BANGKOK_TZ = "Asia/Bangkok";
 const JAIFA_VENUES = [
@@ -463,6 +463,23 @@ export async function NationalManage() {
           )}
         </div>
       </section>
+
+      {/* รางวัลประจำทัวร์นาเมนต์ + Best XI — หน้าแยก */}
+      <Link
+        href="/g15-womens-series/manage/awards"
+        className="group flex items-center gap-4 rounded-2xl bg-linear-to-r from-g15-950 via-g15-800 to-g15-600 p-5 text-white shadow-lg shadow-g15-900/20 transition-transform hover:-translate-y-0.5"
+      >
+        <span className="flex h-12 w-12 flex-none items-center justify-center rounded-xl bg-linear-to-br from-amber-300 to-amber-500 text-amber-950 shadow-md">
+          <Award className="h-6 w-6" />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block font-bold">รางวัล &amp; ทีมยอดเยี่ยม (Best XI)</span>
+          <span className="block text-xs text-g15-200">
+            แชมป์ / รองแชมป์ / อันดับ 3 · MVP · ดาวซัลโว · ผู้รักษาประตูยอดเยี่ยม · น้ำใจนักกีฬา · รางวัลผู้ฝึกสอน · Best XI 4-3-3
+          </span>
+        </span>
+        <ChevronRight className="h-5 w-5 flex-none text-white/60 transition-transform group-hover:translate-x-0.5" />
+      </Link>
 
       {/* ทีมยอดเยี่ยมประจำรอบ */}
       <section className="space-y-4">

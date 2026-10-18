@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { parseMinute } from "@/lib/g15-clock";
 import { shootoutState } from "@/lib/g15-penalties";
 import { normalizeVideoUrl } from "@/lib/g15-video";
+import { ALL_AWARDS, BEST_XI_SLOTS, BEST_XI_STAGE } from "@/lib/g15-awards";
 import { requireUser } from "@/lib/auth";
 import { saveUploadedPhoto } from "@/lib/upload";
 import { parseBangkokDateTimeLocal, getNationalBracket } from "@/lib/g15";
@@ -872,6 +873,71 @@ export async function saveTeamOfRound(formData: FormData): Promise<ActionResult>
     ]);
 
     revalidateG15();
+  });
+}
+
+// ===== รางวัลประจำทัวร์นาเมนต์ + ทีมยอดเยี่ยม (Best XI 4-3-3 holding) =====
+// ฟอร์มเดียว: winner_<KEY> (id ของนักกีฬา/เจ้าหน้าที่/ทีมตามชนิดรางวัล) + note_<KEY>, xi_<SLOT> = playerId · เว้นว่าง = ยังไม่ประกาศ
+export async function saveAwards(formData: FormData): Promise<ActionResult> {
+  await requireAdminOrStaff();
+  return attempt(async () => {
+    const awards = ALL_AWARDS.map((a) => {
+      const id = int(formData, `winner_${a.key}`);
+      const note = str(formData, `note_${a.key}`);
+      return { def: a, id, note };
+    });
+
+    const xi = BEST_XI_SLOTS.flatMap(({ slot }) => {
+      const playerId = int(formData, `xi_${slot}`);
+      return playerId ? [{ stage: BEST_XI_STAGE, slot, playerId }] : [];
+    });
+    const xiIds = xi.map((r) => r.playerId);
+    if (new Set(xiIds).size !== xiIds.length) throw new Error("ทีมยอดเยี่ยม: เลือกนักกีฬาคนเดียวกันซ้ำหลายตำแหน่ง");
+
+    // ตรวจว่า id ที่ส่งมามีอยู่จริงตามชนิดรางวัล
+    const ids = (kind: string) => awards.filter((a) => a.def.kind === kind && a.id != null).map((a) => a.id!);
+    const [players, officials, teams] = await Promise.all([
+      prisma.g15Player.findMany({ where: { id: { in: [...ids("player"), ...xiIds] } }, select: { id: true } }),
+      prisma.g15Official.findMany({ where: { id: { in: ids("official") } }, select: { id: true } }),
+      prisma.g15Team.findMany({ where: { id: { in: ids("team") } }, select: { id: true } }),
+    ]);
+    const exists = { player: new Set(players.map((p) => p.id)), official: new Set(officials.map((o) => o.id)), team: new Set(teams.map((t) => t.id)) };
+    for (const a of awards) {
+      if (a.id != null && !exists[a.def.kind].has(a.id)) throw new Error(`${a.def.th}: ไม่พบรายชื่อที่เลือก`);
+    }
+    for (const id of xiIds) if (!exists.player.has(id)) throw new Error("ทีมยอดเยี่ยม: ไม่พบนักกีฬาที่เลือก");
+
+    const teamIds = awards.filter((a) => a.def.kind === "team" && a.id != null).map((a) => a.id!);
+    if (new Set(teamIds).size !== teamIds.length) throw new Error("รางวัลทีม: เลือกทีมเดียวกันซ้ำหลายอันดับ");
+
+    await prisma.$transaction([
+      ...awards.map((a) =>
+        a.id == null
+          ? prisma.g15Award.deleteMany({ where: { key: a.def.key } })
+          : prisma.g15Award.upsert({
+              where: { key: a.def.key },
+              create: {
+                key: a.def.key,
+                playerId: a.def.kind === "player" ? a.id : null,
+                officialId: a.def.kind === "official" ? a.id : null,
+                teamId: a.def.kind === "team" ? a.id : null,
+                note: a.note,
+              },
+              update: {
+                playerId: a.def.kind === "player" ? a.id : null,
+                officialId: a.def.kind === "official" ? a.id : null,
+                teamId: a.def.kind === "team" ? a.id : null,
+                note: a.note,
+              },
+            }),
+      ),
+      prisma.g15AllStar.deleteMany({ where: { stage: BEST_XI_STAGE } }),
+      ...(xi.length > 0 ? [prisma.g15AllStar.createMany({ data: xi })] : []),
+    ]);
+
+    revalidatePath("/g15-womens-series/awards");
+    revalidatePath("/g15-womens-series/manage/awards");
+    revalidatePath("/g15-womens-series");
   });
 }
 

@@ -1,11 +1,13 @@
 "use client";
 
-import { useActionState } from "react";
+import { startTransition, useActionState } from "react";
 import { Check, AlertCircle, Loader2 } from "lucide-react";
 import type { ActionResult } from "@/app/g15-womens-series/manage/actions";
 
 // ฟอร์มสำหรับ server action ที่คืน ActionResult — แสดง "บันทึกสำเร็จ" หรือข้อความผิดพลาดจริงจากเซิร์ฟเวอร์ใต้ฟอร์ม
 // (ต่างจาก FormWithToast ที่รองรับเฉพาะ action แบบ throw ซึ่งตอน production ผู้ใช้จะไม่เห็นข้อความผิดพลาด)
+// ส่งผ่าน onSubmit (ไม่ใช้ <form action>) เพราะ React จะล้างค่าในฟอร์มกลับเป็นค่าเริ่มต้นหลังส่งทุกครั้ง
+// — บันทึกไม่ผ่านแล้วค่าที่เลือกไว้หายหมด ต้องเลือกใหม่ทั้งฟอร์ม; แบบนี้ค่าที่กรอกอยู่ครบทั้งตอนสำเร็จและผิดพลาด
 export function ActionForm({
   action,
   className,
@@ -23,7 +25,15 @@ export function ActionForm({
   );
 
   return (
-    <form action={formAction} className={className} aria-busy={pending}>
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        const fd = new FormData(e.currentTarget, (e.nativeEvent as SubmitEvent).submitter);
+        startTransition(() => formAction(fd));
+      }}
+      className={className}
+      aria-busy={pending}
+    >
       {children}
       {pending && (
         <div role="status" className="mt-3 flex w-fit items-center gap-1.5 rounded-lg bg-slate-50 px-3 py-2 text-xs font-medium text-slate-500">
