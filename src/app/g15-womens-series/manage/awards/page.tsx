@@ -6,24 +6,10 @@ import { getCurrentUser } from "@/lib/auth";
 import { LOGO_URL } from "@/lib/brand";
 import { saveAwards } from "../actions";
 import { ActionForm } from "@/components/g15/ActionForm";
-import {
-  INDIVIDUAL_AWARDS,
-  TEAM_AWARDS,
-  BEST_XI_SLOTS,
-  POSITION_GROUP_LABEL,
-  positionGroup,
-  coachRank,
-  type PositionGroup,
-} from "@/lib/g15-awards";
+import { AwardsEditor } from "@/components/g15/AwardsEditor";
+import { ALL_AWARDS, BEST_XI_SLOTS, positionGroup, coachRank } from "@/lib/g15-awards";
 import { loadAwards, awardSuggestions } from "@/lib/g15-awards-data";
-import { ArrowLeft, Award, ExternalLink, Medal, Sparkles, Trophy, Users } from "lucide-react";
-
-const select =
-  "w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 focus:border-g15-400 focus:outline-none focus:ring-2 focus:ring-g15-100";
-const input =
-  "w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-g15-400 focus:outline-none focus:ring-2 focus:ring-g15-100";
-
-const GROUP_ORDER: PositionGroup[] = ["GK", "DF", "MF", "FW"];
+import { ArrowLeft, Award, ExternalLink, Sparkles } from "lucide-react";
 
 // เลือกผู้ได้รับรางวัลทั้งหมด + ทีมยอดเยี่ยม 4-3-3 (holding) ในหน้าเดียว แล้วบันทึกครั้งเดียว
 export default async function G15AwardsManagePage() {
@@ -44,74 +30,26 @@ export default async function G15AwardsManagePage() {
     awardSuggestions(),
   ]);
 
-  const playersById = new Map(teams.flatMap((t) => t.players.map((p) => [p.id, { ...p, teamName: t.name }] as const)));
-  const officialsById = new Map(teams.flatMap((t) => t.officials.map((o) => [o.id, { ...o, teamName: t.name }] as const)));
-  const teamById = new Map(teams.map((t) => [t.id, t]));
-  const playerLabel = (p: { jerseyNumber: number | null; firstNameTh: string; lastNameTh: string }) =>
-    `#${p.jerseyNumber ?? "-"} ${p.firstNameTh} ${p.lastNameTh}`;
-
-  const playerOptions = teams.map((t) => (
-    <optgroup key={t.id} label={t.name}>
-      {t.players.map((p) => (
-        <option key={p.id} value={p.id}>
-          {playerLabel(p)}
-          {p.position ? ` · ${p.position}` : ""}
-          {p.isActive ? "" : " (ไม่อยู่ในรายชื่อปัจจุบัน)"}
-        </option>
-      ))}
-    </optgroup>
-  ));
-  const officialOptions = teams.map((t) => (
-    <optgroup key={t.id} label={t.name}>
-      {[...t.officials]
-        .sort((a, b) => coachRank(a.role) - coachRank(b.role))
-        .map((o) => (
-          <option key={o.id} value={o.id}>
-            {o.firstNameTh} {o.lastNameTh}
-            {o.role ? ` — ${o.role}` : ""}
-          </option>
-        ))}
-    </optgroup>
-  ));
-  // ตัวเลือก Best XI: ตำแหน่งตรงกับช่องขึ้นก่อน แล้วจึงตำแหน่งอื่น
-  const xiOptions = (group: PositionGroup) =>
-    [group, ...GROUP_ORDER.filter((g) => g !== group)].map((g) => (
-      <optgroup key={g} label={`${POSITION_GROUP_LABEL[g]}${g === group ? " (ตรงตำแหน่ง)" : ""}`}>
-        {teams.flatMap((t) =>
-          t.players
-            .filter((p) => positionGroup(p.position) === g)
-            .map((p) => (
-              <option key={p.id} value={p.id}>
-                {playerLabel(p)} — {t.name}
-              </option>
-            )),
-        )}
-      </optgroup>
-    ));
-
-  const savedId = (key: string) => {
-    const a = awards.get(key);
-    return a ? (a.playerId ?? a.officialId ?? a.teamId ?? null) : null;
-  };
-  const xiBySlot = new Map(xi.map((x) => [x.slot, x.playerId]));
   const anySaved = awards.size > 0 || xi.length > 0;
-
-  const suggestion = (key: string) => {
-    if (key in sugg.team) {
-      const id = sugg.team[key];
-      return id ? { id, label: teamById.get(id)?.name ?? "", note: null as string | null } : null;
-    }
-    const s = sugg.people[key];
-    if (!s) return null;
-    const p = playersById.get(s.id);
-    return p ? { id: s.id, label: `${playerLabel(p)} (${p.teamName})`, note: s.note } : null;
-  };
-
-  const medal: Record<string, string> = {
-    CHAMPION: "from-amber-300 to-amber-500 text-amber-950",
-    RUNNER_UP: "from-slate-200 to-slate-400 text-slate-900",
-    THIRD_PLACE: "from-orange-300 to-orange-500 text-orange-950",
-  };
+  // ยังไม่เคยบันทึก = ใส่ค่าแนะนำจากผลการแข่งขันไว้ให้ก่อน (แก้ได้ก่อนบันทึก)
+  const initialWinners: Record<string, number | null> = {};
+  const initialNotes: Record<string, string> = {};
+  for (const a of ALL_AWARDS) {
+    const saved = awards.get(a.key);
+    const sgId = a.kind === "team" ? (sugg.team[a.key] ?? null) : (sugg.people[a.key]?.id ?? null);
+    initialWinners[a.key] = saved ? (saved.playerId ?? saved.officialId ?? saved.teamId ?? null) : anySaved ? null : sgId;
+    initialNotes[a.key] = saved ? (saved.note ?? "") : anySaved ? "" : (sugg.people[a.key]?.note ?? "");
+  }
+  const initialXi = Object.fromEntries(BEST_XI_SLOTS.map((s) => [s.slot, xi.find((x) => x.slot === s.slot)?.playerId ?? null]));
+  const suggestions = Object.fromEntries(
+    ALL_AWARDS.map((a) => {
+      if (a.kind === "team") {
+        const id = sugg.team[a.key] ?? null;
+        return [a.key, id ? { id, note: null } : null];
+      }
+      return [a.key, sugg.people[a.key] ?? null];
+    }),
+  );
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -142,7 +80,7 @@ export default async function G15AwardsManagePage() {
               รางวัล &amp; ทีมยอดเยี่ยม
             </h1>
             <p className="mt-1 text-sm text-slate-500">
-              เลือกผู้ได้รับรางวัลทั้งหมดแล้วกดบันทึกครั้งเดียว — ขึ้นหน้า &ldquo;รางวัล&rdquo; ของเว็บทันที · เว้นว่าง = ยังไม่ประกาศ
+              กดการ์ดเพื่อเลือกผู้ได้รับรางวัล แล้วกดบันทึกครั้งเดียว — ขึ้นหน้า &ldquo;รางวัล&rdquo; ของเว็บทันที · ว่าง = ยังไม่ประกาศ
             </p>
           </div>
           <a
@@ -163,108 +101,29 @@ export default async function G15AwardsManagePage() {
           </p>
         )}
 
-        <ActionForm action={saveAwards} successText="บันทึกรางวัลแล้ว — ขึ้นหน้า “รางวัล” ของเว็บแล้ว" className="space-y-8">
-          {/* รางวัลทีม */}
-          <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-            <h2 className="mb-4 flex items-center gap-2 font-semibold text-slate-900">
-              <Trophy className="h-5 w-5 text-amber-500" />
-              รางวัลทีม <span className="font-normal text-slate-400">/ Team Awards</span>
-            </h2>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-              {TEAM_AWARDS.map((a) => {
-                const sg = suggestion(a.key);
-                return (
-                  <label key={a.key} className="flex flex-col gap-2">
-                    <span className={`inline-flex w-fit items-center gap-1.5 rounded-full bg-linear-to-r px-3 py-1 text-xs font-black ${medal[a.key]}`}>
-                      <Medal className="h-3.5 w-3.5" />
-                      {a.th} <span className="font-semibold opacity-70">/ {a.en}</span>
-                    </span>
-                    <select name={`winner_${a.key}`} defaultValue={String(savedId(a.key) ?? sg?.id ?? "")} className={select}>
-                      <option value="">— ยังไม่ประกาศ —</option>
-                      {teams.map((t) => (
-                        <option key={t.id} value={t.id}>
-                          {t.name}
-                        </option>
-                      ))}
-                    </select>
-                    {sg && <span className="text-[11px] text-slate-400">จากผลการแข่งขัน: {sg.label}</span>}
-                  </label>
-                );
-              })}
-            </div>
-          </section>
-
-          {/* รางวัลส่วนบุคคล */}
-          <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-            <h2 className="mb-4 flex items-center gap-2 font-semibold text-slate-900">
-              <Award className="h-5 w-5 text-amber-500" />
-              รางวัลส่วนบุคคล <span className="font-normal text-slate-400">/ Individual Awards</span>
-            </h2>
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              {INDIVIDUAL_AWARDS.map((a, i) => {
-                const sg = suggestion(a.key);
-                const saved = awards.get(a.key);
-                const current = savedId(a.key) ?? sg?.id ?? null;
-                return (
-                  <div key={a.key} className="space-y-2 rounded-xl bg-slate-50 p-4 ring-1 ring-slate-200">
-                    <p className="text-sm font-bold text-slate-900">
-                      {i + 1}. {a.th}
-                      <span className="block text-xs font-medium text-slate-400">{a.en}</span>
-                    </p>
-                    <select name={`winner_${a.key}`} defaultValue={String(current ?? "")} className={select}>
-                      <option value="">— ยังไม่ประกาศ —</option>
-                      {a.kind === "official" ? officialOptions : playerOptions}
-                    </select>
-                    <input
-                      name={`note_${a.key}`}
-                      defaultValue={saved ? (saved.note ?? "") : (sg?.note ?? "")}
-                      placeholder="ข้อความประกอบ (ไม่บังคับ) เช่น 7 ประตู"
-                      className={input}
-                    />
-                    {sg && <p className="text-[11px] text-slate-400">แนะนำจากสถิติ: {sg.label}{sg.note ? ` · ${sg.note}` : ""}</p>}
-                    {a.kind === "official" && current && officialsById.get(current) && (
-                      <p className="text-[11px] text-slate-400">{officialsById.get(current)!.teamName}</p>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </section>
-
-          {/* ทีมยอดเยี่ยม 4-3-3 holding */}
-          <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-            <h2 className="mb-1 flex items-center gap-2 font-semibold text-slate-900">
-              <Users className="h-5 w-5 text-emerald-600" />
-              ทีมยอดเยี่ยม <span className="font-normal text-slate-400">/ Best XI · 4-3-3 (Holding)</span>
-            </h2>
-            <p className="mb-4 text-xs text-slate-500">ตัวเลือกเรียงนักกีฬาที่ตำแหน่งตรงกับช่องขึ้นก่อน (เลือกคนตำแหน่งอื่นได้)</p>
-            <div className="space-y-3 rounded-2xl bg-linear-to-b from-emerald-600 to-emerald-700 p-3 sm:p-5">
-              {[4, 3, 2, 1, 0].map((row) => {
-                const slots = BEST_XI_SLOTS.filter((s) => s.row === row);
-                return (
-                  <div
-                    key={row}
-                    className={`mx-auto grid gap-2 ${
-                      slots.length === 4 ? "max-w-4xl grid-cols-2 sm:grid-cols-4" : slots.length === 3 ? "max-w-3xl grid-cols-1 sm:grid-cols-3" : slots.length === 2 ? "max-w-xl grid-cols-1 sm:grid-cols-2" : "max-w-xs grid-cols-1"
-                    }`}
-                  >
-                    {slots.map((s) => (
-                      <label key={s.slot} className="flex flex-col gap-1 rounded-xl bg-white/95 p-2 shadow-sm">
-                        <span className="text-[11px] font-black text-emerald-800">
-                          {s.en} <span className="font-semibold text-slate-500">· {s.th}</span>
-                        </span>
-                        <select name={`xi_${s.slot}`} defaultValue={String(xiBySlot.get(s.slot) ?? "")} className={`${select} py-2 text-xs`}>
-                          <option value="">— ยังไม่เลือก —</option>
-                          {xiOptions(s.group)}
-                        </select>
-                      </label>
-                    ))}
-                  </div>
-                );
-              })}
-            </div>
-          </section>
-
+        <ActionForm action={saveAwards} successText="บันทึกรางวัลแล้ว — ขึ้นหน้า “รางวัล” ของเว็บแล้ว" className="space-y-6">
+          <AwardsEditor
+            teams={teams.map((t) => ({ id: t.id, name: t.name, logoUrl: t.logoUrl, groupName: t.groupName }))}
+            players={teams.flatMap((t) =>
+              t.players.map((p) => ({
+                id: p.id,
+                teamId: t.id,
+                name: `${p.firstNameTh} ${p.lastNameTh}`,
+                number: p.jerseyNumber,
+                photoUrl: p.photoUrl,
+                group: positionGroup(p.position),
+                position: p.position,
+                active: p.isActive,
+              })),
+            )}
+            officials={teams.flatMap((t) =>
+              t.officials.map((o) => ({ id: o.id, teamId: t.id, name: `${o.firstNameTh} ${o.lastNameTh}`, role: o.role, rank: coachRank(o.role) })),
+            )}
+            initialWinners={initialWinners}
+            initialNotes={initialNotes}
+            initialXi={initialXi}
+            suggestions={suggestions}
+          />
           <div className="sticky bottom-4 z-10 flex justify-end">
             <button
               type="submit"
