@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Bebas_Neue } from "next/font/google";
+import { Bebas_Neue, Montserrat } from "next/font/google";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { G15Chrome } from "@/components/g15/G15Chrome";
@@ -9,6 +9,7 @@ import { Countdown } from "@/components/g15/Countdown";
 import { BestXIPitch } from "@/components/g15/BestXIPitch";
 import { INDIVIDUAL_AWARDS, type AwardDef } from "@/lib/g15-awards";
 import { loadAwards } from "@/lib/g15-awards-data";
+import { formatMatchDateTime } from "@/lib/g15";
 import {
   Award,
   Crown,
@@ -21,10 +22,14 @@ import {
   Settings,
   Lock,
   Star,
+  Trophy,
+  Users,
+  Clock,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 const display = Bebas_Neue({ weight: "400", subsets: ["latin"], display: "swap" });
+const heavy = Montserrat({ weight: ["800", "900"], subsets: ["latin"], display: "swap" });
 
 export const metadata = { title: "รางวัล / Awards — G15 Women's Football Series" };
 
@@ -213,7 +218,6 @@ export default async function G15AwardsPage() {
   const now = new Date();
   const teamOf = (key: string) => awards.get(key)?.team ?? null;
   const champion = teamOf("CHAMPION");
-  const announced = awards.size > 0 || xi.length > 0;
   const finalUpcoming = !!final?.matchDate && final.status !== "FINISHED" && final.matchDate > now;
 
   const mvpDef = INDIVIDUAL_AWARDS.find((a) => a.key === "MVP")!;
@@ -225,84 +229,113 @@ export default async function G15AwardsPage() {
     <div className="min-h-screen overflow-x-clip bg-[#0b0618] text-white">
       <G15Chrome user={user} stage="NATIONAL" />
 
-      {/* ===== HERO ===== */}
-      <section className="relative isolate overflow-hidden pb-16 pt-12 sm:pb-24 sm:pt-16">
-        <div className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,#3b1890_0%,#150833_45%,#0b0618_80%)]" />
-        <div className="absolute inset-x-0 top-0 h-1.5 animate-shimmer-slide bg-linear-to-r from-amber-600 via-amber-200 via-50% to-amber-600 bg-size-[200%_100%]" />
-        {/* แสงหมุนหลังถ้วย */}
+      {/* ===== HERO — โทนมืดทันสมัย: แสงฟุ้งสีแบรนด์ + ตารางจาง ๆ, หัวข้อชิดซ้าย, การ์ดกระจกด้านขวา ===== */}
+      <section className="relative isolate overflow-hidden">
+        <div aria-hidden className="absolute -left-40 -top-48 -z-10 h-[34rem] w-[34rem] rounded-full bg-fuchsia-600/30 blur-[120px]" />
+        <div aria-hidden className="absolute -right-40 top-0 -z-10 h-[32rem] w-[32rem] rounded-full bg-indigo-600/35 blur-[120px]" />
+        <div aria-hidden className="absolute -bottom-56 left-1/3 -z-10 h-[28rem] w-[28rem] rounded-full bg-amber-400/15 blur-[120px]" />
         <div
           aria-hidden
-          className="pointer-events-none absolute left-1/2 top-56 -z-10 h-[60rem] w-[60rem] -translate-x-1/2 -translate-y-1/2 animate-[spin_70s_linear_infinite] bg-[repeating-conic-gradient(from_0deg,rgba(252,211,77,0.09)_0deg_5deg,transparent_5deg_15deg)] mask-[radial-gradient(circle,black_8%,transparent_55%)]"
+          className="absolute inset-0 -z-10 bg-[linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-size-[56px_56px] mask-[radial-gradient(ellipse_at_center,black_25%,transparent_75%)]"
         />
-        {/* ประกายดาว */}
-        {[
-          "left-[8%] top-16 h-5 w-5",
-          "left-[22%] top-56 h-3 w-3",
-          "right-[12%] top-24 h-6 w-6",
-          "right-[26%] top-64 h-3 w-3",
-          "left-[40%] top-8 h-3 w-3",
-          "right-[40%] bottom-10 h-4 w-4",
-        ].map((c, i) => (
-          <Sparkles key={c} aria-hidden className={`animate-float-y absolute text-amber-200/70 ${c}`} style={{ animationDelay: `${i * 0.6}s` }} />
-        ))}
-        {[
-          "left-[15%] top-40",
-          "left-[30%] top-24",
-          "right-[18%] top-48",
-          "right-[34%] top-14",
-          "left-[48%] top-72",
-          "left-[62%] top-36",
-        ].map((c, i) => (
-          <span key={c} aria-hidden className={`absolute h-1 w-1 animate-pulse rounded-full bg-amber-200 ${c}`} style={{ animationDelay: `${i * 0.4}s` }} />
-        ))}
+        <div aria-hidden className="absolute inset-x-0 bottom-0 -z-10 h-32 bg-linear-to-b from-transparent to-[#0b0618]" />
 
-        <div className="mx-auto flex max-w-4xl flex-col items-center px-6 pt-10 text-center sm:pt-16">
-          {/* แสงทองเรืองหลังชื่อหน้า */}
-          <div aria-hidden className="pointer-events-none absolute left-1/2 top-24 -z-10 h-72 w-[40rem] -translate-x-1/2 bg-[radial-gradient(closest-side,rgba(252,211,77,0.28),transparent)] sm:top-32" />
-          <p className="text-[11px] font-black uppercase tracking-[0.4em] text-amber-300/90 sm:text-xs">Hall of Fame · 2026</p>
-          <h1
-            className={`${display.className} animate-shimmer-slide mt-2 bg-[linear-gradient(90deg,#b45309,#fde68a,#f59e0b,#fff7d1,#f59e0b,#fde68a,#b45309)] bg-clip-text text-8xl leading-[0.85] tracking-wide text-transparent sm:text-[10rem]`}
-          >
-            Awards
-          </h1>
-          <p className="mt-3 text-lg font-bold text-white sm:text-xl">รางวัลแห่งเกียรติยศ</p>
-          <p className="mt-1 text-sm text-g15-200">FA Thailand G15 Women&apos;s Football Series 2026</p>
-
-          {!announced && (
-            <div className="mt-10 w-full max-w-xl rounded-3xl bg-white/5 p-5 ring-1 ring-amber-300/25 backdrop-blur sm:p-7">
-              <p className="text-sm font-bold text-amber-200">ประกาศรางวัลหลังจบนัดชิงชนะเลิศ</p>
-              <p className="text-xs text-white/50">Awards will be announced after the final</p>
-              {final && (
-                <div className="mt-5 flex items-center justify-center gap-4 sm:gap-6">
-                  <span className="flex w-28 flex-col items-center gap-2 text-center">
-                    <span className="rounded-full bg-white p-1 shadow-lg"><TeamBadge team={final.homeTeam} size="lg" /></span>
-                    <span className="line-clamp-2 text-xs font-semibold text-white/85">{final.homeTeam.name}</span>
-                  </span>
-                  <span className={`${display.className} text-4xl text-amber-300`}>VS</span>
-                  <span className="flex w-28 flex-col items-center gap-2 text-center">
-                    <span className="rounded-full bg-white p-1 shadow-lg"><TeamBadge team={final.awayTeam} size="lg" /></span>
-                    <span className="line-clamp-2 text-xs font-semibold text-white/85">{final.awayTeam.name}</span>
-                  </span>
-                </div>
-              )}
-              {finalUpcoming && (
-                <div className="mt-5">
-                  <p className="mb-2 text-[11px] font-bold uppercase tracking-widest text-white/50">นัดชิงชนะเลิศเริ่มใน / Final kicks off in</p>
-                  <Countdown target={final!.matchDate!.toISOString()} serverNow={now.getTime()} />
-                </div>
-              )}
+        <div className="mx-auto grid max-w-6xl items-center gap-10 px-6 py-14 sm:py-20 lg:grid-cols-[1.1fr_1fr] lg:gap-16">
+          <div>
+            <span className="inline-flex items-center gap-2 rounded-full bg-white/5 px-3.5 py-1.5 text-xs font-semibold text-white/80 ring-1 ring-white/10 backdrop-blur">
+              <span className="h-1.5 w-1.5 rounded-full bg-amber-400 shadow-[0_0_10px_#fbbf24]" />
+              FA Thailand · G15 Women&apos;s Football Series
+            </span>
+            <h1 className={`${heavy.className} mt-6 text-6xl font-black leading-[0.9] tracking-tight sm:text-8xl`}>
+              <span className="block bg-linear-to-br from-white via-white to-g15-300 bg-clip-text text-transparent">AWARDS</span>
+              <span className="block text-transparent [-webkit-text-stroke:2px_rgba(251,191,36,0.9)]">2026</span>
+            </h1>
+            <p className="mt-6 text-xl font-bold text-white sm:text-2xl">รางวัลแห่งเกียรติยศประจำทัวร์นาเมนต์</p>
+            <p className="mt-2 max-w-md text-sm leading-relaxed text-white/60">
+              ทีมแชมป์ รางวัลส่วนบุคคล และทีมยอดเยี่ยม (Best XI) ของรอบชิงแชมป์ประเทศ
+            </p>
+            <div className="mt-6 flex flex-wrap gap-2">
+              {[
+                { icon: Trophy, text: "3 รางวัลทีม" },
+                { icon: Award, text: "7 รางวัลส่วนบุคคล" },
+                { icon: Users, text: "Best XI · 4-3-3" },
+              ].map(({ icon: Icon, text }) => (
+                <span key={text} className="inline-flex items-center gap-1.5 rounded-xl bg-white/5 px-3 py-2 text-xs font-semibold text-white/80 ring-1 ring-white/10">
+                  <Icon className="h-3.5 w-3.5 text-amber-300" />
+                  {text}
+                </span>
+              ))}
             </div>
-          )}
+            {canManage && (
+              <Link
+                href="/g15-womens-series/manage/awards"
+                className="mt-6 inline-flex items-center gap-1.5 text-xs font-semibold text-white/60 hover:text-white"
+              >
+                <Settings className="h-3.5 w-3.5" />
+                จัดการรางวัล
+              </Link>
+            )}
+          </div>
 
-          {canManage && (
-            <Link
-              href="/g15-womens-series/manage/awards"
-              className="mt-8 inline-flex items-center gap-1.5 rounded-full bg-white/10 px-4 py-2 text-xs font-semibold text-white ring-1 ring-white/20 hover:bg-white/20"
-            >
-              <Settings className="h-3.5 w-3.5" />
-              จัดการรางวัล
-            </Link>
-          )}
+          {/* การ์ดกระจก: ก่อนประกาศ = นัดชิง + นับถอยหลัง, ประกาศแล้ว = ทีมแชมป์ */}
+          <div className="relative">
+            <div aria-hidden className="absolute -inset-4 -z-10 rounded-[2rem] bg-linear-to-br from-fuchsia-500/20 via-transparent to-amber-400/20 blur-2xl" />
+            <div className="rounded-3xl bg-linear-to-br from-white/25 via-white/5 to-white/10 p-px">
+              <div className="rounded-[calc(1.5rem-1px)] bg-[#120a28]/85 p-6 backdrop-blur-xl sm:p-8">
+                {champion ? (
+                  <div className="flex flex-col items-center text-center">
+                    <span className="rounded-full bg-amber-400/15 px-3 py-1 text-[11px] font-bold uppercase tracking-widest text-amber-300 ring-1 ring-amber-300/30">
+                      Champion 2026
+                    </span>
+                    <Link href={`/g15-womens-series/teams/${champion.id}`} className="group mt-6 flex flex-col items-center">
+                      <span className="rounded-full bg-white p-2 shadow-[0_0_60px_rgba(251,191,36,0.35)] ring-4 ring-amber-300/70 transition-transform group-hover:scale-105">
+                        <TeamBadge team={champion} size="xl" />
+                      </span>
+                      <span className="mt-5 text-2xl font-black leading-tight text-white sm:text-3xl">{champion.name}</span>
+                    </Link>
+                    <span className="mt-2 inline-flex items-center gap-1.5 text-sm font-semibold text-amber-200/80">
+                      <Crown className="h-4 w-4" />
+                      แชมป์ประเทศไทย
+                    </span>
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="rounded-full bg-amber-400/15 px-3 py-1 text-[11px] font-bold uppercase tracking-widest text-amber-300 ring-1 ring-amber-300/30">
+                        Final · ชิงชนะเลิศ
+                      </span>
+                      {final?.matchDate && <span className="text-xs text-white/50">{formatMatchDateTime(final.matchDate)}</span>}
+                    </div>
+                    {final ? (
+                      <div className="mt-7 grid grid-cols-[1fr_auto_1fr] items-center gap-3">
+                        {[final.homeTeam, final.awayTeam].map((t, i) => (
+                          <span key={t.id} className={`flex flex-col items-center gap-3 text-center ${i === 1 ? "order-3" : ""}`}>
+                            <span className="rounded-full bg-white p-1.5 shadow-xl ring-1 ring-white/20">
+                              <TeamBadge team={t} size="lg" />
+                            </span>
+                            <span className="line-clamp-2 text-sm font-bold leading-snug text-white/90">{t.name}</span>
+                          </span>
+                        ))}
+                        <span className={`${heavy.className} order-2 text-lg font-black text-white/40`}>VS</span>
+                      </div>
+                    ) : (
+                      <p className="mt-6 text-sm text-white/50">ยังไม่มีนัดชิงชนะเลิศ</p>
+                    )}
+                    {finalUpcoming ? (
+                      <div className="mt-7 border-t border-white/10 pt-6 text-center">
+                        <p className="mb-3 text-[11px] font-bold uppercase tracking-widest text-white/50">เริ่มใน / Kick-off in</p>
+                        <Countdown target={final!.matchDate!.toISOString()} serverNow={now.getTime()} />
+                      </div>
+                    ) : null}
+                    <p className="mt-6 flex items-center justify-center gap-1.5 text-center text-xs text-white/50">
+                      <Clock className="h-3.5 w-3.5" />
+                      ประกาศรางวัลหลังจบนัดชิงชนะเลิศ
+                    </p>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
