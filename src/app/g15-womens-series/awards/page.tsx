@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Bebas_Neue, Montserrat } from "next/font/google";
+import { Montserrat } from "next/font/google";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { G15Chrome } from "@/components/g15/G15Chrome";
@@ -7,7 +7,7 @@ import { Reveal } from "@/components/g15/Reveal";
 import { TeamBadge } from "@/components/g15/TeamBadge";
 import { Countdown } from "@/components/g15/Countdown";
 import { BestXIPitch } from "@/components/g15/BestXIPitch";
-import { INDIVIDUAL_AWARDS, type AwardDef } from "@/lib/g15-awards";
+import { INDIVIDUAL_AWARDS, TEAM_AWARDS, type AwardDef } from "@/lib/g15-awards";
 import { loadAwards } from "@/lib/g15-awards-data";
 import { formatMatchDateTime } from "@/lib/g15";
 import {
@@ -20,15 +20,15 @@ import {
   Sparkles,
   Settings,
   Lock,
-  Star,
+  Medal,
   Trophy,
   Users,
   Clock,
+  UserRound,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
-const display = Bebas_Neue({ weight: "400", subsets: ["latin"], display: "swap" });
-const heavy = Montserrat({ weight: ["800", "900"], subsets: ["latin"], display: "swap" });
+const heavy = Montserrat({ weight: ["700", "800", "900"], subsets: ["latin"], display: "swap" });
 
 export const metadata = { title: "รางวัล / Awards — G15 Women's Football Series" };
 
@@ -41,18 +41,71 @@ const ICON: Record<string, LucideIcon> = {
   INSPIRATIONAL_COACH: Sparkles,
 };
 
-const GOLD_TEXT = "bg-linear-to-b from-amber-50 via-amber-300 to-amber-600 bg-clip-text text-transparent";
+// สีประจำรางวัล — ใช้กับแสงหลังรูป แถบบนการ์ด ป้ายกำกับ (ตัวหนังสือหลักยังเป็นสีขาว)
+type Accent = { text: string; tile: string; bar: string; glow: string; note: string };
+const ACCENT: Record<string, Accent> = {
+  MVP: {
+    text: "text-amber-300",
+    tile: "bg-amber-400/15 text-amber-300 ring-amber-300/30",
+    bar: "from-amber-200 via-amber-400 to-amber-600",
+    glow: "bg-[radial-gradient(closest-side,rgba(251,191,36,0.5),transparent)]",
+    note: "bg-amber-400/15 text-amber-200 ring-amber-300/30",
+  },
+  TOP_SCORER: {
+    text: "text-orange-300",
+    tile: "bg-orange-400/15 text-orange-300 ring-orange-300/30",
+    bar: "from-amber-300 via-orange-400 to-rose-500",
+    glow: "bg-[radial-gradient(closest-side,rgba(251,113,60,0.5),transparent)]",
+    note: "bg-orange-400/15 text-orange-200 ring-orange-300/30",
+  },
+  GOLDEN_GLOVE: {
+    text: "text-sky-300",
+    tile: "bg-sky-400/15 text-sky-300 ring-sky-300/30",
+    bar: "from-cyan-300 via-sky-400 to-indigo-500",
+    glow: "bg-[radial-gradient(closest-side,rgba(56,189,248,0.45),transparent)]",
+    note: "bg-sky-400/15 text-sky-200 ring-sky-300/30",
+  },
+  SPORTSMANSHIP: {
+    text: "text-emerald-300",
+    tile: "bg-emerald-400/15 text-emerald-300 ring-emerald-300/30",
+    bar: "from-lime-300 via-emerald-400 to-teal-500",
+    glow: "bg-[radial-gradient(closest-side,rgba(52,211,153,0.42),transparent)]",
+    note: "bg-emerald-400/15 text-emerald-200 ring-emerald-300/30",
+  },
+  BEST_COACH: {
+    text: "text-violet-300",
+    tile: "bg-violet-400/15 text-violet-300 ring-violet-300/30",
+    bar: "from-fuchsia-300 via-violet-400 to-indigo-500",
+    glow: "bg-[radial-gradient(closest-side,rgba(167,139,250,0.45),transparent)]",
+    note: "bg-violet-400/15 text-violet-200 ring-violet-300/30",
+  },
+  INSPIRATIONAL_COACH: {
+    text: "text-pink-300",
+    tile: "bg-pink-400/15 text-pink-300 ring-pink-300/30",
+    bar: "from-rose-300 via-pink-400 to-fuchsia-500",
+    glow: "bg-[radial-gradient(closest-side,rgba(244,114,182,0.42),transparent)]",
+    note: "bg-pink-400/15 text-pink-200 ring-pink-300/30",
+  },
+};
+
+const CARD_BG = "bg-[#140c2c]";
+// รูปค่อย ๆ จางเป็นโปร่งใสที่ขอบล่าง — กลืนกับพื้น/แสงด้านหลังได้ทุกสี
+const FADE_MASK = "mask-[linear-gradient(to_bottom,black_62%,transparent_96%)]";
 
 type Awards = Awaited<ReturnType<typeof loadAwards>>["awards"];
 type AwardRow = NonNullable<ReturnType<Awards["get"]>>[number];
 type Team = { id: number; name: string; logoUrl: string | null; groupName: string | null };
 
-function SectionTitle({ en, th }: { en: string; th: string }) {
+// หัวข้อ section ชิดซ้าย: ลำดับ + ชื่อไทย / หัวข้อใหญ่ภาษาอังกฤษ
+function SectionTitle({ no, en, th }: { no: number; en: string; th: string }) {
   return (
-    <div className="mb-8 flex flex-col items-center text-center">
-      <span className="mb-3 h-px w-24 bg-linear-to-r from-transparent via-amber-300 to-transparent" />
-      <h2 className={`${display.className} text-5xl leading-none tracking-wide sm:text-6xl ${GOLD_TEXT}`}>{en}</h2>
-      <p className="mt-1 text-sm font-semibold text-amber-100/70">{th}</p>
+    <div className="mb-8 border-b border-white/10 pb-5">
+      <p className="flex items-center gap-2.5 text-xs font-bold tracking-wide text-amber-300">
+        <span className={`${heavy.className} text-white/40`}>{String(no).padStart(2, "0")}</span>
+        <span className="h-px w-6 bg-amber-300/60" />
+        {th}
+      </p>
+      <h2 className={`${heavy.className} mt-2 text-3xl font-black uppercase leading-none tracking-tight text-white sm:text-5xl`}>{en}</h2>
     </div>
   );
 }
@@ -81,66 +134,115 @@ function winnersOf(rows: AwardRow[] | undefined): Winner[] {
   return (rows ?? []).map(winnerOf).filter((w): w is Winner => w != null);
 }
 
-function Portrait({ w, size }: { w: Winner; size: "sm" | "md" | "lg" | "xl" }) {
-  const box = {
-    sm: "h-16 w-16 text-2xl",
-    md: "h-24 w-24 text-4xl",
-    lg: "h-28 w-28 sm:h-32 sm:w-32 text-5xl",
-    xl: "h-36 w-36 sm:h-44 sm:w-44 text-6xl",
-  }[size];
+function WinnerName({ w, className }: { w: Winner; className: string }) {
+  return w.href ? (
+    <Link href={w.href} className={`${className} hover:text-amber-200`}>
+      {w.name}
+    </Link>
+  ) : (
+    <p className={className}>{w.name}</p>
+  );
+}
+
+function TeamChip({ team, className = "" }: { team: Team; className?: string }) {
+  return (
+    <span className={`inline-flex max-w-full items-center gap-1.5 rounded-full bg-white/7 py-1 pl-1 pr-3 text-xs text-white/80 ring-1 ring-white/10 ${className}`}>
+      <TeamBadge team={team} size="sm" />
+      <span className="truncate">{team.name}</span>
+    </span>
+  );
+}
+
+// รูปนักกีฬาแบบตัดพื้นหลัง (bust) ยืนชิดขอบล่างของกรอบ — ไม่มีรูป = เบอร์เสื้อตัวใหญ่จาง ๆ
+function Bust({ w, h = "h-[112%]" }: { w: Winner; h?: string }) {
   return w.photoUrl ? (
     // eslint-disable-next-line @next/next/no-img-element
-    <img src={w.photoUrl} alt="" className={`${box} rounded-full object-cover`} />
+    <img
+      src={w.photoUrl}
+      alt={w.name}
+      className={`absolute bottom-0 left-1/2 ${h} w-auto max-w-none -translate-x-1/2 object-contain object-bottom drop-shadow-[0_18px_28px_rgba(0,0,0,0.55)] transition-transform duration-700 group-hover:scale-[1.03]`}
+    />
   ) : (
-    <span className={`${box} ${display.className} flex items-center justify-center rounded-full bg-linear-to-br from-g15-700 to-g15-950 text-amber-200`}>
+    <span className={`${heavy.className} absolute inset-x-0 bottom-6 text-center text-8xl font-black leading-none text-white/20`}>
       {w.number ?? w.name.charAt(0)}
     </span>
   );
 }
 
-// การ์ดรางวัล (ขอบทองไล่เฉด + เหรียญไอคอนลอยด้านบน) — ยังไม่ประกาศ = เงาล็อก
-function AwardCard({ def, rows, delay }: { def: AwardDef; rows: AwardRow[] | undefined; delay: number }) {
+function CardHeader({ def, ac }: { def: AwardDef; ac: Accent }) {
   const Icon = ICON[def.key] ?? Award;
+  return (
+    <header className="flex items-start justify-between gap-3">
+      <div className="min-w-0">
+        <p className={`${heavy.className} text-[11px] font-extrabold uppercase tracking-[0.18em] ${ac.text}`}>{def.en.replace(/ Award$/, "")}</p>
+        <h3 className="mt-1 text-[15px] font-bold leading-snug text-white">{def.th}</h3>
+      </div>
+      <span className={`flex h-10 w-10 flex-none items-center justify-center rounded-xl ring-1 ${ac.tile}`}>
+        <Icon className="h-5 w-5" />
+      </span>
+    </header>
+  );
+}
+
+function NoteChip({ note, ac }: { note: string | null | undefined; ac: Accent }) {
+  if (!note) return null;
+  return <span className={`inline-flex rounded-full px-3 py-1 text-xs font-bold ring-1 ${ac.note}`}>{note}</span>;
+}
+
+// การ์ดรางวัลนักกีฬา: รูป bust บนแสงสีประจำรางวัล + ชื่อ/ทีม/สถิติ — รางวัลร่วม = รูปเรียงคู่กัน
+function PlayerAwardCard({ def, rows, delay }: { def: AwardDef; rows: AwardRow[] | undefined; delay: number }) {
+  const ac = ACCENT[def.key] ?? ACCENT.MVP;
   const all = winnersOf(rows);
   const w = all[0] ?? null;
   const joint = all.length > 1;
   return (
     <Reveal delay={delay} className="h-full">
-      <div className={`group relative h-full rounded-3xl p-px ${w ? "bg-linear-to-b from-amber-200 via-amber-500/40 to-amber-900/30" : "bg-white/10"}`}>
-        {/* เหรียญไอคอนลอยเหนือขอบการ์ด (อยู่นอกกล่องที่ตัดขอบ จึงไม่ถูกตัดครึ่ง) */}
-        <span
-          className={`absolute -top-7 left-1/2 z-10 flex h-14 w-14 -translate-x-1/2 items-center justify-center rounded-full ring-4 ring-[#0b0618] ${
-            w ? "bg-linear-to-br from-amber-200 via-amber-400 to-amber-600 text-amber-950 shadow-[0_0_30px_rgba(252,211,77,0.45)]" : "bg-[#1d0f42] text-white/40"
-          }`}
-        >
-          <Icon className="h-6 w-6" />
-        </span>
-        <div className="relative flex h-full flex-col items-center overflow-hidden rounded-[calc(1.5rem-1px)] bg-linear-to-b from-[#1d0f42] to-[#0d0720] px-5 pb-7 pt-12 text-center">
-          {w && <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-32 bg-[radial-gradient(ellipse_at_top,rgba(252,211,77,0.22),transparent_70%)]" />}
-          <p className={`relative text-[11px] font-black uppercase tracking-[0.18em] ${w ? "text-amber-300" : "text-white/40"}`}>{def.en.replace(" Award", "")}</p>
-          <p className="relative mt-1 text-sm font-semibold leading-snug text-white/80">{def.th}</p>
+      <article
+        className={`group relative flex h-full flex-col overflow-hidden rounded-3xl ${CARD_BG} ring-1 ring-white/10 transition duration-500 hover:-translate-y-1 hover:ring-white/25`}
+      >
+        <div aria-hidden className={`h-1 bg-linear-to-r ${ac.bar}`} />
+        <div className="px-5 pt-5">
+          <CardHeader def={def} ac={ac} />
+        </div>
 
+        <div className={`relative mt-3 aspect-[5/4] overflow-hidden ${FADE_MASK}`}>
+          <div aria-hidden className={`absolute left-1/2 top-[60%] h-[125%] w-[125%] -translate-x-1/2 -translate-y-1/2 ${ac.glow} opacity-70 transition-opacity duration-500 group-hover:opacity-100`} />
+          {w ? (
+            <>
+              {!joint && w.number != null && (
+                <span aria-hidden className={`${heavy.className} absolute inset-x-0 -top-2 select-none text-center text-[10rem] font-black leading-none tracking-tighter text-white/6`}>
+                  {w.number}
+                </span>
+              )}
+              <div className="absolute inset-0 flex justify-center">
+                {all.map((x) => (
+                  <div key={x.href ?? x.name} className={`relative h-full ${joint ? "flex-1" : "w-full"}`}>
+                    <Bust w={x} h={joint ? "h-[96%]" : "h-[112%]"} />
+                  </div>
+                ))}
+              </div>
+            </>
+          ) : (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <span className="flex h-24 w-24 items-center justify-center rounded-full border border-dashed border-white/20 bg-white/5">
+                <UserRound className="h-10 w-10 text-white/25" strokeWidth={1.5} />
+              </span>
+            </div>
+          )}
+        </div>
+
+        <div className="relative -mt-8 flex flex-1 flex-col px-5 pb-5">
           {joint ? (
             <>
-              <span className="relative mt-4 rounded-full bg-amber-400/15 px-3 py-0.5 text-[11px] font-bold text-amber-200 ring-1 ring-amber-300/30">
+              <span className="w-fit rounded-full bg-white/10 px-2.5 py-0.5 text-[11px] font-bold text-white/80 ring-1 ring-white/15">
                 รางวัลร่วม {all.length} คน · Joint winners
               </span>
-              <div className={`relative mt-5 grid w-full gap-x-3 gap-y-5 ${all.length === 2 ? "grid-cols-2" : "grid-cols-3"}`}>
+              <div className={`mt-3 grid gap-3 ${all.length === 2 ? "grid-cols-2" : "grid-cols-3"}`}>
                 {all.map((x) => (
-                  <div key={x.href ?? x.name} className="flex min-w-0 flex-col items-center">
-                    <span className="rounded-full bg-linear-to-br from-amber-200 to-amber-600 p-1 shadow-[0_0_30px_rgba(252,211,77,0.25)]">
-                      <Portrait w={x} size="sm" />
-                    </span>
-                    {x.href ? (
-                      <Link href={x.href} className="mt-2 line-clamp-2 text-sm font-extrabold leading-tight text-white hover:text-amber-200">
-                        {x.name}
-                      </Link>
-                    ) : (
-                      <p className="mt-2 line-clamp-2 text-sm font-extrabold leading-tight text-white">{x.name}</p>
-                    )}
-                    {x.sub && <p className="text-[11px] text-amber-100/70">{x.sub}</p>}
+                  <div key={x.href ?? x.name} className="min-w-0">
+                    <WinnerName w={x} className="line-clamp-2 block text-sm font-black leading-tight text-white" />
                     {x.team && (
-                      <span className="mt-1.5 inline-flex max-w-full items-center gap-1 text-[11px] text-white/60">
+                      <span className="mt-1.5 flex min-w-0 items-center gap-1.5 text-[11px] text-white/55">
                         <TeamBadge team={x.team} size="sm" />
                         <span className="truncate">{x.team.name}</span>
                       </span>
@@ -148,106 +250,255 @@ function AwardCard({ def, rows, delay }: { def: AwardDef; rows: AwardRow[] | und
                   </div>
                 ))}
               </div>
-              {w?.note && (
-                <span className="relative mt-4 rounded-full bg-amber-400 px-3 py-1 text-xs font-black text-amber-950 shadow-lg shadow-amber-900/40">
-                  {w.note}
-                </span>
-              )}
+              <div className="mt-auto pt-4">
+                <NoteChip note={w?.note} ac={ac} />
+              </div>
             </>
           ) : w ? (
             <>
-              <span className="relative mt-5 rounded-full bg-linear-to-br from-amber-200 to-amber-600 p-1 shadow-[0_0_40px_rgba(252,211,77,0.25)] transition-transform duration-500 group-hover:scale-105">
-                <Portrait w={w} size="md" />
-              </span>
-              {w.href ? (
-                <Link href={w.href} className="relative mt-4 text-lg font-extrabold leading-tight text-white hover:text-amber-200">
-                  {w.name}
-                </Link>
-              ) : (
-                <p className="relative mt-4 text-lg font-extrabold leading-tight text-white">{w.name}</p>
-              )}
-              {w.nameEn && <p className="relative text-[11px] uppercase tracking-wider text-white/40">{w.nameEn}</p>}
-              {w.sub && <p className="relative mt-0.5 text-xs text-amber-100/70">{w.sub}</p>}
-              {w.team && (
-                <span className="relative mt-3 inline-flex items-center gap-1.5 rounded-full bg-white/5 py-1 pl-1 pr-3 text-xs text-white/80 ring-1 ring-white/10">
-                  <TeamBadge team={w.team} size="sm" />
-                  {w.team.name}
-                </span>
-              )}
-              {w.note && (
-                <span className="relative mt-3 rounded-full bg-amber-400 px-3 py-1 text-xs font-black text-amber-950 shadow-lg shadow-amber-900/40">
-                  {w.note}
-                </span>
-              )}
+              <WinnerName w={w} className="block text-xl font-black leading-tight text-white" />
+              {w.nameEn && <p className="mt-0.5 truncate text-[11px] font-semibold uppercase tracking-wider text-white/40">{w.nameEn}</p>}
+              <div className="mt-auto flex flex-wrap items-center gap-2 pt-4">
+                {w.team && <TeamChip team={w.team} />}
+                <NoteChip note={w.note} ac={ac} />
+              </div>
             </>
           ) : (
-            <>
-              <span className="relative mt-5 flex h-24 w-24 items-center justify-center rounded-full border-2 border-dashed border-white/15 bg-white/5">
-                <Lock className="h-8 w-8 text-white/25" />
-              </span>
-              <p className="relative mt-4 text-sm font-semibold text-white/40">รอประกาศผล</p>
-            </>
+            <p className="mt-2 inline-flex items-center gap-1.5 text-sm font-semibold text-white/40">
+              <Lock className="h-4 w-4" />
+              รอประกาศผล
+            </p>
           )}
         </div>
-      </div>
+      </article>
     </Reveal>
   );
 }
 
-// โพเดียม: ที่ 2 ซ้าย · แชมป์กลาง (สูงสุด มีแสงหมุนด้านหลัง) · ที่ 3 ขวา
-function ChampionStage({ champion, runnerUp, third }: { champion: Team; runnerUp: Team | null; third: Team | null }) {
-  const place = (team: Team | null, n: 1 | 2 | 3) => {
-    const tone = {
-      1: { block: "h-44 sm:h-56 from-amber-200 via-amber-400 to-amber-700", ring: "ring-amber-300", label: "แชมป์ / Champion", num: "text-amber-950/80" },
-      2: { block: "h-32 sm:h-40 from-slate-100 via-slate-300 to-slate-500", ring: "ring-slate-200", label: "รองแชมป์ / Runner-up", num: "text-slate-700/80" },
-      3: { block: "h-24 sm:h-28 from-orange-200 via-orange-400 to-orange-800", ring: "ring-orange-300", label: "อันดับ 3 / Third", num: "text-orange-950/70" },
-    }[n];
-    return (
-      <div className="flex flex-col items-center">
-        {team ? (
-          <Link href={`/g15-womens-series/teams/${team.id}`} className="group mb-4 flex flex-col items-center text-center">
-            {n === 1 && <Crown className="animate-float-y mb-2 h-9 w-9 text-amber-300 drop-shadow-[0_0_12px_rgba(252,211,77,0.8)]" />}
-            <span className="relative">
-              {n === 1 && (
-                <span
-                  aria-hidden
-                  className="absolute -inset-10 animate-[spin_18s_linear_infinite] rounded-full bg-[repeating-conic-gradient(from_0deg,rgba(252,211,77,0.35)_0deg_8deg,transparent_8deg_24deg)] mask-[radial-gradient(circle,black_35%,transparent_70%)]"
-                />
-              )}
-              <span className={`relative block rounded-full bg-white p-1.5 ring-4 ${tone.ring} shadow-2xl transition-transform duration-500 group-hover:scale-105`}>
-                <TeamBadge team={team} size={n === 1 ? "xl" : "lg"} />
-              </span>
-            </span>
-            <span className={`mt-3 line-clamp-2 font-extrabold leading-tight ${n === 1 ? "text-lg text-amber-100 sm:text-2xl" : "text-sm text-white sm:text-base"}`}>
-              {team.name}
-            </span>
-            <span className={`mt-1 text-[10px] font-bold uppercase tracking-widest sm:text-[11px] ${n === 1 ? "text-amber-300" : "text-white/50"}`}>{tone.label}</span>
-          </Link>
-        ) : (
-          <div className="mb-4 flex h-24 w-24 items-center justify-center rounded-full border-2 border-dashed border-white/20">
-            <Lock className="h-6 w-6 text-white/30" />
-          </div>
-        )}
-        <div className={`relative w-full overflow-hidden rounded-t-2xl bg-linear-to-b ${tone.block} shadow-[0_-10px_40px_rgba(0,0,0,0.35)]`}>
-          <div aria-hidden className="absolute inset-x-0 top-0 h-1/3 bg-linear-to-b from-white/50 to-transparent" />
-          <span className={`${display.className} absolute inset-0 flex items-center justify-center text-6xl sm:text-8xl ${tone.num}`}>{n}</span>
-        </div>
-      </div>
-    );
-  };
+// การ์ดรางวัลโค้ช (ไม่มีรูป) — โลโก้ทีมเป็นภาพหลัก + โลโก้จาง ๆ เป็นลายน้ำมุมการ์ด
+function CoachAwardCard({ def, rows, delay }: { def: AwardDef; rows: AwardRow[] | undefined; delay: number }) {
+  const ac = ACCENT[def.key] ?? ACCENT.BEST_COACH;
+  const all = winnersOf(rows);
+  const mark = all[0]?.team?.logoUrl ?? null;
   return (
-    <section>
-      <SectionTitle en="Champions" th="ทีมที่ประสบความสำเร็จ" />
-      <div className="relative mx-auto max-w-4xl">
-        <div aria-hidden className="pointer-events-none absolute -top-24 left-1/2 h-[30rem] w-[42rem] -translate-x-1/2 bg-[radial-gradient(closest-side,rgba(252,211,77,0.2),transparent)]" />
-        <div className="relative grid grid-cols-3 items-end gap-2 sm:gap-5">
-          {place(runnerUp, 2)}
-          {place(champion, 1)}
-          {place(third, 3)}
+    <Reveal delay={delay} className="h-full">
+      <article
+        className={`group relative flex h-full flex-col overflow-hidden rounded-3xl ${CARD_BG} ring-1 ring-white/10 transition duration-500 hover:-translate-y-1 hover:ring-white/25`}
+      >
+        <div aria-hidden className={`h-1 bg-linear-to-r ${ac.bar}`} />
+        <div aria-hidden className={`pointer-events-none absolute -right-28 -top-28 h-80 w-80 ${ac.glow} opacity-60`} />
+        {mark && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img aria-hidden src={mark} alt="" className="pointer-events-none absolute -bottom-12 -right-12 h-60 w-60 rounded-full object-cover opacity-[0.07] grayscale" />
+        )}
+        <div className="relative flex flex-1 flex-col p-5 sm:p-6">
+          <CardHeader def={def} ac={ac} />
+          {all.length === 0 ? (
+            <div className="mt-8 flex items-center gap-4">
+              <span className="flex h-16 w-16 flex-none items-center justify-center rounded-full border border-dashed border-white/20 bg-white/5">
+                <Lock className="h-6 w-6 text-white/25" />
+              </span>
+              <p className="text-sm font-semibold text-white/40">รอประกาศผล</p>
+            </div>
+          ) : (
+            <>
+              {all.length > 1 && (
+                <span className="mt-5 w-fit rounded-full bg-white/10 px-2.5 py-0.5 text-[11px] font-bold text-white/80 ring-1 ring-white/15">
+                  รางวัลร่วม {all.length} คน · Joint winners
+                </span>
+              )}
+              <ul className={`space-y-5 ${all.length > 1 ? "mt-4" : "mt-8"}`}>
+                {all.map((x) => (
+                  <li key={x.name} className="flex items-center gap-4">
+                    {x.team ? (
+                      <span className="flex-none rounded-full bg-white p-1 shadow-lg shadow-black/40 ring-4 ring-white/10">
+                        <TeamBadge team={x.team} size={all.length > 1 ? "md" : "lg"} />
+                      </span>
+                    ) : (
+                      <span className="flex h-16 w-16 flex-none items-center justify-center rounded-full bg-white/10 text-2xl font-black">{x.name.charAt(0)}</span>
+                    )}
+                    <div className="min-w-0">
+                      <p className={`font-black leading-tight text-white ${all.length > 1 ? "text-lg" : "text-2xl"}`}>{x.name}</p>
+                      {x.nameEn && <p className="truncate text-[11px] font-semibold uppercase tracking-wider text-white/40">{x.nameEn}</p>}
+                      <p className="mt-1 truncate text-sm text-white/60">{[x.sub, x.team?.name].filter(Boolean).join(" · ")}</p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+              <div className="mt-auto pt-6">
+                <NoteChip note={all[0].note} ac={ac} />
+              </div>
+            </>
+          )}
         </div>
-        <div className="h-3 rounded-b-xl bg-linear-to-r from-transparent via-white/15 to-transparent" />
+      </article>
+    </Reveal>
+  );
+}
+
+// MVP: การ์ดใหญ่ — รูป bust ซ้อนบนตัวหนังสือ "MVP" ขนาดยักษ์ + ข้อมูลด้านขวา · MVP ร่วม = รูปเรียงกัน + ชื่อด้านล่าง
+function MvpFeature({ mvps }: { mvps: Winner[] }) {
+  const ac = ACCENT.MVP;
+  const single = mvps.length === 1 ? mvps[0] : null;
+  return (
+    <div className={`group relative overflow-hidden rounded-[2rem] ${CARD_BG} ring-1 ${mvps.length ? "ring-amber-300/25" : "ring-white/10"}`}>
+      <div aria-hidden className={`h-1 bg-linear-to-r ${ac.bar}`} />
+      <div aria-hidden className="pointer-events-none absolute -left-40 top-0 h-[38rem] w-[38rem] bg-[radial-gradient(closest-side,rgba(251,191,36,0.3),transparent)]" />
+      <div aria-hidden className="pointer-events-none absolute -bottom-48 -right-40 h-[34rem] w-[34rem] bg-[radial-gradient(closest-side,rgba(147,51,234,0.35),transparent)]" />
+
+      {mvps.length === 0 ? (
+        <div className="relative flex flex-col items-center px-6 py-20 text-center">
+          <span className="flex h-28 w-28 items-center justify-center rounded-full border border-dashed border-white/20 bg-white/5">
+            <Crown className="h-12 w-12 text-white/20" />
+          </span>
+          <p className="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold text-white/45">
+            <Lock className="h-4 w-4" />
+            รอประกาศผล
+          </p>
+        </div>
+      ) : (
+        <div className={`relative grid ${single ? "md:grid-cols-[1fr_1.05fr] md:items-center" : ""}`}>
+          {/* เวทีรูป */}
+          <div className="relative h-[22rem] sm:h-[28rem]">
+            <span
+              aria-hidden
+              className={`${heavy.className} absolute inset-x-0 top-2 select-none text-center text-[9rem] font-black leading-none tracking-tighter text-white/6 sm:text-[13rem]`}
+            >
+              MVP
+            </span>
+            <div aria-hidden className={`absolute bottom-[-30%] left-1/2 h-[110%] w-[110%] -translate-x-1/2 ${ac.glow}`} />
+            <div className={`absolute inset-0 flex justify-center ${FADE_MASK} ${single ? "md:[mask-image:none]" : ""}`}>
+              {mvps.map((x) => (
+                <div key={x.href ?? x.name} className={`relative h-full ${single ? "w-full" : "w-1/2 max-w-sm"}`}>
+                  <Bust w={x} h={single ? "h-[104%]" : "h-[96%]"} />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* ข้อมูล */}
+          {single ? (
+            <div className="relative px-6 pb-10 text-center md:py-12 md:pl-0 md:pr-12 md:text-left">
+              <span className={`${heavy.className} inline-flex items-center gap-1.5 rounded-full bg-amber-400/15 px-3 py-1 text-[11px] font-extrabold uppercase tracking-[0.18em] text-amber-300 ring-1 ring-amber-300/30`}>
+                <Crown className="h-3.5 w-3.5" />
+                Most Valuable Player
+              </span>
+              <WinnerName w={single} className="mt-5 block text-4xl font-black leading-[1.1] text-white sm:text-5xl" />
+              {single.nameEn && <p className="mt-2 text-sm font-semibold uppercase tracking-[0.2em] text-white/40">{single.nameEn}</p>}
+              <div className="mt-7 flex flex-wrap items-center justify-center gap-2 md:justify-start">
+                {single.team && <TeamChip team={single.team} className="text-sm" />}
+                {single.number != null && (
+                  <span className={`${heavy.className} rounded-full bg-white/7 px-3 py-1 text-xs font-extrabold text-white/80 ring-1 ring-white/10`}>#{single.number}</span>
+                )}
+                <NoteChip note={single.note} ac={ac} />
+              </div>
+            </div>
+          ) : (
+            <div className="relative px-6 pb-10 text-center">
+              <span className={`${heavy.className} inline-flex items-center gap-1.5 rounded-full bg-amber-400/15 px-3 py-1 text-[11px] font-extrabold uppercase tracking-[0.18em] text-amber-300 ring-1 ring-amber-300/30`}>
+                <Crown className="h-3.5 w-3.5" />
+                Joint Most Valuable Players
+              </span>
+              <div className={`mx-auto mt-6 grid max-w-2xl gap-6 ${mvps.length === 2 ? "grid-cols-2" : "grid-cols-2 sm:grid-cols-3"}`}>
+                {mvps.map((x) => (
+                  <div key={x.href ?? x.name} className="flex min-w-0 flex-col items-center">
+                    <WinnerName w={x} className="block text-lg font-black leading-tight text-white sm:text-2xl" />
+                    {x.team && <TeamChip team={x.team} className="mt-3" />}
+                  </div>
+                ))}
+              </div>
+              <div className="mt-6">
+                <NoteChip note={mvps[0].note} ac={ac} />
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// อันดับทีม 1-2-3 — การ์ดเรียงตามลำดับ ตัวเลขใหญ่โปร่งเป็นพื้นหลัง (แทนแท่นโพเดียม)
+function StandingCard({ team, n, delay }: { team: Team | null; n: 1 | 2 | 3; delay: number }) {
+  const tone = {
+    1: {
+      card: "bg-linear-to-br from-amber-400/25 via-amber-400/5 to-transparent ring-amber-300/40",
+      glow: "bg-amber-400/30",
+      chip: "bg-amber-400 text-amber-950",
+      ring: "ring-amber-300/70",
+      stroke: "[-webkit-text-stroke:2px_rgba(252,211,77,0.35)]",
+      en: "Champion",
+      th: "ชนะเลิศ",
+      icon: Trophy,
+    },
+    2: {
+      card: "bg-linear-to-br from-slate-200/15 via-white/3 to-transparent ring-white/15",
+      glow: "bg-slate-200/15",
+      chip: "bg-slate-200 text-slate-900",
+      ring: "ring-slate-200/60",
+      stroke: "[-webkit-text-stroke:2px_rgba(226,232,240,0.22)]",
+      en: "Runner-up",
+      th: "รองชนะเลิศ",
+      icon: Medal,
+    },
+    3: {
+      card: "bg-linear-to-br from-orange-500/20 via-orange-500/3 to-transparent ring-orange-300/25",
+      glow: "bg-orange-500/20",
+      chip: "bg-orange-300 text-orange-950",
+      ring: "ring-orange-300/60",
+      stroke: "[-webkit-text-stroke:2px_rgba(253,186,116,0.25)]",
+      en: "Third Place",
+      th: "อันดับ 3",
+      icon: Medal,
+    },
+  }[n];
+  const Icon = tone.icon;
+  const body = (
+    <>
+      <div aria-hidden className={`pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full blur-3xl ${tone.glow}`} />
+      <span
+        aria-hidden
+        className={`${heavy.className} pointer-events-none absolute -bottom-10 right-3 select-none text-[10rem] font-black leading-none text-transparent ${tone.stroke}`}
+      >
+        {n}
+      </span>
+      <span className={`${heavy.className} relative inline-flex w-fit items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-extrabold uppercase tracking-[0.16em] ${tone.chip}`}>
+        <Icon className="h-3.5 w-3.5" />
+        {tone.en}
+      </span>
+      <div className="relative mt-5 flex items-center gap-4 sm:mt-8 sm:flex-col sm:items-start sm:gap-5">
+        {team ? (
+          <>
+            <span className={`w-fit flex-none rounded-full bg-white p-1 shadow-xl shadow-black/40 ring-4 ${tone.ring} transition-transform duration-500 group-hover:scale-105`}>
+              <TeamBadge team={team} size="lg" />
+            </span>
+            <div className="min-w-0">
+              <p className="text-xl font-black leading-tight text-white sm:text-2xl">{team.name}</p>
+              <p className="mt-1 text-sm text-white/50">{tone.th}</p>
+            </div>
+          </>
+        ) : (
+          <>
+            <span className="flex h-20 w-20 flex-none items-center justify-center rounded-full border border-dashed border-white/20">
+              <Lock className="h-6 w-6 text-white/30" />
+            </span>
+            <p className="text-sm font-semibold text-white/40">รอประกาศผล</p>
+          </>
+        )}
       </div>
-    </section>
+    </>
+  );
+  const cls = `group relative flex h-full flex-col overflow-hidden rounded-3xl p-5 ring-1 transition duration-500 hover:-translate-y-1 sm:p-6 ${tone.card}`;
+  return (
+    <Reveal delay={delay} className="h-full">
+      {team ? (
+        <Link href={`/g15-womens-series/teams/${team.id}`} className={cls}>
+          {body}
+        </Link>
+      ) : (
+        <div className={cls}>{body}</div>
+      )}
+    </Reveal>
   );
 }
 
@@ -265,12 +516,16 @@ export default async function G15AwardsPage() {
   const teamOf = (key: string) => awards.get(key)?.[0]?.team ?? null;
   const champion = teamOf("CHAMPION");
   const finalUpcoming = !!final?.matchDate && final.status !== "FINISHED" && final.matchDate > now;
+  const finalDone = final?.status === "FINISHED" && final.homeScore != null && final.awayScore != null;
+  const finalPens = finalDone && final.homePenalty != null && final.awayPenalty != null;
 
-  const mvpDef = INDIVIDUAL_AWARDS.find((a) => a.key === "MVP")!;
   const mvps = winnersOf(awards.get("MVP"));
-  const mvp = mvps.length === 1 ? mvps[0] : null;
   const playerAwards = INDIVIDUAL_AWARDS.filter((a) => a.kind === "player" && a.key !== "MVP");
   const coachAwards = INDIVIDUAL_AWARDS.filter((a) => a.kind === "official");
+
+  // เลขลำดับหัวข้อ (ส่วนอันดับทีมจะแสดงเมื่อประกาศแชมป์แล้ว)
+  let no = 0;
+  const next = () => ++no;
 
   return (
     <div className="min-h-screen overflow-x-clip bg-[#0b0618] text-white">
@@ -303,8 +558,8 @@ export default async function G15AwardsPage() {
             </p>
             <div className="mt-6 flex flex-wrap gap-2">
               {[
-                { icon: Trophy, text: "3 รางวัลทีม" },
-                { icon: Award, text: "7 รางวัลส่วนบุคคล" },
+                { icon: Trophy, text: `${TEAM_AWARDS.length} รางวัลทีม` },
+                { icon: Award, text: `${INDIVIDUAL_AWARDS.length} รางวัลส่วนบุคคล` },
                 { icon: Users, text: "Best XI · 4-3-3" },
               ].map(({ icon: Icon, text }) => (
                 <span key={text} className="inline-flex items-center gap-1.5 rounded-xl bg-white/5 px-3 py-2 text-xs font-semibold text-white/80 ring-1 ring-white/10">
@@ -324,7 +579,7 @@ export default async function G15AwardsPage() {
             )}
           </div>
 
-          {/* การ์ดกระจก: ก่อนประกาศ = นัดชิง + นับถอยหลัง, ประกาศแล้ว = ทีมแชมป์ */}
+          {/* การ์ดกระจก: ก่อนประกาศ = นัดชิง + นับถอยหลัง, ประกาศแล้ว = ทีมแชมป์ + ผลนัดชิง */}
           <div className="relative">
             <div aria-hidden className="absolute -inset-4 -z-10 rounded-[2rem] bg-linear-to-br from-fuchsia-500/20 via-transparent to-amber-400/20 blur-2xl" />
             <div className="rounded-3xl bg-linear-to-br from-white/25 via-white/5 to-white/10 p-px">
@@ -344,6 +599,29 @@ export default async function G15AwardsPage() {
                       <Crown className="h-4 w-4" />
                       แชมป์ประเทศไทย
                     </span>
+                    {finalDone && (
+                      <div className="mt-7 w-full border-t border-white/10 pt-6">
+                        <p className="text-[11px] font-bold uppercase tracking-widest text-white/45">นัดชิงชนะเลิศ · Final</p>
+                        <div className="mt-3 grid grid-cols-[1fr_auto_1fr] items-center gap-3">
+                          <span className="flex min-w-0 items-center justify-end gap-2 text-right text-xs font-semibold text-white/75">
+                            <span className="line-clamp-2">{final.homeTeam.name}</span>
+                            <TeamBadge team={final.homeTeam} size="md" />
+                          </span>
+                          <span className={`${heavy.className} text-2xl font-black tabular-nums text-white`}>
+                            {final.homeScore} – {final.awayScore}
+                          </span>
+                          <span className="flex min-w-0 items-center gap-2 text-left text-xs font-semibold text-white/75">
+                            <TeamBadge team={final.awayTeam} size="md" />
+                            <span className="line-clamp-2">{final.awayTeam.name}</span>
+                          </span>
+                        </div>
+                        {finalPens && (
+                          <p className="mt-2 text-xs font-semibold text-amber-200/80">
+                            ดวลจุดโทษ {final.homePenalty} – {final.awayPenalty}
+                          </p>
+                        )}
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <>
@@ -386,133 +664,54 @@ export default async function G15AwardsPage() {
         </div>
       </section>
 
-      <main className="relative mx-auto max-w-6xl space-y-24 px-4 pb-28 sm:px-6">
-        {/* ===== ทีมแชมป์ ===== */}
+      <main className="relative mx-auto max-w-6xl space-y-24 px-4 pb-28 pt-6 sm:px-6">
+        {/* ===== อันดับทีม ===== */}
         {champion && (
-          <Reveal>
-            <ChampionStage champion={champion} runnerUp={teamOf("RUNNER_UP")} third={teamOf("THIRD_PLACE")} />
-          </Reveal>
+          <section>
+            <SectionTitle no={next()} en="Final Standings" th="ทีมที่ประสบความสำเร็จ" />
+            <div className="grid gap-4 sm:grid-cols-3 sm:gap-5">
+              <StandingCard team={champion} n={1} delay={0} />
+              <StandingCard team={teamOf("RUNNER_UP")} n={2} delay={120} />
+              <StandingCard team={teamOf("THIRD_PLACE")} n={3} delay={240} />
+            </div>
+          </section>
         )}
 
         {/* ===== MVP ===== */}
         <section>
-          <SectionTitle en="Most Valuable Player" th={mvpDef.th} />
+          <SectionTitle no={next()} en="Most Valuable Player" th="รางวัลผู้เล่นทรงคุณค่า" />
           <Reveal>
-            <div className={`relative mx-auto max-w-4xl rounded-[2rem] p-[1.5px] ${mvps.length > 0 ? "bg-linear-to-br from-amber-100 via-amber-500 to-amber-900" : "bg-white/10"}`}>
-              <div className="relative overflow-hidden rounded-[calc(2rem-1.5px)] bg-linear-to-br from-[#26114f] via-[#150833] to-[#07040f] px-6 py-10 sm:px-12 sm:py-14">
-                <div aria-hidden className="pointer-events-none absolute -left-20 -top-20 h-80 w-80 rounded-full bg-[radial-gradient(circle,rgba(252,211,77,0.25),transparent_65%)]" />
-                <Star aria-hidden className="absolute right-8 top-8 h-24 w-24 text-amber-300/10" />
-                {mvps.length > 1 ? (
-                  // MVP ร่วม — เรียงรูปคู่กัน
-                  <div className="relative text-center">
-                    <p className={`${display.className} text-5xl leading-none sm:text-6xl ${GOLD_TEXT}`}>MVP</p>
-                    <p className="mt-1 text-xs font-black uppercase tracking-[0.25em] text-amber-200/70">Joint Most Valuable Players</p>
-                    <div className={`mt-10 grid grid-cols-2 gap-x-4 gap-y-10 sm:gap-x-8 ${mvps.length === 2 ? "" : "sm:grid-cols-3"}`}>
-                      {mvps.map((x) => (
-                        <div key={x.href ?? x.name} className="flex min-w-0 flex-col items-center">
-                          <span className="relative">
-                            <Crown className="absolute -top-8 left-1/2 h-8 w-8 -translate-x-1/2 text-amber-300 drop-shadow-[0_0_12px_rgba(252,211,77,0.9)]" />
-                            <span className="block rounded-full bg-linear-to-br from-amber-100 via-amber-400 to-amber-700 p-1.5 shadow-[0_0_50px_rgba(252,211,77,0.35)]">
-                              <Portrait w={x} size="lg" />
-                            </span>
-                          </span>
-                          {x.href ? (
-                            <Link href={x.href} className="mt-4 text-lg font-black sm:text-2xl leading-tight text-white hover:text-amber-200">
-                              {x.name}
-                            </Link>
-                          ) : (
-                            <p className="mt-4 text-lg font-black sm:text-2xl leading-tight text-white">{x.name}</p>
-                          )}
-                          {x.team && (
-                            <span className="mt-2 inline-flex max-w-full items-center gap-2 rounded-full bg-white/10 py-1 pl-1 pr-3 text-xs sm:text-sm text-white ring-1 ring-white/15">
-                              <TeamBadge team={x.team} size="sm" />
-                              <span className="truncate">{x.team.name}</span>
-                            </span>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                    {mvps[0].note && (
-                      <span className="mt-8 inline-block rounded-full bg-amber-400 px-3.5 py-1.5 text-sm font-black text-amber-950">{mvps[0].note}</span>
-                    )}
-                  </div>
-                ) : mvp ? (
-                  <div className="relative grid items-center gap-8 sm:grid-cols-[auto_1fr]">
-                    <div className="relative mx-auto">
-                      <span
-                        aria-hidden
-                        className="absolute -inset-8 animate-[spin_24s_linear_infinite] rounded-full bg-[repeating-conic-gradient(from_0deg,rgba(252,211,77,0.35)_0deg_6deg,transparent_6deg_20deg)] mask-[radial-gradient(circle,black_45%,transparent_72%)]"
-                      />
-                      <Crown className="absolute -top-9 left-1/2 h-10 w-10 -translate-x-1/2 text-amber-300 drop-shadow-[0_0_14px_rgba(252,211,77,0.9)]" />
-                      <span className="relative block rounded-full bg-linear-to-br from-amber-100 via-amber-400 to-amber-700 p-1.5 shadow-[0_0_70px_rgba(252,211,77,0.4)]">
-                        <Portrait w={mvp} size="xl" />
-                      </span>
-                    </div>
-                    <div className="text-center sm:text-left">
-                      <p className={`${display.className} text-5xl leading-none sm:text-6xl ${GOLD_TEXT}`}>MVP</p>
-                      <p className="mt-1 text-xs font-black uppercase tracking-[0.25em] text-amber-200/70">Most Valuable Player</p>
-                      {mvp.href ? (
-                        <Link href={mvp.href} className="mt-4 block text-3xl font-black leading-tight text-white hover:text-amber-200 sm:text-4xl">
-                          {mvp.name}
-                        </Link>
-                      ) : (
-                        <p className="mt-4 text-3xl font-black leading-tight text-white sm:text-4xl">{mvp.name}</p>
-                      )}
-                      {mvp.nameEn && <p className="mt-1 text-sm uppercase tracking-widest text-white/40">{mvp.nameEn}</p>}
-                      <div className="mt-4 flex flex-wrap items-center justify-center gap-2 sm:justify-start">
-                        {mvp.team && (
-                          <span className="inline-flex items-center gap-2 rounded-full bg-white/10 py-1 pl-1 pr-3.5 text-sm text-white ring-1 ring-white/15">
-                            <TeamBadge team={mvp.team} size="md" />
-                            {mvp.team.name}
-                          </span>
-                        )}
-                        {mvp.number != null && (
-                          <span className="rounded-full bg-white/10 px-3 py-1.5 font-mono text-sm font-black text-amber-200 ring-1 ring-white/15">#{mvp.number}</span>
-                        )}
-                        {mvp.note && <span className="rounded-full bg-amber-400 px-3.5 py-1.5 text-sm font-black text-amber-950">{mvp.note}</span>}
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="relative flex flex-col items-center py-6 text-center">
-                    <span className="flex h-36 w-36 items-center justify-center rounded-full border-2 border-dashed border-white/15 bg-white/5">
-                      <Crown className="h-14 w-14 text-white/20" />
-                    </span>
-                    <p className="mt-5 text-base font-bold text-white/50">รอประกาศผล</p>
-                  </div>
-                )}
-              </div>
-            </div>
+            <MvpFeature mvps={mvps} />
           </Reveal>
         </section>
 
         {/* ===== รางวัลนักกีฬา ===== */}
         <section>
-          <SectionTitle en="Player Awards" th="รางวัลส่วนบุคคล" />
-          <div className="grid grid-cols-1 gap-x-5 gap-y-14 pt-7 sm:grid-cols-3">
+          <SectionTitle no={next()} en="Player Awards" th="รางวัลส่วนบุคคล" />
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {playerAwards.map((def, i) => (
-              <AwardCard key={def.key} def={def} rows={awards.get(def.key)} delay={i * 120} />
+              <PlayerAwardCard key={def.key} def={def} rows={awards.get(def.key)} delay={i * 120} />
             ))}
           </div>
         </section>
 
         {/* ===== รางวัลผู้ฝึกสอน ===== */}
         <section>
-          <SectionTitle en="Coaching Awards" th="รางวัลผู้ฝึกสอน" />
-          <div className="mx-auto grid max-w-3xl grid-cols-1 gap-x-5 gap-y-14 pt-7 sm:grid-cols-2">
+          <SectionTitle no={next()} en="Coaching Awards" th="รางวัลผู้ฝึกสอน" />
+          <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
             {coachAwards.map((def, i) => (
-              <AwardCard key={def.key} def={def} rows={awards.get(def.key)} delay={i * 120} />
+              <CoachAwardCard key={def.key} def={def} rows={awards.get(def.key)} delay={i * 120} />
             ))}
           </div>
         </section>
 
         {/* ===== Best XI ===== */}
         <section>
-          <SectionTitle en="Best XI" th="ทีมยอดเยี่ยมประจำทัวร์นาเมนต์ · 4-3-3" />
+          <SectionTitle no={next()} en="Best XI" th="ทีมยอดเยี่ยมประจำทัวร์นาเมนต์ · 4-3-3" />
           <Reveal>
             <div className="relative mx-auto max-w-5xl">
               {xi.length === 0 && (
-                <p className="mx-auto -mt-3 mb-5 w-fit rounded-full bg-white/5 px-5 py-2 text-sm font-bold text-amber-200 ring-1 ring-amber-300/30">
+                <p className="mx-auto mb-5 w-fit rounded-full bg-white/5 px-5 py-2 text-sm font-bold text-amber-200 ring-1 ring-amber-300/30">
                   <Lock className="mr-1.5 inline h-4 w-4" />
                   ประกาศหลังจบการแข่งขัน
                 </p>
