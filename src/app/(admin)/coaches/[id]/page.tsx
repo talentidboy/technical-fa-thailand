@@ -21,6 +21,9 @@ import {
 } from "@/lib/constants";
 import { getLicenseStatus, LICENSE_STATUS_STYLES } from "@/lib/license-status";
 import { getHighestCoreLevel, getNextCoreLevel } from "@/lib/license-rank";
+import { currentLicenseRecords, formatThaiDate, RENEWAL_STATUS } from "@/lib/license-renewal";
+import { RenewOneButton } from "@/components/renewal/RenewOneButton";
+import { UndoRenewalButton } from "@/components/renewal/UndoRenewalButton";
 import { getCountryByCode, getFlagEmoji } from "@/lib/countries";
 import { formatThaiAddress } from "@/lib/thai-address";
 import {
@@ -64,7 +67,7 @@ export default async function CoachDetailPage({
       include: {
         licenseRecords: {
           orderBy: { issueDate: "desc" },
-          include: { instructor: true },
+          include: { instructor: true, renewals: { orderBy: { requestedAt: "desc" } } },
         },
         employments: { orderBy: { createdAt: "desc" } },
         systemUser: { select: { email: true, isActive: true, lastLoginAt: true } },
@@ -96,6 +99,12 @@ export default async function CoachDetailPage({
   }
 
   const currentCoreLevel = getHighestCoreLevel(coach.licenseRecords);
+  // ใบระดับสูงสุดของแต่ละสาย = ใบที่ต้องดูวันหมดอายุ/ต่ออายุ (ใบที่อัปเกรดไปแล้วไม่ต้องต่อ)
+  const currentIds = new Set(currentLicenseRecords(coach.licenseRecords).map((r) => r.id));
+  const renewals = coach.licenseRecords
+    .flatMap((r) => r.renewals.map((x) => ({ ...x, licenseType: r.licenseType, recordExpire: r.expireDate })))
+    .sort((a, b) => b.requestedAt.getTime() - a.requestedAt.getTime());
+  const nowIso = new Date().toISOString();
   const nextCoreLevel = getNextCoreLevel(currentCoreLevel);
   const instructorOptions = instructors.map((inst) => ({
     value: String(inst.id),
@@ -390,8 +399,10 @@ export default async function CoachDetailPage({
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {coach.licenseRecords.map((record) => {
-                  const status = getLicenseStatus(record.expireDate);
-                  const style = LICENSE_STATUS_STYLES[status];
+                  const isCurrent = currentIds.has(record.id);
+                  const style = isCurrent
+                    ? LICENSE_STATUS_STYLES[getLicenseStatus(record.expireDate)]
+                    : { label: "มีระดับสูงกว่าแล้ว", className: "bg-slate-100 text-slate-500" };
                   return (
                     <tr key={record.id}>
                       <td className="px-6 py-3 font-medium text-slate-900">
@@ -433,6 +444,9 @@ export default async function CoachDetailPage({
                       </td>
                       <td className="px-6 py-3 text-right">
                         <div className="flex items-center justify-end gap-1">
+                          {isAdmin && isCurrent && record.expireDate && (
+                            <RenewOneButton recordId={record.id} expireIso={record.expireDate.toISOString()} nowIso={nowIso} />
+                          )}
                           <a
                             href={`/coaches/${coach.id}/certificate/${record.id}`}
                             aria-label="ดาวน์โหลดใบประกาศ (Diploma)"
@@ -479,6 +493,44 @@ export default async function CoachDetailPage({
                 })}
               </tbody>
             </table>
+          </div>
+        )}
+
+        {renewals.length > 0 && (
+          <div className="border-t border-slate-100 px-6 py-4">
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">ประวัติการต่ออายุ</p>
+            <ul className="space-y-2">
+              {renewals.map((r) => {
+                const st = RENEWAL_STATUS[r.status] ?? RENEWAL_STATUS.PENDING;
+                return (
+                  <li key={r.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
+                    <span className="rounded-md bg-indigo-600 px-1.5 py-0.5 text-[11px] font-black text-white">{r.licenseType}</span>
+                    <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ring-1 ${st.className}`}>{st.label}</span>
+                    <span className="text-slate-600">
+                      {r.status === "APPROVED"
+                        ? `${formatThaiDate(r.previousExpireDate)} → ${formatThaiDate(r.newExpireDate)}`
+                        : r.status === "REJECTED"
+                          ? `เหตุผล: ${r.reviewNote}`
+                          : `ยื่นคำขอ ${formatThaiDate(r.requestedAt)}`}
+                    </span>
+                    {r.note && <span className="text-xs text-slate-400">“{r.note}”</span>}
+                    {r.reviewedBy && (
+                      <span className="text-xs text-slate-400">
+                        {formatThaiDate(r.reviewedAt)} · {r.reviewedBy}
+                      </span>
+                    )}
+                    {isAdmin && r.status === "PENDING" && (
+                      <Link href="/renewals?tab=requests" className="text-xs font-semibold text-indigo-600 hover:underline">
+                        ตรวจคำขอ →
+                      </Link>
+                    )}
+                    {isAdmin && r.status === "APPROVED" && r.recordExpire?.getTime() === r.newExpireDate?.getTime() && (
+                      <UndoRenewalButton id={r.id} />
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
           </div>
         )}
       </div>

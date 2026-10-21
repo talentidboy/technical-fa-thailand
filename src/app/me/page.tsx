@@ -17,6 +17,9 @@ import { coreProgramSteps } from "@/components/CoursesSection";
 import { APPLICATION_STATUS, LIVE_APPLICATION_STATUSES } from "@/lib/course-workflow";
 import { Reveal } from "@/components/g15/Reveal";
 import { applyToSession } from "./courses/actions";
+import { cancelRenewalRequest } from "./renewal-actions";
+import { RenewalRequestForm } from "@/components/renewal/RenewalRequestForm";
+import { canRequestRenewal, currentLicenseRecords, daysUntil } from "@/lib/license-renewal";
 import {
   Mail,
   Phone,
@@ -38,6 +41,7 @@ import {
   AlertCircle,
   BookOpen,
   Settings,
+  RefreshCw,
 } from "lucide-react";
 
 function formatDate(date: Date | null) {
@@ -63,7 +67,10 @@ export default async function CoachHomePage({
     prisma.coach.findUnique({
       where: { id: coachId },
       include: {
-        licenseRecords: { orderBy: { issueDate: "desc" } },
+        licenseRecords: {
+          orderBy: { issueDate: "desc" },
+          include: { renewals: { orderBy: { requestedAt: "desc" }, take: 3 } },
+        },
         employments: { orderBy: { createdAt: "desc" } },
       },
     }),
@@ -126,7 +133,12 @@ export default async function CoachHomePage({
         Number(b.canApply) - Number(a.canApply) || Number(b.eligible) - Number(a.eligible) || Number(a.passed) - Number(b.passed),
     );
 
-  const licenseStatuses = coach.licenseRecords.map((r) => getLicenseStatus(r.expireDate));
+  // นับสถานะเฉพาะใบระดับสูงสุดของแต่ละสาย — ใบที่อัปเกรดไปแล้ว (เช่น B เมื่อมี A) ไม่นับว่า "หมดอายุ"
+  const current = currentLicenseRecords(coach.licenseRecords);
+  const currentIds = new Set(current.map((r) => r.id));
+  const licenseStatuses = current.map((r) => getLicenseStatus(r.expireDate));
+  // ใบที่ควรต่ออายุ (ใกล้หมด/หมดแล้ว และยังไม่ได้ส่งคำขอ) — แจ้งเตือนบนหัวข้อใบอนุญาต
+  const renewDue = current.filter((r) => canRequestRenewal(r.expireDate, now) && !r.renewals.some((x) => x.status === "PENDING"));
   const counts = {
     total: coach.licenseRecords.length,
     active: licenseStatuses.filter((s) => s === "active").length,
@@ -456,6 +468,20 @@ export default async function CoachHomePage({
             </div>
           ))}
         </div>
+        {renewDue.length > 0 && (
+          <div className="mb-4 flex items-start gap-3 rounded-2xl bg-amber-50 px-4 py-3 text-sm text-amber-900 ring-1 ring-amber-200">
+            <RefreshCw className="mt-0.5 h-4 w-4 flex-none text-amber-600" />
+            <p>
+              {renewDue
+                .map((r) => {
+                  const d = daysUntil(r.expireDate!, now);
+                  return `ใบอนุญาต ${labelFor(LICENSE_TYPES, r.licenseType)} ${d < 0 ? "หมดอายุแล้ว" : `จะหมดอายุในอีก ${d} วัน`}`;
+                })
+                .join(" · ")}{" "}
+              — กด &ldquo;ขอต่ออายุใบอนุญาต&rdquo; ที่การ์ดด้านล่าง
+            </p>
+          </div>
+        )}
         {coach.licenseRecords.length === 0 ? (
           <div className="flex flex-col items-center gap-2 rounded-3xl border border-dashed border-slate-300 bg-white px-6 py-8 text-center">
             <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 text-slate-400">
@@ -467,7 +493,12 @@ export default async function CoachHomePage({
         ) : (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             {coach.licenseRecords.map((record) => {
-              const style = LICENSE_STATUS_STYLES[getLicenseStatus(record.expireDate)];
+              const isCurrent = currentIds.has(record.id);
+              const style = isCurrent
+                ? LICENSE_STATUS_STYLES[getLicenseStatus(record.expireDate)]
+                : { label: "มีระดับสูงกว่าแล้ว", className: "bg-slate-100 text-slate-500" };
+              const pendingRenewal = record.renewals.find((x) => x.status === "PENDING");
+              const lastRenewal = record.renewals[0];
               return (
                 <div key={record.id} className="flex gap-4 rounded-3xl bg-white p-4 shadow-sm ring-1 ring-slate-200 transition-all hover:-translate-y-0.5 hover:shadow-md">
                   <span className="flex h-14 w-14 flex-none items-center justify-center rounded-2xl bg-linear-to-br from-indigo-700 to-indigo-900 text-lg font-black text-amber-300">
@@ -485,6 +516,31 @@ export default async function CoachHomePage({
                     <p className="text-xs text-slate-500">
                       ออก {formatDate(record.issueDate)} · หมดอายุ {formatDate(record.expireDate)}
                     </p>
+                    {isCurrent && lastRenewal?.status === "APPROVED" && !pendingRenewal && (
+                      <p className="mt-1 text-xs font-medium text-emerald-700">ต่ออายุล่าสุดเมื่อ {formatDate(lastRenewal.reviewedAt)}</p>
+                    )}
+                    {isCurrent && pendingRenewal ? (
+                      <div className="mt-3 flex flex-wrap items-center gap-2 rounded-xl bg-amber-50 px-3 py-2 text-xs text-amber-900 ring-1 ring-amber-200">
+                        <Clock className="h-3.5 w-3.5 flex-none text-amber-600" />
+                        <span className="flex-1">ส่งคำขอต่ออายุแล้วเมื่อ {formatDate(pendingRenewal.requestedAt)} — รอเจ้าหน้าที่ตรวจสอบ</span>
+                        <form action={cancelRenewalRequest}>
+                          <input type="hidden" name="id" value={pendingRenewal.id} />
+                          <button type="submit" className="font-semibold text-amber-700 underline-offset-2 hover:underline">
+                            ยกเลิกคำขอ
+                          </button>
+                        </form>
+                      </div>
+                    ) : isCurrent && canRequestRenewal(record.expireDate, now) ? (
+                      <>
+                        {lastRenewal?.status === "REJECTED" && (
+                          <p className="mt-2 flex items-start gap-1.5 text-xs text-red-600">
+                            <AlertCircle className="mt-0.5 h-3.5 w-3.5 flex-none" />
+                            คำขอครั้งก่อนไม่อนุมัติ: {lastRenewal.reviewNote}
+                          </p>
+                        )}
+                        <RenewalRequestForm recordId={record.id} licenseLabel={labelFor(LICENSE_TYPES, record.licenseType) ?? record.licenseType} />
+                      </>
+                    ) : null}
                     {AFC_CERTIFICATE_LEVELS.includes(record.licenseType) ? (
                       <div className="mt-2.5 flex flex-wrap gap-2">
                         <a

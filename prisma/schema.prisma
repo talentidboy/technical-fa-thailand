@@ -63,8 +63,31 @@ model LicenseRecord {
 
   // ใบสมัครอบรมที่ออกใบอนุญาตนี้ (ยืนยันผลผ่านจากหน้าจัดการรุ่นอบรม) — null = บันทึกเอง/นำเข้า
   application Application?
+  renewals    LicenseRenewal[]
 
   @@map("license_records")
+}
+
+// การต่ออายุใบอนุญาต — ต่ออายุ = เลื่อน expireDate ของใบอนุญาตเดิม (เลขที่ใบอนุญาตเดิม) แล้วเก็บประวัติไว้ที่นี่
+// PENDING = โค้ชยื่นคำขอ (รอแอดมินตรวจ) · APPROVED = ต่ออายุแล้ว (เก็บวันหมดอายุเดิม/ใหม่ไว้ยกเลิกย้อนได้) · REJECTED = ไม่อนุมัติ
+model LicenseRenewal {
+  id                 Int           @id @default(autoincrement())
+  licenseRecordId    Int           @map("license_record_id")
+  licenseRecord      LicenseRecord @relation(fields: [licenseRecordId], references: [id], onDelete: Cascade)
+  status             String        @default("PENDING")
+  requestedByCoach   Boolean       @default(false) @map("requested_by_coach")
+  note               String? // กิจกรรม/หลักฐาน CPD ที่โค้ชแจ้ง หรือหมายเหตุของแอดมิน
+  evidenceUrl        String?       @map("evidence_url")
+  requestedAt        DateTime      @default(now()) @map("requested_at")
+  reviewedAt         DateTime?     @map("reviewed_at")
+  reviewedBy         String?       @map("reviewed_by")
+  reviewNote         String?       @map("review_note") // เหตุผลที่ไม่อนุมัติ
+  previousExpireDate DateTime?     @map("previous_expire_date")
+  newExpireDate      DateTime?     @map("new_expire_date")
+
+  @@index([status])
+  @@index([licenseRecordId])
+  @@map("license_renewals")
 }
 
 // ข้อมูลวิทยากรผู้สอนหลักสูตรอบรมผู้ฝึกสอน

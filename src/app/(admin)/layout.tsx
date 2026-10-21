@@ -24,6 +24,7 @@ export default async function AdminLayout({
     courseSessionCount,
     expiringSoon,
     expiringSoonCount,
+    renewalRequestCount,
   ] = await Promise.all([
     user.role === "ADMIN"
       ? prisma.profileEditRequest.count({ where: { status: "PENDING" } })
@@ -49,6 +50,7 @@ export default async function AdminLayout({
     prisma.licenseRecord.count({
       where: { expireDate: { gte: now, lte: ninetyDaysFromNow } },
     }),
+    user.role === "ADMIN" ? prisma.licenseRenewal.count({ where: { status: "PENDING" } }) : Promise.resolve(0),
   ]);
 
   return (
@@ -57,6 +59,7 @@ export default async function AdminLayout({
         email={user.email}
         role={user.role}
         pendingRequestCount={pendingRequestCount}
+        renewalRequestCount={renewalRequestCount}
       />
       <main className="min-w-0 lg:h-screen lg:flex-1 lg:overflow-y-auto">
         <div className="mx-auto max-w-6xl px-4 py-6 sm:px-8 sm:py-8">
