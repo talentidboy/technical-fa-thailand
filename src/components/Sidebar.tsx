@@ -14,6 +14,7 @@ import {
   ArrowLeft,
   KeyRound,
   CalendarClock,
+  BarChart3,
   Menu,
   X,
 } from "lucide-react";
@@ -32,6 +33,7 @@ const navItems: NavItem[] = [
   { href: "/dashboard", label: "แดชบอร์ด", icon: LayoutDashboard },
   { href: "/coaches", label: "รายชื่อผู้ฝึกสอน", icon: Users },
   { href: "/instructors", label: "วิทยากร", icon: GraduationCap },
+  { href: "/reports", label: "รายงานการอบรม", icon: BarChart3 },
 ];
 
 // แถบเมนูของศูนย์อบรมผู้ฝึกสอน — จอใหญ่ (lg+) เป็นแถบด้านซ้ายถาวร, จอเล็กเป็นแถบบน + เมนูเลื่อนออกจากซ้าย
