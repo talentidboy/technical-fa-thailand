@@ -1,33 +1,23 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useStoredValue } from "./useStoredValue";
+
+const EMPTY_COLORS: Record<string, string> = {};
+
+function isColorMap(value: unknown): value is Record<string, string> {
+  return (
+    value !== null &&
+    typeof value === "object" &&
+    !Array.isArray(value) &&
+    Object.values(value).every((color) => typeof color === "string")
+  );
+}
 
 export function useColorMap(storageKey: string) {
-  const [colors, setColors] = useState<Record<string, string>>({});
-
-  useEffect(() => {
-    try {
-      const raw = window.localStorage.getItem(storageKey);
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        if (parsed && typeof parsed === "object") setColors(parsed);
-      }
-    } catch {
-      // ignore malformed/unavailable localStorage
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const [colors, updateColors] = useStoredValue(storageKey, EMPTY_COLORS, isColorMap);
 
   function update(updater: (prev: Record<string, string>) => Record<string, string>) {
-    setColors((prev) => {
-      const next = updater(prev);
-      try {
-        window.localStorage.setItem(storageKey, JSON.stringify(next));
-      } catch {
-        // ignore unavailable localStorage (e.g. private mode)
-      }
-      return next;
-    });
+    updateColors(updater);
   }
 
   function setColor(name: string, color: string) {

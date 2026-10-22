@@ -1,12 +1,9 @@
 import type { Metadata } from "next";
-import { Noto_Sans_Thai } from "next/font/google";
+import "@fontsource/noto-sans-thai/400.css";
+import "@fontsource/noto-sans-thai/500.css";
+import "@fontsource/noto-sans-thai/600.css";
+import "@fontsource/noto-sans-thai/700.css";
 import "./globals.css";
-
-const notoSansThai = Noto_Sans_Thai({
-  variable: "--font-thai",
-  subsets: ["thai", "latin"],
-  weight: ["400", "500", "600", "700"],
-});
 
 export const metadata: Metadata = {
   title: "FA Thailand Technical",
@@ -19,7 +16,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="th" className={`${notoSansThai.variable} h-full antialiased`}>
+    <html lang="th" className="h-full antialiased">
       <body className="h-full bg-slate-50 text-slate-900">{children}</body>
     </html>
   );

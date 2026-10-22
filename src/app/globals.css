@@ -3,6 +3,7 @@
 :root {
   --background: #f8fafc;
   --foreground: #0f172a;
+  --font-thai: "Noto Sans Thai", Arial, sans-serif;
 }
 
 @theme inline {

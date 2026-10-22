@@ -1,35 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useStoredValue } from "./useStoredValue";
+
+function isNonEmptyStringArray(value: unknown): value is string[] {
+  return Array.isArray(value) && value.length > 0 && value.every((item) => typeof item === "string");
+}
 
 export function useManagedList(storageKey: string, seed: string[]) {
-  const [items, setItems] = useState<string[]>(seed);
-
-  useEffect(() => {
-    try {
-      const raw = window.localStorage.getItem(storageKey);
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          setItems(parsed);
-        }
-      }
-    } catch {
-      // ignore malformed/unavailable localStorage
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const [items, updateItems] = useStoredValue(storageKey, seed, isNonEmptyStringArray);
 
   function update(updater: (prev: string[]) => string[]) {
-    setItems((prev) => {
-      const next = updater(prev);
-      try {
-        window.localStorage.setItem(storageKey, JSON.stringify(next));
-      } catch {
-        // ignore unavailable localStorage (e.g. private mode)
-      }
-      return next;
-    });
+    updateItems(updater);
   }
 
   function add(value: string) {

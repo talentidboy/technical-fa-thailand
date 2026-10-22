@@ -109,6 +109,35 @@ function buildQuery(
   return qs ? `/dashboard/report?${qs}` : "/dashboard/report";
 }
 
+function SearchFilter({
+  initialValue,
+  onSearch,
+}: {
+  initialValue: string;
+  onSearch: (value: string) => void;
+}) {
+  const [searchInput, setSearchInput] = useState(initialValue);
+
+  useEffect(() => {
+    if (searchInput === initialValue) return;
+    const timer = setTimeout(() => onSearch(searchInput), 400);
+    return () => clearTimeout(timer);
+  }, [initialValue, onSearch, searchInput]);
+
+  return (
+    <div className="relative mb-3">
+      <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+      <input
+        type="text"
+        value={searchInput}
+        onChange={(event) => setSearchInput(event.target.value)}
+        placeholder="ค้นหาชื่อ, ID AFC, สโมสร..."
+        className="w-full rounded-lg border border-slate-200 py-2 pl-9 pr-3 text-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100"
+      />
+    </div>
+  );
+}
+
 export function CoachReportDashboard({
   filters,
   sortKey,
@@ -128,22 +157,6 @@ export function CoachReportDashboard({
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-  const [searchInput, setSearchInput] = useState(filters.search);
-
-  useEffect(() => {
-    setSearchInput(filters.search);
-  }, [filters.search]);
-
-  // debounce การพิมพ์ค้นหา ก่อนยิงไป URL/เซิร์ฟเวอร์
-  useEffect(() => {
-    if (searchInput === filters.search) return;
-    const t = setTimeout(() => {
-      go({ ...filters, search: searchInput });
-    }, 400);
-    return () => clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchInput]);
-
   function go(
     nextFilters: CoachFilters,
     nextSort: SortKey = sortKey,
@@ -216,16 +229,11 @@ export function CoachReportDashboard({
           </p>
         </div>
 
-        <div className="relative mb-3">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-          <input
-            type="text"
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-            placeholder="ค้นหาชื่อ, ID AFC, สโมสร..."
-            className="w-full rounded-lg border border-slate-200 py-2 pl-9 pr-3 text-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100"
-          />
-        </div>
+        <SearchFilter
+          key={filters.search}
+          initialValue={filters.search}
+          onSearch={(search) => go({ ...filters, search })}
+        />
 
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
           <FilterSelect

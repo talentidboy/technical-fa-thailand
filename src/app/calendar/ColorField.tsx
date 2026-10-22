@@ -1,29 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Plus, X } from "lucide-react";
+import { useStoredValue } from "./useStoredValue";
 
 const STORAGE_KEY = "calendar-color-presets";
 
-function loadPresets(seed: string[]): string[] {
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-    }
-  } catch {
-    // ignore malformed/unavailable localStorage
-  }
-  return seed;
-}
-
-function savePresets(presets: string[]) {
-  try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(presets));
-  } catch {
-    // ignore unavailable localStorage (e.g. private mode)
-  }
+function isNonEmptyStringArray(value: unknown): value is string[] {
+  return Array.isArray(value) && value.length > 0 && value.every((item) => typeof item === "string");
 }
 
 export default function ColorField({
@@ -36,27 +20,18 @@ export default function ColorField({
   seedColors: string[];
 }) {
   const [value, setValue] = useState(defaultValue);
-  const [presets, setPresets] = useState<string[]>(seedColors);
-
-  useEffect(() => {
-    setPresets(loadPresets(seedColors));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const [presets, updatePresets] = useStoredValue(STORAGE_KEY, seedColors, isNonEmptyStringArray);
 
   function addPreset() {
-    setPresets((prev) => {
+    updatePresets((prev) => {
       if (prev.some((c) => c.toLowerCase() === value.toLowerCase())) return prev;
-      const next = [...prev, value];
-      savePresets(next);
-      return next;
+      return [...prev, value];
     });
   }
 
   function removePreset(color: string) {
-    setPresets((prev) => {
-      const next = prev.filter((c) => c !== color);
-      savePresets(next);
-      return next;
+    updatePresets((prev) => {
+      return prev.filter((c) => c !== color);
     });
   }
 
