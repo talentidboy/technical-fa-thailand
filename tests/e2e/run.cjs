@@ -53,8 +53,8 @@ async function waitForServer(child, log) {
   const log = [];
   const server = spawn("npx", ["next", "dev", "-p", String(h.PORT)], {
     cwd: h.ROOT,
-    // ปิดอีเมลจริง + กำหนดรหัสงานอัตโนมัติสำหรับทดสอบ
-    env: { ...process.env, TEST_DB_SCHEMA: h.SCHEMA, EMAIL_DISABLED: "1", CRON_SECRET: h.CRON_SECRET },
+    // ปิดอีเมลจริง + กำหนดรหัสงานอัตโนมัติสำหรับทดสอบ + เอกสารอคาเดมีเก็บในโฟลเดอร์ทดสอบ (ไม่ขึ้นที่เก็บไฟล์จริง)
+    env: { ...process.env, TEST_DB_SCHEMA: h.SCHEMA, EMAIL_DISABLED: "1", CRON_SECRET: h.CRON_SECRET, ACADEMY_DOCS_DIR: path.join(ARTIFACTS, "academy-docs") },
     shell: process.platform === "win32",
     detached: process.platform !== "win32",
   });

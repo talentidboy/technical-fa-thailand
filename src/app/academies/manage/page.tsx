@@ -1,16 +1,15 @@
 import Link from "next/link";
-import Image from "next/image";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
-import { LOGO_URL } from "@/lib/brand";
 import { getProvinceOptions } from "@/lib/thai-address";
 import { ACADEMY_LEVELS, LEVEL_META, STATE_META, compareAcademies, isLevel, levelRank, thaiDate, type AcademyState } from "@/lib/academy";
 import { loadAcademies, matchesQuery, type AcademyRow } from "@/lib/academy-data";
 import { ResultForm } from "@/components/ResultForm";
 import { LevelBadge, StateChip } from "@/components/academy/AcademyUi";
+import { ManageShell } from "@/components/academy/ManageShell";
 import { createAcademy } from "./actions";
 import { AcademyFields, LicenceFields, inputClass } from "./fields";
-import { ArrowLeft, Plus, Download, Search, ChevronLeft, ChevronRight, ExternalLink, TriangleAlert } from "lucide-react";
+import { Plus, Download, Search, ChevronLeft, ChevronRight, ExternalLink, TriangleAlert } from "lucide-react";
 
 const PAGE = 50;
 
@@ -89,26 +88,7 @@ export default async function AcademyManagePage({
   const provincesInUse = [...new Set(rows.map((a) => a.province).filter((p): p is string => !!p))].sort((a, b) => a.localeCompare(b, "th"));
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <header className="sticky top-0 z-20 border-b border-white/10 bg-indigo-950/90 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-6 py-4">
-          <Link href="/academies/manage" className="flex items-center gap-2">
-            <Image src={LOGO_URL} alt="FA Thailand" width={36} height={36} className="h-9 w-9 rounded-lg object-cover" />
-            <div>
-              <p className="text-sm font-bold text-white">Academy Licensing</p>
-              <p className="text-[11px] text-indigo-300">จัดการทะเบียนอคาเดมี</p>
-            </div>
-          </Link>
-          <Link
-            href="/academies"
-            className="inline-flex items-center gap-1.5 rounded-lg border border-white/15 px-3 py-2 text-sm font-medium text-indigo-200 transition-colors hover:bg-white/10 hover:text-white"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            <span className="hidden sm:inline">ดูหน้าทำเนียบ</span>
-          </Link>
-        </div>
-      </header>
-
+    <ManageShell active="registry">
       <main className="mx-auto max-w-7xl space-y-6 px-6 py-8">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
@@ -293,6 +273,6 @@ export default async function AcademyManagePage({
           ทุกการแก้ไขถูกบันทึกในบันทึกการแก้ไขของระบบ
         </p>
       </main>
-    </div>
+    </ManageShell>
   );
 }

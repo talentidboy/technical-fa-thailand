@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
+import { redirect, unstable_rethrow } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireUser, type CurrentUser } from "@/lib/auth";
 import { audit, changedFields } from "@/lib/audit";
@@ -21,6 +21,7 @@ async function attempt(fn: (user: CurrentUser) => Promise<void>): Promise<FormRe
     revalidatePath("/academies", "layout");
     return { ok: true };
   } catch (err) {
+    unstable_rethrow(err);
     return { ok: false, error: err instanceof Error ? err.message : "บันทึกไม่สำเร็จ" };
   }
 }
@@ -134,8 +135,10 @@ export async function toggleAcademyActive(formData: FormData) {
 export async function deleteAcademy(formData: FormData): Promise<FormResult> {
   const res = await attempt(async (user) => {
     const id = idOf(formData);
-    const academy = await prisma.academy.findUnique({ where: { id }, include: { licences: true } });
+    const academy = await prisma.academy.findUnique({ where: { id }, include: { licences: true, _count: { select: { members: true, applications: true } } } });
     if (!academy) throw new Error("ไม่พบอคาเดมี");
+    // ข้อมูลในพอร์ทัล (บัญชี ใบสมัคร เอกสาร รายชื่อนักเตะ) กู้คืนจากบันทึกไม่ได้ — ให้ปิดการแสดงแทน
+    if (academy._count.members || academy._count.applications) throw new Error("อคาเดมีนี้มีบัญชีหรือใบสมัครในพอร์ทัลแล้ว ลบไม่ได้ — ใช้ “ปิดการแสดงบนหน้าสาธารณะ” แทน");
     await prisma.academy.delete({ where: { id } });
     // เก็บสำเนาข้อมูลไว้ในบันทึก เผื่อต้องกู้คืน
     await audit(user.email, "ACADEMY_DELETE", { summary: `ลบอคาเดมี ${academy.nameEn} (ใบอนุญาต ${academy.licences.length} ใบ)`, details: academy });

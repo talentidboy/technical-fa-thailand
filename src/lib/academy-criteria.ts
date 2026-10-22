@@ -275,6 +275,20 @@ export const ACADEMY_CRITERIA: CriteriaCategory[] = [
 export const criteriaCount = (level: AcademyLevel) =>
   ACADEMY_CRITERIA.reduce((n, c) => n + c.subs.reduce((m, s) => m + s.rows.filter((r) => r[LEVEL_INDEX[level]]).length, 0), 0);
 
+// เกณฑ์ของระดับหนึ่งเป็นรายการเดียว — code = หัวข้อย่อย.ลำดับแถว (เช่น 1.1.3) ใช้ผูกหลักฐานในใบสมัคร
+export type CriterionItem = { code: string; catNo: number; catTh: string; subCode: string; subTh: string; subEn: string; th: string; en: string };
+export function criteriaList(level: AcademyLevel): CriterionItem[] {
+  const i = LEVEL_INDEX[level];
+  return ACADEMY_CRITERIA.flatMap((cat) =>
+    cat.subs.flatMap((sub) =>
+      sub.rows.flatMap((row, n) => {
+        const cell = row[i];
+        return cell ? [{ code: `${sub.code}.${n + 1}`, catNo: cat.no, catTh: cat.th, subCode: sub.code, subTh: sub.th, subEn: sub.en, th: cell.th, en: cell.en }] : [];
+      }),
+    ),
+  );
+}
+
 // สรุประดับ (จากภาพประกอบของสมาคมฯ) — เหมาะกับใคร และข้อกำหนดหลัก
 export const LEVEL_SUMMARY: Record<
   AcademyLevel,

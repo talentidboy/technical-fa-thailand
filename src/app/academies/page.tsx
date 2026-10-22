@@ -1,14 +1,30 @@
 import Link from "next/link";
 import Image from "next/image";
 import type { Metadata } from "next";
-import { getCurrentUser } from "@/lib/auth";
+import { getAcademyUser, getCurrentUser } from "@/lib/auth";
 import { LOGO_URL } from "@/lib/brand";
 import { ACADEMY_LEVELS, LEVEL_META, compareAcademies, isLevel, showPublicly } from "@/lib/academy";
 import { loadAcademies, matchesQuery } from "@/lib/academy-data";
 import { LEVEL_SUMMARY, criteriaCount } from "@/lib/academy-criteria";
 import { LevelMedal, StateChip } from "@/components/academy/AcademyUi";
 import { CriteriaExplorer } from "@/components/academy/CriteriaExplorer";
-import { ArrowLeft, ArrowRight, Check, ListChecks, MapPin, Search, Settings, ShieldCheck, Star, ChevronLeft, ChevronRight } from "lucide-react";
+import { ThailandMap } from "@/components/academy/ThailandMap";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  ClipboardPen,
+  LayoutDashboard,
+  ListChecks,
+  LogIn,
+  MapPin,
+  Search,
+  Settings,
+  ShieldCheck,
+  Star,
+} from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Academy Licensing — ทำเนียบอคาเดมีที่ได้รับการรับรอง | FA Thailand",
@@ -25,7 +41,7 @@ export default async function AcademiesPage({
 }) {
   const sp = await searchParams;
   const criteriaLevel = isLevel(sp.criteria) ? sp.criteria : "BRONZE";
-  const [user, rows] = await Promise.all([getCurrentUser(), loadAcademies()]);
+  const [user, academyUser, rows] = await Promise.all([getCurrentUser(), getAcademyUser(), loadAcademies()]);
   const canManage = user?.role === "ADMIN" || user?.role === "STAFF";
 
   const all = rows.filter((a) => showPublicly(a.active, a.state));
@@ -63,7 +79,7 @@ export default async function AcademiesPage({
             </div>
           </Link>
           <div className="flex items-center gap-2">
-            {canManage && (
+            {canManage ? (
               <Link
                 href="/academies/manage"
                 className="inline-flex items-center gap-1.5 rounded-lg bg-amber-400 px-3 py-2 text-sm font-semibold text-indigo-950 transition-colors hover:bg-amber-300"
@@ -71,6 +87,24 @@ export default async function AcademiesPage({
                 <Settings className="h-4 w-4" />
                 <span className="hidden sm:inline">จัดการข้อมูล</span>
               </Link>
+            ) : academyUser ? (
+              <Link
+                href="/academies/portal"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-amber-400 px-3 py-2 text-sm font-semibold text-indigo-950 transition-colors hover:bg-amber-300"
+              >
+                <LayoutDashboard className="h-4 w-4" />
+                <span className="hidden sm:inline">พอร์ทัลอคาเดมี</span>
+              </Link>
+            ) : (
+              !user && (
+                <Link
+                  href="/academies/login"
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-white px-3 py-2 text-sm font-semibold text-indigo-950 transition-colors hover:bg-indigo-50"
+                >
+                  <LogIn className="h-4 w-4" />
+                  <span className="hidden sm:inline">เข้าสู่ระบบอคาเดมี</span>
+                </Link>
+              )
             )}
             <Link
               href="/"
@@ -83,59 +117,61 @@ export default async function AcademiesPage({
         </div>
       </header>
 
-      {/* Hero */}
+      {/* Hero: แผนที่อคาเดมีทั่วประเทศ */}
       <section className="relative isolate overflow-hidden bg-indigo-950 text-white">
-        <div className="absolute -left-24 -top-24 -z-10 h-96 w-96 rounded-full bg-indigo-500/25 blur-3xl" />
-        <div className="absolute -right-20 top-10 -z-10 h-96 w-96 rounded-full bg-amber-400/20 blur-3xl" />
+        <div className="absolute -left-24 -top-24 -z-10 h-112 w-md rounded-full bg-indigo-500/25 blur-3xl" />
+        <div className="absolute -right-24 top-1/3 -z-10 h-120 w-120 rounded-full bg-amber-400/15 blur-3xl" />
         <div
           className="absolute inset-0 -z-10 opacity-[0.05]"
           style={{ backgroundImage: "linear-gradient(white 1px, transparent 1px), linear-gradient(90deg, white 1px, transparent 1px)", backgroundSize: "36px 36px" }}
         />
         <div className="absolute inset-x-0 top-0 h-1 bg-linear-to-r from-amber-600 via-amber-300 to-amber-600" />
-        <div className="mx-auto grid max-w-6xl items-center gap-10 px-6 py-14 lg:grid-cols-[1.2fr_1fr]">
-          <div>
+        <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:py-16">
+          <ThailandMap academies={all.map((a) => ({ id: a.id, nameEn: a.nameEn, nameTh: a.nameTh, province: a.province, level: a.level }))}>
             <p className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-amber-300 ring-1 ring-white/15">
               <ShieldCheck className="h-3.5 w-3.5" />
               ใบอนุญาตรับรองมาตรฐานอคาเดมี
             </p>
             <h1 className="mt-4 text-3xl font-extrabold leading-tight sm:text-5xl">Academy Licensing</h1>
             <p className="mt-4 max-w-xl text-sm leading-relaxed text-indigo-200 sm:text-base">
-              ทำเนียบศูนย์ฝึกเยาวชนและอคาเดมีฟุตบอลที่ได้รับการรับรองมาตรฐานจากสมาคมกีฬาฟุตบอลแห่งประเทศไทย ในพระบรมราชูปถัมภ์
-              แบ่งเป็น 3 ระดับ ภายใต้โครงการ GROW TOGETHER ร่วมกับ FIFA Talent Development Scheme
+              แผนที่ศูนย์ฝึกเยาวชนและอคาเดมีฟุตบอลที่ได้รับการรับรองมาตรฐานจากสมาคมกีฬาฟุตบอลแห่งประเทศไทย ในพระบรมราชูปถัมภ์ ทั่วประเทศ 3 ระดับ
+              ภายใต้โครงการ GROW TOGETHER ร่วมกับ FIFA Talent Development Scheme
             </p>
-            <div className="mt-7 flex flex-wrap gap-3">
+            <div className="mt-6 grid max-w-md grid-cols-3 gap-2.5">
+              {[...ACADEMY_LEVELS].reverse().map((l) => (
+                <Link key={l} href={href({ level: l, page: null })} className="flex items-center gap-2.5 rounded-2xl bg-white/5 p-2.5 ring-1 ring-white/10 transition-colors hover:bg-white/10">
+                  <LevelMedal level={l} size="sm" />
+                  <span>
+                    <span className="block text-xl font-extrabold leading-none">{count(l)}</span>
+                    <span className="text-[11px] font-semibold text-indigo-200">{LEVEL_META[l].label}</span>
+                  </span>
+                </Link>
+              ))}
+            </div>
+            <div className="mt-6 flex flex-wrap gap-3">
               <a
                 href="#directory"
-                className="inline-flex items-center gap-2 rounded-full bg-amber-400 px-6 py-3 text-sm font-bold text-indigo-950 shadow-lg shadow-amber-500/20 transition-transform hover:scale-105"
+                className="inline-flex items-center gap-2 rounded-full bg-amber-400 px-5 py-2.5 text-sm font-bold text-indigo-950 shadow-lg shadow-amber-500/20 transition-transform hover:scale-105"
               >
                 <Search className="h-4 w-4" />
                 ค้นหาอคาเดมี
               </a>
+              <Link
+                href={academyUser ? "/academies/portal" : "/academies/register"}
+                className="inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-bold text-indigo-950 transition-transform hover:scale-105"
+              >
+                <ClipboardPen className="h-4 w-4" />
+                {academyUser ? "พอร์ทัลอคาเดมีของฉัน" : "สมัคร / ยื่นขอใบอนุญาต"}
+              </Link>
               <a
                 href="#criteria"
-                className="inline-flex items-center gap-2 rounded-full border border-white/25 px-6 py-3 text-sm font-bold text-white transition-colors hover:bg-white/10"
+                className="inline-flex items-center gap-2 rounded-full border border-white/25 px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-white/10"
               >
                 <ListChecks className="h-4 w-4" />
                 เกณฑ์มาตรฐาน
               </a>
             </div>
-          </div>
-          <div className="grid grid-cols-3 gap-3">
-            {[...ACADEMY_LEVELS].reverse().map((l) => (
-              <Link
-                key={l}
-                href={href({ level: l, page: null })}
-                className="group flex flex-col items-center rounded-3xl bg-white/5 p-4 text-center ring-1 ring-white/10 transition-colors hover:bg-white/10"
-              >
-                <LevelMedal level={l} />
-                <p className="mt-3 text-3xl font-extrabold">{count(l)}</p>
-                <p className="text-xs font-semibold text-indigo-200">FAT {LEVEL_META[l].label}</p>
-              </Link>
-            ))}
-            <p className="col-span-3 text-center text-xs text-indigo-300">
-              รวม {all.length.toLocaleString()} อคาเดมี ใน {provinces.length} จังหวัด
-            </p>
-          </div>
+          </ThailandMap>
         </div>
       </section>
 

@@ -40,6 +40,7 @@ model Coach {
   profileEditRequests ProfileEditRequest[]
   applications        Application[]
   notifications       Notification[]
+  academyStaff        AcademyStaff[]
 
   @@map("coaches")
 }
@@ -143,6 +144,7 @@ model SystemUser {
   sessions         Session[]
   announcements    Announcement[]
   trainingArticles TrainingArticle[]
+  academyMember    AcademyMember?
 
   @@map("system_users")
 }
@@ -249,18 +251,18 @@ model CourseSession {
 // status: PENDING (รออนุมัติ) → APPROVED (อนุมัติเข้าอบรม) → PASSED (ผ่าน ออกใบอนุญาตแล้ว) / FAILED (ไม่ผ่าน)
 //         หรือ REJECTED (ไม่อนุมัติเข้าอบรม), CANCELLED
 model Application {
-  id              Int           @id @default(autoincrement())
-  coachId         Int           @map("coach_id")
-  coach           Coach         @relation(fields: [coachId], references: [id], onDelete: Cascade)
-  courseSessionId Int           @map("course_session_id")
-  courseSession   CourseSession @relation(fields: [courseSessionId], references: [id], onDelete: Cascade)
-  status          String        @default("PENDING")
-  appliedAt       DateTime      @default(now()) @map("applied_at")
-  reviewedAt      DateTime?     @map("reviewed_at")
-  reviewedBy      String?       @map("reviewed_by")
+  id              Int            @id @default(autoincrement())
+  coachId         Int            @map("coach_id")
+  coach           Coach          @relation(fields: [coachId], references: [id], onDelete: Cascade)
+  courseSessionId Int            @map("course_session_id")
+  courseSession   CourseSession  @relation(fields: [courseSessionId], references: [id], onDelete: Cascade)
+  status          String         @default("PENDING")
+  appliedAt       DateTime       @default(now()) @map("applied_at")
+  reviewedAt      DateTime?      @map("reviewed_at")
+  reviewedBy      String?        @map("reviewed_by")
   note            String?
   // ใบอนุญาตที่ออกให้เมื่อยืนยันผลผ่าน (ลบใบอนุญาต = ผลถูกยกเลิก)
-  licenseRecordId Int?          @unique @map("license_record_id")
+  licenseRecordId Int?           @unique @map("license_record_id")
   licenseRecord   LicenseRecord? @relation(fields: [licenseRecordId], references: [id], onDelete: SetNull)
 
   @@unique([coachId, courseSessionId])
@@ -304,7 +306,7 @@ model G15Team {
   cards         G15Card[]
   lineups       G15Lineup[]
 
-  awards        G15Award[]
+  awards G15Award[]
 
   @@map("g15_teams")
 }
@@ -342,7 +344,7 @@ model G15Player {
   allStars            G15AllStar[]
   playerOfMatchAwards G15Match[]   @relation("G15PlayerOfMatch")
 
-  awards              G15Award[]
+  awards G15Award[]
 
   @@map("g15_players")
 }
@@ -424,13 +426,13 @@ model G15Match {
   secondHalfAddedTime Int?      @map("second_half_added_time")
 
   // ทีมงานผู้ตัดสิน — จากใบรายงานผู้ตัดสิน/Starting List ของแต่ละนัด (มีเฉพาะนัดที่ได้รับเอกสารแล้ว)
-  referee            String? @map("referee")
-  assistantReferee1  String? @map("assistant_referee_1")
-  assistantReferee2  String? @map("assistant_referee_2")
-  fourthOfficial     String? @map("fourth_official")
-  matchCommissioner  String? @map("match_commissioner")
-  refereeAssessor    String? @map("referee_assessor")
-  generalCoordinator String? @map("general_coordinator")
+  referee                     String? @map("referee")
+  assistantReferee1           String? @map("assistant_referee_1")
+  assistantReferee2           String? @map("assistant_referee_2")
+  fourthOfficial              String? @map("fourth_official")
+  matchCommissioner           String? @map("match_commissioner")
+  refereeAssessor             String? @map("referee_assessor")
+  generalCoordinator          String? @map("general_coordinator")
   assistantGeneralCoordinator String? @map("assistant_general_coordinator")
 
   // สกอร์แยกครึ่งเวลาตามที่ระบุในใบรายงานผู้ตัดสิน — เก็บไว้อ้างอิงเฉยๆ ไม่ใช่ค่าที่ใช้คำนวณตารางคะแนน
@@ -505,7 +507,7 @@ model G15Goal {
   jerseyNumber   Int?       @map("jersey_number")
   minute         Int?
   // ทดเวลาบาดเจ็บ เช่น 90+3 → minute = 90, addedMinute = 3 (ว่าง = ไม่ใช่ช่วงทดเวลา)
-  addedMinute Int? @map("added_minute")
+  addedMinute    Int?       @map("added_minute")
   // ทำเข้าประตูตัวเอง — teamId = ทีมที่ได้ประตู, playerId/playerName = คนยิง (เป็นผู้เล่นทีมตรงข้าม)
   // ไม่นับเป็นประตูของคนยิงในดาวซัลโว/โปรไฟล์
   isOwnGoal      Boolean    @default(false) @map("is_own_goal")
@@ -526,7 +528,7 @@ model G15Substitution {
   team            G15Team  @relation(fields: [teamId], references: [id], onDelete: Cascade)
   minute          Int?
   // ทดเวลาบาดเจ็บ เช่น 90+3 → minute = 90, addedMinute = 3 (ว่าง = ไม่ใช่ช่วงทดเวลา)
-  addedMinute Int? @map("added_minute")
+  addedMinute     Int?     @map("added_minute")
   playerInName    String   @map("player_in_name")
   playerInNumber  Int?     @map("player_in_number")
   playerOutName   String   @map("player_out_name")
@@ -550,7 +552,7 @@ model G15Card {
   cardType     String   @map("card_type")
   minute       Int?
   // ทดเวลาบาดเจ็บ เช่น 90+3 → minute = 90, addedMinute = 3 (ว่าง = ไม่ใช่ช่วงทดเวลา)
-  addedMinute Int? @map("added_minute")
+  addedMinute  Int?     @map("added_minute")
   reason       String?
   createdAt    DateTime @default(now()) @map("created_at")
 
@@ -612,25 +614,181 @@ model PlayAndLearnSetting {
 // ===== Academy Licensing — ใบอนุญาตรับรองมาตรฐานอคาเดมี (FAT Bronze / Silver / Gold) =====
 // อคาเดมี 1 แห่ง มีประวัติใบอนุญาตได้หลายใบ (ต่ออายุ / เลื่อนระดับ) — ระดับปัจจุบันคำนวณจากใบที่ยังมีผล (lib/academy.ts)
 model Academy {
-  id          Int              @id @default(autoincrement())
-  nameEn      String           @map("name_en")
-  nameTh      String?          @map("name_th")
-  aliases     String? // ชื่อเดิม / ชื่อเรียกอื่น
-  province    String?
-  address     String?
-  parentClub  String?          @map("parent_club") // สโมสรต้นสังกัด (ถ้ามี)
-  contactName String?          @map("contact_name") // ผู้ประสานงาน — ข้อมูลติดต่อไม่แสดงบนหน้าสาธารณะ
-  phone       String?
-  email       String?
-  website     String? // เว็บไซต์ / เพจ
-  note        String?
-  active      Boolean          @default(true) // false = ปิด/ยุบรวม ไม่แสดงบนหน้าสาธารณะ
-  createdAt   DateTime         @default(now()) @map("created_at")
-  updatedAt   DateTime         @updatedAt @map("updated_at")
-  licences    AcademyLicence[]
+  id              Int                  @id @default(autoincrement())
+  nameEn          String               @map("name_en")
+  nameTh          String?              @map("name_th")
+  aliases         String? // ชื่อเดิม / ชื่อเรียกอื่น
+  province        String?
+  address         String?
+  parentClub      String?              @map("parent_club") // สโมสรต้นสังกัด (ถ้ามี)
+  contactName     String?              @map("contact_name") // ผู้ประสานงาน — ข้อมูลติดต่อไม่แสดงบนหน้าสาธารณะ
+  phone           String?
+  email           String?
+  website         String? // เว็บไซต์ / เพจ
+  note            String?
+  active          Boolean              @default(true) // false = ปิด/ยุบรวม ไม่แสดงบนหน้าสาธารณะ
+  logoUrl         String?              @map("logo_url")
+  // ผู้ดูแลอคาเดมียืนยันว่าได้รับความยินยอมจากผู้ปกครองให้เก็บข้อมูลนักเตะ (PDPA)
+  playerConsentAt DateTime?            @map("player_consent_at")
+  playerConsentBy String?              @map("player_consent_by")
+  createdAt       DateTime             @default(now()) @map("created_at")
+  updatedAt       DateTime             @updatedAt @map("updated_at")
+  licences        AcademyLicence[]
+  members         AcademyMember[]
+  staff           AcademyStaff[]
+  teams           AcademyTeam[]
+  applications    AcademyApplication[]
+  documents       AcademyDocument[]
+  notices         AcademyNotice[]
 
   @@index([province])
   @@map("academies")
+}
+
+// ===== พอร์ทัลอคาเดมี — บัญชีบทบาท ACADEMY (ตาราง system_users) ดูแลได้ 1 อคาเดมี =====
+// อคาเดมีใหม่ที่สมัครเอง = อนุมัติทันที (เป็นเจ้าของข้อมูลที่สร้างเอง) · ขอดูแลอคาเดมีที่มีในทะเบียน = รอแอดมินอนุมัติ
+model AcademyMember {
+  id        Int        @id @default(autoincrement())
+  userId    Int        @unique @map("user_id")
+  user      SystemUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+  academyId Int        @map("academy_id")
+  academy   Academy    @relation(fields: [academyId], references: [id], onDelete: Cascade)
+  name      String // ชื่อผู้ดูแล
+  phone     String?
+  position  String? // ตำแหน่งในอคาเดมี
+  status    String     @default("PENDING") // PENDING | APPROVED | REJECTED
+  note      String? // ข้อความประกอบคำขอ / เหตุผลที่ไม่อนุมัติ
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @updatedAt @map("updated_at")
+
+  @@index([academyId])
+  @@map("academy_members")
+}
+
+// บุคลากรของอคาเดมี — ผูกกับฐานข้อมูลผู้ฝึกสอนได้ (ระบบตรวจระดับใบอนุญาตจริงให้)
+model AcademyStaff {
+  id        Int      @id @default(autoincrement())
+  academyId Int      @map("academy_id")
+  academy   Academy  @relation(fields: [academyId], references: [id], onDelete: Cascade)
+  name      String
+  role      String // HEAD | COACH | ASSISTANT | GK_COACH | FITNESS | MEDICAL | ADMIN | OTHER
+  licence   String? // ใบอนุญาตที่แจ้ง: PRO | A | B | C | OTHER
+  coachId   Int?     @map("coach_id")
+  coach     Coach?   @relation(fields: [coachId], references: [id], onDelete: SetNull)
+  phone     String?
+  email     String?
+  note      String?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([academyId])
+  @@map("academy_staff")
+}
+
+model AcademyTeam {
+  id        Int             @id @default(autoincrement())
+  academyId Int             @map("academy_id")
+  academy   Academy         @relation(fields: [academyId], references: [id], onDelete: Cascade)
+  name      String // เช่น U14
+  ageGroup  Int             @map("age_group") // 14 = U14 (ใช้ตรวจเกณฑ์จำนวนนักเตะ: U12 ลงไป ≥ 12 คน · อื่นๆ ≥ 18 คน)
+  gender    String          @default("MIXED") // BOYS | GIRLS | MIXED
+  note      String?
+  createdAt DateTime        @default(now()) @map("created_at")
+  updatedAt DateTime        @updatedAt @map("updated_at")
+  players   AcademyPlayer[]
+
+  @@index([academyId])
+  @@map("academy_teams")
+}
+
+// นักเตะเยาวชน — ข้อมูลส่วนบุคคลของผู้เยาว์: เห็นเฉพาะผู้ดูแลอคาเดมีและแอดมิน ไม่แสดงบนหน้าสาธารณะ
+model AcademyPlayer {
+  id        Int         @id @default(autoincrement())
+  teamId    Int         @map("team_id")
+  team      AcademyTeam @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  firstName String      @map("first_name")
+  lastName  String      @map("last_name")
+  nickname  String?
+  birthDate DateTime?   @map("birth_date")
+  position  String // GK | DF | MF | FW
+  shirtNo   Int?        @map("shirt_no")
+  createdAt DateTime    @default(now()) @map("created_at")
+  updatedAt DateTime    @updatedAt @map("updated_at")
+
+  @@index([teamId])
+  @@map("academy_players")
+}
+
+// ใบสมัคร (ขอใหม่ / ต่ออายุ / เลื่อนระดับ) — หลักฐานรายข้อตามเกณฑ์ของระดับที่ขอ · แอดมินตรวจทีละข้อแล้วอนุมัติ
+model AcademyApplication {
+  id           Int               @id @default(autoincrement())
+  academyId    Int               @map("academy_id")
+  academy      Academy           @relation(fields: [academyId], references: [id], onDelete: Cascade)
+  kind         String // NEW | RENEWAL | UPGRADE
+  level        String // ระดับที่ขอ BRONZE | SILVER | GOLD
+  status       String            @default("DRAFT") // DRAFT | SUBMITTED | NEEDS_FIX | APPROVED | REJECTED
+  submittedAt  DateTime?         @map("submitted_at")
+  decidedAt    DateTime?         @map("decided_at")
+  decidedBy    String?           @map("decided_by")
+  decisionNote String?           @map("decision_note")
+  licenceId    Int?              @map("licence_id") // ใบอนุญาตที่ออกเมื่ออนุมัติ
+  createdAt    DateTime          @default(now()) @map("created_at")
+  updatedAt    DateTime          @updatedAt @map("updated_at")
+  evidence     AcademyEvidence[]
+
+  @@index([academyId])
+  @@index([status])
+  @@map("academy_applications")
+}
+
+model AcademyEvidence {
+  id            Int                @id @default(autoincrement())
+  applicationId Int                @map("application_id")
+  application   AcademyApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  criterion     String // รหัสเกณฑ์ เช่น 1.1.3 (lib/academy-criteria.ts)
+  note          String? // คำอธิบายจากอคาเดมี
+  status        String             @default("PENDING") // PENDING | PASS | FIX | FAIL
+  reviewNote    String?            @map("review_note")
+  reviewedAt    DateTime?          @map("reviewed_at")
+  reviewedBy    String?            @map("reviewed_by")
+  updatedAt     DateTime           @updatedAt @map("updated_at")
+  documents     AcademyDocument[]
+
+  @@unique([applicationId, criterion])
+  @@map("academy_evidence")
+}
+
+// ไฟล์เอกสาร — เก็บในที่เก็บส่วนตัว (เปิดผ่าน /academies/docs/[id] ที่ตรวจสิทธิ์ก่อนทุกครั้ง)
+model AcademyDocument {
+  id         Int              @id @default(autoincrement())
+  academyId  Int              @map("academy_id")
+  academy    Academy          @relation(fields: [academyId], references: [id], onDelete: Cascade)
+  evidenceId Int?             @map("evidence_id")
+  evidence   AcademyEvidence? @relation(fields: [evidenceId], references: [id], onDelete: Cascade)
+  fileKey    String           @map("file_key")
+  fileName   String           @map("file_name")
+  mime       String
+  size       Int
+  uploadedBy String           @map("uploaded_by")
+  createdAt  DateTime         @default(now()) @map("created_at")
+
+  @@index([academyId])
+  @@index([evidenceId])
+  @@map("academy_documents")
+}
+
+model AcademyNotice {
+  id        Int       @id @default(autoincrement())
+  academyId Int       @map("academy_id")
+  academy   Academy   @relation(fields: [academyId], references: [id], onDelete: Cascade)
+  title     String
+  body      String?
+  link      String?
+  readAt    DateTime? @map("read_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  @@index([academyId, readAt])
+  @@map("academy_notices")
 }
 
 model AcademyLicence {

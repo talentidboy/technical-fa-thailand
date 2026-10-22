@@ -26,6 +26,8 @@ export function ResultForm({
   const [state, formAction, pending] = useActionState(async (_prev: (FormResult & { at: number }) | null, formData: FormData) => {
     const res = await action(formData);
     if (res.ok && resetOnSuccess) ref.current?.reset();
+    // ไฟล์ที่อัปโหลดสำเร็จแล้วต้องไม่ค้างในช่อง (กดบันทึกซ้ำจะอัปโหลดซ้ำ)
+    else if (res.ok) ref.current?.querySelectorAll<HTMLInputElement>("input[type=file]").forEach((input) => (input.value = ""));
     return { ...res, at: Date.now() };
   }, null);
 

@@ -1,32 +1,61 @@
 import Link from "next/link";
-import Image from "next/image";
 import { notFound, redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { parseId } from "@/lib/route-id";
-import { LOGO_URL } from "@/lib/brand";
 import { getProvinceOptions } from "@/lib/thai-address";
 import { AUDIT_ACTIONS } from "@/lib/audit-actions";
-import { LICENCE_STATUS, currentLicence, levelRank, licenceState, showPublicly, thaiDate } from "@/lib/academy";
+import { LEVEL_META, LICENCE_STATUS, currentLicence, levelRank, licenceState, showPublicly, thaiDate } from "@/lib/academy";
+import { APPLICATION_KINDS, APPLICATION_STATUS, MEMBER_STATUS } from "@/lib/academy-portal";
+import { LICENCE_LEVELS, POSITIONS, STAFF_ROLES, teamCheck } from "@/lib/academy-checks";
+import { loadStaff, loadTeams } from "@/lib/academy-data";
 import { ResultForm } from "@/components/ResultForm";
 import { ConfirmSubmit } from "@/components/ConfirmSubmit";
 import { LevelBadge, LevelMedal, StateChip } from "@/components/academy/AcademyUi";
+import { ManageShell } from "@/components/academy/ManageShell";
+import { GENDERS } from "@/components/academy/TeamFields";
 import { addLicence, deleteAcademy, deleteLicence, toggleAcademyActive, updateAcademy, updateLicence } from "../actions";
 import { AcademyFields, LicenceFields } from "../fields";
-import { ArrowLeft, ExternalLink, Save, Plus, Pencil, Trash2, EyeOff, Eye, History } from "lucide-react";
+import {
+  ArrowLeft,
+  BadgeCheck,
+  CheckCircle2,
+  ExternalLink,
+  Eye,
+  EyeOff,
+  FileCheck2,
+  History,
+  Pencil,
+  Plus,
+  Save,
+  Shirt,
+  Trash2,
+  TriangleAlert,
+  UserCheck,
+  Users,
+} from "lucide-react";
 
 export default async function AcademyEditPage({ params }: { params: Promise<{ id: string }> }) {
   const user = await getCurrentUser();
   if (!user || (user.role !== "ADMIN" && user.role !== "STAFF")) redirect("/academies");
   const id = parseId((await params).id);
   if (!id) notFound();
-  const [academy, logs] = await Promise.all([
-    prisma.academy.findUnique({ where: { id }, include: { licences: true } }),
+  const [academy, logs, staff, teams] = await Promise.all([
+    prisma.academy.findUnique({
+      where: { id },
+      include: {
+        licences: true,
+        members: { include: { user: { select: { email: true, isActive: true } } }, orderBy: { id: "asc" } },
+        applications: { include: { evidence: { select: { status: true } } }, orderBy: { createdAt: "desc" } },
+      },
+    }),
     prisma.auditLog.findMany({
       where: { action: { startsWith: "ACADEMY_" }, details: { path: ["academyId"], equals: id } },
       orderBy: { createdAt: "desc" },
       take: 15,
     }),
+    loadStaff(id),
+    loadTeams(id),
   ]);
   if (!academy) notFound();
 
@@ -39,27 +68,12 @@ export default async function AcademyEditPage({ params }: { params: Promise<{ id
   const provinces = getProvinceOptions().map((p) => p.nameTh);
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <header className="sticky top-0 z-20 border-b border-white/10 bg-indigo-950/90 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-6 py-4">
-          <Link href="/academies/manage" className="flex items-center gap-2">
-            <Image src={LOGO_URL} alt="FA Thailand" width={36} height={36} className="h-9 w-9 rounded-lg object-cover" />
-            <div>
-              <p className="text-sm font-bold text-white">Academy Licensing</p>
-              <p className="text-[11px] text-indigo-300">จัดการทะเบียนอคาเดมี</p>
-            </div>
-          </Link>
-          <Link
-            href="/academies/manage"
-            className="inline-flex items-center gap-1.5 rounded-lg border border-white/15 px-3 py-2 text-sm font-medium text-indigo-200 transition-colors hover:bg-white/10 hover:text-white"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            <span className="hidden sm:inline">กลับทะเบียน</span>
-          </Link>
-        </div>
-      </header>
-
+    <ManageShell active="registry">
       <main className="mx-auto max-w-7xl px-6 py-8">
+        <Link href="/academies/manage" className="mb-4 inline-flex items-center gap-1 text-sm text-slate-500 hover:text-slate-800">
+          <ArrowLeft className="h-4 w-4" />
+          กลับทะเบียน
+        </Link>
         <div className="flex flex-wrap items-center gap-4">
           <LevelMedal level={current?.level ?? null} size="lg" />
           <div className="min-w-0 flex-1">
@@ -214,7 +228,179 @@ export default async function AcademyEditPage({ params }: { params: Promise<{ id
             )}
           </div>
         </div>
+
+        <h2 className="mt-10 text-sm font-bold uppercase tracking-wider text-indigo-500">ข้อมูลจากพอร์ทัลอคาเดมี</h2>
+        <div className="mt-3 grid gap-6 lg:grid-cols-2">
+          <section className="rounded-2xl bg-white shadow-sm ring-1 ring-slate-200">
+            <h3 className="flex items-center gap-1.5 border-b border-slate-100 px-5 py-3.5 font-semibold text-slate-900">
+              <UserCheck className="h-4 w-4 text-slate-400" />
+              บัญชีผู้ดูแล ({academy.members.length})
+            </h3>
+            {academy.members.length === 0 ? (
+              <p className="px-5 py-6 text-sm text-slate-400">
+                ยังไม่มีบัญชี —{" "}
+                <Link href={`/academies/manage/accounts?academy=${academy.id}`} className="font-semibold text-indigo-600 hover:underline">
+                  สร้างบัญชีให้อคาเดมีนี้
+                </Link>
+              </p>
+            ) : (
+              <ul className="divide-y divide-slate-100 text-sm">
+                {academy.members.map((m) => (
+                  <li key={m.id} className="flex items-center gap-3 px-5 py-3">
+                    <span className="min-w-0 flex-1">
+                      <span className="block font-medium text-slate-900">
+                        {m.name}
+                        {m.position && <span className="font-normal text-slate-500"> · {m.position}</span>}
+                      </span>
+                      <span className="block truncate text-xs text-slate-500">
+                        {m.user.email}
+                        {m.phone && ` · ${m.phone}`}
+                      </span>
+                    </span>
+                    <span className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${MEMBER_STATUS[m.status]?.tone ?? ""}`}>{MEMBER_STATUS[m.status]?.label ?? m.status}</span>
+                    {!m.user.isActive && <span className="rounded-full bg-slate-200 px-2 py-0.5 text-[11px] font-bold text-slate-600">ระงับ</span>}
+                  </li>
+                ))}
+              </ul>
+            )}
+            <Link href="/academies/manage/accounts" className="block border-t border-slate-100 px-5 py-2.5 text-xs font-semibold text-indigo-600 hover:bg-slate-50">
+              จัดการบัญชี / ตั้งรหัสผ่านใหม่
+            </Link>
+          </section>
+
+          <section className="rounded-2xl bg-white shadow-sm ring-1 ring-slate-200">
+            <h3 className="flex items-center gap-1.5 border-b border-slate-100 px-5 py-3.5 font-semibold text-slate-900">
+              <FileCheck2 className="h-4 w-4 text-slate-400" />
+              ใบสมัคร ({academy.applications.length})
+            </h3>
+            {academy.applications.length === 0 ? (
+              <p className="px-5 py-6 text-sm text-slate-400">ยังไม่มีใบสมัครผ่านระบบ</p>
+            ) : (
+              <ul className="divide-y divide-slate-100 text-sm">
+                {academy.applications.map((a) => {
+                  const s = APPLICATION_STATUS[a.status];
+                  return (
+                    <li key={a.id}>
+                      <Link href={`/academies/manage/applications/${a.id}`} className="flex items-center gap-3 px-5 py-3 hover:bg-indigo-50/40">
+                        <LevelMedal level={a.level} size="sm" />
+                        <span className="min-w-0 flex-1">
+                          <span className="block font-medium text-slate-900">
+                            {LEVEL_META[a.level as keyof typeof LEVEL_META]?.label} · {APPLICATION_KINDS[a.kind]}
+                          </span>
+                          <span className="block text-xs text-slate-500">
+                            {a.submittedAt ? `ส่ง ${thaiDate(a.submittedAt)}` : `เริ่ม ${thaiDate(a.createdAt)}`} · ผ่าน {a.evidence.filter((e) => e.status === "PASS").length}/{a.evidence.length}
+                          </span>
+                        </span>
+                        <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ring-1 ${s.tone}`}>{s.label}</span>
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </section>
+
+          <section className="rounded-2xl bg-white shadow-sm ring-1 ring-slate-200">
+            <h3 className="flex items-center gap-1.5 border-b border-slate-100 px-5 py-3.5 font-semibold text-slate-900">
+              <Users className="h-4 w-4 text-slate-400" />
+              บุคลากร ({staff.length})
+            </h3>
+            {staff.length === 0 ? (
+              <p className="px-5 py-6 text-sm text-slate-400">อคาเดมียังไม่ได้กรอกรายชื่อบุคลากร</p>
+            ) : (
+              <ul className="divide-y divide-slate-100 text-sm">
+                {staff.map((s) => (
+                  <li key={s.id} className="flex items-center gap-3 px-5 py-2.5">
+                    <span className="min-w-0 flex-1">
+                      <span className="block font-medium text-slate-900">{s.name}</span>
+                      <span className="block text-xs text-slate-500">
+                        {STAFF_ROLES[s.role] ?? s.role}
+                        {s.coach && (
+                          <>
+                            {" · "}
+                            <Link href={`/coaches/${s.coach.id}`} className="text-indigo-600 hover:underline">
+                              ประวัติผู้ฝึกสอน
+                            </Link>
+                          </>
+                        )}
+                      </span>
+                    </span>
+                    {s.verifiedLicence ? (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700" title="ยืนยันจากฐานข้อมูลผู้ฝึกสอน">
+                        <BadgeCheck className="h-3.5 w-3.5" />
+                        {LICENCE_LEVELS[s.verifiedLicence]}
+                      </span>
+                    ) : (
+                      s.licence && <span className="text-xs text-slate-500">แจ้ง {LICENCE_LEVELS[s.licence] ?? s.licence}</span>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+
+          <section id="teams" className="scroll-mt-28 rounded-2xl bg-white shadow-sm ring-1 ring-slate-200">
+            <h3 className="flex items-center gap-1.5 border-b border-slate-100 px-5 py-3.5 font-semibold text-slate-900">
+              <Shirt className="h-4 w-4 text-slate-400" />
+              ทีมและนักเตะ ({teams.length} ทีม · {teams.reduce((n, t) => n + t.players.length, 0)} คน)
+            </h3>
+            {academy.playerConsentAt && (
+              <p className="border-b border-slate-100 px-5 py-2 text-xs text-slate-500">
+                ยืนยันความยินยอม PDPA โดย {academy.playerConsentBy} · {thaiDate(academy.playerConsentAt)}
+              </p>
+            )}
+            {teams.length === 0 ? (
+              <p className="px-5 py-6 text-sm text-slate-400">อคาเดมียังไม่ได้กรอกทีม</p>
+            ) : (
+              <ul className="divide-y divide-slate-100">
+                {teams.map((t) => {
+                  const r = teamCheck(t);
+                  return (
+                    <li key={t.id}>
+                      <details>
+                        <summary className="flex cursor-pointer items-center gap-2 px-5 py-3 text-sm hover:bg-slate-50">
+                          {r.ok ? <CheckCircle2 className="h-4 w-4 flex-none text-emerald-500" /> : <TriangleAlert className="h-4 w-4 flex-none text-amber-500" />}
+                          <span className="font-medium text-slate-900">{t.name}</span>
+                          <span className="text-xs text-slate-500">
+                            U{t.ageGroup} · {GENDERS[t.gender] ?? t.gender} · {t.players.length} คน
+                          </span>
+                        </summary>
+                        {t.players.length > 0 && (
+                          <div className="overflow-x-auto px-5 pb-3">
+                            <table className="w-full text-xs">
+                              <thead className="text-left text-slate-400">
+                                <tr>
+                                  <th className="py-1 pr-2 font-medium">เบอร์</th>
+                                  <th className="py-1 pr-2 font-medium">ชื่อ-นามสกุล</th>
+                                  <th className="py-1 pr-2 font-medium">ตำแหน่ง</th>
+                                  <th className="py-1 font-medium">วันเกิด</th>
+                                </tr>
+                              </thead>
+                              <tbody className="text-slate-700">
+                                {t.players.map((p) => (
+                                  <tr key={p.id} className="border-t border-slate-100">
+                                    <td className="py-1 pr-2 tabular-nums">{p.shirtNo ?? "-"}</td>
+                                    <td className="py-1 pr-2">
+                                      {p.firstName} {p.lastName}
+                                      {p.nickname && <span className="text-slate-400"> ({p.nickname})</span>}
+                                    </td>
+                                    <td className="py-1 pr-2">{POSITIONS[p.position] ?? p.position}</td>
+                                    <td className="py-1">{thaiDate(p.birthDate)}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        )}
+                      </details>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </section>
+        </div>
       </main>
-    </div>
+    </ManageShell>
   );
 }

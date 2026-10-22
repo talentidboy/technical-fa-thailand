@@ -39,7 +39,7 @@ export async function destroySession() {
   cookieStore.delete(COOKIE_NAME);
 }
 
-export async function getCurrentUser() {
+async function sessionUser() {
   const cookieStore = await cookies();
   const token = cookieStore.get(COOKIE_NAME)?.value;
   if (!token) return null;
@@ -59,6 +59,22 @@ export async function getCurrentUser() {
   }
 
   return session.user;
+}
+
+// ผู้ใช้ของระบบหลัก (แอดมิน / เจ้าหน้าที่ / โค้ช)
+// บัญชีอคาเดมี (ACADEMY) ถือว่า "ยังไม่ได้ล็อกอิน" ในทุกส่วนของระบบหลัก — หน้าแอดมินหลายหน้ากันเฉพาะบทบาทโค้ช
+// การตัดที่จุดนี้จุดเดียวจึงกันบัญชีอคาเดมีไม่ให้เข้าข้อมูลส่วนอื่นได้ทั้งหมด · พอร์ทัลอคาเดมีใช้ getAcademyUser()
+export async function getCurrentUser() {
+  const user = await sessionUser();
+  return user && user.role !== "ACADEMY" ? user : null;
+}
+
+// บัญชีผู้ดูแลอคาเดมี + สถานะการเป็นผู้ดูแล (ใช้เฉพาะพอร์ทัล /academies/portal)
+export async function getAcademyUser() {
+  const user = await sessionUser();
+  if (!user || user.role !== "ACADEMY") return null;
+  const member = await prisma.academyMember.findUnique({ where: { userId: user.id }, include: { academy: true } });
+  return member ? { user, member } : null;
 }
 
 export type CurrentUser = NonNullable<

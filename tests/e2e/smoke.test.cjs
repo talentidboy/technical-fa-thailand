@@ -36,6 +36,13 @@ module.exports = {
     const s = await seed(ctx);
     const admin = await ctx.login("ADMIN");
     const coach = await ctx.login("COACH", { coachId: s.coach });
+    const academy = await ctx.login("ACADEMY", { email: "smoke-academy@test.invalid" });
+    const academyId = (await ctx.sql(`insert into academies (name_en, province, updated_at) values ('Smoke Academy','ขอนแก่น', now()) returning id`))[0].id;
+    await ctx.sql(
+      `insert into academy_members (user_id, academy_id, name, status, updated_at) select user_id, $1, 'ผู้ดูแล', 'APPROVED', now() from system_users where email='smoke-academy@test.invalid'`,
+      [academyId],
+    );
+    const teamId = (await ctx.sql(`insert into academy_teams (academy_id, name, age_group, updated_at) values ($1,'U12',12, now()) returning id`, [academyId]))[0].id;
 
     const groups = [
       {
@@ -50,6 +57,8 @@ module.exports = {
           "/register",
           "/play-and-learn",
           "/academies",
+          "/academies/login",
+          "/academies/register",
           `/apply/${s.session}`,
           `/verify/${s.coach}`,
           "/g15-womens-series",
@@ -91,6 +100,10 @@ module.exports = {
           "/training-centre",
           "/grassroots-football",
           "/academies/manage",
+          `/academies/manage/${academyId}`,
+          "/academies/manage/applications",
+          "/academies/manage/applications?status=APPROVED",
+          "/academies/manage/accounts",
           "/play-and-learn/manage",
           "/play-and-learn/manage?tab=centers",
           "/play-and-learn/manage?tab=PASSPORT",
@@ -103,6 +116,20 @@ module.exports = {
         ],
       },
       { who: "โค้ช", token: coach, pages: ["/me", "/me/courses", "/me/card", "/me/settings", "/me/edit", "/me/notifications"] },
+      {
+        who: "อคาเดมี",
+        token: academy,
+        pages: [
+          "/academies",
+          "/academies/portal",
+          "/academies/portal/profile",
+          "/academies/portal/staff",
+          "/academies/portal/teams",
+          `/academies/portal/teams/${teamId}`,
+          "/academies/portal/applications",
+          "/academies/portal/notices",
+        ],
+      },
     ];
 
     for (const g of groups) {
@@ -120,7 +147,7 @@ module.exports = {
 
     // ลิงก์ผิด → หน้า "ไม่พบ" (404) ไม่ใช่หน้าข้อผิดพลาด
     const p = await ctx.page(admin);
-    for (const url of ["/coaches/abc", "/coaches/99999999999", "/g15-womens-series/teams/abc", "/news/xyz", "/course-sessions/0", "/หน้าที่ไม่มีอยู่"]) {
+    for (const url of ["/coaches/abc", "/coaches/99999999999", "/g15-womens-series/teams/abc", "/news/xyz", "/course-sessions/0", "/academies/manage/applications/abc", "/หน้าที่ไม่มีอยู่"]) {
       const res = await p.goto(BASE + encodeURI(url), { waitUntil: "networkidle" });
       const body = await p.locator("body").innerText();
       check(`ลิงก์ผิด ${url} → 404 ภาษาไทย`, res && res.status() === 404 && body.includes(NOT_FOUND_TEXT) && !body.includes(ERROR_TEXT), String(res && res.status()));
