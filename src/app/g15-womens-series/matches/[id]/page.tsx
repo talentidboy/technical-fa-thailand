@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { parseId } from "@/lib/route-id";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
@@ -66,8 +67,8 @@ export default async function G15MatchDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id: idParam } = await params;
-  const id = Number(idParam);
-  if (!Number.isInteger(id)) notFound();
+  const id = parseId(idParam);
+  if (id == null) notFound();
 
   const [user, match, allTeams, allMatches] = await Promise.all([
     getCurrentUser(),

@@ -1,5 +1,6 @@
 "use server";
 
+import { coachName } from "@/lib/coach-name";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
@@ -94,7 +95,7 @@ export async function searchCoaches(sessionId: number, q: string): Promise<Coach
 
   return coaches.map((c) => ({
     id: c.id,
-    name: `${c.nameTh} ${c.surnameTh}`,
+    name: coachName(c),
     nameEn: [c.nameEn, c.familyNameEn].filter(Boolean).join(" ") || null,
     idTail: c.idNumber ? c.idNumber.replace(/\D/g, "").slice(-4) : null,
     level: getHighestCoreLevel(c.licenseRecords),
@@ -289,6 +290,6 @@ export async function mergeIntoExistingCoach(
       }
     });
     revalidateSession(sessionId, [target.id]);
-    return `รวมกับประวัติเดิมของ ${target.nameTh} ${target.surnameTh} แล้ว`;
+    return `รวมกับประวัติเดิมของ ${coachName(target)} แล้ว`;
   });
 }

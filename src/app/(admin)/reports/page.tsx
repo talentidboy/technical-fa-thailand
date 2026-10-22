@@ -3,7 +3,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { loadTrainingReport, parseYearRange, thaiYear, REPORT_LEVELS, LEVEL_LABEL, type ReportLevel } from "@/lib/training-report";
 import { SESSION_STATUS } from "@/lib/course-workflow";
 import { FixBuddhistYearsButton } from "@/components/report/FixBuddhistYearsButton";
-import { FileSpreadsheet, FileBadge, Users, UserPlus, ArrowUpCircle, RefreshCw, AlertTriangle, MapPin, BookOpen } from "lucide-react";
+import { FileSpreadsheet, FileBadge, Users, UserPlus, ArrowUpCircle, RefreshCw, AlertTriangle, MapPin, BookOpen, Copy } from "lucide-react";
 
 const be = (y: number) => y + 543;
 const fmt = (n: number) => (n === 0 ? "–" : n.toLocaleString());
@@ -339,6 +339,32 @@ export default async function TrainingReportPage({ searchParams }: { searchParam
             ))}
           </ul>
           {r.issues.length > 50 && <p className="border-t border-slate-100 px-5 py-2.5 text-xs text-slate-400">แสดง 50 รายการแรก — ดูทั้งหมดในไฟล์ Excel</p>}
+        </Card>
+      )}
+
+      {r.duplicates.length > 0 && (
+        <Card
+          title={`ผู้ฝึกสอนที่อาจซ้ำกัน (${r.duplicates.length} ชื่อ)`}
+          sub="ชื่อ-สกุลไทยตรงกันหลายประวัติ — ตรวจว่าเป็นคนเดียวกันหรือไม่ ถ้าใช่ ควรรวมใบอนุญาตไว้ในประวัติเดียว (คนที่ไม่มีเลขบัตรมักเป็นประวัติเก่า)"
+          icon={Copy}
+        >
+          <ul className="divide-y divide-slate-100">
+            {r.duplicates.map((d) => (
+              <li key={d.name} className="flex flex-wrap items-center gap-x-3 gap-y-1.5 px-5 py-2.5 text-sm">
+                <span className="w-48 flex-none font-medium text-slate-900">{d.name}</span>
+                {d.coaches.map((c) => (
+                  <Link
+                    key={c.id}
+                    href={`/coaches/${c.id}`}
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-slate-50 px-2.5 py-1 text-xs text-slate-700 ring-1 ring-slate-200 hover:bg-indigo-50 hover:text-indigo-700"
+                  >
+                    #{c.id} · ใบอนุญาต {c.licenses} ใบ · {c.hasIdNumber ? "มีเลขบัตร" : "ไม่มีเลขบัตร"}
+                    {c.afcId ? ` · ${c.afcId}` : ""}
+                  </Link>
+                ))}
+              </li>
+            ))}
+          </ul>
         </Card>
       )}
     </div>

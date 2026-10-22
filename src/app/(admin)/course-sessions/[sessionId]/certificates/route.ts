@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { parseId } from "@/lib/route-id";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth";
 import { generateCertificateBatchPdf } from "@/lib/certificate-pdf";
@@ -10,7 +11,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ sess
   const kind = new URL(request.url).searchParams.get("type") === "licence" ? "licence" : "diploma";
 
   const session = await prisma.courseSession.findUnique({
-    where: { id: Number(sessionId) },
+    where: { id: parseId(sessionId) ?? 0 },
     include: {
       course: true,
       applications: {

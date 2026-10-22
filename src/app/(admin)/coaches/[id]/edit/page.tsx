@@ -1,4 +1,6 @@
+import { coachName } from "@/lib/coach-name";
 import Link from "next/link";
+import { parseId } from "@/lib/route-id";
 import { notFound, redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
@@ -21,7 +23,7 @@ export default async function EditCoachPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const coachId = Number(id);
+  const coachId = parseId(id) ?? 0;
 
   const [coach, user] = await Promise.all([
     prisma.coach.findUnique({ where: { id: coachId } }),
@@ -52,7 +54,7 @@ export default async function EditCoachPage({
       <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
         <div className="border-b border-slate-100 px-6 py-4">
           <h1 className="font-semibold text-slate-900">
-            แก้ไขข้อมูล {coach.nameTh} {coach.surnameTh}
+            แก้ไขข้อมูล {coachName(coach)}
           </h1>
         </div>
         <form action={updateCoach} className="space-y-6 p-6">

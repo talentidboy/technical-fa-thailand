@@ -1,4 +1,6 @@
+import { coachName, coachInitial } from "@/lib/coach-name";
 import Link from "next/link";
+import { parseId } from "@/lib/route-id";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
@@ -59,7 +61,7 @@ export default async function CoachDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const coachId = Number(id);
+  const coachId = parseId(id) ?? 0;
 
   const [coach, user, instructors] = await Promise.all([
     prisma.coach.findUnique({
@@ -133,12 +135,12 @@ export default async function CoachDetailPage({
               />
             ) : (
               <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-2xl font-semibold text-indigo-700">
-                {coach.nameTh.charAt(0)}
+                {coachInitial(coach)}
               </div>
             )}
             <div>
               <h1 className="text-xl font-bold text-slate-900">
-                {coach.nameTh} {coach.surnameTh}
+                {coachName(coach)}
               </h1>
               {(coach.nameEn || coach.familyNameEn) && (
                 <p className="text-sm text-slate-500">
@@ -223,7 +225,7 @@ export default async function CoachDetailPage({
       {isAdmin && (
         <CoachAccountPanel
           coachId={coach.id}
-          coachName={`${coach.nameTh} ${coach.surnameTh}`}
+          coachName={coachName(coach)}
           suggestedUsername={suggestedUsername}
           account={
             coach.systemUser

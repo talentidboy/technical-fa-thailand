@@ -612,3 +612,23 @@ model G15Award {
   @@index([key])
   @@map("g15_awards")
 }
+
+// บันทึกข้อผิดพลาดของระบบ — SERVER = จาก instrumentation (หน้า/Server Action/API ที่ error), CLIENT = หน้าที่ผู้ใช้เห็นหน้าแจ้งข้อผิดพลาด
+// error เดิม (ข้อความ + หน้าเดียวกัน) ที่เกิดซ้ำภายใน 1 ชั่วโมงรวมเป็นแถวเดียวแล้วนับ count
+model ErrorLog {
+  id          Int      @id @default(autoincrement())
+  source      String
+  message     String
+  digest      String?
+  path        String?
+  routeType   String?  @map("route_type")
+  stack       String?
+  userAgent   String?  @map("user_agent")
+  count       Int      @default(1)
+  resolved    Boolean  @default(false)
+  firstSeenAt DateTime @default(now()) @map("first_seen_at")
+  lastSeenAt  DateTime @default(now()) @map("last_seen_at")
+
+  @@index([lastSeenAt])
+  @@map("error_logs")
+}

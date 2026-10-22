@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { parseId } from "@/lib/route-id";
 import { notFound, redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
@@ -13,7 +14,7 @@ export default async function EditInstructorPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const instructorId = Number(id);
+  const instructorId = parseId(id) ?? 0;
 
   const [instructor, user] = await Promise.all([
     prisma.instructor.findUnique({ where: { id: instructorId } }),

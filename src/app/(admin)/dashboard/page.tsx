@@ -1,3 +1,4 @@
+import { coachName, coachInitial } from "@/lib/coach-name";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { Users, ArrowUpRight, Bell } from "lucide-react";
@@ -112,7 +113,7 @@ export default async function Home({
                     </span>
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-semibold text-slate-900">
-                        {record.coach.nameTh} {record.coach.surnameTh}
+                        {coachName(record.coach)}
                       </p>
                       <p className="truncate text-xs text-slate-400">
                         {labelFor(LICENSE_TYPES, record.licenseType)} · หมดอายุ{" "}
@@ -162,11 +163,11 @@ export default async function Home({
                   className="flex min-w-0 items-center gap-3"
                 >
                   <div className="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-linear-to-br from-indigo-600 to-indigo-800 text-sm font-bold text-white">
-                    {coach.nameTh.charAt(0)}
+                    {coachInitial(coach)}
                   </div>
                   <div>
                     <p className="text-sm font-medium text-slate-900 hover:text-indigo-600">
-                      {coach.nameTh} {coach.surnameTh}
+                      {coachName(coach)}
                     </p>
                     <p className="text-xs text-slate-400">
                       {coach.afcId ?? "ไม่มี AFC ID"}

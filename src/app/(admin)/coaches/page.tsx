@@ -1,3 +1,4 @@
+import { coachName, coachInitial } from "@/lib/coach-name";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { createCoach } from "./actions";
@@ -277,11 +278,11 @@ export default async function CoachesPage({
                           />
                         ) : (
                           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-xs font-semibold text-indigo-700">
-                            {coach.nameTh.charAt(0)}
+                            {coachInitial(coach)}
                           </div>
                         )}
                         <span className="font-medium text-slate-900 hover:text-indigo-600">
-                          {coach.nameTh} {coach.surnameTh}
+                          {coachName(coach)}
                         </span>
                       </Link>
                     </td>

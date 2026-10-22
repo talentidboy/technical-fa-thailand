@@ -1,0 +1,63 @@
+# ตรวจอัตโนมัติทุกครั้งที่ push / เปิด Pull Request
+#  - check: lint + typecheck + build (ไม่ต้องใช้ฐานข้อมูล)
+#  - e2e:   ชุดทดสอบเต็ม (เปิดเว็บจริงในเบราว์เซอร์) — ทำงานเมื่อตั้ง secrets DATABASE_URL / DIRECT_URL ใน GitHub แล้ว
+#           ทดสอบบน schema แยก (e2e_ci_<run>) ซึ่งถูกลบทิ้งเมื่อจบ ไม่แตะข้อมูลจริง
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      # build ไม่ต้องต่อฐานข้อมูล — ใส่ค่าหลอกไว้ให้ Prisma สร้าง client ได้
+      DATABASE_URL: postgresql://ci:ci@127.0.0.1:1/ci
+      DIRECT_URL: postgresql://ci:ci@127.0.0.1:1/ci
+      NEXT_TELEMETRY_DISABLED: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Lint
+        run: npm run lint
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Build
+        run: npm run build
+
+  e2e:
+    needs: check
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      DIRECT_URL: ${{ secrets.DIRECT_URL }}
+      E2E_SCHEMA: e2e_ci_${{ github.run_id }}
+      NEXT_TELEMETRY_DISABLED: "1"
+    steps:
+      - name: ข้ามถ้ายังไม่ได้ตั้ง secrets
+        if: env.DIRECT_URL == ''
+        run: echo "::notice::ยังไม่ได้ตั้ง secrets DATABASE_URL / DIRECT_URL — ข้ามชุดทดสอบ E2E"
+      - uses: actions/checkout@v4
+        if: env.DIRECT_URL != ''
+      - uses: actions/setup-node@v4
+        if: env.DIRECT_URL != ''
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+        if: env.DIRECT_URL != ''
+      - name: E2E tests
+        if: env.DIRECT_URL != ''
+        run: npm run test:e2e

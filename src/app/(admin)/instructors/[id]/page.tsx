@@ -1,4 +1,6 @@
+import { coachName } from "@/lib/coach-name";
 import Link from "next/link";
+import { parseId } from "@/lib/route-id";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
@@ -31,7 +33,7 @@ export default async function InstructorDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const instructorId = Number(id);
+  const instructorId = parseId(id) ?? 0;
 
   const [instructor, user] = await Promise.all([
     prisma.instructor.findUnique({
@@ -200,7 +202,7 @@ export default async function InstructorDetailPage({
                         href={`/coaches/${record.coachId}`}
                         className="font-medium text-slate-900 hover:text-indigo-600"
                       >
-                        {record.coach.nameTh} {record.coach.surnameTh}
+                        {coachName(record.coach)}
                       </Link>
                     </td>
                     <td className="px-6 py-3 text-slate-600">

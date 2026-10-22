@@ -1,5 +1,6 @@
 "use server";
 
+import { coachName } from "@/lib/coach-name";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin, hashPassword } from "@/lib/auth";
 import { sendEmail, isEmailConfigured } from "@/lib/email";
@@ -73,7 +74,7 @@ export async function sendCoachAccountEmail(formData: FormData) {
 
   const account = await prisma.systemUser.findUnique({
     where: { coachId },
-    include: { coach: { select: { nameTh: true, surnameTh: true } } },
+    include: { coach: { select: { nameTh: true, surnameTh: true, nameEn: true, familyNameEn: true } } },
   });
   if (!account) redirect("/coaches/accounts?error=coach_not_found");
 
@@ -84,7 +85,7 @@ export async function sendCoachAccountEmail(formData: FormData) {
       html: `
         <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto;">
           <h2 style="color: #1a3a6b;">FA Thailand Technical</h2>
-          <p>สวัสดีคุณ${account.coach ? `${account.coach.nameTh} ${account.coach.surnameTh}` : ""}</p>
+          <p>สวัสดีคุณ${account.coach ? coachName(account.coach) : ""}</p>
           <p>บัญชีผู้ฝึกสอนของคุณพร้อมใช้งานแล้ว เข้าสู่ระบบได้ด้วยอีเมลนี้ (${account.email}) ที่หน้าเข้าสู่ระบบของเว็บไซต์
           หากลืมรหัสผ่าน กรุณาติดต่อผู้ดูแลระบบเพื่อขอตั้งรหัสผ่านใหม่</p>
         </div>

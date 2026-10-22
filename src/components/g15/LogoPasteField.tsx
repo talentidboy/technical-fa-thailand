@@ -2,9 +2,9 @@
 
 import { useRef, useState, type ChangeEvent, type ClipboardEvent, type DragEvent } from "react";
 import { ImagePlus, X } from "lucide-react";
+import { shrinkImage, UPLOAD_LIMIT_BYTES } from "@/lib/image-shrink";
 
 const ALLOWED_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
-const MAX_SIZE_BYTES = 5 * 1024 * 1024;
 
 export function LogoPasteField({
   label = "โลโก้ทีม",
@@ -19,13 +19,14 @@ export function LogoPasteField({
   const [preview, setPreview] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  function tryAcceptFile(file: File) {
-    if (!ALLOWED_TYPES.has(file.type)) {
+  async function tryAcceptFile(raw: File) {
+    if (!ALLOWED_TYPES.has(raw.type)) {
       setError("รองรับเฉพาะไฟล์รูปภาพ JPEG, PNG หรือ WEBP เท่านั้น");
       return;
     }
-    if (file.size > MAX_SIZE_BYTES) {
-      setError("ขนาดไฟล์ต้องไม่เกิน 5MB");
+    const file = await shrinkImage(raw);
+    if (file.size > UPLOAD_LIMIT_BYTES) {
+      setError("ขนาดไฟล์ต้องไม่เกิน 4MB");
       return;
     }
     setError(null);
@@ -43,7 +44,7 @@ export function LogoPasteField({
         const file = item.getAsFile();
         if (file) {
           e.preventDefault();
-          tryAcceptFile(file);
+          void tryAcceptFile(file);
         }
         break;
       }
@@ -53,12 +54,12 @@ export function LogoPasteField({
   function handleDrop(e: DragEvent<HTMLDivElement>) {
     e.preventDefault();
     const file = e.dataTransfer.files?.[0];
-    if (file && file.type.startsWith("image/")) tryAcceptFile(file);
+    if (file && file.type.startsWith("image/")) void tryAcceptFile(file);
   }
 
   function handleChange(e: ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
-    if (file) tryAcceptFile(file);
+    if (file) void tryAcceptFile(file);
   }
 
   function clear() {

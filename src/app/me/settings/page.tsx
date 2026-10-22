@@ -1,3 +1,4 @@
+import { coachInitial } from "@/lib/coach-name";
 import Link from "next/link";
 import { requireCoach } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -109,7 +110,7 @@ export default async function CoachSettingsPage({ searchParams }: { searchParams
                   <img src={coach.photoUrl} alt="" className="h-20 w-20 rounded-2xl object-cover ring-1 ring-slate-200" />
                 ) : (
                   <span className="flex h-20 w-20 items-center justify-center rounded-2xl bg-indigo-50 text-3xl font-bold text-indigo-700">
-                    {coach.nameTh.charAt(0)}
+                    {coachInitial(coach)}
                   </span>
                 )}
                 <label className="flex min-w-0 flex-1 flex-col gap-1.5">

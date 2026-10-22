@@ -1,4 +1,6 @@
+import { coachName, coachInitial } from "@/lib/coach-name";
 import { prisma } from "@/lib/prisma";
+import { parseId } from "@/lib/route-id";
 import { getHighestLicense } from "@/lib/license-rank";
 import { getLicenseStatus } from "@/lib/license-status";
 import { LICENSE_TYPES, labelFor } from "@/lib/constants";
@@ -11,7 +13,7 @@ export default async function VerifyPage({
 }) {
   const { id } = await params;
   const coach = await prisma.coach.findUnique({
-    where: { id: Number(id) },
+    where: { id: parseId(id) ?? 0 },
     include: { licenseRecords: true },
   });
 
@@ -45,12 +47,12 @@ export default async function VerifyPage({
           />
         ) : (
           <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-indigo-100 text-2xl font-bold text-indigo-700">
-            {coach.nameTh.charAt(0)}
+            {coachInitial(coach)}
           </div>
         )}
 
         <h1 className="mt-4 text-lg font-bold text-slate-900">
-          {coach.nameTh} {coach.surnameTh}
+          {coachName(coach)}
         </h1>
         <p className="text-sm text-slate-500">{coach.afcId ?? "ไม่มี AFC ID"}</p>
 

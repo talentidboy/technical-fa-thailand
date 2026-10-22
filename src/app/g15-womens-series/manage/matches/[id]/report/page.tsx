@@ -1,4 +1,5 @@
 import { Fragment } from "react";
+import { parseId } from "@/lib/route-id";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
@@ -30,8 +31,8 @@ export default async function G15MatchReportPage({ params }: { params: Promise<{
   if (!user) redirect("/login");
   if (user.role !== "ADMIN" && user.role !== "STAFF") redirect("/g15-womens-series");
 
-  const id = Number((await params).id);
-  if (!Number.isInteger(id)) notFound();
+  const id = parseId((await params).id);
+  if (id == null) notFound();
   const match = await prisma.g15Match.findUnique({
     where: { id },
     include: {

@@ -5,6 +5,11 @@ import nextTs from "eslint-config-next/typescript";
 const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
+  // สคริปต์ Node (ชุดทดสอบ E2E / สำรองข้อมูล) เป็น CommonJS ใช้ require ได้
+  {
+    files: ["**/*.cjs"],
+    rules: { "@typescript-eslint/no-require-imports": "off" },
+  },
   // Override default ignores of eslint-config-next.
   globalIgnores([
     // Default ignores of eslint-config-next:

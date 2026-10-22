@@ -1,3 +1,4 @@
+import { coachName } from "@/lib/coach-name";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -25,6 +26,7 @@ export default async function AdminLayout({
     expiringSoon,
     expiringSoonCount,
     renewalRequestCount,
+    errorCount,
   ] = await Promise.all([
     user.role === "ADMIN"
       ? prisma.profileEditRequest.count({ where: { status: "PENDING" } })
@@ -51,6 +53,8 @@ export default async function AdminLayout({
       where: { expireDate: { gte: now, lte: ninetyDaysFromNow } },
     }),
     user.role === "ADMIN" ? prisma.licenseRenewal.count({ where: { status: "PENDING" } }) : Promise.resolve(0),
+    // ตารางบันทึก error อ่านไม่ได้ (เช่น ยังไม่สร้างตาราง) ต้องไม่ทำให้ทั้งหน้าแอดมินพัง
+    user.role === "ADMIN" ? prisma.errorLog.count({ where: { resolved: false } }).catch(() => 0) : Promise.resolve(0),
   ]);
 
   return (
@@ -60,6 +64,7 @@ export default async function AdminLayout({
         role={user.role}
         pendingRequestCount={pendingRequestCount}
         renewalRequestCount={renewalRequestCount}
+        errorCount={errorCount}
       />
       <main className="min-w-0 lg:h-screen lg:flex-1 lg:overflow-y-auto">
         <div className="mx-auto max-w-6xl px-4 py-6 sm:px-8 sm:py-8">
@@ -72,14 +77,14 @@ export default async function AdminLayout({
             expiringSoon={expiringSoon.map((r) => ({
               id: r.id,
               coachId: r.coachId,
-              coachName: `${r.coach.nameTh} ${r.coach.surnameTh}`,
+              coachName: coachName(r.coach),
               licenseType: r.licenseType,
               expireDate: r.expireDate,
             }))}
             pendingRequestCount={pendingRequestCount}
             pendingRequests={pendingRequests.map((r) => ({
               id: r.id,
-              coachName: `${r.coach.nameTh} ${r.coach.surnameTh}`,
+              coachName: coachName(r.coach),
               createdAt: r.createdAt,
             }))}
           />

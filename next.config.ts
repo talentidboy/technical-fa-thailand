@@ -2,6 +2,9 @@ import path from "node:path";
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // รหัสเวอร์ชันของการ deploy (ต้องตรงกับ src/lib/deployment.ts) — หน้าที่เปิดค้างไว้จากเวอร์ชันเก่า
+  // จะถูกโหลดใหม่ทั้งหน้าอัตโนมัติเมื่อเปลี่ยนหน้า แทนการเรียก Server Action ที่ไม่มีแล้วจนกดบันทึกไม่ได้
+  deploymentId: process.env.VERCEL_DEPLOYMENT_ID || process.env.VERCEL_GIT_COMMIT_SHA || undefined,
   turbopack: {
     root: path.resolve(__dirname),
   },

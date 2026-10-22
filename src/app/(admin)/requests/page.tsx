@@ -1,3 +1,4 @@
+import { coachName } from "@/lib/coach-name";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
@@ -72,7 +73,7 @@ export default async function RequestsPage() {
                   <div className="flex flex-wrap items-start justify-between gap-4">
                     <div>
                       <p className="font-medium text-slate-900">
-                        {req.coach.nameTh} {req.coach.surnameTh}
+                        {coachName(req.coach)}
                       </p>
                       {fields.length > 0 && (
                         <ul className="mt-2 space-y-1 text-sm text-slate-600">
@@ -134,7 +135,7 @@ export default async function RequestsPage() {
                 className="flex items-center justify-between px-6 py-3 text-sm"
               >
                 <span className="text-slate-600">
-                  {req.coach.nameTh} {req.coach.surnameTh}
+                  {coachName(req.coach)}
                 </span>
                 <span
                   className={

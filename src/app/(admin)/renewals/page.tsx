@@ -1,3 +1,4 @@
+import { coachName } from "@/lib/coach-name";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
@@ -91,7 +92,7 @@ export default async function RenewalsPage({
         recordId: r.licenseRecordId,
         requestId: r.id,
         coachId: c.id,
-        name: `${c.nameTh} ${c.surnameTh}`,
+        name: coachName(c),
         nameEn: [c.nameEn, c.familyNameEn].filter(Boolean).join(" ") || null,
         afcId: c.afcId,
         photoUrl: c.photoUrl,
@@ -128,7 +129,7 @@ export default async function RenewalsPage({
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
                     <Link href={`/coaches/${c.id}`} className="font-semibold text-slate-900 hover:text-indigo-700">
-                      {c.nameTh} {c.surnameTh}
+                      {coachName(c)}
                     </Link>
                     <span className="rounded-md bg-indigo-600 px-1.5 py-0.5 text-[11px] font-black text-white">{h.licenseRecord.licenseType}</span>
                     <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ring-1 ${st.className}`}>{st.label}</span>
@@ -174,7 +175,7 @@ export default async function RenewalsPage({
           recordId: r.id,
           requestId: null,
           coachId: c.id,
-          name: `${c.nameTh} ${c.surnameTh}`,
+          name: coachName(c),
           nameEn: [c.nameEn, c.familyNameEn].filter(Boolean).join(" ") || null,
           afcId: c.afcId,
           photoUrl: c.photoUrl,

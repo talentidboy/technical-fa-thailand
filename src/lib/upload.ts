@@ -3,7 +3,8 @@ import crypto from "node:crypto";
 
 const BUCKET = "uploads";
 const ALLOWED_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
-const MAX_SIZE_BYTES = 5 * 1024 * 1024;
+// ต้องไม่เกิน experimental.serverActions.bodySizeLimit (4mb) ใน next.config.ts — รูปใหญ่กว่านี้ถูกย่อในเบราว์เซอร์ก่อน (lib/image-shrink.ts)
+const MAX_SIZE_BYTES = 4 * 1024 * 1024;
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -19,7 +20,7 @@ export async function saveUploadedPhoto(
     throw new Error("รองรับไฟล์รูปภาพ JPEG, PNG หรือ WEBP เท่านั้น");
   }
   if (file.size > MAX_SIZE_BYTES) {
-    throw new Error("ขนาดไฟล์ต้องไม่เกิน 5MB");
+    throw new Error("ขนาดไฟล์ต้องไม่เกิน 4MB");
   }
 
   const ext = file.type === "image/png" ? "png" : file.type === "image/webp" ? "webp" : "jpg";

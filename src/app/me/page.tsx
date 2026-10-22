@@ -1,3 +1,4 @@
+import { coachName, coachInitial } from "@/lib/coach-name";
 import Link from "next/link";
 import { requireCoach } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -175,13 +176,13 @@ export default async function CoachHomePage({
                   <img src={coach.photoUrl} alt="" className="h-20 w-20 flex-none rounded-2xl object-cover ring-2 ring-white/20 sm:h-24 sm:w-24" />
                 ) : (
                   <div className="flex h-20 w-20 flex-none items-center justify-center rounded-2xl bg-white/10 text-3xl font-bold text-amber-300 ring-2 ring-white/15 sm:h-24 sm:w-24">
-                    {coach.nameTh.replace(/^[เแโใไ]/, "").charAt(0)}
+                    {coachInitial(coach)}
                   </div>
                 )}
                 <div className="min-w-0">
                   <p className={`${display.className} text-[11px] font-extrabold uppercase tracking-[0.25em] text-amber-300`}>Coach Dashboard</p>
                   <h1 className="mt-1 text-2xl font-extrabold leading-tight sm:text-3xl">
-                    {coach.nameTh} {coach.surnameTh}
+                    {coachName(coach)}
                   </h1>
                   {fullNameEn && <p className="truncate text-sm text-white/55">{fullNameEn}</p>}
                 </div>
@@ -229,7 +230,7 @@ export default async function CoachHomePage({
               <div className="mx-auto w-full max-w-80 lg:mx-0">
                 <LicenceCard
                   level={coreCard.licenseType}
-                  name={fullNameEn || `${coach.nameTh} ${coach.surnameTh}`}
+                  name={fullNameEn || coachName(coach)}
                   certificateNo={coreCard.certificateNo}
                   expire={coreCard.expireDate ? formatDate(coreCard.expireDate) : null}
                   statusLabel={LICENSE_STATUS_STYLES[getLicenseStatus(coreCard.expireDate)].label}

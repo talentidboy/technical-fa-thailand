@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { parseId } from "@/lib/route-id";
 import Image from "next/image";
 import { notFound, redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
@@ -47,8 +48,8 @@ export default async function G15ManageTeamPage({
   }
 
   const { id: idParam } = await params;
-  const id = Number(idParam);
-  if (!Number.isInteger(id)) notFound();
+  const id = parseId(idParam);
+  if (id == null) notFound();
 
   const team = await prisma.g15Team.findUnique({ where: { id } });
   if (!team) notFound();

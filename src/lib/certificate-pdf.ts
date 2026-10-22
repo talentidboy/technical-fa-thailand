@@ -1,3 +1,4 @@
+import { coachName } from "@/lib/coach-name";
 import { PDFDocument, rgb } from "pdf-lib";
 import fontkit from "@pdf-lib/fontkit";
 import { readFile } from "node:fs/promises";
@@ -167,7 +168,7 @@ type RecordWithCoach = {
 
 function paramsFromRecord(record: RecordWithCoach, kind: "diploma" | "licence") {
   return {
-    coachName: `${record.coach.nameTh} ${record.coach.surnameTh}`,
+    coachName: coachName(record.coach),
     licenseTypeLabel: labelFor(LICENSE_TYPES, record.licenseType) ?? record.licenseType,
     recordTypeLabel: labelFor(RECORD_TYPES, record.recordType) ?? record.recordType,
     certificateNo: record.certificateNo,

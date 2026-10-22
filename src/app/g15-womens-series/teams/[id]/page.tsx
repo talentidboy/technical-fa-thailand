@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { parseId } from "@/lib/route-id";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getStandings, getNationalStandings, formatMatchDateTime, type StandingRow } from "@/lib/g15";
@@ -25,8 +26,8 @@ export default async function G15TeamDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id: idParam } = await params;
-  const id = Number(idParam);
-  if (!Number.isInteger(id)) notFound();
+  const id = parseId(idParam);
+  if (id == null) notFound();
 
   const [user, team] = await Promise.all([getCurrentUser(), prisma.g15Team.findUnique({ where: { id } })]);
   if (!team) notFound();

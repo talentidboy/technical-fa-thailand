@@ -15,6 +15,7 @@ import {
   KeyRound,
   CalendarClock,
   BarChart3,
+  Bug,
   Menu,
   X,
 } from "lucide-react";
@@ -42,11 +43,13 @@ export function Sidebar({
   role,
   pendingRequestCount = 0,
   renewalRequestCount = 0,
+  errorCount = 0,
 }: {
   email: string;
   role: string;
   pendingRequestCount?: number;
   renewalRequestCount?: number;
+  errorCount?: number;
 }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
@@ -78,6 +81,7 @@ export function Sidebar({
           { href: "/renewals", label: "ต่ออายุใบอนุญาต", icon: CalendarClock, badge: renewalRequestCount },
           { href: "/coaches/accounts", label: "บัญชีผู้ฝึกสอน", icon: KeyRound },
           { href: "/requests", label: "คำขอแก้ไขข้อมูล", icon: Inbox, badge: pendingRequestCount },
+          { href: "/errors", label: "บันทึกข้อผิดพลาด", icon: Bug, badge: errorCount },
         ]
       : [];
 

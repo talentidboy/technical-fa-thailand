@@ -1,3 +1,4 @@
+import { coachName } from "@/lib/coach-name";
 import { prisma } from "./prisma";
 import { CORE_LICENSE_PROGRESSION } from "./constants";
 import { getProvinceNameByCode } from "./thai-address";
@@ -96,7 +97,7 @@ export async function loadTrainingReport(fromYear: number, toYear: number, now =
   const issues: IssueRow[] = [];
   const valid: typeof records = [];
   for (const r of records) {
-    const name = `${r.coach.nameTh} ${r.coach.surnameTh}`;
+    const name = coachName(r.coach);
     const base = { recordId: r.id, coachId: r.coachId, coachName: name, licenseType: r.licenseType, certificateNo: r.certificateNo, issueDate: r.issueDate };
     if (!r.issueDate) {
       issues.push({ ...base, problem: "ไม่มีวันที่ออกใบ", buddhistYear: false });
@@ -196,6 +197,24 @@ export async function loadTrainingReport(fromYear: number, toYear: number, now =
   const dataYears = valid.map((r) => thaiYear(r.issueDate!));
   const minYear = dataYears.length ? Math.min(...dataYears) : currentYear;
 
+  // ผู้ฝึกสอนที่อาจเป็นคนเดียวกัน (ชื่อ-สกุลไทยตรงกัน) — ให้แอดมินตรวจและรวมประวัติ
+  const people = await prisma.coach.findMany({
+    where: { NOT: { nameTh: "" } },
+    select: { id: true, nameTh: true, surnameTh: true, idNumber: true, afcId: true, _count: { select: { licenseRecords: true } } },
+  });
+  const byName = new Map<string, typeof people>();
+  for (const c of people) {
+    const key = `${c.nameTh}${c.surnameTh}`.replace(/\s+/g, "");
+    if (key) byName.set(key, [...(byName.get(key) ?? []), c]);
+  }
+  const duplicates = [...byName.values()]
+    .filter((g) => g.length > 1)
+    .map((g) => ({
+      name: `${g[0].nameTh} ${g[0].surnameTh}`,
+      coaches: g.map((c) => ({ id: c.id, hasIdNumber: !!c.idNumber, afcId: c.afcId, licenses: c._count.licenseRecords })),
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name, "th"));
+
   return {
     fromYear,
     toYear,
@@ -212,6 +231,7 @@ export async function loadTrainingReport(fromYear: number, toYear: number, now =
     byGender: GENDERS.map((g) => ({ key: g.key, label: g.label, counts: byGender.get(g.key)!, total: sum(byGender.get(g.key)!) })),
     sessions: sessionRows,
     renewalCounts,
+    duplicates,
     issues: issues.sort((a, b) => Number(b.buddhistYear) - Number(a.buddhistYear) || (b.issueDate?.getTime() ?? 0) - (a.issueDate?.getTime() ?? 0)),
     // รายชื่อผู้ได้รับใบอนุญาตในช่วงปี (ใช้ในไฟล์ Excel)
     records: inRange

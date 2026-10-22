@@ -1,3 +1,4 @@
+import { coachName } from "@/lib/coach-name";
 import Link from "next/link";
 import { requireCoach } from "@/lib/auth";
 import { getCoachCardData } from "@/lib/coach-card-data";
@@ -29,7 +30,7 @@ export default async function MyCardPage() {
 
       <div className="rounded-2xl border border-slate-200 bg-white p-10 shadow-sm">
         <CoachCard
-          name={`${coach.nameTh} ${coach.surnameTh}`}
+          name={coachName(coach)}
           afcId={coach.afcId ?? ""}
           photoUrl={coach.photoUrl}
           licenseLabel={licenseLabel}

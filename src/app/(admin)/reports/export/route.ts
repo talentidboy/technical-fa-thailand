@@ -120,6 +120,19 @@ export async function GET(request: NextRequest) {
     for (const x of r.issues) is.addRow([x.coachName, x.licenseType, x.certificateNo ?? "", x.issueDate ? x.issueDate.toISOString().slice(0, 10) : "", x.problem]);
   }
 
+  if (r.duplicates.length > 0) {
+    const ds = wb.addWorksheet("อาจซ้ำกัน");
+    ds.columns = [
+      { header: "ชื่อ-นามสกุล", width: 28 },
+      { header: "รหัสในระบบ", width: 12 },
+      { header: "AFC ID", width: 18 },
+      { header: "มีเลขบัตร", width: 10 },
+      { header: "จำนวนใบอนุญาต", width: 14 },
+    ];
+    styleHeader(ds.getRow(1));
+    for (const d of r.duplicates) for (const c of d.coaches) ds.addRow([d.name, c.id, c.afcId ?? "", c.hasIdNumber ? "มี" : "ไม่มี", c.licenses]);
+  }
+
   const buffer = await wb.xlsx.writeBuffer();
   return new NextResponse(buffer, {
     headers: {

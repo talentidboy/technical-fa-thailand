@@ -7,6 +7,11 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "typecheck": "tsc --noEmit",
+    "check": "npm run lint && npm run typecheck",
+    "test:e2e": "node tests/e2e/run.cjs",
+    "db:migrate": "prisma migrate deploy",
+    "db:backup": "node scripts/backup-db.cjs",
     "postinstall": "prisma generate"
   },
   "dependencies": {
@@ -44,6 +49,7 @@
     "dotenv": "^17.4.2",
     "eslint": "^9",
     "eslint-config-next": "16.2.9",
+    "playwright-core": "^1.63.0",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

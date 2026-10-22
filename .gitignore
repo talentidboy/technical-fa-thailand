@@ -52,3 +52,7 @@ next-env.d.ts
 
 .vercel
 .env*
+
+# ไฟล์จากการรันชุดทดสอบ / สำรองข้อมูล (มีข้อมูลส่วนบุคคล — ห้าม commit)
+/tests/e2e/.artifacts/
+/backups/

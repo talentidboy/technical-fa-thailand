@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { parseId } from "@/lib/route-id";
 import { Bebas_Neue } from "next/font/google";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
@@ -18,8 +19,8 @@ const display = Bebas_Neue({ weight: "400", subsets: ["latin"], display: "swap" 
 // ไม่แสดงวันเกิด/ส่วนสูง/น้ำหนัก/เลขบัตร — นักกีฬาเป็นเยาวชน แสดงเฉพาะข้อมูลที่หน้าทีมเปิดเผยอยู่แล้ว
 export default async function G15PlayerPage({ params }: { params: Promise<{ id: string }> }) {
   const { id: idParam } = await params;
-  const id = Number(idParam);
-  if (!Number.isInteger(id)) notFound();
+  const id = parseId(idParam);
+  if (id == null) notFound();
 
   const [user, player] = await Promise.all([
     getCurrentUser(),

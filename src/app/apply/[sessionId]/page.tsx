@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { parseId } from "@/lib/route-id";
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
@@ -18,8 +19,8 @@ function formatDate(date: Date | null) {
 // หน้าสมัครอบรมสาธารณะของแต่ละรุ่น — ลิงก์นี้แอดมินคัดลอกไปประกาศได้เลย (Facebook / LINE)
 export default async function ApplyPage({ params }: { params: Promise<{ sessionId: string }> }) {
   const { sessionId } = await params;
-  const id = Number(sessionId);
-  if (!Number.isInteger(id)) notFound();
+  const id = parseId(sessionId);
+  if (id == null) notFound();
 
   const [session, user] = await Promise.all([
     prisma.courseSession.findUnique({

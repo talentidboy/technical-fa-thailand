@@ -1,4 +1,6 @@
+import { coachName } from "@/lib/coach-name";
 import Link from "next/link";
+import { parseId } from "@/lib/route-id";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { AFC_CERTIFICATE_LEVELS, CORE_LICENSE_PROGRESSION } from "@/lib/constants";
@@ -53,8 +55,8 @@ export default async function CourseSessionPage({
 }) {
   const { sessionId } = await params;
   const sp = await searchParams;
-  const id = Number(sessionId);
-  if (!Number.isInteger(id)) notFound();
+  const id = parseId(sessionId);
+  if (id == null) notFound();
 
   const session = await prisma.courseSession.findUnique({
     where: { id },
@@ -142,7 +144,7 @@ export default async function CourseSessionPage({
         )
         .map((m) => ({
           coachId: m.id,
-          name: `${m.nameTh} ${m.surnameTh}`,
+          name: coachName(m),
           level: getHighestCoreLevel(m.licenseRecords),
           certificateNo: m.licenseRecords.find((r) => r.certificateNo)?.certificateNo ?? null,
           idTail: digits(m.idNumber)?.slice(-4) ?? null,
@@ -151,7 +153,7 @@ export default async function CourseSessionPage({
         id: a.id,
         coachId: c.id,
         status: a.status,
-        name: `${c.nameTh} ${c.surnameTh}`,
+        name: coachName(c),
         nameEn: nameEn(c),
         photoUrl: c.photoUrl,
         idTail: digits(c.idNumber)?.slice(-4) ?? null,
@@ -167,9 +169,9 @@ export default async function CourseSessionPage({
   }
 
   // ---------- ยืนยันผล ----------
-  const byThaiName = <T extends { coach: { nameTh: string; surnameTh: string } }>(list: T[]) =>
+  const byThaiName = <T extends { coach: { nameTh: string; surnameTh: string; nameEn: string | null; familyNameEn: string | null } }>(list: T[]) =>
     [...list].sort((x, y) =>
-      `${x.coach.nameTh} ${x.coach.surnameTh}`.localeCompare(`${y.coach.nameTh} ${y.coach.surnameTh}`, "th"),
+      coachName(x.coach).localeCompare(coachName(y.coach), "th"),
     );
   let resultRows: ResultRow[] = [];
   let defaultStartNo = "";
@@ -178,7 +180,7 @@ export default async function CourseSessionPage({
   if (tab === "results") {
     resultRows = byThaiName(apps.filter((a) => a.status === "APPROVED")).map((a) => ({
       id: a.id,
-      name: `${a.coach.nameTh} ${a.coach.surnameTh}`,
+      name: coachName(a.coach),
       nameEn: nameEn(a.coach),
       photoUrl: a.coach.photoUrl,
       warnings: printWarnings(a.coach),
@@ -481,7 +483,7 @@ export default async function CourseSessionPage({
                     {/* จอแคบ: ชื่อเต็มแถว ปุ่มดาวน์โหลดขึ้นบรรทัดใหม่ */}
                     <div className="min-w-44 flex-1">
                       <Link href={`/coaches/${a.coachId}`} className="text-sm font-medium text-slate-900 hover:text-indigo-600">
-                        {a.coach.nameTh} {a.coach.surnameTh}
+                        {coachName(a.coach)}
                       </Link>
                       {a.licenseRecord && (
                         <p className="text-xs text-slate-400">
@@ -514,7 +516,7 @@ export default async function CourseSessionPage({
                         )}
                       </div>
                     )}
-                    <UndoResultButton sessionId={session.id} applicationId={a.id} name={`${a.coach.nameTh} ${a.coach.surnameTh}`} />
+                    <UndoResultButton sessionId={session.id} applicationId={a.id} name={coachName(a.coach)} />
                   </li>
                 ))}
               </ul>
@@ -533,9 +535,9 @@ export default async function CourseSessionPage({
                       {APPLICATION_STATUS.FAILED.label}
                     </span>
                     <Link href={`/coaches/${a.coachId}`} className="flex-1 text-sm font-medium text-slate-900 hover:text-indigo-600">
-                      {a.coach.nameTh} {a.coach.surnameTh}
+                      {coachName(a.coach)}
                     </Link>
-                    <UndoResultButton sessionId={session.id} applicationId={a.id} name={`${a.coach.nameTh} ${a.coach.surnameTh}`} />
+                    <UndoResultButton sessionId={session.id} applicationId={a.id} name={coachName(a.coach)} />
                   </li>
                 ))}
               </ul>

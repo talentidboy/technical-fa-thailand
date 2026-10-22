@@ -1,3 +1,4 @@
+import { coachName } from "@/lib/coach-name";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
@@ -40,13 +41,13 @@ export default async function CoachAccountsPage({
   const [accounts, coachesWithoutLogin] = await Promise.all([
     prisma.systemUser.findMany({
       where: { role: "COACH" },
-      include: { coach: { select: { nameTh: true, surnameTh: true } } },
+      include: { coach: { select: { nameTh: true, surnameTh: true, nameEn: true, familyNameEn: true } } },
       orderBy: { createdAt: "desc" },
     }),
     prisma.coach.findMany({
       where: { systemUser: null },
       orderBy: { nameTh: "asc" },
-      select: { id: true, nameTh: true, surnameTh: true },
+      select: { id: true, nameTh: true, surnameTh: true, nameEn: true, familyNameEn: true },
     }),
   ]);
 
@@ -85,7 +86,7 @@ export default async function CoachAccountsPage({
             required
             options={coachesWithoutLogin.map((c) => ({
               value: String(c.id),
-              label: `${c.nameTh} ${c.surnameTh}`,
+              label: coachName(c),
             }))}
           />
           <Field label="อีเมล" name="email" type="email" required />
@@ -115,7 +116,7 @@ export default async function CoachAccountsPage({
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
                     <p className="font-medium text-slate-900">
-                      {account.coach ? `${account.coach.nameTh} ${account.coach.surnameTh}` : "-"}{" "}
+                      {account.coach ? coachName(account.coach) : "-"}{" "}
                       <span className="font-normal text-slate-400">· {account.email}</span>
                     </p>
                     <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500">

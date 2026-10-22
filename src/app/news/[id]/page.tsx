@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { parseId } from "@/lib/route-id";
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
@@ -14,7 +15,7 @@ export default async function NewsDetailPage({
 }) {
   const { id } = await params;
   const announcement = await prisma.announcement.findUnique({
-    where: { id: Number(id) },
+    where: { id: parseId(id) ?? 0 },
     include: { author: true },
   });
 

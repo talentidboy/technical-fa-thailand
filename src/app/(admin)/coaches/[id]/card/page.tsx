@@ -1,4 +1,6 @@
+import { coachName } from "@/lib/coach-name";
 import Link from "next/link";
+import { parseId } from "@/lib/route-id";
 import { notFound } from "next/navigation";
 import { getCoachCardData } from "@/lib/coach-card-data";
 import { getOrigin } from "@/lib/origin";
@@ -13,7 +15,7 @@ export default async function CoachCardPage({
 }) {
   const { id } = await params;
   const origin = await getOrigin();
-  const data = await getCoachCardData(Number(id), origin);
+  const data = await getCoachCardData(parseId(id) ?? 0, origin);
 
   if (!data) notFound();
   const { coach, licenseLabel, qrDataUrl } = data;
@@ -30,7 +32,7 @@ export default async function CoachCardPage({
 
       <div className="rounded-2xl border border-slate-200 bg-white p-10 shadow-sm">
         <CoachCard
-          name={`${coach.nameTh} ${coach.surnameTh}`}
+          name={coachName(coach)}
           afcId={coach.afcId ?? ""}
           photoUrl={coach.photoUrl}
           licenseLabel={licenseLabel}

@@ -1,10 +1,12 @@
 import Image from "next/image";
 import { redirect } from "next/navigation";
+import { connection } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createFirstAdmin } from "./actions";
 import { LOGO_URL } from "@/lib/brand";
 
 export default async function SetupPage() {
+  await connection(); // นับผู้ใช้ตอนมีคนเปิดหน้าจริง ไม่ใช่ตอน build
   const userCount = await prisma.systemUser.count();
   if (userCount > 0) {
     redirect("/login");
