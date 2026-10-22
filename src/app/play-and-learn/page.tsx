@@ -19,6 +19,7 @@ import { CountUp } from "@/components/play-and-learn/CountUp";
 import { Gallery, type GalleryPhoto } from "@/components/play-and-learn/Gallery";
 import { VideoGrid, type PlVideo } from "@/components/play-and-learn/VideoGrid";
 import { PassportIcon } from "@/components/play-and-learn/PassportIcon";
+import { PassportScene } from "@/components/play-and-learn/PassportScene";
 import { Reveal } from "@/components/g15/Reveal";
 import styles from "./pl.module.css";
 import {
@@ -722,12 +723,13 @@ function PassportMap({ chapters }: { chapters: { title: string; extra: string | 
   const cols = 4;
   const rows = Math.ceil(chapters.length / cols);
   const W = 400;
-  const RH = 100;
+  const RH = 105;
   const H = rows * RH;
+  // จุดบนเส้นทาง = กึ่งกลางภาพฉากของแต่ละบท
   const pos = chapters.map((_, i) => {
     const r = Math.floor(i / cols);
     const c = r % 2 === 0 ? i % cols : cols - 1 - (i % cols);
-    return { x: (c + 0.5) * (W / cols), y: r * RH + 34 };
+    return { x: (c + 0.5) * (W / cols), y: r * RH + 44 };
   });
   let d = `M ${pos[0].x} ${pos[0].y}`;
   for (let i = 1; i < pos.length; i++) {
@@ -751,14 +753,14 @@ function PassportMap({ chapters }: { chapters: { title: string; extra: string | 
           <div
             key={`${ch.title}-${i}`}
             className="absolute w-40 -translate-x-1/2"
-            style={{ left: `${(pos[i].x / W) * 100}%`, top: `calc(${(pos[i].y / H) * 100}% - 32px)` }}
+            style={{ left: `${(pos[i].x / W) * 100}%`, top: `calc(${(pos[i].y / H) * 100}% - 44px)` }}
           >
             <PassportStop chapter={ch} index={i} />
           </div>
         ))}
       </div>
 
-      <ol className="relative space-y-3 before:absolute before:bottom-8 before:left-8 before:top-8 before:border-l-2 before:border-dashed before:border-purple-300 md:hidden">
+      <ol className="relative space-y-3 before:absolute before:bottom-10 before:left-16 before:top-10 before:border-l-2 before:border-dashed before:border-purple-300 md:hidden">
         {chapters.map((ch, i) => (
           <li key={`${ch.title}-${i}`}>
             <PassportStop chapter={ch} index={i} row />
@@ -769,27 +771,51 @@ function PassportMap({ chapters }: { chapters: { title: string; extra: string | 
   );
 }
 
+// 1 บทบนแผนที่: ภาพฉากเคลื่อนไหวตามเรื่อง + ป้ายไอคอน + ชื่อบท (row = แบบแถวสำหรับจอมือถือ)
 function PassportStop({ chapter, index, row }: { chapter: { title: string; extra: string | null; url: string | null }; index: number; row?: boolean }) {
-  const content = (
-    <>
-      <span
-        className={`relative flex h-16 w-16 flex-none items-center justify-center rounded-full bg-linear-to-br text-white shadow-lg ring-4 ring-white transition-transform group-hover:scale-110 ${badgeAccents[index % badgeAccents.length]} ${row ? "" : styles.float}`}
-        style={row ? undefined : { animationDelay: `${index * 0.35}s` }}
-      >
-        <PassportIcon name={chapter.extra} className="h-7 w-7" />
-        <span className="absolute -right-1.5 -top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-white text-[11px] font-extrabold text-purple-600 shadow ring-1 ring-pink-100">
-          {index + 1}
+  const scene = (
+    <span className={`relative block flex-none overflow-hidden shadow-lg shadow-purple-200/60 ring-4 ring-white ${row ? "h-20 w-28 rounded-xl" : "h-22 w-40 rounded-2xl"}`}>
+      <PassportScene name={chapter.extra} />
+      <span className="absolute left-1.5 top-1.5 rounded-full bg-white/90 px-2 py-0.5 text-[10px] font-extrabold text-purple-600 shadow-sm">บทที่ {index + 1}</span>
+    </span>
+  );
+  // ป้ายไอคอนอยู่มุมขวาล่างของภาพ — ไม่บังจุดเด่นกลางฉาก
+  const badge = (
+    <span
+      className={`absolute flex items-center justify-center rounded-full bg-linear-to-br text-white shadow-md ring-[3px] ring-white ${badgeAccents[index % badgeAccents.length]} ${
+        row ? "-bottom-2 -right-2 h-9 w-9" : `-bottom-3 -right-3 h-11 w-11 ${styles.float}`
+      }`}
+      style={row ? undefined : { animationDelay: `${index * 0.35}s` }}
+    >
+      <PassportIcon name={chapter.extra} className={row ? "h-4.5 w-4.5" : "h-5.5 w-5.5"} />
+    </span>
+  );
+  const text = (
+    <span className={row ? "min-w-0 flex-1" : "mt-3 block"}>
+      <span className="block text-xs font-bold leading-snug text-slate-900 sm:text-[13px]">{chapter.title}</span>
+      {chapter.url && (
+        <span className={`mt-1 flex items-center gap-1 text-[11px] font-semibold text-purple-600 group-hover:text-pink-600 ${row ? "" : "justify-center"}`}>
+          <Download className="h-3 w-3" />
+          ดาวน์โหลด
         </span>
+      )}
+    </span>
+  );
+  const content = row ? (
+    <>
+      <span className="relative flex-none">
+        {scene}
+        {badge}
       </span>
-      <span className={row ? "min-w-0 flex-1" : "mt-2 block"}>
-        <span className="block text-xs font-bold leading-snug text-slate-900 sm:text-[13px]">{chapter.title}</span>
-        {chapter.url && (
-          <span className={`mt-1 flex items-center gap-1 text-[11px] font-semibold text-purple-600 group-hover:text-pink-600 ${row ? "" : "justify-center"}`}>
-            <Download className="h-3 w-3" />
-            ดาวน์โหลด
-          </span>
-        )}
+      {text}
+    </>
+  ) : (
+    <>
+      <span className={`relative block transition-transform duration-300 group-hover:-translate-y-1 group-hover:rotate-0 ${index % 2 ? "rotate-2" : "-rotate-2"}`}>
+        {scene}
+        {badge}
       </span>
+      {text}
     </>
   );
   const className = `group flex ${row ? "items-center gap-4 rounded-2xl bg-white/80 p-2 pr-4" : "flex-col items-center text-center"}`;

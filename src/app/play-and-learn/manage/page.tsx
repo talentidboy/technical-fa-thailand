@@ -20,6 +20,7 @@ import { Field } from "@/components/FormField";
 import { PlForm } from "@/components/play-and-learn/PlForm";
 import { PhotoUploader } from "@/components/play-and-learn/PhotoUploader";
 import { PassportIcon } from "@/components/play-and-learn/PassportIcon";
+import { PassportScene } from "@/components/play-and-learn/PassportScene";
 import { ConfirmSubmit } from "@/components/ConfirmSubmit";
 import { LOGO_URL } from "@/lib/brand";
 import {
@@ -502,9 +503,16 @@ function ItemSummary({ item }: { item: PlayAndLearnItem }) {
   const [main, sub] = itemLines(item);
   return (
     <div className="flex min-w-0 items-center gap-3">
-      <Thumb src={item.imageUrl}>
-        {kind === "PASSPORT" ? <PassportIcon name={item.extra} className="h-5 w-5 text-purple-400" /> : <KindIcon className="h-5 w-5 text-pink-400" />}
-      </Thumb>
+      {kind === "PASSPORT" ? (
+        <span className="relative flex h-12 w-20 flex-none items-center justify-center overflow-hidden rounded-xl">
+          <PassportScene name={item.extra} />
+          <PassportIcon name={item.extra} className="relative h-5 w-5 text-white drop-shadow" />
+        </span>
+      ) : (
+        <Thumb src={item.imageUrl}>
+          <KindIcon className="h-5 w-5 text-pink-400" />
+        </Thumb>
+      )}
       <div className="min-w-0">
         <p className="flex items-center gap-2 font-semibold text-slate-900">
           <span className="truncate">{main}</span>

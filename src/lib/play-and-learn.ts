@@ -34,24 +34,25 @@ export const PL_KINDS = {
   FAQ: { label: "คำถามที่พบบ่อย", fields: { title: "คำถาม *", body: "คำตอบ *" } },
   TESTIMONIAL: { label: "เสียงจากผู้ปกครอง", fields: { body: "ข้อความ *", title: "ชื่อ *", extra: "เป็นใคร เช่น คุณแม่น้องฟ้า", imageUrl: "รูป" } },
   PARTNER: { label: "พาร์ทเนอร์", fields: { title: "ชื่อ *", imageUrl: "โลโก้ *", url: "เว็บไซต์" } },
-  PASSPORT: { label: "พาสปอร์ต", fields: { title: "ชื่อบท *", url: "ลิงก์ไฟล์ PDF", extra: "ไอคอน" } },
+  PASSPORT: { label: "พาสปอร์ต", fields: { title: "ชื่อบท *", url: "ลิงก์ไฟล์ PDF", extra: "ฉากพื้นหลัง + ไอคอน" } },
 } as const satisfies Record<string, { label: string; fields: Partial<Record<PlField, string>> }>;
 export type PlKind = keyof typeof PL_KINDS;
 export const PL_KIND_KEYS = Object.keys(PL_KINDS) as PlKind[];
 export const isRequired = (kind: PlKind, field: PlField) => ((PL_KINDS[kind].fields as Partial<Record<PlField, string>>)[field] ?? "").endsWith("*");
 
-// ไอคอนบทพาสปอร์ต (ชื่อที่เก็บในฐานข้อมูล → คำอธิบายในฟอร์มแอดมิน · ตัวไอคอนจริงอยู่ที่ components/play-and-learn/PassportIcon.tsx)
+// ไอคอน + ฉากพื้นหลังของบทพาสปอร์ต (ชื่อที่เก็บในฐานข้อมูล → คำอธิบายในฟอร์มแอดมิน)
+// ตัวไอคอนอยู่ที่ components/play-and-learn/PassportIcon.tsx · ฉากอยู่ที่ PassportScene.tsx
 export const PASSPORT_ICONS = {
-  waves: "คลื่นทะเล",
-  fish: "ปลา",
-  palm: "ต้นมะพร้าว",
-  mountain: "ภูเขา",
-  temple: "โบราณสถาน",
-  compass: "เข็มทิศ",
-  droplets: "หยดน้ำ",
-  moon: "พระจันทร์",
-  star: "ดาว",
-  ball: "ลูกบอล",
+  waves: "ทะเล — คลื่น เรือใบ ชายหาด",
+  fish: "พิพิธภัณฑ์สัตว์น้ำ — ปลาว่าย ฟองน้ำ สาหร่าย",
+  palm: "ภาคใต้ — ต้นมะพร้าว เกาะ เรือหางยาว",
+  mountain: "ภาคเหนือ — ภูเขา หมอก เจดีย์บนดอย",
+  temple: "ภาคอีสาน — ปราสาทหิน ทุ่งนา ต้นตาล",
+  compass: "ภาคกลาง — วัด แม่น้ำ เรือ",
+  droplets: "สงกรานต์ — สาดน้ำ ขันน้ำ พวงมาลัย",
+  moon: "ลอยกระทง — พระจันทร์ กระทง โคมลอย",
+  star: "ท้องฟ้ายามค่ำ — ดาวกะพริบ ดาวตก",
+  ball: "สนามฟุตบอล — ประตู ลูกบอลเด้ง",
 } as const;
 export type PassportIconName = keyof typeof PASSPORT_ICONS;
 

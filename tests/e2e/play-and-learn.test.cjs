@@ -25,6 +25,10 @@ module.exports = {
     const ids = await pub.evaluate(() => ["events", "gallery", "videos", "voices", "faq"].filter((id) => document.getElementById(id)));
     check("หน้าว่าง: ซ่อนหมวดที่ไม่มีข้อมูล", ids.length === 0, ids.join(","));
     check("หน้าว่าง: พาสปอร์ต 8 บทเดิม", (await pub.locator('a[aria-label^="ดาวน์โหลดพาสปอร์ตบทที่"]:visible').count()) === 8);
+    check("พาสปอร์ต: ทุกบทมีฉากพื้นหลัง", (await pub.locator('#passport a[aria-label^="ดาวน์โหลดพาสปอร์ตบทที่"]:visible svg[viewBox="0 0 160 96"]').count()) === 8);
+    await pub.locator("#passport").scrollIntoViewIfNeeded();
+    await pub.waitForTimeout(1200);
+    await pub.locator("#passport").screenshot({ path: require("path").join(ctx.artifactsDir, "play-and-learn-passport.png") });
     check("บุคคลทั่วไป: ไม่เห็นปุ่มจัดการข้อมูล", (await pub.getByRole("link", { name: "จัดการข้อมูล" }).count()) === 0);
 
     const coachId = (await sql(`insert into coaches (name_th, surname_th, updated_at) values ('โค้ช','ทดสอบ', now()) returning id`))[0].id;

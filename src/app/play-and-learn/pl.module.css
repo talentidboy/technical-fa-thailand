@@ -198,6 +198,214 @@
   animation: ping 1.4s cubic-bezier(0, 0, 0.2, 1) infinite;
 }
 
+/* ===== ฉากพื้นหลังของแต่ละบทพาสปอร์ต (components/play-and-learn/PassportScene.tsx) =====
+   หน่วย px ใน transform ของ SVG = หน่วยของ viewBox (กว้าง 160) */
+@keyframes s-wave {
+  to {
+    transform: translateX(-40px);
+  }
+}
+.sWave {
+  animation: s-wave 4s linear infinite;
+}
+.sWaveSlow {
+  animation: s-wave 9s linear infinite reverse;
+}
+@keyframes s-bob {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-2deg);
+  }
+  50% {
+    transform: translateY(-2.5px) rotate(2deg);
+  }
+}
+.sBob {
+  animation: s-bob 3s ease-in-out infinite;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+@keyframes s-drift {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(14px);
+  }
+}
+.sDrift {
+  animation: s-drift 9s ease-in-out infinite;
+}
+@keyframes s-swim {
+  from {
+    transform: translateX(-30px);
+  }
+  to {
+    transform: translateX(190px);
+  }
+}
+.sSwim {
+  animation: s-swim 10s linear infinite;
+}
+@keyframes s-rise {
+  0% {
+    transform: translateY(0);
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-70px);
+    opacity: 0;
+  }
+}
+.sRise {
+  animation: s-rise 4s ease-in infinite;
+}
+@keyframes s-lantern {
+  0% {
+    transform: translate(0, 0);
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(8px, -70px);
+    opacity: 0;
+  }
+}
+.sLantern {
+  animation: s-lantern 7s linear infinite;
+}
+@keyframes s-fall {
+  0% {
+    transform: translateY(-30px);
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(100px);
+    opacity: 0.2;
+  }
+}
+.sFall {
+  animation: s-fall 1.8s linear infinite;
+}
+@keyframes s-sway {
+  0%,
+  100% {
+    transform: rotate(-4deg);
+  }
+  50% {
+    transform: rotate(4deg);
+  }
+}
+.sSway {
+  animation: s-sway 3.5s ease-in-out infinite;
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+}
+@keyframes s-flicker {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(0.8, 1.15);
+    opacity: 0.8;
+  }
+}
+.sFlicker {
+  animation: s-flicker 0.6s ease-in-out infinite;
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+}
+@keyframes s-glow {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.65;
+    transform: scale(1.12);
+  }
+}
+.sGlow {
+  animation: s-glow 3s ease-in-out infinite;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.sTwinkle {
+  animation: twinkle 2.4s ease-in-out infinite;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+@keyframes s-stream {
+  to {
+    stroke-dashoffset: -16;
+  }
+}
+.sStream {
+  stroke-dasharray: 3 5;
+  animation: s-stream 0.6s linear infinite;
+}
+@keyframes s-shoot {
+  0% {
+    transform: translate(0, 0);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  40%,
+  100% {
+    transform: translate(-60px, 30px);
+    opacity: 0;
+  }
+}
+.sShoot {
+  animation: s-shoot 4s ease-out infinite;
+}
+@keyframes s-hop {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-18px);
+  }
+}
+.sHop {
+  animation: s-hop 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sWave,
+  .sWaveSlow,
+  .sBob,
+  .sDrift,
+  .sSwim,
+  .sRise,
+  .sLantern,
+  .sFall,
+  .sSway,
+  .sFlicker,
+  .sGlow,
+  .sTwinkle,
+  .sStream,
+  .sShoot,
+  .sHop {
+    animation: none;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   :global(html):has(.root) {
     scroll-behavior: auto;
