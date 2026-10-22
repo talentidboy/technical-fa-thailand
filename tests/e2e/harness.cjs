@@ -10,6 +10,7 @@ const { Client } = require("pg");
 const SCHEMA = process.env.E2E_SCHEMA || "e2e_test";
 const PORT = Number(process.env.E2E_PORT || 3491);
 const BASE = `http://localhost:${PORT}`;
+const CRON_SECRET = "e2e-cron-secret";
 
 if (!/^[a-z_][a-z0-9_]*$/.test(SCHEMA) || SCHEMA === "public") throw new Error(`E2E_SCHEMA ไม่ถูกต้อง: ${SCHEMA}`);
 
@@ -80,6 +81,7 @@ function createContext(browser, artifactsDir) {
   return {
     BASE,
     SCHEMA,
+    CRON_SECRET,
     sql,
     login,
     thaiMidnight,
@@ -102,4 +104,4 @@ function createContext(browser, artifactsDir) {
   };
 }
 
-module.exports = { ROOT, SCHEMA, PORT, BASE, schemaUrl, sql, withDb, resetSchema, dropSchema, login, thaiMidnight, todayThai, browserOptions, createContext };
+module.exports = { ROOT, SCHEMA, PORT, BASE, CRON_SECRET, schemaUrl, sql, withDb, resetSchema, dropSchema, login, thaiMidnight, todayThai, browserOptions, createContext };

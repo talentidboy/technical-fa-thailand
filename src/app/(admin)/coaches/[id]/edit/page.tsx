@@ -85,15 +85,13 @@ export default async function EditCoachPage({
               />
             </label>
             <Field
-              label="ชื่อ (ไทย)"
+              label="ชื่อ (ไทย) — ชาวต่างชาติเว้นว่างได้"
               name="nameTh"
-              required
               defaultValue={coach.nameTh}
             />
             <Field
               label="นามสกุล (ไทย)"
               name="surnameTh"
-              required
               defaultValue={coach.surnameTh}
             />
             <Field

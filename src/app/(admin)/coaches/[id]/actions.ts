@@ -3,6 +3,8 @@
 import { prisma } from "@/lib/prisma";
 import { requireAdmin, requireUser } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
+import { audit } from "@/lib/audit";
+import { notifyCoaches } from "@/lib/notify";
 
 function optionalString(formData: FormData, key: string) {
   const value = String(formData.get(key) ?? "").trim();
@@ -20,7 +22,7 @@ function optionalInt(formData: FormData, key: string) {
 }
 
 export async function createLicenseRecord(formData: FormData) {
-  await requireAdmin();
+  const admin = await requireAdmin();
   const coachId = Number(formData.get("coachId"));
   const licenseType = String(formData.get("licenseType") ?? "").trim();
   const recordType = String(formData.get("recordType") ?? "").trim();
@@ -29,7 +31,7 @@ export async function createLicenseRecord(formData: FormData) {
     throw new Error("กรุณาเลือกระดับใบอนุญาตและประเภทการได้มา");
   }
 
-  await prisma.licenseRecord.create({
+  const created = await prisma.licenseRecord.create({
     data: {
       coachId,
       licenseType,
@@ -41,6 +43,7 @@ export async function createLicenseRecord(formData: FormData) {
       instructorId: optionalInt(formData, "instructorId"),
     },
   });
+  await audit(admin.email, "LICENSE_CREATE", { coachId, summary: `เพิ่มใบอนุญาต ${licenseType} ${created.certificateNo ?? ""}`.trim(), details: created });
 
   revalidatePath(`/coaches/${coachId}`);
   revalidatePath("/dashboard");
@@ -61,7 +64,7 @@ export async function confirmLicenseUpgrade(formData: FormData) {
     throw new Error("กรุณายืนยันว่าผู้ฝึกสอนผ่านการประเมิน/อบรมระดับนี้แล้ว");
   }
 
-  await prisma.licenseRecord.create({
+  const created = await prisma.licenseRecord.create({
     data: {
       coachId,
       licenseType,
@@ -74,16 +77,20 @@ export async function confirmLicenseUpgrade(formData: FormData) {
       instructorId: optionalInt(formData, "instructorId"),
     },
   });
+  await audit(approver.email, "LICENSE_UPGRADE", { coachId, summary: `ยืนยันอัปเกรดเป็นระดับ ${licenseType}`, details: created });
+  await notifyCoaches([{ coachId, type: "LICENSE_ISSUED", title: `ได้รับใบอนุญาตระดับ ${licenseType}`, body: "ดาวน์โหลด Diploma / Licence ได้ในหน้าใบอนุญาตของฉัน", href: "/me", key: `license:${created.id}` }]);
 
   revalidatePath(`/coaches/${coachId}`);
   revalidatePath("/dashboard");
 }
 
 export async function deleteLicenseRecord(formData: FormData) {
-  await requireAdmin();
+  const admin = await requireAdmin();
   const id = Number(formData.get("id"));
   const coachId = Number(formData.get("coachId"));
+  const record = await prisma.licenseRecord.findUnique({ where: { id } });
   await prisma.licenseRecord.delete({ where: { id } });
+  if (record) await audit(admin.email, "LICENSE_DELETE", { coachId, summary: `ลบใบอนุญาต ${record.licenseType} ${record.certificateNo ?? ""}`.trim(), details: record });
   revalidatePath(`/coaches/${coachId}`);
   revalidatePath("/dashboard");
 }

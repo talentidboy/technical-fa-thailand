@@ -18,6 +18,7 @@ import { coreProgramSteps } from "@/lib/coach-program";
 import { APPLICATION_STATUS, LIVE_APPLICATION_STATUSES } from "@/lib/course-workflow";
 import { Reveal } from "@/components/g15/Reveal";
 import { SectionHead, LicenceCard, levelTone, display } from "@/components/coach/CoachUi";
+import { profileCompleteness } from "@/lib/profile-completeness";
 import { applyToSession } from "./courses/actions";
 import { cancelRenewalRequest } from "./renewal-actions";
 import { RenewalRequestForm } from "@/components/renewal/RenewalRequestForm";
@@ -44,6 +45,8 @@ import {
   BookOpen,
   Settings,
   RefreshCw,
+  Bell,
+  UserCheck,
 } from "lucide-react";
 
 function formatDate(date: Date | null) {
@@ -65,7 +68,7 @@ export default async function CoachHomePage({
   const coachId = user.coachId!;
   const { saved, applied, error } = await searchParams;
 
-  const [coach, sessions, myApplications] = await Promise.all([
+  const [coach, sessions, myApplications, newNotifications] = await Promise.all([
     prisma.coach.findUnique({
       where: { id: coachId },
       include: {
@@ -90,6 +93,7 @@ export default async function CoachHomePage({
       orderBy: { appliedAt: "desc" },
       take: 5,
     }),
+    prisma.notification.findMany({ where: { coachId, readAt: null }, orderBy: { createdAt: "desc" }, take: 3 }),
   ]);
 
   if (!coach) {
@@ -150,6 +154,7 @@ export default async function CoachHomePage({
   const country = getCountryByCode(coach.nationalityCode);
   const fullNameEn = [coach.nameEn, coach.familyNameEn].filter(Boolean).join(" ");
   const job = coach.employments[0];
+  const completeness = profileCompleteness(coach);
   // บัตรดิจิทัลบนหัวหน้า = ใบระดับหลักปัจจุบัน
   const coreCard = current.find((r) => CORE_LICENSE_PROGRESSION.includes(r.licenseType)) ?? null;
   const STATUS_DOT: Record<string, string> = { active: "bg-emerald-400", expiring: "bg-amber-300", expired: "bg-red-400", unknown: "bg-white/60" };
@@ -247,6 +252,57 @@ export default async function CoachHomePage({
           </div>
         </section>
       </Reveal>
+
+      {/* แจ้งเตือนใหม่ */}
+      {newNotifications.length > 0 && (
+        <Link href="/me/notifications" className="block overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-amber-200 transition-shadow hover:shadow-md">
+          <p className="flex items-center gap-2 border-b border-amber-100 bg-amber-50 px-5 py-3 text-sm font-bold text-amber-900">
+            <Bell className="h-4 w-4 text-amber-600" />
+            การแจ้งเตือนใหม่
+            <ArrowRight className="ml-auto h-4 w-4" />
+          </p>
+          <ul className="divide-y divide-slate-100">
+            {newNotifications.map((n) => (
+              <li key={n.id} className="px-5 py-3">
+                <p className="text-sm font-semibold text-slate-900">{n.title}</p>
+                {n.body && <p className="text-xs text-slate-500">{n.body}</p>}
+              </li>
+            ))}
+          </ul>
+        </Link>
+      )}
+
+      {/* ชวนกรอกข้อมูลให้ครบ */}
+      {completeness.percent < 100 && (
+        <section className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200 sm:p-6">
+          <div className="flex flex-wrap items-center gap-4">
+            <span className="flex h-12 w-12 flex-none items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600">
+              <UserCheck className="h-6 w-6" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="font-bold text-slate-900">ข้อมูลของคุณครบ {completeness.percent}%</p>
+              <p className="text-sm text-slate-500">กรอกให้ครบเพื่อใช้ออกบัตร/ใบประกาศ และรับแจ้งเตือนทางอีเมล</p>
+              <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-100">
+                <div className="h-full rounded-full bg-linear-to-r from-indigo-500 to-emerald-500" style={{ width: `${completeness.percent}%` }} />
+              </div>
+            </div>
+            <Link
+              href="/me/settings#profile"
+              className="inline-flex flex-none items-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700"
+            >
+              กรอกข้อมูล <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+          <ul className="mt-4 flex flex-wrap gap-2">
+            {completeness.missing.map((m) => (
+              <li key={m.key} title={m.why} className={`rounded-full px-3 py-1 text-xs font-medium ring-1 ${m.self ? "bg-amber-50 text-amber-800 ring-amber-200" : "bg-slate-50 text-slate-600 ring-slate-200"}`}>
+                ยังไม่มี{m.label}
+                {!m.self && " (แจ้งเจ้าหน้าที่)"}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       {saved && (
         <p className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">

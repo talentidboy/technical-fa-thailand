@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { thaiYear } from "@/lib/training-report";
+import { audit } from "@/lib/audit";
 
 export type ActionResult = { ok: true; message?: string } | { ok: false; error: string };
 
@@ -15,7 +16,7 @@ const minus543 = (d: Date) => {
 
 // แก้ใบอนุญาตที่กรอกปีเป็น พ.ศ. (เช่น 2568) ให้เป็น ค.ศ. — ลบ 543 ปีจากวันที่ออกใบ (และวันหมดอายุถ้าเป็น พ.ศ. ด้วย)
 export async function fixBuddhistYears(): Promise<ActionResult> {
-  await requireAdmin();
+  const admin = await requireAdmin();
   try {
     const records = await prisma.licenseRecord.findMany({
       where: { issueDate: { gte: new Date("2400-01-01T00:00:00Z") } },
@@ -34,6 +35,7 @@ export async function fixBuddhistYears(): Promise<ActionResult> {
         }),
       ),
     );
+    await audit(admin.email, "DATA_FIX", { summary: `แก้ปี พ.ศ. → ค.ศ. ${fix.length} ใบ`, details: fix.map((r) => ({ id: r.id, issueDate: r.issueDate, expireDate: r.expireDate })) });
     revalidatePath("/reports");
     for (const id of new Set(fix.map((r) => r.coachId))) revalidatePath(`/coaches/${id}`);
     return { ok: true, message: `แก้ปี พ.ศ. → ค.ศ. แล้ว ${fix.length} ใบ` };

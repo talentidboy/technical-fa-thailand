@@ -133,6 +133,21 @@ export async function GET(request: NextRequest) {
     for (const d of r.duplicates) for (const c of d.coaches) ds.addRow([d.name, c.id, c.afcId ?? "", c.hasIdNumber ? "มี" : "ไม่มี", c.licenses]);
   }
 
+  if (r.completeness.incomplete.length > 0) {
+    const cs = wb.addWorksheet("ข้อมูลไม่ครบ");
+    cs.columns = [
+      { header: "รหัสในระบบ", width: 12 },
+      { header: "ชื่อ-นามสกุล", width: 30 },
+      { header: "AFC ID", width: 18 },
+      { header: "ครบ (%)", width: 9 },
+      { header: "ข้อมูลที่ยังขาด", width: 70 },
+    ];
+    styleHeader(cs.getRow(1));
+    for (const c of r.completeness.incomplete) cs.addRow([c.id, c.name, c.afcId ?? "", c.percent, c.missing.join(", ")]);
+    cs.views = [{ state: "frozen", ySplit: 1 }];
+    cs.autoFilter = { from: "A1", to: "E1" };
+  }
+
   const buffer = await wb.xlsx.writeBuffer();
   return new NextResponse(buffer, {
     headers: {

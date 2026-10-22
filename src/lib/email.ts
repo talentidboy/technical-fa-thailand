@@ -1,6 +1,7 @@
 import { Resend } from "resend";
 
-const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
+// EMAIL_DISABLED=1 = ปิดการส่งอีเมลทั้งหมด (ชุดทดสอบตั้งไว้ กันส่งอีเมลจริงไปยังที่อยู่ในข้อมูลทดสอบ)
+const resend = process.env.RESEND_API_KEY && process.env.EMAIL_DISABLED !== "1" ? new Resend(process.env.RESEND_API_KEY) : null;
 
 export function isEmailConfigured() {
   return resend !== null;

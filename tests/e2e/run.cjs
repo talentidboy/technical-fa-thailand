@@ -53,7 +53,8 @@ async function waitForServer(child, log) {
   const log = [];
   const server = spawn("npx", ["next", "dev", "-p", String(h.PORT)], {
     cwd: h.ROOT,
-    env: { ...process.env, TEST_DB_SCHEMA: h.SCHEMA },
+    // ปิดอีเมลจริง + กำหนดรหัสงานอัตโนมัติสำหรับทดสอบ
+    env: { ...process.env, TEST_DB_SCHEMA: h.SCHEMA, EMAIL_DISABLED: "1", CRON_SECRET: h.CRON_SECRET },
     shell: process.platform === "win32",
     detached: process.platform !== "win32",
   });

@@ -42,7 +42,9 @@ export function proxy(request: NextRequest) {
     pathname === "/api/g15/version" ||
     // หน้าแจ้งข้อผิดพลาดส่งรายละเอียดมาบันทึก / เช็กเวอร์ชันเว็บ — ต้องใช้ได้แม้ยังไม่ล็อกอิน
     pathname === "/api/client-error" ||
-    pathname === "/api/deploy-id";
+    pathname === "/api/deploy-id" ||
+    // งานอัตโนมัติรายวัน (ตรวจสิทธิ์ด้วย CRON_SECRET ในตัว route เอง)
+    pathname === "/api/cron/daily";
 
   if (isPublic) return NextResponse.next();
 

@@ -39,6 +39,7 @@ model Coach {
   systemUser          SystemUser?
   profileEditRequests ProfileEditRequest[]
   applications        Application[]
+  notifications       Notification[]
 
   @@map("coaches")
 }
@@ -631,4 +632,39 @@ model ErrorLog {
 
   @@index([lastSeenAt])
   @@map("error_logs")
+}
+
+// บันทึกการแก้ไขของแอดมิน/เจ้าหน้าที่ (ใคร ทำอะไร เมื่อไร) — ตรวจสอบย้อนหลังได้
+// coachId ไม่ผูก FK: ประวัติการแก้ไขยังอยู่แม้ผู้ฝึกสอนถูกลบ/รวมประวัติไปแล้ว · details = ค่าก่อน/หลัง หรือข้อมูลที่ถูกลบ
+model AuditLog {
+  id         Int      @id @default(autoincrement())
+  createdAt  DateTime @default(now()) @map("created_at")
+  actorEmail String   @map("actor_email")
+  action     String
+  coachId    Int?     @map("coach_id")
+  summary    String
+  details    Json?
+
+  @@index([createdAt])
+  @@index([coachId])
+  @@map("audit_logs")
+}
+
+// การแจ้งเตือนถึงผู้ฝึกสอน — แสดงในหน้าโค้ช และส่งอีเมล (ถ้ามีอีเมล) · key กันแจ้งซ้ำ เช่น "exp90:123:2027-01-01"
+model Notification {
+  id        Int       @id @default(autoincrement())
+  coachId   Int       @map("coach_id")
+  coach     Coach     @relation(fields: [coachId], references: [id], onDelete: Cascade)
+  type      String
+  title     String
+  body      String?
+  href      String?
+  key       String?   @unique
+  emailedAt DateTime? @map("emailed_at")
+  readAt    DateTime? @map("read_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  @@index([coachId, readAt])
+  @@index([emailedAt])
+  @@map("notifications")
 }

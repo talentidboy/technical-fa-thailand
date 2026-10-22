@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth";
+import { audit, changedFields } from "@/lib/audit";
 import { saveUploadedPhoto } from "@/lib/upload";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -34,15 +35,19 @@ function coachFieldsFromForm(formData: FormData) {
   };
 }
 
-export async function createCoach(formData: FormData) {
-  await requireAdmin();
-
+// ต้องมีชื่อ-นามสกุลไทย หรืออังกฤษ อย่างน้อยหนึ่งชุด (ผู้ฝึกสอนต่างชาติไม่มีชื่อไทย)
+function requireName(formData: FormData) {
   const nameTh = String(formData.get("nameTh") ?? "").trim();
   const surnameTh = String(formData.get("surnameTh") ?? "").trim();
+  const hasTh = !!nameTh && !!surnameTh;
+  const hasEn = !!optionalString(formData, "nameEn") && !!optionalString(formData, "familyNameEn");
+  if (!hasTh && !hasEn) throw new Error("กรุณากรอกชื่อ-นามสกุล (ภาษาไทย หรือ ภาษาอังกฤษ)");
+  return { nameTh, surnameTh };
+}
 
-  if (!nameTh || !surnameTh) {
-    throw new Error("กรุณากรอกชื่อและนามสกุล");
-  }
+export async function createCoach(formData: FormData) {
+  const admin = await requireAdmin();
+  const { nameTh, surnameTh } = requireName(formData);
 
   const photoUrl = await saveUploadedPhoto(
     formData.get("photo") as File | null,
@@ -57,35 +62,34 @@ export async function createCoach(formData: FormData) {
     },
   });
 
+  await audit(admin.email, "COACH_CREATE", { coachId: coach.id, summary: `เพิ่มผู้ฝึกสอน ${nameTh || coach.nameEn} ${surnameTh || coach.familyNameEn}`.trim() });
   revalidatePath("/coaches");
   revalidatePath("/dashboard");
   redirect(`/coaches/${coach.id}`);
 }
 
 export async function updateCoach(formData: FormData) {
-  await requireAdmin();
+  const admin = await requireAdmin();
 
   const id = Number(formData.get("id"));
-  const nameTh = String(formData.get("nameTh") ?? "").trim();
-  const surnameTh = String(formData.get("surnameTh") ?? "").trim();
-
-  if (!nameTh || !surnameTh) {
-    throw new Error("กรุณากรอกชื่อและนามสกุล");
-  }
+  const { nameTh, surnameTh } = requireName(formData);
+  const before = await prisma.coach.findUnique({ where: { id } });
 
   const newPhotoUrl = await saveUploadedPhoto(
     formData.get("photo") as File | null,
   );
 
-  await prisma.coach.update({
-    where: { id },
-    data: {
-      nameTh,
-      surnameTh,
-      ...coachFieldsFromForm(formData),
-      ...(newPhotoUrl ? { photoUrl: newPhotoUrl } : {}),
-    },
-  });
+  const data = {
+    nameTh,
+    surnameTh,
+    ...coachFieldsFromForm(formData),
+    ...(newPhotoUrl ? { photoUrl: newPhotoUrl } : {}),
+  };
+  await prisma.coach.update({ where: { id }, data });
+  if (before) {
+    const diff = changedFields(before as unknown as Record<string, unknown>, data);
+    if (Object.keys(diff).length) await audit(admin.email, "COACH_UPDATE", { coachId: id, summary: `แก้ไข ${Object.keys(diff).join(", ")}`, details: diff });
+  }
 
   revalidatePath("/coaches");
   revalidatePath(`/coaches/${id}`);
@@ -94,10 +98,19 @@ export async function updateCoach(formData: FormData) {
 }
 
 export async function deleteCoach(formData: FormData) {
-  await requireAdmin();
+  const admin = await requireAdmin();
 
   const id = Number(formData.get("id"));
+  // เก็บสำเนาข้อมูลก่อนลบ (ใบอนุญาตจะถูกลบตามไปด้วย)
+  const snapshot = await prisma.coach.findUnique({ where: { id }, include: { licenseRecords: true, employments: true } });
   await prisma.coach.delete({ where: { id } });
+  if (snapshot) {
+    await audit(admin.email, "COACH_DELETE", {
+      coachId: id,
+      summary: `ลบผู้ฝึกสอน ${snapshot.nameTh || snapshot.nameEn} ${snapshot.surnameTh || snapshot.familyNameEn} (ใบอนุญาต ${snapshot.licenseRecords.length} ใบ)`,
+      details: snapshot,
+    });
+  }
   revalidatePath("/coaches");
   revalidatePath("/dashboard");
   redirect("/coaches");

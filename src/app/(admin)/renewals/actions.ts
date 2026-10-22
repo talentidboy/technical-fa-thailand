@@ -3,7 +3,9 @@
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
-import { renewedExpiry, thaiDate } from "@/lib/license-renewal";
+import { renewedExpiry, thaiDate, formatThaiDate } from "@/lib/license-renewal";
+import { audit } from "@/lib/audit";
+import { notifyCoaches } from "@/lib/notify";
 
 export type ActionResult = { ok: true; message?: string } | { ok: false; error: string };
 
@@ -49,7 +51,7 @@ export async function renewLicenses(input: {
     if (ids.length > 500) throw new Error("เลือกได้ครั้งละไม่เกิน 500 ใบ");
 
     const [records, pending] = await Promise.all([
-      prisma.licenseRecord.findMany({ where: { id: { in: ids } }, select: { id: true, coachId: true, expireDate: true } }),
+      prisma.licenseRecord.findMany({ where: { id: { in: ids } }, select: { id: true, coachId: true, expireDate: true, licenseType: true, certificateNo: true } }),
       prisma.licenseRenewal.findMany({ where: { licenseRecordId: { in: ids }, status: "PENDING" }, select: { id: true, licenseRecordId: true } }),
     ]);
     const pendingByRecord = new Map(pending.map((p) => [p.licenseRecordId, p.id]));
@@ -68,6 +70,23 @@ export async function renewLicenses(input: {
         ];
       }),
     );
+    for (const r of records) {
+      const next = renewedExpiry(r.expireDate, renewDate, years);
+      await audit(admin.email, "RENEWAL_APPROVE", {
+        coachId: r.coachId,
+        summary: `ต่ออายุใบอนุญาต ${r.licenseType} ${r.certificateNo ?? ""} ถึง ${formatThaiDate(next)}`.replace(/\s+/g, " "),
+        details: { recordId: r.id, from: r.expireDate, to: next, note },
+      });
+    }
+    await notifyCoaches(
+      records.map((r) => ({
+        coachId: r.coachId,
+        type: "RENEWAL_APPROVED",
+        title: `ต่ออายุใบอนุญาต ${r.licenseType} แล้ว`,
+        body: `หมดอายุใหม่ ${formatThaiDate(renewedExpiry(r.expireDate, renewDate, years))}`,
+        href: "/me",
+      })),
+    );
     revalidateRenewals(records.map((r) => r.coachId));
     return `ต่ออายุแล้ว ${records.length} ใบ`;
   });
@@ -81,13 +100,17 @@ export async function rejectRenewal(requestId: number, reason: string): Promise<
     if (!why) throw new Error("กรุณาระบุเหตุผลที่ไม่อนุมัติ");
     const req = await prisma.licenseRenewal.findFirst({
       where: { id: requestId, status: "PENDING" },
-      select: { id: true, licenseRecord: { select: { coachId: true } } },
+      select: { id: true, licenseRecord: { select: { coachId: true, licenseType: true } } },
     });
     if (!req) throw new Error("คำขอนี้ถูกจัดการไปแล้ว");
     await prisma.licenseRenewal.update({
       where: { id: req.id },
       data: { status: "REJECTED", reviewedAt: new Date(), reviewedBy: admin.email, reviewNote: why },
     });
+    await audit(admin.email, "RENEWAL_REJECT", { coachId: req.licenseRecord.coachId, summary: `ไม่อนุมัติต่ออายุใบอนุญาต ${req.licenseRecord.licenseType}: ${why}` });
+    await notifyCoaches([
+      { coachId: req.licenseRecord.coachId, type: "RENEWAL_REJECTED", title: `คำขอต่ออายุใบอนุญาต ${req.licenseRecord.licenseType} ไม่ได้รับอนุมัติ`, body: `เหตุผล: ${why} — แก้ไขแล้วยื่นใหม่ได้`, href: "/me" },
+    ]);
     revalidateRenewals([req.licenseRecord.coachId]);
     return "บันทึกว่าไม่อนุมัติแล้ว";
   });
@@ -96,7 +119,7 @@ export async function rejectRenewal(requestId: number, reason: string): Promise<
 // ยกเลิกการต่ออายุ: คืนวันหมดอายุเดิม — ทำได้เฉพาะการต่ออายุครั้งล่าสุดของใบนั้น
 // (คำขอของโค้ชจะกลับไปเป็น "รอตรวจสอบ", ที่แอดมินต่อให้เองจะถูกลบ)
 export async function undoRenewal(renewalId: number): Promise<ActionResult> {
-  await requireAdmin();
+  const admin = await requireAdmin();
   return attempt(async () => {
     const r = await prisma.licenseRenewal.findFirst({
       where: { id: renewalId, status: "APPROVED" },
@@ -115,6 +138,11 @@ export async function undoRenewal(renewalId: number): Promise<ActionResult> {
           })
         : prisma.licenseRenewal.delete({ where: { id: r.id } }),
     ]);
+    await audit(admin.email, "RENEWAL_UNDO", {
+      coachId: r.licenseRecord.coachId,
+      summary: `ยกเลิกการต่ออายุ คืนวันหมดอายุเดิม ${formatThaiDate(r.previousExpireDate)}`,
+      details: { recordId: r.licenseRecord.id, from: r.newExpireDate, to: r.previousExpireDate },
+    });
     revalidateRenewals([r.licenseRecord.coachId]);
     return "ยกเลิกการต่ออายุแล้ว — คืนวันหมดอายุเดิม";
   });

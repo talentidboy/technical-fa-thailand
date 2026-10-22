@@ -2,6 +2,7 @@ import { coachName } from "@/lib/coach-name";
 import { prisma } from "./prisma";
 import { CORE_LICENSE_PROGRESSION } from "./constants";
 import { getProvinceNameByCode } from "./thai-address";
+import { PROFILE_CHECKS, profileCompleteness, profileSelect } from "./profile-completeness";
 
 // รายงานสรุปการอบรม (ใบอนุญาตที่ออกตามปี/ระดับ/ภูมิภาค/เพศ, รุ่นอบรม, การต่ออายุ, ข้อมูลที่ควรตรวจสอบ)
 // ใช้ร่วมกันระหว่างหน้า /reports และไฟล์ Excel
@@ -199,11 +200,35 @@ export async function loadTrainingReport(fromYear: number, toYear: number, now =
 
   // ผู้ฝึกสอนที่อาจเป็นคนเดียวกัน (ชื่อ-สกุลไทยตรงกัน) — ให้แอดมินตรวจและรวมประวัติ
   const people = await prisma.coach.findMany({
-    where: { NOT: { nameTh: "" } },
-    select: { id: true, nameTh: true, surnameTh: true, idNumber: true, afcId: true, _count: { select: { licenseRecords: true } } },
+    select: { id: true, nameTh: true, surnameTh: true, afcId: true, ...profileSelect, _count: { select: { licenseRecords: true } } },
   });
+
+  // ความครบถ้วนของข้อมูล (ผู้ฝึกสอนที่มีใบอนุญาต)
+  const missingCount = Object.fromEntries(PROFILE_CHECKS.map((c) => [c.key, 0]));
+  const incomplete: { id: number; name: string; afcId: string | null; percent: number; missing: string[] }[] = [];
+  const licensed = people.filter((c) => c._count.licenseRecords > 0);
+  for (const c of licensed) {
+    const pc = profileCompleteness(c);
+    for (const m of pc.missing) missingCount[m.key]++;
+    if (pc.missing.length)
+      incomplete.push({
+        id: c.id,
+        name: `${c.nameTh} ${c.surnameTh}`.trim() || [c.nameEn, c.familyNameEn].filter(Boolean).join(" "),
+        afcId: c.afcId,
+        percent: pc.percent,
+        missing: pc.missing.map((m) => m.label),
+      });
+  }
+  const completeness = {
+    coaches: licensed.length,
+    complete: licensed.length - incomplete.length,
+    fields: PROFILE_CHECKS.map((c) => ({ key: c.key, label: c.label, missing: missingCount[c.key], has: licensed.length - missingCount[c.key] })),
+    incomplete: incomplete.sort((a, b) => a.percent - b.percent || a.id - b.id),
+  };
+
   const byName = new Map<string, typeof people>();
   for (const c of people) {
+    if (!c.nameTh.trim()) continue;
     const key = `${c.nameTh}${c.surnameTh}`.replace(/\s+/g, "");
     if (key) byName.set(key, [...(byName.get(key) ?? []), c]);
   }
@@ -232,6 +257,7 @@ export async function loadTrainingReport(fromYear: number, toYear: number, now =
     sessions: sessionRows,
     renewalCounts,
     duplicates,
+    completeness,
     issues: issues.sort((a, b) => Number(b.buddhistYear) - Number(a.buddhistYear) || (b.issueDate?.getTime() ?? 0) - (a.issueDate?.getTime() ?? 0)),
     // รายชื่อผู้ได้รับใบอนุญาตในช่วงปี (ใช้ในไฟล์ Excel)
     records: inRange

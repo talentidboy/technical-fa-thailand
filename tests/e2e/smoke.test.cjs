@@ -83,6 +83,7 @@ module.exports = {
           "/reports",
           "/requests",
           "/errors",
+          "/audit",
           "/users",
           "/calendar",
           "/announcements",
@@ -94,7 +95,7 @@ module.exports = {
           `/g15-womens-series/manage/matches/${s.match}`,
         ],
       },
-      { who: "โค้ช", token: coach, pages: ["/me", "/me/courses", "/me/card", "/me/settings", "/me/edit"] },
+      { who: "โค้ช", token: coach, pages: ["/me", "/me/courses", "/me/card", "/me/settings", "/me/edit", "/me/notifications"] },
     ];
 
     for (const g of groups) {

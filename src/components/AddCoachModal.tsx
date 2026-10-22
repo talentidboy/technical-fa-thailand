@@ -70,11 +70,10 @@ export function AddCoachModal({
                 className="rounded-lg border border-slate-200 px-3.5 py-2.5 text-sm text-slate-600 file:mr-3 file:rounded-md file:border-0 file:bg-indigo-50 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-indigo-600"
               />
             </label>
-            <Field label="ชื่อ (ไทย)" name="nameTh" required placeholder="สมชาย" />
+            <Field label="ชื่อ (ไทย) — ชาวต่างชาติเว้นว่างได้" name="nameTh" placeholder="สมชาย" />
             <Field
               label="นามสกุล (ไทย)"
               name="surnameTh"
-              required
               placeholder="ใจดี"
             />
             <Field label="ชื่อ (อังกฤษ)" name="nameEn" placeholder="Somchai" />

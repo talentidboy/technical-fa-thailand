@@ -131,6 +131,7 @@ export default async function CoachSettingsPage({ searchParams }: { searchParams
                 <Field label="นามสกุล (อังกฤษ)" name="familyNameEn" defaultValue={coach.familyNameEn ?? undefined} placeholder="Jaidee" />
                 <SelectField label="เพศ" name="gender" options={GENDER_OPTIONS} defaultValue={coach.gender ?? undefined} />
                 <Field label="เบอร์โทร" name="telNo" required defaultValue={coach.telNo ?? undefined} inputMode="tel" />
+                <Field label="อีเมล (รับแจ้งเตือนใบอนุญาต/ผลอบรม)" name="email" type="email" defaultValue={coach.email ?? undefined} placeholder="name@example.com" />
                 <SelectField label="สัญชาติ" name="nationalityCode" options={countryOptions} defaultValue={coach.nationalityCode ?? undefined} />
               </div>
 
@@ -169,7 +170,6 @@ export default async function CoachSettingsPage({ searchParams }: { searchParams
                 { label: "เลขบัตรประชาชน", value: maskId(coach.idNumber) },
                 { label: "หนังสือเดินทาง", value: maskId(coach.passportNumber) },
                 { label: "วันเกิด", value: formatDate(coach.dob) },
-                { label: "อีเมลที่ลงทะเบียน", value: coach.email ?? "-" },
               ].map((r) => (
                 <div key={r.label} className="px-5 py-3.5 sm:px-6 sm:[&:nth-child(n+3)]:border-t sm:[&:nth-child(n+3)]:border-slate-100">
                   <dt className="text-xs text-slate-400">{r.label}</dt>

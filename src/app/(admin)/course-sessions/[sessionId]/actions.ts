@@ -7,6 +7,13 @@ import { revalidatePath } from "next/cache";
 import { CORE_LICENSE_PROGRESSION } from "@/lib/constants";
 import { getHighestCoreLevel } from "@/lib/license-rank";
 import { nthCertificateNo, LIVE_APPLICATION_STATUSES } from "@/lib/course-workflow";
+import { audit } from "@/lib/audit";
+import { notifyCoaches } from "@/lib/notify";
+
+async function sessionLabel(sessionId: number) {
+  const s = await prisma.courseSession.findUnique({ where: { id: sessionId }, select: { name: true, course: { select: { title: true } } } });
+  return s ? `${s.course.title} ${s.name}` : `รุ่น #${sessionId}`;
+}
 
 export type ActionResult = { ok: true; message?: string } | { ok: false; error: string };
 
@@ -35,6 +42,7 @@ export async function reviewApplications(
   const admin = await requireAdmin();
   return attempt(async () => {
     if (!["APPROVED", "REJECTED", "PENDING"].includes(decision)) throw new Error("คำสั่งไม่ถูกต้อง");
+    const coachIds = (await prisma.application.findMany({ where: { id: { in: ids }, courseSessionId: sessionId }, select: { coachId: true } })).map((a) => a.coachId);
     const { count } = await prisma.application.updateMany({
       // คนที่ยืนยันผลไปแล้ว (PASSED/FAILED) เปลี่ยนจากตรงนี้ไม่ได้ ต้องยกเลิกผลก่อน
       where: { id: { in: ids }, courseSessionId: sessionId, status: { in: ["PENDING", "APPROVED", "REJECTED", "CANCELLED"] } },
@@ -43,8 +51,22 @@ export async function reviewApplications(
           ? { status: "PENDING", reviewedAt: null, reviewedBy: null }
           : { status: decision, reviewedAt: new Date(), reviewedBy: admin.email },
     });
+    const label = await sessionLabel(sessionId);
+    const verb = decision === "APPROVED" ? "อนุมัติเข้าอบรม" : decision === "REJECTED" ? "ไม่อนุมัติ" : "ย้อนเป็นรออนุมัติ";
+    await audit(admin.email, "APPLICATION_REVIEW", { summary: `${verb} ${count} คน — ${label}`, details: { sessionId, applicationIds: ids, decision } });
+    if (decision !== "PENDING") {
+      await notifyCoaches(
+        coachIds.map((coachId) => ({
+          coachId,
+          type: decision === "APPROVED" ? "APPLICATION_APPROVED" : "APPLICATION_REJECTED",
+          title: decision === "APPROVED" ? `ได้รับการอนุมัติเข้าอบรม ${label}` : `ใบสมัคร ${label} ไม่ได้รับอนุมัติ`,
+          body: decision === "APPROVED" ? "ดูวันและสถานที่อบรมได้ในหน้าสมัครอบรม" : "สอบถามรายละเอียดเพิ่มเติมได้ที่เจ้าหน้าที่",
+          href: "/me/courses",
+        })),
+      );
+    }
     revalidateSession(sessionId);
-    return `${decision === "APPROVED" ? "อนุมัติเข้าอบรม" : decision === "REJECTED" ? "ไม่อนุมัติ" : "ย้อนเป็นรออนุมัติ"} ${count} คน`;
+    return `${verb} ${count} คน`;
   });
 }
 
@@ -115,6 +137,9 @@ export async function addParticipants(sessionId: number, coachIds: number[]): Pr
         update: { status: "APPROVED", reviewedAt: new Date(), reviewedBy: admin.email },
       });
     }
+    const label = await sessionLabel(sessionId);
+    await audit(admin.email, "APPLICATION_ADD", { summary: `เพิ่มผู้เข้าอบรม ${coachIds.length} คน — ${label}`, details: { sessionId, coachIds } });
+    await notifyCoaches(coachIds.map((coachId) => ({ coachId, type: "APPLICATION_APPROVED", title: `มีรายชื่อเข้าอบรม ${label}`, href: "/me/courses" })));
     revalidateSession(sessionId, coachIds);
     return `เพิ่มผู้เข้าอบรม ${coachIds.length} คน`;
   });
@@ -207,6 +232,21 @@ export async function confirmResults(input: {
       if (remaining === 0) await tx.courseSession.update({ where: { id: session.id }, data: { status: "COMPLETED" } });
     });
 
+    const label = `${session.course.title} ${session.name}`;
+    await audit(admin.email, "COURSE_RESULT", {
+      summary: `ยืนยันผล ${label}: ผ่าน ${passed.length} ไม่ผ่าน ${failed.length}`,
+      details: { sessionId: session.id, passed: passed.map((a, i) => ({ coachId: a.coachId, certificateNo: licenseType ? numbers[i] : null })), failed: failed.map((a) => a.coachId) },
+    });
+    await notifyCoaches([
+      ...passed.map((a) => ({
+        coachId: a.coachId,
+        type: "COURSE_PASSED",
+        title: `ผ่านการอบรม ${label}`,
+        body: licenseType ? `ได้รับใบอนุญาตระดับ ${licenseType} — ดาวน์โหลด Diploma / Licence ได้ในหน้าใบอนุญาตของฉัน` : null,
+        href: "/me",
+      })),
+      ...failed.map((a) => ({ coachId: a.coachId, type: "COURSE_FAILED", title: `ผลการอบรม ${label}: ยังไม่ผ่าน`, body: "สมัครรุ่นถัดไปได้เมื่อเปิดรับ", href: "/me/courses" })),
+    ]);
     revalidateSession(session.id, [...passed, ...failed].map((a) => a.coachId));
     revalidatePath("/me");
     return licenseType
@@ -217,7 +257,7 @@ export async function confirmResults(input: {
 
 // ยกเลิกผล (กรณีกดผิด) → ลบใบอนุญาตที่ออกจากรุ่นนี้ แล้วกลับเป็น "อนุมัติเข้าอบรม" ให้ยืนยันผลใหม่ได้
 export async function undoResult(sessionId: number, applicationId: number): Promise<ActionResult> {
-  await requireAdmin();
+  const admin = await requireAdmin();
   return attempt(async () => {
     const app = await prisma.application.findFirst({ where: { id: applicationId, courseSessionId: sessionId } });
     if (!app || !["PASSED", "FAILED"].includes(app.status)) throw new Error("ไม่พบผลการอบรมที่จะยกเลิก");
@@ -225,6 +265,11 @@ export async function undoResult(sessionId: number, applicationId: number): Prom
       await tx.application.update({ where: { id: app.id }, data: { status: "APPROVED", licenseRecordId: null } });
       if (app.licenseRecordId) await tx.licenseRecord.delete({ where: { id: app.licenseRecordId } });
       await tx.courseSession.updateMany({ where: { id: sessionId, status: "COMPLETED" }, data: { status: "CLOSED" } });
+    });
+    await audit(admin.email, "COURSE_RESULT_UNDO", {
+      coachId: app.coachId,
+      summary: `ยกเลิกผลการอบรม (${app.status === "PASSED" ? "ผ่าน" : "ไม่ผ่าน"}) — ${await sessionLabel(sessionId)}`,
+      details: { sessionId, applicationId, licenseRecordId: app.licenseRecordId },
     });
     revalidateSession(sessionId, [app.coachId]);
     revalidatePath("/me");
@@ -239,7 +284,7 @@ export async function mergeIntoExistingCoach(
   applicationId: number,
   targetCoachId: number,
 ): Promise<ActionResult> {
-  await requireAdmin();
+  const admin = await requireAdmin();
   return attempt(async () => {
     const app = await prisma.application.findFirst({
       where: { id: applicationId, courseSessionId: sessionId },
@@ -289,6 +334,7 @@ export async function mergeIntoExistingCoach(
         await tx.systemUser.update({ where: { id: source.systemUser.id }, data: { coachId: target.id } });
       }
     });
+    await audit(admin.email, "COACH_MERGE", { coachId: target.id, summary: `รวมประวัติผู้สมัคร #${source.id} เข้ากับประวัติเดิม`, details: { removed: source } });
     revalidateSession(sessionId, [target.id]);
     return `รวมกับประวัติเดิมของ ${coachName(target)} แล้ว`;
   });

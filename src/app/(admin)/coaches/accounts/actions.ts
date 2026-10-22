@@ -3,6 +3,7 @@
 import { coachName } from "@/lib/coach-name";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin, hashPassword } from "@/lib/auth";
+import { audit } from "@/lib/audit";
 import { sendEmail, isEmailConfigured } from "@/lib/email";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -12,7 +13,7 @@ function revalidate() {
 }
 
 export async function createCoachAccount(formData: FormData) {
-  await requireAdmin();
+  const admin = await requireAdmin();
 
   const coachId = Number(formData.get("coachId"));
   const email = String(formData.get("email") ?? "")
@@ -33,12 +34,13 @@ export async function createCoachAccount(formData: FormData) {
   await prisma.systemUser.create({
     data: { coachId, email, passwordHash, role: "COACH" },
   });
+  await audit(admin.email, "ACCOUNT_CREATE", { coachId, summary: `สร้างบัญชี (${email})` });
 
   revalidate();
 }
 
 export async function resetCoachPassword(formData: FormData) {
-  await requireAdmin();
+  const admin = await requireAdmin();
 
   const coachId = Number(formData.get("coachId"));
   const newPassword = String(formData.get("newPassword") ?? "");
@@ -49,18 +51,20 @@ export async function resetCoachPassword(formData: FormData) {
 
   const passwordHash = await hashPassword(newPassword);
   await prisma.systemUser.update({ where: { coachId }, data: { passwordHash } });
+  await audit(admin.email, "ACCOUNT_RESET", { coachId, summary: "ตั้งรหัสผ่านใหม่" });
 
   revalidate();
 }
 
 export async function toggleCoachAccountActive(formData: FormData) {
-  await requireAdmin();
+  const admin = await requireAdmin();
 
   const coachId = Number(formData.get("coachId"));
   const user = await prisma.systemUser.findUnique({ where: { coachId }, select: { isActive: true } });
   if (!user) return;
 
   await prisma.systemUser.update({ where: { coachId }, data: { isActive: !user.isActive } });
+  await audit(admin.email, "ACCOUNT_TOGGLE", { coachId, summary: user.isActive ? "ระงับบัญชี" : "เปิดใช้งานบัญชี" });
   revalidate();
 }
 
@@ -100,8 +104,10 @@ export async function sendCoachAccountEmail(formData: FormData) {
 }
 
 export async function deleteCoachAccount(formData: FormData) {
-  await requireAdmin();
+  const admin = await requireAdmin();
   const id = Number(formData.get("id"));
+  const account = await prisma.systemUser.findFirst({ where: { id, role: "COACH" }, select: { email: true, coachId: true } });
+  if (account) await audit(admin.email, "ACCOUNT_DELETE", { coachId: account.coachId, summary: `ลบบัญชี (${account.email})` });
 
   // จำกัดขอบเขตไว้เฉพาะบัญชีที่ role = COACH เท่านั้น กันไม่ให้ลบบัญชี Admin/เจ้าหน้าที่ผิดที่มาผิดทาง
   await prisma.systemUser.deleteMany({ where: { id, role: "COACH" } });

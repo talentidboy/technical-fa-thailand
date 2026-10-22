@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { requireCoach } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
 import { logout } from "@/app/login/actions";
 import { LOGO_URL } from "@/lib/brand";
 import { MeNav } from "@/components/MeNav";
@@ -11,7 +12,8 @@ export default async function MeLayout({
 }: {
   children: React.ReactNode;
 }) {
-  await requireCoach();
+  const user = await requireCoach();
+  const unread = await prisma.notification.count({ where: { coachId: user.coachId!, readAt: null } }).catch(() => 0);
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -25,7 +27,7 @@ export default async function MeLayout({
             </div>
           </Link>
           <div className="flex items-center gap-1.5">
-            <MeNav />
+            <MeNav unread={unread} />
             <form action={logout}>
               <button
                 type="submit"

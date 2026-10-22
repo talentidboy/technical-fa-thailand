@@ -4,6 +4,7 @@ import crypto from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin, hashPassword } from "@/lib/auth";
+import { audit } from "@/lib/audit";
 
 export type AccountResult =
   | { ok: true; message: string; username?: string; password?: string }
@@ -30,10 +31,12 @@ function checkPassword(raw: string) {
   return password;
 }
 
-async function run(coachId: number, fn: () => Promise<AccountResult>): Promise<AccountResult> {
-  await requireAdmin();
+async function run(coachId: number, action: string, fn: () => Promise<AccountResult>): Promise<AccountResult> {
+  const admin = await requireAdmin();
   try {
     const result = await fn();
+    // ไม่เก็บรหัสผ่านในบันทึก
+    if (result.ok) await audit(admin.email, action, { coachId, summary: `${result.message}${result.username ? ` (${result.username})` : ""}` });
     revalidatePath(`/coaches/${coachId}`);
     revalidatePath("/coaches/accounts");
     return result;
@@ -48,7 +51,7 @@ async function ensureUsernameFree(username: string, exceptUserId?: number) {
 }
 
 export async function createCoachLogin(coachId: number, usernameRaw: string, passwordRaw: string) {
-  return run(coachId, async () => {
+  return run(coachId, "ACCOUNT_CREATE", async () => {
     const username = normalizeUsername(usernameRaw);
     const password = checkPassword(passwordRaw);
     const coach = await prisma.coach.findUnique({ where: { id: coachId }, select: { systemUser: true } });
@@ -64,7 +67,7 @@ export async function createCoachLogin(coachId: number, usernameRaw: string, pas
 
 // ตั้งรหัสผ่านใหม่ + ออกจากระบบทุกอุปกรณ์ที่ล็อกอินค้างไว้
 export async function resetCoachLogin(coachId: number, passwordRaw: string) {
-  return run(coachId, async () => {
+  return run(coachId, "ACCOUNT_RESET", async () => {
     const password = checkPassword(passwordRaw);
     const user = await prisma.systemUser.findUnique({ where: { coachId } });
     if (!user) throw new Error("ยังไม่มีบัญชี");
@@ -77,7 +80,7 @@ export async function resetCoachLogin(coachId: number, passwordRaw: string) {
 }
 
 export async function renameCoachLogin(coachId: number, usernameRaw: string) {
-  return run(coachId, async () => {
+  return run(coachId, "ACCOUNT_RENAME", async () => {
     const username = normalizeUsername(usernameRaw);
     const user = await prisma.systemUser.findUnique({ where: { coachId } });
     if (!user) throw new Error("ยังไม่มีบัญชี");
@@ -88,7 +91,7 @@ export async function renameCoachLogin(coachId: number, usernameRaw: string) {
 }
 
 export async function toggleCoachLogin(coachId: number) {
-  return run(coachId, async () => {
+  return run(coachId, "ACCOUNT_TOGGLE", async () => {
     const user = await prisma.systemUser.findUnique({ where: { coachId } });
     if (!user) throw new Error("ยังไม่มีบัญชี");
     await prisma.systemUser.update({ where: { id: user.id }, data: { isActive: !user.isActive } });

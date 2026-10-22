@@ -25,6 +25,10 @@ import { getLicenseStatus, LICENSE_STATUS_STYLES } from "@/lib/license-status";
 import { getHighestCoreLevel, getNextCoreLevel } from "@/lib/license-rank";
 import { currentLicenseRecords, formatThaiDate, RENEWAL_STATUS } from "@/lib/license-renewal";
 import { RenewOneButton } from "@/components/renewal/RenewOneButton";
+import { MergeCoachPanel } from "@/components/MergeCoachPanel";
+import { ConfirmSubmit } from "@/components/ConfirmSubmit";
+import { profileCompleteness } from "@/lib/profile-completeness";
+import { AUDIT_ACTIONS } from "@/lib/audit-actions";
 import { UndoRenewalButton } from "@/components/renewal/UndoRenewalButton";
 import { getCountryByCode, getFlagEmoji } from "@/lib/countries";
 import { formatThaiAddress } from "@/lib/thai-address";
@@ -57,13 +61,16 @@ function formatDate(date: Date | null) {
 
 export default async function CoachDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ mergeWith?: string }>;
 }) {
   const { id } = await params;
   const coachId = parseId(id) ?? 0;
+  const mergeWith = parseId((await searchParams).mergeWith);
 
-  const [coach, user, instructors] = await Promise.all([
+  const [coach, user, instructors, auditLogs] = await Promise.all([
     prisma.coach.findUnique({
       where: { id: coachId },
       include: {
@@ -80,9 +87,11 @@ export default async function CoachDetailPage({
       orderBy: { name: "asc" },
       select: { id: true, name: true },
     }),
+    prisma.auditLog.findMany({ where: { coachId }, orderBy: { createdAt: "desc" }, take: 30 }),
   ]);
 
   if (!coach) notFound();
+  const completeness = profileCompleteness(coach);
   const isAdmin = user?.role === "ADMIN";
   const canConfirmUpgrade = user?.role === "ADMIN" || user?.role === "STAFF";
 
@@ -150,6 +159,15 @@ export default async function CoachDetailPage({
               <p className="mt-1 text-sm text-indigo-600">
                 {coach.afcId ?? "ไม่มี AFC ID"}
               </p>
+              <p
+                title={completeness.missing.map((m) => m.label).join(", ")}
+                className={`mt-1.5 inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                  completeness.percent === 100 ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"
+                }`}
+              >
+                ข้อมูลครบ {completeness.done}/{completeness.total}
+                {completeness.missing.length > 0 && ` · ขาด ${completeness.missing.map((m) => m.label).join(", ")}`}
+              </p>
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -171,13 +189,13 @@ export default async function CoachDetailPage({
                 </Link>
                 <form action={deleteCoach}>
                   <input type="hidden" name="id" value={coach.id} />
-                  <button
-                    type="submit"
+                  <ConfirmSubmit
+                    message={`ลบ ${coachName(coach)} และใบอนุญาตทั้งหมด ${coach.licenseRecords.length} ใบ? ย้อนกลับไม่ได้ (ถ้าเป็นประวัติซ้ำ ให้ใช้ "รวมประวัติซ้ำ" แทน)`}
                     className="inline-flex items-center gap-2 rounded-lg border border-red-200 px-4 py-2 text-sm font-medium text-red-600 transition-colors hover:bg-red-50"
                   >
                     <Trash2 className="h-4 w-4" />
                     ลบผู้ฝึกสอน
-                  </button>
+                  </ConfirmSubmit>
                 </form>
               </>
             )}
@@ -479,13 +497,13 @@ export default async function CoachDetailPage({
                                 name="coachId"
                                 value={coach.id}
                               />
-                              <button
-                                type="submit"
-                                aria-label="ลบใบอนุญาต"
+                              <ConfirmSubmit
+                                ariaLabel="ลบใบอนุญาต"
+                                message={`ลบใบอนุญาต ${record.licenseType} ${record.certificateNo ?? ""}? ย้อนกลับไม่ได้`}
                                 className="inline-flex items-center justify-center rounded-lg p-2 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600"
                               >
                                 <Trash2 className="h-4 w-4" />
-                              </button>
+                              </ConfirmSubmit>
                             </form>
                           )}
                         </div>
@@ -536,6 +554,8 @@ export default async function CoachDetailPage({
           </div>
         )}
       </div>
+
+      {isAdmin && <MergeCoachPanel key={mergeWith ?? 0} coachId={coach.id} initialOtherId={mergeWith} />}
 
       {/* Employment history */}
       <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
@@ -620,6 +640,30 @@ export default async function CoachDetailPage({
           </div>
         )}
       </div>
+      {isAdmin && auditLogs.length > 0 && (
+        <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <div className="flex items-center justify-between gap-2 border-b border-slate-100 px-6 py-4">
+            <h2 className="font-semibold text-slate-900">ประวัติการแก้ไข</h2>
+            <Link href={`/audit?coach=${coach.id}`} className="text-xs font-semibold text-indigo-600 hover:underline">
+              ดูทั้งหมด →
+            </Link>
+          </div>
+          <ul className="divide-y divide-slate-100">
+            {auditLogs.map((a) => {
+              const meta = AUDIT_ACTIONS[a.action] ?? { label: a.action, tone: "bg-slate-100 text-slate-600" };
+              return (
+                <li key={a.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 px-6 py-2.5 text-sm">
+                  <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${meta.tone}`}>{meta.label}</span>
+                  <span className="min-w-0 flex-1 text-slate-700">{a.summary}</span>
+                  <span className="text-xs text-slate-400">
+                    {a.createdAt.toLocaleString("th-TH", { day: "numeric", month: "short", year: "2-digit", hour: "2-digit", minute: "2-digit", timeZone: "Asia/Bangkok" })} · {a.actorEmail}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
     </div>
   );
 }
