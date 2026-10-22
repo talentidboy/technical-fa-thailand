@@ -119,20 +119,30 @@ const PHILOSOPHY = [
   { icon: ShieldCheck, th: "ให้ปลอดภัย", en: "Safe", tone: "bg-teal-100 text-teal-600" },
 ];
 
-// ส่วนประกอบของแต่ละบท (จากคู่มือการสอน)
+// สีประจำแต่ละช่วงของบทเรียน
+const LESSON_TONES = [
+  { icon: "from-pink-300 to-rose-400", text: "text-pink-600", soft: "bg-pink-100", ring: "ring-pink-200" },
+  { icon: "from-violet-300 to-purple-400", text: "text-violet-600", soft: "bg-violet-100", ring: "ring-violet-200" },
+  { icon: "from-teal-300 to-emerald-400", text: "text-teal-600", soft: "bg-teal-100", ring: "ring-teal-200" },
+  { icon: "from-amber-300 to-orange-400", text: "text-amber-600", soft: "bg-amber-100", ring: "ring-amber-200" },
+  { icon: "from-sky-300 to-cyan-400", text: "text-sky-600", soft: "bg-sky-100", ring: "ring-sky-200" },
+];
+const LESSON_TRACK = "linear-gradient(90deg, #f9a8d4, #c4b5fd, #5eead4, #fcd34d, #7dd3fc)";
+
+// ส่วนประกอบของแต่ละบท (จากคู่มือการสอน) — คำอธิบายสั้นเรียบเรียงจากคู่มือ แบ่งเป็นวลี (ขึ้นบรรทัดใหม่ทีละวลี ไม่ตัดกลางคำ)
 const LESSON_STEPS = [
-  { icon: BookOpen, th: "บทนำ", en: "Introducing The Story" },
-  { icon: Users, th: "ตัวละครและเหตุการณ์", en: "Characters & Setting" },
-  { icon: Sparkles, th: "สนุก", en: "The Adventure" },
-  { icon: MessageCircleHeart, th: "ทบทวนความสนุก", en: "The Reflection" },
-  { icon: ChevronsRight, th: "สนุกกันต่อในบทถัดไป", en: "The Cliffhanger" },
+  { icon: BookOpen, th: "บทนำ", en: "Introducing The Story", desc: ["โค้ชเปิดนิทาน", "ชวนน้อง ๆ ออกเดินทาง", "ในจินตนาการไปกับกุ๋งกิ๋ง"] },
+  { icon: Users, th: "ตัวละครและเหตุการณ์", en: "Characters & Setting", desc: ["รู้จักตัวละครและสถานที่", "ที่จะไปผจญภัยในบทนี้"] },
+  { icon: Sparkles, th: "สนุก", en: "The Adventure", desc: ["ผจญภัยตามเรื่องผ่านเกม", "และการฝึกฟุตบอลขั้นพื้นฐาน"] },
+  { icon: MessageCircleHeart, th: "ทบทวนความสนุก", en: "The Reflection", desc: ["ชวนกันเล่าว่าวันนี้", "ได้เล่นอะไร สนุกตรงไหน"] },
+  { icon: ChevronsRight, th: "สนุกกันต่อในบทถัดไป", en: "The Cliffhanger", desc: ["ทิ้งท้ายให้ลุ้นว่าบทหน้า", "กุ๋งกิ๋งจะไปที่ไหน"] },
 ];
 
 const SCHEDULE = [
-  { icon: CalendarDays, text: "ต่อเนื่อง 10 สัปดาห์" },
-  { icon: Repeat, text: "สัปดาห์ละ 1 ครั้ง" },
-  { icon: Timer, text: "ครั้งละ 45 นาที" },
-  { icon: Heart, text: "2 สัปดาห์สุดท้าย เล่นบทที่ชอบซ้ำอีกครั้ง" },
+  { icon: CalendarDays, value: "10", unit: "สัปดาห์", label: "เรียนต่อเนื่อง" },
+  { icon: Repeat, value: "1", unit: "ครั้ง", label: "ต่อสัปดาห์" },
+  { icon: Timer, value: "45", unit: "นาที", label: "ต่อครั้ง" },
+  { icon: Heart, value: "2", unit: "สัปดาห์สุดท้าย", label: "เลือกบทที่ชอบ กลับมาเล่นซ้ำ" },
 ];
 
 // หน้านี้เปิดสาธารณะไม่ต้องล็อกอิน — เป็นแคมเปญให้ผู้ปกครอง/บุคคลทั่วไปเข้าดูข้อมูลและสมัครเรียนได้เลย
@@ -386,44 +396,113 @@ export default async function PlayAndLearnPage() {
       </WhiteBand>
 
       {/* 1 บทเรียน */}
-      <section id="lesson" className="relative mx-auto max-w-5xl scroll-mt-32 px-6 py-14">
+      <section id="lesson" className="relative mx-auto max-w-6xl scroll-mt-32 px-6 py-14">
         <SectionTitle
           eyebrow="How We Play"
           title="1 บทเรียน สนุกแบบนี้"
-          desc="โค้ชอ่านนิทานแล้วชวนน้อง ๆ ออกผจญภัยในจินตนาการไปกับกุ๋งกิ๋ง ทุกเหตุการณ์เชื่อมโยงสู่เกมและการฝึกฟุตบอลขั้นพื้นฐาน"
+          desc={
+            // แต่ละวลีขึ้นบรรทัดเป็นก้อนเดียว ไม่ให้ตัดกลางคำ (จอเล็กแตกเป็นวลีย่อย)
+            <>
+              <span className="inline-block">
+                <span className="inline-block">โค้ชอ่านนิทานแล้วชวนน้อง ๆ</span> <span className="inline-block">ออกผจญภัยในจินตนาการไปกับกุ๋งกิ๋ง</span>
+              </span>{" "}
+              <span className="inline-block">
+                <span className="inline-block">ทุกเหตุการณ์เชื่อมโยงสู่เกม</span> <span className="inline-block">และการฝึกฟุตบอลขั้นพื้นฐาน</span>
+              </span>
+            </>
+          }
         />
-        <div className={`relative mx-[10%] mb-2 hidden h-10 md:block ${styles.track}`} aria-hidden>
-          <div className="absolute inset-x-0 top-1/2 border-t-2 border-dashed border-purple-200" />
-          <Ball id="lesson" className={`absolute left-0 top-0 h-10 w-10 ${styles.roll}`} />
-        </div>
-        <ol className="grid gap-4 md:grid-cols-5">
-          {LESSON_STEPS.map((step, i) => (
-            <li key={step.en}>
-              <Reveal delay={i * 110} className="h-full">
-                <div className="flex h-full items-center gap-4 rounded-3xl border border-pink-100 bg-white p-4 shadow-sm transition-all hover:-translate-y-1 hover:shadow-lg md:flex-col md:p-5 md:text-center">
-                  <span className={`relative flex h-14 w-14 flex-none items-center justify-center rounded-full bg-linear-to-br text-white shadow-md ${badgeAccents[i * 2 % badgeAccents.length]}`}>
-                    <step.icon className="h-6 w-6" />
-                    <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-white text-[10px] font-extrabold text-purple-600 shadow ring-1 ring-pink-100">
-                      {i + 1}
-                    </span>
+        <Reveal>
+          <div className="relative rounded-4xl bg-white/85 p-5 shadow-xl shadow-pink-100/70 ring-1 ring-pink-100 backdrop-blur-sm sm:p-8">
+            <Image
+              src={PLAY_AND_LEARN_MASCOT.throwing}
+              alt=""
+              width={260}
+              height={320}
+              className={`pointer-events-none absolute -right-3 -top-20 hidden h-auto w-24 lg:block ${styles.sway}`}
+            />
+
+            {/* แถบเวลา 1 คาบ: หมุด 5 ช่วง + ลูกบอลกลิ้งไปตามแถบ (จอใหญ่) */}
+            <div className="hidden md:block" aria-hidden>
+              <div className="mx-[10%] mb-12 flex justify-between text-[11px] font-bold uppercase tracking-widest text-purple-300">
+                <span>เริ่มคาบ</span>
+                <span>45 นาที</span>
+              </div>
+              <div className={`relative mx-[10%] h-2.5 rounded-full ${styles.track}`} style={{ backgroundImage: LESSON_TRACK }}>
+                <Ball id="lesson" className={`absolute -top-12 left-0 h-8 w-8 ${styles.roll}`} />
+                {LESSON_STEPS.map((step, i) => (
+                  <span
+                    key={step.en}
+                    className={`absolute top-1/2 flex h-9 w-9 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-white text-sm font-extrabold shadow-md ring-4 ${LESSON_TONES[i].ring} ${LESSON_TONES[i].text}`}
+                    style={{ left: `${(i / (LESSON_STEPS.length - 1)) * 100}%` }}
+                  >
+                    {i + 1}
                   </span>
-                  <div>
-                    <p className="text-sm font-bold text-slate-900">{step.th}</p>
-                    <p className="text-xs text-purple-500">{step.en}</p>
+                ))}
+              </div>
+            </div>
+
+            <ol className="grid gap-3 md:grid-cols-5 md:gap-4">
+              {LESSON_STEPS.map((step, i) => {
+                const tone = LESSON_TONES[i];
+                return (
+                  <li key={step.en} className="relative md:pt-8">
+                    <span aria-hidden className="absolute left-1/2 top-0 hidden h-8 border-l-2 border-dashed border-pink-200 md:block" />
+                    <Reveal delay={i * 110} className="h-full">
+                      <div className="group relative flex h-full gap-4 overflow-hidden rounded-3xl bg-white p-4 shadow-sm ring-1 ring-slate-100 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg md:flex-col md:items-center md:p-5 md:text-center">
+                        <span aria-hidden className={`absolute -right-6 -top-6 h-20 w-20 rounded-full opacity-70 transition-transform duration-500 group-hover:scale-125 ${tone.soft}`} />
+                        <span
+                          className={`relative flex h-12 w-12 flex-none -rotate-6 items-center justify-center rounded-2xl bg-linear-to-br text-white shadow-md transition-transform duration-300 group-hover:rotate-0 group-hover:scale-110 ${tone.icon}`}
+                        >
+                          <step.icon className="h-6 w-6" />
+                        </span>
+                        <div className="relative min-w-0">
+                          <p className={`text-[11px] font-bold md:hidden ${tone.text}`}>ช่วงที่ {i + 1}</p>
+                          <p className="font-bold leading-snug text-slate-900">{step.th}</p>
+                          <p className={`text-xs font-semibold ${tone.text}`}>{step.en}</p>
+                          <p className="mt-2 text-xs leading-relaxed text-slate-500">
+                            {step.desc.map((phrase, j) => (
+                              <Fragment key={phrase}>
+                                {j > 0 && " "}
+                                <span className="inline-block">{phrase}</span>
+                              </Fragment>
+                            ))}
+                          </p>
+                        </div>
+                      </div>
+                    </Reveal>
+                  </li>
+                );
+              })}
+            </ol>
+
+            {/* ตารางเรียน */}
+            <div className="mt-8 grid grid-cols-2 gap-3 border-t border-dashed border-pink-200 pt-6 lg:grid-cols-4">
+              {SCHEDULE.map(({ icon: Icon, value, unit, label }, i) => (
+                <div key={label} className="flex flex-col items-center gap-2 rounded-2xl bg-pink-50/70 p-3 text-center sm:flex-row sm:gap-3 sm:text-left">
+                  <span className={`flex h-10 w-10 flex-none items-center justify-center rounded-xl bg-white shadow-sm ${LESSON_TONES[i].text}`}>
+                    <Icon className="h-5 w-5" />
+                  </span>
+                  <div className="min-w-0">
+                    <p className="leading-tight">
+                      <span className="bg-linear-to-br from-pink-500 to-purple-500 bg-clip-text text-2xl font-extrabold text-transparent">{value}</span>{" "}
+                      <span className="text-sm font-bold text-slate-700">{unit}</span>
+                    </p>
+                    {/* เว้นวรรคในข้อความ = จุดขึ้นบรรทัดใหม่ (ไม่ตัดกลางวลี) */}
+                    <p className="text-xs text-slate-500">
+                      {label.split(" ").map((phrase, j) => (
+                        <Fragment key={phrase}>
+                          {j > 0 && " "}
+                          <span className="inline-block">{phrase}</span>
+                        </Fragment>
+                      ))}
+                    </p>
                   </div>
                 </div>
-              </Reveal>
-            </li>
-          ))}
-        </ol>
-        <div className="mt-8 flex flex-wrap justify-center gap-2">
-          {SCHEDULE.map(({ icon: Icon, text }) => (
-            <span key={text} className="inline-flex items-center gap-1.5 rounded-full bg-white/90 px-4 py-2 text-xs font-semibold text-purple-700 shadow-sm ring-1 ring-pink-100">
-              <Icon className="h-3.5 w-3.5 text-pink-500" />
-              {text}
-            </span>
-          ))}
-        </div>
+              ))}
+            </div>
+          </div>
+        </Reveal>
       </section>
 
       {/* พาสปอร์ต */}
@@ -648,7 +727,7 @@ export default async function PlayAndLearnPage() {
   );
 }
 
-function SectionTitle({ eyebrow, title, desc, as: Heading = "h2" }: { eyebrow: string; title: string; desc?: string; as?: "h1" | "h2" }) {
+function SectionTitle({ eyebrow, title, desc, as: Heading = "h2" }: { eyebrow: string; title: string; desc?: React.ReactNode; as?: "h1" | "h2" }) {
   return (
     <div className="mb-10 text-center">
       <p className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-purple-400">
@@ -800,7 +879,7 @@ function PassportStop({ chapter, index, row }: { chapter: { title: string; extra
   );
   const text = (
     <span className={row ? "min-w-0 flex-1" : "mt-3 block w-max max-w-44 rounded-xl bg-white/90 px-2.5 py-1 shadow-sm backdrop-blur-sm"}>
-      <span className="block text-balance text-xs font-bold leading-snug text-slate-900 sm:text-[13px]">{chapter.title}</span>
+      <span className="block text-xs font-bold leading-snug text-slate-900 sm:text-[13px]">{chapter.title}</span>
       {chapter.url && (
         <span className={`mt-1 flex items-center gap-1 text-[11px] font-semibold text-purple-600 group-hover:text-pink-600 ${row ? "" : "justify-center"}`}>
           <Download className="h-3 w-3" />

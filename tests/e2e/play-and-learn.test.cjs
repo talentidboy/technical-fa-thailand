@@ -29,6 +29,9 @@ module.exports = {
     await pub.locator("#passport").scrollIntoViewIfNeeded();
     await pub.waitForTimeout(1200);
     await pub.locator("#passport").screenshot({ path: require("path").join(ctx.artifactsDir, "play-and-learn-passport.png") });
+    await pub.locator("#lesson").scrollIntoViewIfNeeded();
+    await pub.waitForTimeout(1500);
+    await pub.locator("#lesson").screenshot({ path: require("path").join(ctx.artifactsDir, "play-and-learn-lesson.png") });
     check("บุคคลทั่วไป: ไม่เห็นปุ่มจัดการข้อมูล", (await pub.getByRole("link", { name: "จัดการข้อมูล" }).count()) === 0);
 
     const coachId = (await sql(`insert into coaches (name_th, surname_th, updated_at) values ('โค้ช','ทดสอบ', now()) returning id`))[0].id;
