@@ -417,13 +417,414 @@ const SCENES: Record<PassportIconName, () => React.ReactNode> = {
   ball: Field,
 };
 
+const sceneKey = (name: string | null) => (name && name in BG ? name : "star") as PassportIconName;
+
+// สีพื้นไล่เฉดของฉาก (ใช้เป็นพื้นแถวบนจอมือถือ)
+export const passportTint = (name: string | null) => BG[sceneKey(name)];
+
 export function PassportScene({ name, className = "" }: { name: string | null; className?: string }) {
-  const key = (name && name in BG ? name : "star") as PassportIconName;
+  const key = sceneKey(name);
   return (
     <span aria-hidden className={`absolute inset-0 overflow-hidden bg-linear-to-b ${BG[key]} ${className}`}>
       <svg viewBox="0 0 160 96" preserveAspectRatio="xMidYMid slice" className="absolute inset-0 h-full w-full transition-transform duration-500 group-hover:scale-110">
         {SCENES[key]()}
       </svg>
     </span>
+  );
+}
+
+// ===================== วิวพื้นหลังแผนที่ตามสถานที่ของแต่ละบท =====================
+// วาดในช่องขนาด 100×105 (1 ช่องต่อ 1 บทบนแผนที่) และเลยขอบออกไป (-12..112, -10..115) ให้ค่อยๆ กลืนกับช่องข้างเคียง
+// จุดกึ่งกลางการ์ดอยู่ที่ (50, 44) — ของเด่นของวิวจึงวางไว้ขอบซ้าย/ขวา ด้านบน และด้านล่าง
+
+// คลื่นเต็มความกว้างช่อง (เลื่อนซ้ายได้ 40 หน่วยโดยไม่เห็นขอบ)
+function zoneWave(y: number, amp: number) {
+  let d = `M-12 ${y}`;
+  for (let i = 0; i < 10; i++) d += ` q10 ${i % 2 ? amp : -amp} 20 0`;
+  return `${d} V115 H-12Z`;
+}
+
+const Sky = ({ fill }: { fill: string }) => <rect x="-12" y="-10" width="124" height="125" fill={fill} />;
+
+function Prang({ x, base, h, fill, line }: { x: number; base: number; h: number; fill: string; line: string }) {
+  const w = h * 0.42;
+  return (
+    <>
+      <path d={`M${x - w / 2} ${base}C${x - w / 2} ${base - h * 0.55} ${x - w * 0.2} ${base - h * 0.85} ${x} ${base - h}C${x + w * 0.2} ${base - h * 0.85} ${x + w / 2} ${base - h * 0.55} ${x + w / 2} ${base}Z`} fill={fill} />
+      <path d={`M${x - w * 0.42} ${base - h * 0.25}h${w * 0.84}M${x - w * 0.34} ${base - h * 0.5}h${w * 0.68}M${x - w * 0.22} ${base - h * 0.72}h${w * 0.44}`} stroke={line} strokeWidth="1" />
+    </>
+  );
+}
+
+function ZoneSea() {
+  return (
+    <>
+      <Sky fill="#e0f2fe" />
+      <circle cx="86" cy="10" r="10" fill="#fef3c7" className={styles.sGlow} />
+      <circle cx="86" cy="10" r="6.5" fill="#fde68a" />
+      <Cloud x={14} y={10} s={0.9} />
+      <path d="M38 6q2.5 -2.5 5 0q2.5 -2.5 5 0M52 12q2 -2 4 0q2 -2 4 0" fill="none" stroke="#64748b" strokeWidth="0.9" strokeLinecap="round" />
+      <g className={styles.sWaveSlow}>
+        <path d={zoneWave(54, 2)} fill="#bae6fd" />
+      </g>
+      <g className={styles.sBob}>
+        <path d="M-6 66h16l-3 4h-10z" fill="#f472b6" />
+        <path d="M1 65V50" stroke="#94a3b8" strokeWidth="0.8" />
+        <path d="M2 52L10 64H2Z" fill="#fff" />
+      </g>
+      <g className={styles.sWave}>
+        <path d={zoneWave(66, 2.5)} fill="#7dd3fc" />
+      </g>
+      <path d="M-12 86Q30 80 60 86T112 84V115H-12Z" fill="#fde68a" />
+      <path d="M8 90V76" stroke="#94a3b8" strokeWidth="1" />
+      <path d="M-2 78Q8 68 18 78Z" fill="#f9a8d4" />
+      <path d="M3 78Q8 70 8 68Q8 70 13 78" fill="none" stroke="#fff" strokeWidth="0.8" />
+      <path d="M86 100v-6h3v-3h3v3h3v-3h3v3h3v6z" fill="#fcd34d" />
+      <path d={star4(30, 100, 3)} fill="#fb7185" />
+      <path d="M70 104a3 3 0 0 1 6 0z" fill="#fbcfe8" />
+    </>
+  );
+}
+
+function ZoneAquarium() {
+  return (
+    <>
+      <Sky fill="#cffafe" />
+      <rect x="-12" y="30" width="124" height="85" fill="#a5f3fc" />
+      <rect x="-12" y="72" width="124" height="43" fill="#7dd3fc" opacity="0.6" />
+      <path d="M-2 -10h10l18 125h-14zM62 -10h8l14 125h-10zM96 -10h6l10 125h-8z" fill="#fff" opacity="0.25" />
+      <g className={styles.sBob}>
+        <path d="M0 18a7 7 0 0 1 14 0z" fill="#f9a8d4" />
+        <path d="M2 18q1 4 0 8M6 18q1 5 0 10M10 18q-1 5 0 9M13 18q1 4 0 7" fill="none" stroke="#f9a8d4" strokeWidth="0.9" strokeLinecap="round" />
+      </g>
+      <g className={styles.sSwim} style={{ animationDuration: "9s", animationDelay: "-4s" }}>
+        <Fish y={12} body="#fde68a" tail="#facc15" scale={0.6} />
+      </g>
+      <g transform="matrix(-1 0 0 1 100 0)">
+        <g className={styles.sSwim} style={{ animationDuration: "12s", animationDelay: "-2s" }}>
+          <Fish y={84} body="#fdba74" tail="#fb923c" scale={0.8} />
+        </g>
+      </g>
+      {(
+        [
+          [94, 90, 2, "0s"],
+          [98, 96, 1.5, "-1.4s"],
+          [4, 94, 1.8, "-2.4s"],
+        ] as const
+      ).map(([x, y, r, wait]) => (
+        <circle key={x} cx={x} cy={y} r={r} fill="#fff" fillOpacity="0.5" stroke="#fff" strokeWidth="0.5" className={styles.sRise} style={delay(wait)} />
+      ))}
+      <path d="M-12 100Q50 94 112 100V115H-12Z" fill="#fde68a" />
+      <g className={styles.sSway}>
+        <path d="M2 104C-3 92 7 86 1 74C-3 66 4 60 2 52" fill="none" stroke="#34d399" strokeWidth="3" strokeLinecap="round" />
+      </g>
+      <g className={styles.sSway} style={delay("-1.5s")}>
+        <path d="M98 104C93 94 101 88 96 78" fill="none" stroke="#6ee7b7" strokeWidth="3" strokeLinecap="round" />
+      </g>
+      <path d="M86 104v-7m0 3l-4 -5m4 3l4 -6" fill="none" stroke="#f9a8d4" strokeWidth="2.4" strokeLinecap="round" />
+      <path d={star4(60, 106, 3)} fill="#fb7185" />
+    </>
+  );
+}
+
+function ZoneSouth() {
+  return (
+    <>
+      <Sky fill="#ffe4e6" />
+      <rect x="-12" y="26" width="124" height="89" fill="#ffedd5" />
+      <circle cx="90" cy="20" r="9" fill="#fdba74" opacity="0.85" />
+      <Cloud x={30} y={10} s={0.8} />
+      <path d="M-8 62C-9 50 -3 44 1 48C4 42 9 48 8 62Z" fill="#c4b5fd" opacity="0.75" />
+      <path d="M90 62C89 54 94 50 97 53C100 50 104 55 103 62Z" fill="#c4b5fd" opacity="0.65" />
+      <g className={styles.sWaveSlow}>
+        <path d={zoneWave(61, 1.5)} fill="#7dd3fc" />
+      </g>
+      <g className={styles.sBob} style={delay("-1s")}>
+        <path d="M80 76q10 4 20 -1l-2 -2q-8 3 -17 1z" fill="#f472b6" />
+        <path d="M84 74v-4h6v3" fill="#fde68a" />
+      </g>
+      <g className={styles.sWave}>
+        <path d={zoneWave(74, 1.5)} fill="#38bdf8" opacity="0.5" />
+      </g>
+      <path d="M-12 86Q50 78 112 88V115H-12Z" fill="#fde68a" />
+      <Palm x={-4} base={104} h={62} />
+      <Palm x={86} base={106} h={50} wait="-1.6s" />
+      <path d="M40 100a3 3 0 0 1 6 0z" fill="#fbcfe8" />
+    </>
+  );
+}
+
+function ZoneNorth() {
+  return (
+    <>
+      <Sky fill="#ede9fe" />
+      <circle cx="50" cy="12" r="10" fill="#fef3c7" className={styles.sGlow} />
+      <circle cx="50" cy="12" r="6.5" fill="#fde68a" />
+      <path d="M-12 50L4 18L22 40L50 16L78 40L96 14L112 44V115H-12Z" fill="#c4b5fd" />
+      <g className={styles.sDrift}>
+        <rect x="-10" y="32" width="30" height="5" rx="2.5" fill="#fff" opacity="0.8" />
+        <rect x="80" y="28" width="28" height="5" rx="2.5" fill="#fff" opacity="0.75" />
+      </g>
+      <path d="M-12 72L10 42L34 66L60 48L86 68L104 40L112 52V115H-12Z" fill="#a5b4fc" />
+      <g className={styles.sDrift} style={delay("-4s")}>
+        <rect x="74" y="58" width="34" height="5" rx="2.5" fill="#fff" opacity="0.8" />
+      </g>
+      <path d="M-12 86Q30 76 60 84T112 80V115H-12Z" fill="#86efac" />
+      {[-6, 2, 10].map((x) => (
+        <path key={x} d={`M${x} ${86 - (x + 6) * 0.15}l4 -11l4 11z`} fill="#34d399" />
+      ))}
+      <rect x="88" y="82" width="12" height="2.5" fill="#fcd34d" />
+      <path d="M90 82C90 75 98 75 98 82Z" fill="#fde68a" />
+      <path d="M92.8 77L94 67L95.2 77Z" fill="#fcd34d" />
+      {Array.from({ length: 16 }, (_, i) => (
+        <circle key={i} cx={-8 + i * 7.5} cy={98 + (i % 3) * 4} r="1.8" fill="#fde047" />
+      ))}
+    </>
+  );
+}
+
+function ZoneIsan() {
+  return (
+    <>
+      <Sky fill="#fef9c3" />
+      <circle cx="12" cy="10" r="10" fill="#fed7aa" className={styles.sGlow} />
+      <circle cx="12" cy="10" r="6.5" fill="#fdba74" />
+      <Cloud x={84} y={12} s={0.8} wait="-2s" />
+      <path d="M-12 74Q50 68 112 74V115H-12Z" fill="#d9f99d" />
+      <path d="M-12 74h30v3h-30z" fill="#f2b8a0" />
+      <Prang x={3} base={74} h={40} fill="#fbd5c0" line="#e8a58a" />
+      <SugarPalm x={94} base={76} h={36} />
+      <SugarPalm x={104} base={75} h={28} />
+      <path d="M-12 86Q50 80 112 86V115H-12Z" fill="#bef264" />
+      {Array.from({ length: 13 }, (_, i) => (
+        <path key={i} d={`M${i * 10 - 10} 115l7 -26`} stroke="#84cc16" strokeWidth="1" opacity="0.45" />
+      ))}
+      <g transform="translate(78 98)">
+        <ellipse cx="0" cy="0" rx="8" ry="4.5" fill="#94a3b8" />
+        <circle cx="8" cy="-3" r="3" fill="#94a3b8" />
+        <path d="M6.5 -5.5q-2 -3 1 -4M9.5 -5.5q2 -3 -1 -4" fill="none" stroke="#64748b" strokeWidth="0.9" />
+        <path d="M-5 3v4M-1 3v4M3 3v4M6 3v4" stroke="#94a3b8" strokeWidth="1.6" />
+      </g>
+    </>
+  );
+}
+
+function ZoneCentral() {
+  return (
+    <>
+      <Sky fill="#e0e7ff" />
+      <Cloud x={20} y={10} s={0.9} />
+      <Cloud x={80} y={6} s={0.7} wait="-3s" />
+      <Prang x={98} base={74} h={46} fill="#e9d5ff" line="#c4b5fd" />
+      <rect x="-12" y="72" width="124" height="5" fill="#bbf7d0" />
+      <rect x="-10" y="60" width="22" height="13" fill="#fff" />
+      <path d="M-14 62L1 50L16 62Z" fill="#fdba74" />
+      <path d="M-9 56L1 46L11 56Z" fill="#fb923c" opacity="0.8" />
+      <path d="M-14 62L1 50L16 62M-9 56L1 46L11 56" fill="none" stroke="#6ee7b7" strokeWidth="1.1" strokeLinejoin="round" />
+      <path d="M16 62q2 -1 2 -4M1 46q1 -3 2 -3" fill="none" stroke="#fcd34d" strokeWidth="1.2" strokeLinecap="round" />
+      <g className={styles.sWaveSlow}>
+        <path d={zoneWave(77, 1.2)} fill="#93c5fd" />
+      </g>
+      <path d="M20 90h12M64 100h14M90 92h10" stroke="#fff" opacity="0.6" strokeLinecap="round" />
+      <g className={styles.sBob}>
+        <path d="M4 98q11 4 22 0l-2 -3h-18z" fill="#f472b6" />
+        <path d="M9 95v-5h10v5" fill="#fde68a" />
+      </g>
+      <g className={styles.sBob} style={delay("-1.5s")}>
+        <path d="M76 106q9 3 18 0l-2 -2h-14z" fill="#a78bfa" />
+      </g>
+    </>
+  );
+}
+
+function ZoneSongkran() {
+  const flowers = Array.from({ length: 11 }, (_, i) => {
+    const t = i / 10;
+    // เส้นโค้ง M-12 2 Q50 18 112 2
+    return { x: -12 + 124 * t, y: (1 - t) ** 2 * 2 + 2 * t * (1 - t) * 18 + t * t * 2, c: ["#fde047", "#fb7185", "#fff", "#c084fc"][i % 4] };
+  });
+  return (
+    <>
+      <Sky fill="#cffafe" />
+      <rect x="-12" y="62" width="124" height="53" fill="#fce7f3" />
+      <path d="M-12 2Q50 18 112 2" fill="none" stroke="#f9a8d4" strokeWidth="0.8" />
+      {flowers.map((f) => (
+        <circle key={f.x} cx={f.x} cy={f.y + 2} r="2.4" fill={f.c} stroke="#f9a8d4" strokeWidth="0.5" />
+      ))}
+      {(
+        [
+          [2, "0s"],
+          [10, "-0.6s"],
+          [90, "-1.1s"],
+          [98, "-0.3s"],
+        ] as const
+      ).map(([x, wait]) => (
+        <path key={x} d={`M${x} 16q-2.5 4 0 6q2.5 -2 0 -6z`} fill="#38bdf8" className={styles.sFall} style={delay(wait)} />
+      ))}
+      <path d="M-12 100Q50 95 112 100V115H-12Z" fill="#fbcfe8" />
+      <path d="M8 96C12 76 26 70 34 80" fill="none" stroke="#38bdf8" strokeWidth="1.8" strokeLinecap="round" className={styles.sStream} />
+      <path d="M92 96C88 76 74 70 66 80" fill="none" stroke="#7dd3fc" strokeWidth="1.8" strokeLinecap="round" className={styles.sStream} style={delay("-0.3s")} />
+      <path d="M0 96h14l-3 7h-8z" fill="#fcd34d" />
+      <ellipse cx="7" cy="96" rx="7" ry="1.6" fill="#7dd3fc" />
+      <path d="M86 96h14l-3 7h-8z" fill="#fcd34d" />
+      <ellipse cx="93" cy="96" rx="7" ry="1.6" fill="#7dd3fc" />
+      {[24, 40, 60, 76].map((x) => (
+        <g key={x}>
+          <circle cx={x} cy="106" r="2.6" fill="#fde047" />
+          <circle cx={x} cy="106" r="1" fill="#fb923c" />
+        </g>
+      ))}
+    </>
+  );
+}
+
+function ZoneLoyKrathong() {
+  return (
+    <>
+      <Sky fill="#c7d2fe" />
+      <rect x="-12" y="-10" width="124" height="50" fill="#a5b4fc" opacity="0.55" />
+      <Stars
+        list={[
+          [20, 6, 1.6, "0s"],
+          [36, 16, 1.3, "-0.7s"],
+          [64, 4, 1.6, "-1.5s"],
+          [78, 18, 1.3, "-0.3s"],
+          [96, 30, 1.5, "-1.1s"],
+          [-4, 36, 1.3, "-1.9s"],
+        ]}
+      />
+      <circle cx="6" cy="12" r="12" fill="#fef9c3" className={styles.sGlow} />
+      <circle cx="6" cy="12" r="7.5" fill="#fef9c3" />
+      <g className={styles.sTwinkle} style={delay("-0.8s")}>
+        {[0, 45, 90, 135, 180, 225, 270, 315].map((a) => {
+          const r = (a * Math.PI) / 180;
+          return <path key={a} d={`M${90 + 3 * Math.cos(r)} ${10 + 3 * Math.sin(r)}L${90 + 7 * Math.cos(r)} ${10 + 7 * Math.sin(r)}`} stroke="#fbcfe8" strokeWidth="1" strokeLinecap="round" />;
+        })}
+      </g>
+      {(
+        [
+          [94, 64, "0s"],
+          [100, 72, "-2.5s"],
+          [2, 70, "-4.8s"],
+        ] as const
+      ).map(([x, y, wait]) => (
+        <g key={x} className={styles.sLantern} style={delay(wait)}>
+          <rect x={x - 2.5} y={y - 3.5} width="5" height="7" rx="1.8" fill="#fdba74" />
+          <rect x={x - 1.2} y={y} width="2.4" height="2.4" rx="0.8" fill="#fef08a" />
+        </g>
+      ))}
+      <g className={styles.sWaveSlow}>
+        <path d={zoneWave(76, 1)} fill="#a5b4fc" />
+      </g>
+      <path d="M2 82h10M4 87h6" stroke="#fef9c3" strokeWidth="1.2" strokeLinecap="round" opacity="0.7" />
+      {(
+        [
+          [4, 92, "0s"],
+          [84, 96, "-1.2s"],
+          [44, 104, "-2s"],
+        ] as const
+      ).map(([x, y, wait]) => (
+        <g key={x} className={styles.sBob} style={delay(wait)}>
+          <path d={`M${x - 8} ${y}q8 4 16 0l-2 -2.5h-12z`} fill="#4ade80" />
+          <path d={`M${x - 5} ${y - 2.5}l2.5 -6l2.5 6zM${x} ${y - 2.5}l2.5 -6l2.5 6z`} fill="#f9a8d4" />
+          <ellipse cx={x} cy={y - 10} rx="1" ry="1.7" fill="#fde047" className={styles.sFlicker} />
+        </g>
+      ))}
+      <g className={styles.sWave}>
+        <path d={zoneWave(100, 1)} fill="#818cf8" opacity="0.45" />
+      </g>
+    </>
+  );
+}
+
+function ZoneStarSky() {
+  return (
+    <>
+      <Sky fill="#ddd6fe" />
+      <Stars
+        list={[
+          [6, 8, 1.6, "0s"],
+          [26, 18, 1.3, "-0.6s"],
+          [70, 6, 1.6, "-1.4s"],
+          [92, 20, 1.3, "-0.2s"],
+          [4, 60, 1.4, "-1.8s"],
+          [96, 56, 1.4, "-1s"],
+        ]}
+      />
+      <g className={styles.sShoot}>
+        <path d="M90 4l-16 8" stroke="#fff" strokeWidth="1.2" strokeLinecap="round" />
+      </g>
+      <path d="M-12 92Q30 80 60 90T112 84V115H-12Z" fill="#a78bfa" opacity="0.55" />
+    </>
+  );
+}
+
+function ZoneField() {
+  return (
+    <>
+      <Sky fill="#e0f2fe" />
+      <Cloud x={14} y={10} s={0.9} />
+      <Cloud x={86} y={6} s={0.7} wait="-2s" />
+      <rect x="-12" y="70" width="124" height="45" fill="#86efac" />
+      {[-12, 12, 36, 60, 84, 108].map((x) => (
+        <rect key={x} x={x} y="70" width="12" height="45" fill="#4ade80" opacity="0.35" />
+      ))}
+      <path d="M-12 92H112" stroke="#fff" opacity="0.7" />
+      <path d="M92 70V54H112M98 54V70M104 54V70M92 60H112M92 65H112" fill="none" stroke="#fff" strokeWidth="0.6" opacity="0.7" />
+      <path d="M92 70V54H112" fill="none" stroke="#fff" strokeWidth="1.8" />
+      <g className={styles.sHop}>
+        <circle cx="6" cy="84" r="4" fill="#fff" stroke="#a855f7" strokeWidth="0.9" />
+      </g>
+    </>
+  );
+}
+
+const ZONES: Record<PassportIconName, () => React.ReactNode> = {
+  waves: ZoneSea,
+  fish: ZoneAquarium,
+  palm: ZoneSouth,
+  mountain: ZoneNorth,
+  temple: ZoneIsan,
+  compass: ZoneCentral,
+  droplets: ZoneSongkran,
+  moon: ZoneLoyKrathong,
+  star: ZoneStarSky,
+  ball: ZoneField,
+};
+
+// ขอบนุ่มของแต่ละช่อง (ใช้ครั้งเดียวต่อแผนที่ — ใส่ไว้ใน <defs> ของ SVG แผนที่)
+export function PassportZoneDefs() {
+  return (
+    <defs>
+      <linearGradient id="pl-zone-h" x1="0" x2="1" y1="0" y2="0">
+        <stop offset="0" stopColor="#fff" stopOpacity="0" />
+        <stop offset="0.2" stopColor="#fff" />
+        <stop offset="0.8" stopColor="#fff" />
+        <stop offset="1" stopColor="#fff" stopOpacity="0" />
+      </linearGradient>
+      <linearGradient id="pl-zone-v" x1="0" x2="0" y1="0" y2="1">
+        <stop offset="0" stopColor="#fff" stopOpacity="0" />
+        <stop offset="0.16" stopColor="#fff" />
+        <stop offset="0.84" stopColor="#fff" />
+        <stop offset="1" stopColor="#fff" stopOpacity="0" />
+      </linearGradient>
+      <mask id="pl-zone-vmask" maskUnits="userSpaceOnUse" x="-12" y="-10" width="124" height="125">
+        <rect x="-12" y="-10" width="124" height="125" fill="url(#pl-zone-v)" />
+      </mask>
+      <mask id="pl-zone" maskUnits="userSpaceOnUse" x="-12" y="-10" width="124" height="125">
+        <rect x="-12" y="-10" width="124" height="125" fill="url(#pl-zone-h)" mask="url(#pl-zone-vmask)" />
+      </mask>
+    </defs>
+  );
+}
+
+// วิวของ 1 ช่องบนแผนที่ (x, y = มุมซ้ายบนของช่องในหน่วยของแผนที่)
+export function PassportZone({ name, x, y }: { name: string | null; x: number; y: number }) {
+  return (
+    <g transform={`translate(${x} ${y})`}>
+      <g mask="url(#pl-zone)" opacity="0.85">
+        {ZONES[sceneKey(name)]()}
+      </g>
+    </g>
   );
 }

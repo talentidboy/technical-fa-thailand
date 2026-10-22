@@ -19,7 +19,7 @@ import { CountUp } from "@/components/play-and-learn/CountUp";
 import { Gallery, type GalleryPhoto } from "@/components/play-and-learn/Gallery";
 import { VideoGrid, type PlVideo } from "@/components/play-and-learn/VideoGrid";
 import { PassportIcon } from "@/components/play-and-learn/PassportIcon";
-import { PassportScene } from "@/components/play-and-learn/PassportScene";
+import { PassportScene, PassportZone, PassportZoneDefs, passportTint } from "@/components/play-and-learn/PassportScene";
 import { Reveal } from "@/components/g15/Reveal";
 import styles from "./pl.module.css";
 import {
@@ -746,6 +746,11 @@ function PassportMap({ chapters }: { chapters: { title: string; extra: string | 
     <>
       <div className="relative mx-auto hidden max-w-4xl md:block" style={{ aspectRatio: `${W} / ${H}` }}>
         <svg viewBox={`0 0 ${W} ${H}`} className="absolute inset-0 h-full w-full overflow-visible" aria-hidden>
+          <PassportZoneDefs />
+          {chapters.map((ch, i) => (
+            <PassportZone key={`${ch.title}-${i}`} name={ch.extra} x={pos[i].x - 50} y={pos[i].y - 44} />
+          ))}
+          <path d={d} fill="none" stroke="#fff" strokeWidth="16" strokeLinecap="round" opacity="0.9" />
           <path d={d} fill="none" stroke="#fbcfe8" strokeWidth="12" strokeLinecap="round" />
           <path d={d} fill="none" stroke="#c084fc" strokeWidth="2.5" strokeLinecap="round" className={styles.road} />
         </svg>
@@ -791,8 +796,8 @@ function PassportStop({ chapter, index, row }: { chapter: { title: string; extra
     </span>
   );
   const text = (
-    <span className={row ? "min-w-0 flex-1" : "mt-3 block"}>
-      <span className="block text-xs font-bold leading-snug text-slate-900 sm:text-[13px]">{chapter.title}</span>
+    <span className={row ? "min-w-0 flex-1" : "mt-3 block w-max max-w-44 rounded-xl bg-white/90 px-2.5 py-1 shadow-sm backdrop-blur-sm"}>
+      <span className="block text-balance text-xs font-bold leading-snug text-slate-900 sm:text-[13px]">{chapter.title}</span>
       {chapter.url && (
         <span className={`mt-1 flex items-center gap-1 text-[11px] font-semibold text-purple-600 group-hover:text-pink-600 ${row ? "" : "justify-center"}`}>
           <Download className="h-3 w-3" />
@@ -818,7 +823,7 @@ function PassportStop({ chapter, index, row }: { chapter: { title: string; extra
       {text}
     </>
   );
-  const className = `group flex ${row ? "items-center gap-4 rounded-2xl bg-white/80 p-2 pr-4" : "flex-col items-center text-center"}`;
+  const className = `group flex ${row ? `items-center gap-4 rounded-2xl bg-linear-to-r p-2 pr-4 ring-1 ring-white ${passportTint(chapter.extra)}` : "flex-col items-center text-center"}`;
   return chapter.url ? (
     <a href={chapter.url} target="_blank" rel="noopener noreferrer" className={className} aria-label={`ดาวน์โหลดพาสปอร์ตบทที่ ${index + 1} ${chapter.title}`}>
       {content}
