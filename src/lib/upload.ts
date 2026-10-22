@@ -16,6 +16,17 @@ function storage() {
   return client.storage.from(BUCKET);
 }
 
+// ไฟล์ PDF (เช่น พาสปอร์ต Play and Learn) — ขนาดไม่เกิน 4MB เท่ากับรูป
+export async function saveUploadedPdf(file: File | null): Promise<string | null> {
+  if (!file || file.size === 0) return null;
+  if (file.type !== "application/pdf") throw new Error("รองรับเฉพาะไฟล์ PDF");
+  if (file.size > MAX_SIZE_BYTES) throw new Error("ไฟล์ PDF ต้องไม่เกิน 4MB — ไฟล์ใหญ่กว่านี้ให้วางลิงก์แทน");
+  const filename = `play-and-learn-${crypto.randomUUID()}.pdf`;
+  const { error } = await storage().upload(filename, Buffer.from(await file.arrayBuffer()), { contentType: "application/pdf", upsert: false });
+  if (error) throw new Error(`อัปโหลดไฟล์ไม่สำเร็จ: ${error.message}`);
+  return storage().getPublicUrl(filename).data.publicUrl;
+}
+
 export async function saveUploadedPhoto(
   file: File | null,
 ): Promise<string | null> {

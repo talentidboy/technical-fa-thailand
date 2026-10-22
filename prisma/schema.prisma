@@ -570,11 +570,43 @@ model PlayAndLearnCenter {
   tel         String
   schedule    String?
   registerUrl String?  @map("register_url")
+  imageUrl    String?  @map("image_url") // รูปบรรยากาศของศูนย์
+  mapUrl      String?  @map("map_url") // ลิงก์ Google Maps
   sortOrder   Int      @default(0) @map("sort_order")
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
   @@map("play_and_learn_centers")
+}
+
+// เนื้อหาหน้า Play and Learn ที่แอดมินจัดการเองได้ แยกประเภทด้วย kind:
+// EVENT กิจกรรม/ข่าว · PHOTO แกลเลอรี · VIDEO วิดีโอ · FAQ คำถามที่พบบ่อย · TESTIMONIAL เสียงจากผู้ปกครอง
+// PARTNER พาร์ทเนอร์ · PASSPORT บทพาสปอร์ต (url = ไฟล์ PDF, extra = ไอคอน)
+model PlayAndLearnItem {
+  id        Int       @id @default(autoincrement())
+  kind      String
+  title     String
+  body      String?
+  imageUrl  String?   @map("image_url")
+  url       String?
+  date      DateTime?
+  extra     String? // ข้อมูลเสริมตามประเภท เช่น สถานที่ (EVENT), ผู้พูด (TESTIMONIAL), ไอคอน (PASSPORT), อัลบั้ม (PHOTO)
+  sortOrder Int       @default(0) @map("sort_order")
+  published Boolean   @default(true)
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  @@index([kind, published, sortOrder])
+  @@map("play_and_learn_items")
+}
+
+// ข้อความ/ช่องทางติดต่อของหน้า Play and Learn (key → value) — ไม่มีค่าใน DB ใช้ค่าเริ่มต้นในโค้ด (lib/play-and-learn.ts)
+model PlayAndLearnSetting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("play_and_learn_settings")
 }
 
 // แกลเลอรี G15 = รายการอัลบั้มภาพ (หัวข้อ + ลิงก์ เช่น Google Drive) — ไม่ได้เก็บไฟล์รูปเอง ผูกกับนัดได้ (ไม่บังคับ)
