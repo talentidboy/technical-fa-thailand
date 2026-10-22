@@ -609,6 +609,49 @@ model PlayAndLearnSetting {
   @@map("play_and_learn_settings")
 }
 
+// ===== Academy Licensing — ใบอนุญาตรับรองมาตรฐานอคาเดมี (FAT Bronze / Silver / Gold) =====
+// อคาเดมี 1 แห่ง มีประวัติใบอนุญาตได้หลายใบ (ต่ออายุ / เลื่อนระดับ) — ระดับปัจจุบันคำนวณจากใบที่ยังมีผล (lib/academy.ts)
+model Academy {
+  id          Int              @id @default(autoincrement())
+  nameEn      String           @map("name_en")
+  nameTh      String?          @map("name_th")
+  aliases     String? // ชื่อเดิม / ชื่อเรียกอื่น
+  province    String?
+  address     String?
+  parentClub  String?          @map("parent_club") // สโมสรต้นสังกัด (ถ้ามี)
+  contactName String?          @map("contact_name") // ผู้ประสานงาน — ข้อมูลติดต่อไม่แสดงบนหน้าสาธารณะ
+  phone       String?
+  email       String?
+  website     String? // เว็บไซต์ / เพจ
+  note        String?
+  active      Boolean          @default(true) // false = ปิด/ยุบรวม ไม่แสดงบนหน้าสาธารณะ
+  createdAt   DateTime         @default(now()) @map("created_at")
+  updatedAt   DateTime         @updatedAt @map("updated_at")
+  licences    AcademyLicence[]
+
+  @@index([province])
+  @@map("academies")
+}
+
+model AcademyLicence {
+  id         Int       @id @default(autoincrement())
+  academyId  Int       @map("academy_id")
+  academy    Academy   @relation(fields: [academyId], references: [id], onDelete: Cascade)
+  level      String? // BRONZE | SILVER | GOLD — ว่าง = ยังไม่ระบุระดับ
+  tier       String? // ระดับย่อยตามทะเบียนเดิม เช่น T1 / T2 / T3
+  licenceNo  String?   @map("licence_no")
+  registryNo Int?      @map("registry_no") // ลำดับในทะเบียน Excel เดิม (อ้างอิงตอนนำเข้า)
+  approvedAt DateTime? @map("approved_at")
+  expiresAt  DateTime? @map("expires_at")
+  status     String    @default("ACTIVE") // ACTIVE = มีผล · SUPERSEDED = เลื่อนระดับ/ต่ออายุแล้ว · REVOKED = ระงับ
+  note       String?
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
+
+  @@index([academyId])
+  @@map("academy_licences")
+}
+
 // แกลเลอรี G15 = รายการอัลบั้มภาพ (หัวข้อ + ลิงก์ เช่น Google Drive) — ไม่ได้เก็บไฟล์รูปเอง ผูกกับนัดได้ (ไม่บังคับ)
 model G15GalleryLink {
   id        Int       @id @default(autoincrement())

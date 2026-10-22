@@ -37,6 +37,9 @@ export function proxy(request: NextRequest) {
     pathname.startsWith("/g15-womens-series/teams/") ||
     pathname.startsWith("/g15-womens-series/matches/") ||
     pathname.startsWith("/g15-womens-series/players/") ||
+    // ทำเนียบอคาเดมี (Academy Licensing) — หน้าจัดการ /academies/manage ต้องล็อกอิน
+    pathname === "/academies" ||
+    (pathname.startsWith("/academies/") && !pathname.startsWith("/academies/manage")) ||
     // ไฟล์ภาพสาธารณะของ G15 ใน public/g15 (เช่น แผนผังสนาม) — ไม่งั้นผู้ชมที่ไม่ได้ล็อกอินจะถูกเด้งไปหน้าเข้าสู่ระบบแทนภาพ
     pathname.startsWith("/g15/") ||
     pathname === "/api/g15/version" ||

@@ -35,6 +35,7 @@ import {
   Sprout,
   Trophy,
   Sparkles,
+  ShieldCheck,
 } from "lucide-react";
 
 const menuLinks = [
@@ -127,6 +128,19 @@ const categories = [
     features: [] as { icon: typeof FileBadge; label: string }[],
     comingSoon: false,
     // แคมเปญสำหรับผู้ปกครอง/บุคคลทั่วไป เปิดสาธารณะไม่ต้องล็อกอินเช่นกัน (ดู src/proxy.ts)
+    public: true,
+  },
+  {
+    title: "Academy Licensing",
+    subtitle: "ใบอนุญาตรับรองมาตรฐานอคาเดมีฟุตบอลเยาวชน ระดับ Bronze / Silver / Gold",
+    href: "/academies" as string | null,
+    image: null as string | null,
+    badgeImage: null as string | null,
+    icon: ShieldCheck,
+    accent: "from-yellow-300 via-amber-500 to-indigo-950",
+    features: [] as { icon: typeof FileBadge; label: string }[],
+    comingSoon: false,
+    // ทำเนียบอคาเดมีเปิดสาธารณะ (ดู src/proxy.ts) — แอดมินจัดการที่ /academies/manage
     public: true,
   },
 ];

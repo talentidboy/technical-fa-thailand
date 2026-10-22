@@ -32,7 +32,10 @@ async function withDb(fn) {
   }
 }
 
-const sql = (query, params) => withDb(async (c) => (await c.query(query, params)).rows);
+// วันที่ส่งเป็น ISO (UTC) ให้เก็บแบบเดียวกับที่ Prisma เขียน — ถ้าส่ง Date ตรงๆ pg จะแปลงเป็นเวลาท้องถิ่น (+07:00)
+// แล้วคอลัมน์ timestamp ตัดเขตเวลาทิ้ง ทำให้วันที่เลื่อน 7 ชม. (ทดสอบช่วง 00:00–07:00 น. นับวันคลาดไป 1 วัน)
+const sql = (query, params) =>
+  withDb(async (c) => (await c.query(query, params?.map((p) => (p instanceof Date ? p.toISOString() : p)))).rows);
 
 // ล้างทุกตารางใน schema ทดสอบ (ก่อนเริ่มแต่ละไฟล์ทดสอบ)
 async function resetSchema() {

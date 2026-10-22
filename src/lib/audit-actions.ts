@@ -21,4 +21,11 @@ export const AUDIT_ACTIONS: Record<string, { label: string; tone: string }> = {
   ACCOUNT_DELETE: { label: "ลบบัญชีโค้ช", tone: "bg-red-50 text-red-700" },
   PROFILE_REQUEST: { label: "คำขอแก้ไขข้อมูล", tone: "bg-sky-50 text-sky-700" },
   DATA_FIX: { label: "แก้ข้อมูลอัตโนมัติ", tone: "bg-slate-100 text-slate-700" },
+  ACADEMY_CREATE: { label: "เพิ่มอคาเดมี", tone: "bg-emerald-50 text-emerald-700" },
+  ACADEMY_UPDATE: { label: "แก้ไขข้อมูลอคาเดมี", tone: "bg-sky-50 text-sky-700" },
+  ACADEMY_DELETE: { label: "ลบอคาเดมี", tone: "bg-red-50 text-red-700" },
+  ACADEMY_LICENCE_ADD: { label: "ออกใบอนุญาตอคาเดมี", tone: "bg-emerald-50 text-emerald-700" },
+  ACADEMY_LICENCE_UPDATE: { label: "แก้ไขใบอนุญาตอคาเดมี", tone: "bg-sky-50 text-sky-700" },
+  ACADEMY_LICENCE_DELETE: { label: "ลบใบอนุญาตอคาเดมี", tone: "bg-red-50 text-red-700" },
+  ACADEMY_IMPORT: { label: "นำเข้าทะเบียนอคาเดมี", tone: "bg-slate-100 text-slate-700" },
 };
