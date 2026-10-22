@@ -31,9 +31,12 @@ jobs:
       - run: npm ci
       - name: Lint
         run: npm run lint
+      # รันทุกขั้นแม้ขั้นก่อนหน้าไม่ผ่าน — เห็นผลครบในรอบเดียว
       - name: Typecheck
+        if: ${{ !cancelled() }}
         run: npm run typecheck
       - name: Build
+        if: ${{ !cancelled() }}
         run: npm run build
 
   e2e:
