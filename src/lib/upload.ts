@@ -6,10 +6,15 @@ const ALLOWED_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 // ต้องไม่เกิน experimental.serverActions.bodySizeLimit (4mb) ใน next.config.ts — รูปใหญ่กว่านี้ถูกย่อในเบราว์เซอร์ก่อน (lib/image-shrink.ts)
 const MAX_SIZE_BYTES = 4 * 1024 * 1024;
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-);
+// สร้างตอนอัปโหลดจริงเท่านั้น — ถ้าสร้างตอนโหลดไฟล์ หน้าที่ import ไฟล์นี้จะพังทั้งหน้าเมื่อไม่มีค่า env (เช่นตอน build บน CI)
+let client: ReturnType<typeof createClient> | null = null;
+function storage() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !key) throw new Error("ระบบอัปโหลดรูปยังไม่ได้ตั้งค่า (NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY)");
+  client ??= createClient(url, key);
+  return client.storage.from(BUCKET);
+}
 
 export async function saveUploadedPhoto(
   file: File | null,
@@ -27,7 +32,7 @@ export async function saveUploadedPhoto(
   const filename = `${crypto.randomUUID()}.${ext}`;
   const buffer = Buffer.from(await file.arrayBuffer());
 
-  const { error } = await supabase.storage.from(BUCKET).upload(filename, buffer, {
+  const { error } = await storage().upload(filename, buffer, {
     contentType: file.type,
     upsert: false,
   });
@@ -35,6 +40,6 @@ export async function saveUploadedPhoto(
     throw new Error(`อัปโหลดรูปไม่สำเร็จ: ${error.message}`);
   }
 
-  const { data } = supabase.storage.from(BUCKET).getPublicUrl(filename);
+  const { data } = storage().getPublicUrl(filename);
   return data.publicUrl;
 }
