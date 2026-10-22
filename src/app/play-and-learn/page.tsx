@@ -744,25 +744,28 @@ function PassportMap({ chapters }: { chapters: { title: string; extra: string | 
 
   return (
     <>
-      <div className="relative mx-auto hidden max-w-4xl md:block" style={{ aspectRatio: `${W} / ${H}` }}>
-        <svg viewBox={`0 0 ${W} ${H}`} className="absolute inset-0 h-full w-full overflow-visible" aria-hidden>
-          <PassportZoneDefs />
+      {/* กรอบแผนที่มุมโค้ง — วิวตามสถานที่ไล่สีกลืนกันอยู่ด้านใน */}
+      <div className="mx-auto hidden max-w-4xl overflow-hidden rounded-4xl bg-linear-to-br from-sky-50 via-pink-50 to-violet-50 px-4 py-2 shadow-lg shadow-pink-100/60 ring-1 ring-pink-100 md:block">
+        <div className="relative" style={{ aspectRatio: `${W} / ${H}` }}>
+          <svg viewBox={`0 0 ${W} ${H}`} className="absolute inset-0 h-full w-full overflow-visible" aria-hidden>
+            <PassportZoneDefs />
+            {chapters.map((ch, i) => (
+              <PassportZone key={`${ch.title}-${i}`} name={ch.extra} x={pos[i].x - 50} y={pos[i].y - 44} />
+            ))}
+            <path d={d} fill="none" stroke="#fff" strokeWidth="14" strokeLinecap="round" opacity="0.8" />
+            <path d={d} fill="none" stroke="#fbcfe8" strokeWidth="10" strokeLinecap="round" />
+            <path d={d} fill="none" stroke="#c084fc" strokeWidth="2.5" strokeLinecap="round" className={styles.road} />
+          </svg>
           {chapters.map((ch, i) => (
-            <PassportZone key={`${ch.title}-${i}`} name={ch.extra} x={pos[i].x - 50} y={pos[i].y - 44} />
+            <div
+              key={`${ch.title}-${i}`}
+              className="absolute w-40 -translate-x-1/2"
+              style={{ left: `${(pos[i].x / W) * 100}%`, top: `calc(${(pos[i].y / H) * 100}% - 44px)` }}
+            >
+              <PassportStop chapter={ch} index={i} />
+            </div>
           ))}
-          <path d={d} fill="none" stroke="#fff" strokeWidth="16" strokeLinecap="round" opacity="0.9" />
-          <path d={d} fill="none" stroke="#fbcfe8" strokeWidth="12" strokeLinecap="round" />
-          <path d={d} fill="none" stroke="#c084fc" strokeWidth="2.5" strokeLinecap="round" className={styles.road} />
-        </svg>
-        {chapters.map((ch, i) => (
-          <div
-            key={`${ch.title}-${i}`}
-            className="absolute w-40 -translate-x-1/2"
-            style={{ left: `${(pos[i].x / W) * 100}%`, top: `calc(${(pos[i].y / H) * 100}% - 44px)` }}
-          >
-            <PassportStop chapter={ch} index={i} />
-          </div>
-        ))}
+        </div>
       </div>
 
       <ol className="relative space-y-3 before:absolute before:bottom-10 before:left-16 before:top-10 before:border-l-2 before:border-dashed before:border-purple-300 md:hidden">
@@ -816,7 +819,7 @@ function PassportStop({ chapter, index, row }: { chapter: { title: string; extra
     </>
   ) : (
     <>
-      <span className={`relative block transition-transform duration-300 group-hover:-translate-y-1 group-hover:rotate-0 ${index % 2 ? "rotate-2" : "-rotate-2"}`}>
+      <span className="relative block transition-transform duration-300 group-hover:-translate-y-1">
         {scene}
         {badge}
       </span>
