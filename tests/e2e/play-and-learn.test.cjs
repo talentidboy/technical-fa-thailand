@@ -34,6 +34,17 @@ module.exports = {
     await pub.locator("#lesson").screenshot({ path: require("path").join(ctx.artifactsDir, "play-and-learn-lesson.png") });
     check("บุคคลทั่วไป: ไม่เห็นปุ่มจัดการข้อมูล", (await pub.getByRole("link", { name: "จัดการข้อมูล" }).count()) === 0);
 
+    // แนะนำโครงการ: ย่อหน้าท้ายซ่อนไว้ กด "อ่านต่อ" แล้วกางออก · ปุ่มอ่านเพิ่มเติมเปิด/ปิดป๊อปอัพ
+    const readMoreHeight = () => pub.locator("[data-readmore-body]").evaluate((el) => el.clientHeight);
+    check("แนะนำโครงการ: ย่อหน้าท้ายซ่อนไว้ก่อน", (await readMoreHeight()) === 0);
+    await pub.getByRole("button", { name: /อ่านต่ออีก \d+ ย่อหน้า/ }).click();
+    check("กดอ่านต่อ → กางย่อหน้าที่เหลือ", await until(async () => (await readMoreHeight()) > 100, 3000));
+    await pub.getByRole("button", { name: /แนวทางการฝึกนักเตะรุ่นจิ๋ว/ }).click();
+    const infoDialog = pub.getByRole("dialog");
+    check("เปิดป๊อปอัพอ่านเพิ่มเติม", await until(async () => (await infoDialog.count()) === 1, 3000));
+    await pub.keyboard.press("Escape");
+    check("ปิดป๊อปอัพด้วย Esc", await until(async () => (await infoDialog.count()) === 0, 3000));
+
     const coachId = (await sql(`insert into coaches (name_th, surname_th, updated_at) values ('โค้ช','ทดสอบ', now()) returning id`))[0].id;
     const coach = await ctx.page(await ctx.login("COACH", { coachId }));
     await coach.goto(`${BASE}/play-and-learn/manage`, { waitUntil: "networkidle", timeout: 240_000 });

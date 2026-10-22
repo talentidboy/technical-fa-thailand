@@ -2,27 +2,32 @@
 
 import Image from "next/image";
 import { useEffect, useState } from "react";
-import { X, Footprints, BookOpen, Sparkles } from "lucide-react";
+import { X, Footprints, BookOpen, Sparkles, ArrowRight } from "lucide-react";
 import { PLAY_AND_LEARN_PILLARS_DIAGRAM_URL } from "@/lib/brand";
+import { Reveal } from "@/components/g15/Reveal";
+import styles from "@/app/play-and-learn/pl.module.css";
 
 const popups = [
   {
     key: "coaching",
     icon: Footprints,
     title: "แนวทางการฝึกนักเตะรุ่นจิ๋ว",
-    color: "bg-pink-100 text-pink-600",
+    tone: "from-pink-300 to-rose-400",
+    soft: "bg-pink-100",
   },
   {
     key: "chapters",
     icon: BookOpen,
     title: "พาเล่นอย่างไรให้สนุกและบรรลุเป้าหมาย",
-    color: "bg-purple-100 text-purple-600",
+    tone: "from-violet-300 to-purple-400",
+    soft: "bg-violet-100",
   },
   {
     key: "goals",
     icon: Sparkles,
     title: "เป้าหมายแห่งการเรียนรู้คู่ความสนุก",
-    color: "bg-amber-100 text-amber-600",
+    tone: "from-amber-300 to-orange-400",
+    soft: "bg-amber-100",
   },
 ] as const;
 
@@ -48,29 +53,40 @@ export function InfoPopups() {
   return (
     <>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        {popups.map(({ key, icon: Icon, title, color }) => (
-          <button
-            key={key}
-            type="button"
-            onClick={() => setOpen(key)}
-            className="group flex flex-col items-center gap-3 rounded-2xl border border-pink-100 bg-white p-5 text-center shadow-sm transition-all hover:-translate-y-1 hover:shadow-lg"
-          >
-            <div className={`flex h-12 w-12 items-center justify-center rounded-xl ${color} transition-transform group-hover:scale-110`}>
-              <Icon className="h-6 w-6" />
-            </div>
-            <p className="text-sm font-semibold text-slate-900">{title}</p>
-            <span className="text-xs font-medium text-purple-600">อ่านเพิ่มเติม</span>
-          </button>
+        {popups.map(({ key, icon: Icon, title, tone, soft }, i) => (
+          <Reveal key={key} delay={i * 120} className="h-full">
+            <button
+              type="button"
+              onClick={() => setOpen(key)}
+              className={`group flex h-full w-full items-center gap-4 rounded-3xl bg-white p-5 text-left shadow-sm ring-1 ring-pink-100 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-pink-100 sm:flex-col sm:text-center ${styles.shine}`}
+            >
+              <span aria-hidden className={`absolute -right-8 -top-8 h-24 w-24 rounded-full opacity-70 transition-transform duration-500 group-hover:scale-150 ${soft}`} />
+              <span
+                className={`relative flex h-12 w-12 flex-none items-center justify-center rounded-2xl bg-linear-to-br text-white shadow-md transition-transform duration-300 group-hover:-rotate-6 group-hover:scale-110 ${tone}`}
+              >
+                <Icon className="h-6 w-6" />
+              </span>
+              <span className="relative min-w-0">
+                <span className="block text-sm font-bold text-slate-900">{title}</span>
+                <span className="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-purple-600">
+                  อ่านเพิ่มเติม
+                  <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
+                </span>
+              </span>
+            </button>
+          </Reveal>
         ))}
       </div>
 
       {open && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm"
+          className={`fixed inset-0 z-50 flex items-center justify-center bg-purple-950/40 p-4 backdrop-blur-sm ${styles.fadeIn}`}
           onClick={() => setOpen(null)}
         >
           <div
-            className="relative max-h-[85vh] w-full max-w-2xl overflow-y-auto rounded-3xl bg-white p-6 shadow-2xl sm:p-8"
+            role="dialog"
+            aria-modal="true"
+            className={`relative max-h-[85vh] w-full max-w-2xl overflow-y-auto rounded-4xl bg-white p-6 shadow-2xl sm:p-8 ${styles.modalIn}`}
             onClick={(e) => e.stopPropagation()}
           >
             <button

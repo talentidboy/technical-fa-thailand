@@ -14,6 +14,7 @@ import {
 import { DEFAULT_PASSPORT, bangkokDay, loadPlSettings, paragraphs, parseFacts, sortEvents, thaiDate, type PlKind } from "@/lib/play-and-learn";
 import type { PlayAndLearnCenter, PlayAndLearnItem } from "@/generated/prisma/client";
 import { InfoPopups } from "@/components/play-and-learn/InfoPopups";
+import { ReadMore } from "@/components/play-and-learn/ReadMore";
 import { SectionNav } from "@/components/play-and-learn/SectionNav";
 import { CountUp } from "@/components/play-and-learn/CountUp";
 import { Gallery, type GalleryPhoto } from "@/components/play-and-learn/Gallery";
@@ -54,6 +55,9 @@ import {
   Repeat,
   Timer,
   Heart,
+  Baby,
+  Star,
+  Map as MapIcon,
 } from "lucide-react";
 
 // การ์ดเรียงเป็นตาราง กว้างไม่เกิน 350px และจัดกึ่งกลางเมื่อมีน้อยรายการ
@@ -84,6 +88,37 @@ const HERO_DECOR = [
   { src: PLAY_AND_LEARN_ELEMENTS.flowerPurple, className: `bottom-[16%] left-[3%] w-8 sm:w-12 ${styles.drift}`, delay: "1.8s" },
   { src: PLAY_AND_LEARN_ELEMENTS.star, className: `bottom-[24%] right-[3%] w-6 sm:w-9 ${styles.twinkle}`, delay: "1.2s" },
   { src: PLAY_AND_LEARN_ELEMENTS.flowerYellow, className: `left-[46%] top-[4%] hidden w-9 sm:block ${styles.drift}`, delay: "2.6s" },
+];
+
+// พลุกระดาษรอบคำขวัญตอนเปิดหน้า — คำนวณตำแหน่งครั้งเดียว (ไม่สุ่มตอนแสดงผล)
+const CONFETTI = Array.from({ length: 22 }, (_, i) => {
+  const a = (i / 22) * Math.PI * 2;
+  const r = 110 + (i % 4) * 40;
+  return {
+    x: Math.round(Math.cos(a) * r * 1.7),
+    y: Math.round(Math.sin(a) * r * 0.65 - 20),
+    r: (i * 67) % 360,
+    color: ["#f472b6", "#c084fc", "#5eead4", "#fcd34d", "#7dd3fc", "#fda4af"][i % 6],
+    shape: ["h-2 w-2 rounded-full", "h-1.5 w-3 rounded-sm", "h-2.5 w-2.5 rounded-[3px]"][i % 3],
+    delay: 500 + (i % 5) * 60,
+  };
+});
+
+// สีไอคอนของตัวเลขเด่น (วนตามลำดับ)
+const FACT_TONES = [
+  "from-pink-300 to-rose-400",
+  "from-violet-300 to-purple-400",
+  "from-teal-300 to-emerald-400",
+  "from-amber-300 to-orange-400",
+  "from-sky-300 to-cyan-400",
+  "from-fuchsia-300 to-pink-400",
+];
+
+// ไอคอนที่หมุนรอบตัวกุ๋งกิ๋งในส่วนแนะนำโครงการ
+const ORBIT = [
+  { icon: Heart, pos: "left-1/2 top-0 -translate-x-1/2", tone: "text-pink-500" },
+  { icon: Star, pos: "bottom-[10%] right-0", tone: "text-amber-500" },
+  { icon: Volleyball, pos: "bottom-[10%] left-0", tone: "text-purple-500" },
 ];
 
 // 3 เสาหลักของการเรียนรู้ (จากเนื้อหา "เป้าหมายแห่งการเรียนรู้คู่ความสนุก")
@@ -161,6 +196,7 @@ export default async function PlayAndLearnPage() {
   const passport = items.some((i) => i.kind === "PASSPORT") ? of("PASSPORT") : DEFAULT_PASSPORT;
   const { upcoming, past } = sortEvents(of("EVENT"), bangkokDay(new Date()));
   const pastShown = past.slice(0, 6);
+  const intro = paragraphs(s.intro);
   const photos: GalleryPhoto[] = of("PHOTO").flatMap((p) =>
     p.imageUrl ? [{ id: p.id, src: p.imageUrl, title: p.title, album: p.extra, date: p.date ? thaiDate(p.date, "long") : null }] : [],
   );
@@ -229,6 +265,7 @@ export default async function PlayAndLearnPage() {
           </div>
         </div>
         <SectionNav sections={sections} />
+        <div aria-hidden className={styles.progress} />
       </header>
 
       {/* ภาพแบนเนอร์ (มีโลโก้และเด็กๆ อยู่ในภาพแล้ว) + ดอกไม้/ดาวลอย */}
@@ -238,7 +275,7 @@ export default async function PlayAndLearnPage() {
           alt={`PLAY AND LEARN เพลินให้สุดกับฟุตบอล — ${s.tagline}`}
           width={2750}
           height={1536}
-          className="h-auto w-full"
+          className={`h-auto w-full ${styles.kenburns}`}
           priority
         />
         {HERO_DECOR.map((d, i) => (
@@ -247,8 +284,13 @@ export default async function PlayAndLearnPage() {
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-linear-to-t from-pink-50 to-transparent" />
       </section>
 
-      {/* คำขวัญ + กุ๋งกิ๋งโบกมือ + ลูกบอลเด้ง */}
-      <section className="relative mx-auto max-w-5xl px-6 pb-2 pt-4 text-center">
+      {/* คำขวัญ (เด้งเข้ามาทีละคำ + พลุกระดาษ) + กุ๋งกิ๋งโบกมือ + ลูกบอลเด้ง */}
+      <section className="relative isolate mx-auto max-w-5xl px-6 pb-2 pt-4 text-center">
+        <div aria-hidden className="pointer-events-none absolute inset-x-0 -top-6 -z-10 h-72">
+          <span className={`absolute left-[8%] top-4 h-48 w-48 rounded-full bg-pink-300/35 blur-3xl ${styles.blob}`} />
+          <span className={`absolute right-[10%] top-0 h-56 w-56 rounded-full bg-purple-300/35 blur-3xl ${styles.blob}`} style={{ animationDelay: "-5s" }} />
+          <span className={`absolute left-[42%] top-24 h-40 w-40 rounded-full bg-teal-200/40 blur-3xl ${styles.blob}`} style={{ animationDelay: "-9s" }} />
+        </div>
         <Image
           src={PLAY_AND_LEARN_MASCOT.wave}
           alt="กุ๋งกิ๋งโบกมือทักทาย"
@@ -261,83 +303,135 @@ export default async function PlayAndLearnPage() {
           <span className={`mt-1 h-2 w-12 rounded-full bg-purple-900/30 blur-[2px] ${styles.ballShadow}`} />
         </div>
         <Image src={PLAY_AND_LEARN_MASCOT.wave} alt="" width={260} height={320} className={`mx-auto mb-2 h-24 w-auto lg:hidden ${styles.sway}`} />
-        <p className={`text-xl font-extrabold leading-snug sm:text-3xl ${styles.gradientText}`}>&ldquo;{s.tagline}&rdquo;</p>
-        <p className="mx-auto mt-2 max-w-xl text-sm text-slate-600">
+        <p className="relative text-2xl font-extrabold leading-snug sm:text-4xl">
+          {`“${s.tagline}”`.split(" ").map((word, i) => (
+            <Fragment key={i}>
+              {i > 0 && " "}
+              <span className={styles.word} style={{ animationDelay: `${0.15 + i * 0.09}s` }}>
+                {word}
+              </span>
+            </Fragment>
+          ))}
+          <span aria-hidden className="pointer-events-none absolute left-1/2 top-1/2">
+            {CONFETTI.map((c, i) => (
+              <span
+                key={i}
+                className={`absolute block ${c.shape} ${styles.confetti}`}
+                style={{ background: c.color, "--x": `${c.x}px`, "--y": `${c.y}px`, "--r": `${c.r}deg`, animationDelay: `${c.delay}ms` } as React.CSSProperties}
+              />
+            ))}
+          </span>
+        </p>
+        <p className="mx-auto mt-3 max-w-xl text-sm text-slate-600 sm:text-base">
           ฟุตบอลสำหรับเด็กผู้หญิงวัย 5-8 ปี เรียนสนุกผ่านนิทานการผจญภัยของกุ๋งกิ๋ง
         </p>
         <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
           <a
             href="#centers"
-            className="inline-flex items-center gap-1.5 rounded-full bg-linear-to-r from-pink-400 to-purple-400 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-pink-300/50 transition-transform hover:scale-105"
+            className={`inline-flex items-center gap-1.5 rounded-full bg-linear-to-r from-pink-400 to-purple-400 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-pink-300/50 transition-transform hover:scale-105 ${styles.shineAuto}`}
           >
             <MapPin className="h-4 w-4" />
             ดูศูนย์ฝึกใกล้บ้าน
           </a>
           <a
             href="#passport"
-            className="inline-flex items-center gap-1.5 rounded-full border border-purple-300 bg-white/80 px-6 py-3 text-sm font-bold text-purple-700 backdrop-blur-sm transition-colors hover:bg-white"
+            className={`inline-flex items-center gap-1.5 rounded-full border border-purple-300 bg-white/80 px-6 py-3 text-sm font-bold text-purple-700 backdrop-blur-sm transition-colors hover:bg-white ${styles.shine}`}
           >
             <Download className="h-4 w-4" />
             ดาวน์โหลด Adventure Passport
           </a>
         </div>
+        <a href="#about" className="mt-7 inline-flex flex-col items-center text-[11px] font-semibold text-purple-400 transition-colors hover:text-purple-600">
+          เลื่อนลงเพื่อดูเพิ่มเติม
+          <ChevronDown className={`h-5 w-5 ${styles.nudge}`} />
+        </a>
       </section>
 
-      {/* ตัวเลขเด่น */}
+      {/* ตัวเลขเด่น — แถบกระจกแผ่นเดียว ไอคอนสีตามเรื่อง */}
       {facts.length > 0 && (
-        <section aria-label="ตัวเลขเด่นของโครงการ" className="mx-auto max-w-5xl px-4 py-10 sm:px-6">
-          <div className="flex flex-wrap justify-center gap-3">
-            {facts.map((f, i) => (
-              <Reveal key={`${f.value}-${f.label}`} delay={i * 80} className="w-[calc(50%-6px)] sm:w-36">
-                <div
-                  className={`h-full rounded-3xl border border-pink-100 bg-white/95 px-3 py-5 text-center shadow-sm transition-transform hover:-translate-y-1 hover:rotate-0 ${i % 2 ? "rotate-1" : "-rotate-1"}`}
-                >
-                  <p className="bg-linear-to-br from-pink-500 to-purple-500 bg-clip-text text-3xl font-extrabold text-transparent sm:text-4xl">
-                    <CountUp value={f.value} />
-                  </p>
-                  <p className="mt-1 text-xs font-medium leading-snug text-slate-500">{f.label}</p>
-                </div>
-              </Reveal>
-            ))}
-          </div>
+        <section aria-label="ตัวเลขเด่นของโครงการ" className="mx-auto max-w-5xl px-4 pb-10 pt-4 sm:px-6">
+          <Reveal>
+            <div className="rounded-4xl bg-white/80 p-2 shadow-xl shadow-pink-100/70 ring-1 ring-pink-100 backdrop-blur-sm sm:p-3">
+              <div className="grid grid-cols-3 lg:grid-flow-col lg:auto-cols-fr lg:grid-cols-none">
+                {facts.map((f, i) => (
+                  <div key={`${f.value}-${f.label}`} className="group relative flex flex-col items-center rounded-3xl px-1.5 py-4 text-center transition-colors duration-300 hover:bg-pink-50/80 sm:px-2 sm:py-5">
+                    {i > 0 && <span aria-hidden className="absolute inset-y-6 left-0 hidden w-px bg-pink-100 lg:block" />}
+                    <span
+                      className={`mb-2 flex h-9 w-9 items-center justify-center rounded-xl bg-linear-to-br text-white shadow-md transition-transform duration-300 group-hover:-translate-y-1 group-hover:rotate-6 sm:h-11 sm:w-11 sm:rounded-2xl ${FACT_TONES[i % FACT_TONES.length]}`}
+                    >
+                      <FactIcon label={f.label} />
+                    </span>
+                    <p className="bg-linear-to-br from-pink-500 to-purple-500 bg-clip-text text-2xl font-extrabold leading-tight text-transparent sm:text-4xl">
+                      <CountUp value={f.value} />
+                    </p>
+                    <p className="mt-0.5 text-xs font-medium leading-snug text-slate-500">{f.label}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </Reveal>
         </section>
       )}
 
-      {/* เกี่ยวกับโครงการ */}
-      <section id="about" className="relative mx-auto max-w-4xl scroll-mt-32 px-6 pb-14 pt-4">
+      {/* เกี่ยวกับโครงการ — ซ้าย: กุ๋งกิ๋งบนก้อนสีเปลี่ยนรูป + ไอคอนหมุนรอบ · ขวา: ข้อความ (ย่อหน้าที่เหลือกดอ่านต่อ) */}
+      <section id="about" className="relative mx-auto max-w-6xl scroll-mt-32 px-6 pb-14 pt-4">
         <SectionTitle eyebrow="Introduction" title="PLAY AND LEARN เพลินให้สุดกับฟุตบอล" as="h1" />
-        <Image
-          src={PLAY_AND_LEARN_MASCOT.standingOnBall}
-          alt=""
-          width={260}
-          height={340}
-          className={`pointer-events-none absolute -right-36 top-40 hidden h-auto w-36 xl:block ${styles.float}`}
-        />
-        <Reveal>
-          <div className="relative overflow-hidden rounded-3xl border border-pink-100 bg-white p-6 shadow-lg shadow-pink-200/50 sm:p-10">
-            <Image src={PLAY_AND_LEARN_ELEMENTS.flowerYellow} alt="" width={72} height={72} className={`pointer-events-none absolute -right-3 -top-3 h-16 w-16 opacity-90 sm:h-20 sm:w-20 ${styles.drift}`} />
-            <Image src={PLAY_AND_LEARN_ELEMENTS.flowerPurple} alt="" width={64} height={64} className={`pointer-events-none absolute -bottom-4 -left-4 h-14 w-14 opacity-80 ${styles.drift}`} style={{ animationDelay: "2s" }} />
-            <div className="relative space-y-5 text-sm leading-relaxed text-slate-600 sm:text-[15px]">
-              {paragraphs(s.intro).map((parts, i) => (
-                <p key={i}>
-                  {parts.map((part, j) =>
-                    part.bold ? (
-                      <strong key={j} className="text-slate-900">
-                        {part.text}
-                      </strong>
-                    ) : (
-                      <Fragment key={j}>{part.text}</Fragment>
-                    ),
-                  )}
-                </p>
+        <div className="grid items-center gap-10 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
+          <Reveal className="relative mx-auto aspect-square w-full max-w-64 sm:max-w-sm">
+            <div aria-hidden className={`absolute inset-4 bg-linear-to-br from-pink-200 via-fuchsia-200 to-purple-200 ${styles.morph}`} />
+            <div aria-hidden className={`absolute inset-12 bg-linear-to-tr from-sky-100 via-white to-pink-100 opacity-80 ${styles.morph}`} style={{ animationDelay: "-5s" }} />
+            <div aria-hidden className={`absolute inset-0 ${styles.orbit}`}>
+              {ORBIT.map(({ icon: Icon, pos, tone }) => (
+                <span key={pos} className={`absolute ${pos}`}>
+                  <span className={`flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-md ${tone} ${styles.orbitItem}`}>
+                    <Icon className="h-5 w-5" />
+                  </span>
+                </span>
               ))}
             </div>
-            <p className="relative mt-6 border-t border-pink-100 pt-5 text-center italic text-purple-700">
-              PLAY AND LEARN เพลินให้สุดกับฟุตบอล &ldquo;{s.tagline}&rdquo;
-            </p>
-          </div>
-        </Reveal>
-        <div className="mt-8">
+            <Image
+              src={PLAY_AND_LEARN_MASCOT.standingOnBall}
+              alt="กุ๋งกิ๋งยืนบนลูกฟุตบอล"
+              width={260}
+              height={340}
+              className={`absolute inset-x-0 bottom-8 mx-auto h-[76%] w-auto ${styles.float}`}
+            />
+            <span className="absolute right-0 top-2 rounded-2xl rounded-bl-sm bg-white px-3 py-2 text-xs font-bold text-pink-600 shadow-lg ring-1 ring-pink-100 sm:text-sm">
+              เพลินให้สุดกับฟุตบอล!
+            </span>
+          </Reveal>
+          <Reveal delay={150}>
+            <div className="relative overflow-hidden rounded-4xl bg-white p-6 shadow-xl shadow-pink-100/70 ring-1 ring-pink-100 sm:p-9">
+              <span aria-hidden className="absolute -left-12 -top-12 h-36 w-36 rounded-full bg-pink-100/80 blur-2xl" />
+              <Image src={PLAY_AND_LEARN_ELEMENTS.flowerYellow} alt="" width={72} height={72} className={`pointer-events-none absolute -right-3 -top-3 h-16 w-16 opacity-90 ${styles.drift}`} />
+              <div className="relative text-sm leading-relaxed text-slate-600 sm:text-[15px]">
+                {intro[0] && (
+                  <p className="text-base font-medium leading-relaxed text-slate-700 sm:text-lg">
+                    <IntroText parts={intro[0]} />
+                  </p>
+                )}
+                {intro[1] && (
+                  <p className="mt-5">
+                    <IntroText parts={intro[1]} />
+                  </p>
+                )}
+                {intro.length > 2 && (
+                  <ReadMore count={intro.length - 2}>
+                    {intro.slice(2).map((parts, i) => (
+                      <p key={i}>
+                        <IntroText parts={parts} />
+                      </p>
+                    ))}
+                  </ReadMore>
+                )}
+              </div>
+              <p className="relative mt-6 border-t border-dashed border-pink-200 pt-5 text-center text-sm font-semibold italic text-purple-700">
+                PLAY AND LEARN เพลินให้สุดกับฟุตบอล &ldquo;{s.tagline}&rdquo;
+              </p>
+            </div>
+          </Reveal>
+        </div>
+        <div className="mt-10">
           <InfoPopups />
         </div>
       </section>
@@ -683,7 +777,7 @@ export default async function PlayAndLearnPage() {
               <p className="mt-3 text-sm font-medium leading-relaxed text-purple-900 sm:text-base">{s.ctaText}</p>
               <a
                 href="#centers"
-                className="mt-7 inline-flex items-center gap-2 rounded-full bg-white px-7 py-3.5 text-sm font-extrabold text-pink-600 shadow-lg transition-transform hover:scale-105"
+                className={`mt-7 inline-flex items-center gap-2 rounded-full bg-white px-7 py-3.5 text-sm font-extrabold text-pink-600 shadow-lg transition-transform hover:scale-105 ${styles.shineAuto}`}
               >
                 เลือกศูนย์ฝึกใกล้บ้าน
                 <ArrowRight className="h-4 w-4" />
@@ -727,6 +821,36 @@ export default async function PlayAndLearnPage() {
   );
 }
 
+// ไอคอนของตัวเลขเด่นเลือกจากคำในคำอธิบาย (แอดมินแก้ตัวเลขเด่นได้ — คำที่ไม่รู้จักใช้รูปประกาย)
+function FactIcon({ label }: { label: string }) {
+  const c = "h-5 w-5";
+  if (/ปี|อายุ|วัย/.test(label)) return <Baby className={c} />;
+  if (/สัปดาห์/.test(label)) return <CalendarDays className={c} />;
+  if (/นาที|ชั่วโมง/.test(label)) return <Timer className={c} />;
+  if (/บท|ตอน/.test(label)) return <BookOpen className={c} />;
+  if (/จังหวัด/.test(label)) return <MapIcon className={c} />;
+  if (/ศูนย์/.test(label)) return <MapPin className={c} />;
+  if (/โค้ช|ผู้ฝึก/.test(label)) return <Users className={c} />;
+  return <Sparkles className={c} />;
+}
+
+// ข้อความ 1 ย่อหน้าของแนะนำโครงการ — ตัวหนาเป็นแถบไฮไลต์ที่ค่อยๆ ระบายตอนเลื่อนมาถึง
+function IntroText({ parts }: { parts: { bold: boolean; text: string }[] }) {
+  return (
+    <>
+      {parts.map((part, j) =>
+        part.bold ? (
+          <strong key={j} className={`font-bold text-slate-900 ${styles.marker}`}>
+            {part.text}
+          </strong>
+        ) : (
+          <Fragment key={j}>{part.text}</Fragment>
+        ),
+      )}
+    </>
+  );
+}
+
 function SectionTitle({ eyebrow, title, desc, as: Heading = "h2" }: { eyebrow: string; title: string; desc?: React.ReactNode; as?: "h1" | "h2" }) {
   return (
     <div className="mb-10 text-center">
@@ -735,6 +859,10 @@ function SectionTitle({ eyebrow, title, desc, as: Heading = "h2" }: { eyebrow: s
         {eyebrow}
       </p>
       <Heading className="mt-2 text-2xl font-extrabold text-slate-900 sm:text-3xl">{title}</Heading>
+      {/* เส้นหยักใต้หัวข้อ — วาดตัวเองขึ้นตอนเลื่อนมาถึง */}
+      <svg viewBox="0 0 124 12" aria-hidden className={`mx-auto mt-2 block h-3 w-24 ${styles.squiggle}`}>
+        <path d="M2 6q7.5 -6 15 0t15 0t15 0t15 0t15 0t15 0t15 0t15 0" fill="none" stroke="#f9a8d4" strokeWidth="3" strokeLinecap="round" />
+      </svg>
       {desc && <p className="mx-auto mt-3 max-w-2xl text-sm leading-relaxed text-slate-500">{desc}</p>}
     </div>
   );
@@ -753,11 +881,16 @@ function WhiteBand({ id, children }: { id: string; children: React.ReactNode }) 
   );
 }
 
+// เส้นคลื่นไหลช้าๆ: SVG กว้าง 2 เท่าของจอ วาดคลื่น 2 รอบที่ต่อกันพอดี แล้วเลื่อนครึ่งหนึ่งวนซ้ำ
+const WAVE_PATH = "M0 24C240 4 480 44 720 24S1200 44 1440 24S1920 44 2160 24S2640 44 2880 24V48H0Z";
+
 function Wave({ flip }: { flip?: boolean }) {
   return (
-    <svg viewBox="0 0 1440 48" preserveAspectRatio="none" aria-hidden className={`-my-px block h-6 w-full text-white sm:h-10 ${flip ? "rotate-180" : ""}`}>
-      <path d="M0 24C180 48 360 48 540 30S900 0 1080 12s270 30 360 24V48H0Z" fill="currentColor" />
-    </svg>
+    <div aria-hidden className={`-my-px h-6 overflow-hidden text-white sm:h-10 ${flip ? "rotate-180" : ""}`}>
+      <svg viewBox="0 0 2880 48" preserveAspectRatio="none" className={`block h-full w-[200%] ${styles.waveMove}`}>
+        <path d={WAVE_PATH} fill="currentColor" />
+      </svg>
+    </div>
   );
 }
 
@@ -982,7 +1115,7 @@ function CenterCard({ center }: { center: PlayAndLearnCenter }) {
               href={center.registerUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex flex-none items-center gap-1 rounded-full bg-linear-to-r from-pink-400 to-purple-400 px-4 py-2 text-xs font-bold text-white shadow-sm transition-transform hover:scale-105"
+              className={`inline-flex flex-none items-center gap-1 rounded-full bg-linear-to-r from-pink-400 to-purple-400 px-4 py-2 text-xs font-bold text-white shadow-sm transition-transform hover:scale-105 ${styles.shine}`}
             >
               รับสมัคร
               <ArrowRight className="h-3.5 w-3.5" />
