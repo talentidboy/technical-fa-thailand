@@ -14,7 +14,6 @@ import {
   ArrowLeft,
   ArrowRight,
   Award,
-  Check,
   ChevronLeft,
   ChevronRight,
   ClipboardPen,
@@ -27,6 +26,7 @@ import {
   Settings,
   ShieldCheck,
   Star,
+  X,
 } from "lucide-react";
 
 export const metadata: Metadata = {
@@ -34,7 +34,7 @@ export const metadata: Metadata = {
   description: "ทำเนียบอคาเดมีฟุตบอลเยาวชนที่ได้รับใบอนุญาตรับรองมาตรฐาน FAT Bronze / Silver / Gold จากสมาคมกีฬาฟุตบอลแห่งประเทศไทย ในพระบรมราชูปถัมภ์",
 };
 
-const PAGE = 24;
+const PAGE = 12;
 
 // หน้าสาธารณะ: ทำเนียบอคาเดมีที่ได้รับการรับรอง — ไม่แสดงชื่อผู้ประสานงาน เบอร์ และอีเมล (ข้อมูลส่วนบุคคล)
 export default async function AcademiesPage({
@@ -222,126 +222,70 @@ export default async function AcademiesPage({
                 <Award className="h-4 w-4" />
                 มาตรฐาน 3 ระดับ
               </a>
-              <a href="#criteria" className="inline-flex items-center gap-1.5 transition-colors hover:text-white">
-                <ListChecks className="h-4 w-4" />
-                เกณฑ์มาตรฐาน
-              </a>
+              <InfoDialog
+                wide
+                title="เกณฑ์มาตรฐานอคาเดมี"
+                className="inline-flex items-center gap-1.5 transition-colors hover:text-white"
+                label={
+                  <>
+                    <ListChecks className="h-4 w-4" />
+                    เกณฑ์มาตรฐาน
+                  </>
+                }
+              >
+                <CriteriaExplorer />
+              </InfoDialog>
             </div>
           </div>
           <ThailandMap academies={all.map((a) => ({ id: a.id, nameEn: a.nameEn, nameTh: a.nameTh, province: a.province, level: a.level }))} />
         </div>
       </section>
 
-      {/* มาตรฐาน 3 ระดับ (จากเอกสารของสมาคมฯ) */}
-      <section id="levels" className="mx-auto max-w-6xl px-6 py-12">
-        <h2 className="text-center text-xl font-extrabold text-slate-900 sm:text-2xl">มาตรฐานอคาเดมี 3 ระดับ</h2>
-        <p className="mx-auto mt-2 max-w-2xl text-center text-sm text-slate-500">
-          พัฒนาอคาเดมีทีละขั้นจากระดับทองแดงสู่ระดับทอง แต่ละระดับมีเกณฑ์ใน 3 หมวด: การจัดการและองค์กร · การฝึกสอนและประสิทธิภาพ · สุขภาพและสวัสดิการ
-        </p>
-        <div className="mt-8 grid gap-4 lg:grid-cols-3">
-          {ACADEMY_LEVELS.map((l) => {
-            const s = LEVEL_SUMMARY[l];
-            return (
-              <article key={l} className="flex flex-col overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-slate-200 transition-shadow hover:shadow-lg">
-                <div className={`h-1.5 bg-linear-to-r ${LEVEL_META[l].medal}`} />
-                <div className="flex items-center gap-4 px-5 pt-5">
-                  <LevelMedal level={l} />
-                  <div>
-                    <p className={`text-lg font-extrabold ${LEVEL_META[l].text}`}>{s.title}</p>
-                    <p className="text-sm font-semibold text-slate-700">{s.th}</p>
-                  </div>
-                </div>
-                <p className="px-5 pt-3 text-sm leading-relaxed text-slate-600">{s.audience.th}</p>
-                <dl className="mx-5 mt-4 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1.5 rounded-2xl bg-slate-50 p-4 text-sm">
-                  <dt className="text-slate-500">หัวหน้าอคาเดมี</dt>
-                  <dd className="font-semibold text-slate-800">{s.head}</dd>
-                  <dt className="text-slate-500">ผู้ฝึกสอน</dt>
-                  <dd className="font-semibold text-slate-800">{s.coaches}</dd>
-                  {s.assistants && (
-                    <>
-                      <dt className="text-slate-500">ผู้ช่วยผู้ฝึกสอน</dt>
-                      <dd className="font-semibold text-slate-800">{s.assistants}</dd>
-                    </>
-                  )}
-                  <dt className="text-slate-500">จำนวนทีม</dt>
-                  <dd className="font-semibold text-slate-800">{s.teams}</dd>
-                </dl>
-                <ul className="space-y-1.5 px-5 py-4 text-sm text-slate-600">
-                  {s.highlights.map((h) => (
-                    <li key={h} className="flex gap-2">
-                      <Check className={`mt-0.5 h-4 w-4 flex-none ${LEVEL_META[l].text}`} />
-                      {h}
-                    </li>
-                  ))}
-                </ul>
-                <div className="mt-auto flex items-center justify-between border-t border-slate-100 px-5 py-3">
-                  <Link href={`/academies?criteria=${l}#criteria`} className="inline-flex items-center gap-1 text-sm font-semibold text-indigo-600 hover:text-indigo-800">
-                    ดูเกณฑ์ทั้งหมด {criteriaCount(l)} ข้อ
-                    <ArrowRight className="h-4 w-4" />
-                  </Link>
-                  <span className="text-xs text-slate-400">{count(l)} อคาเดมี</span>
-                </div>
-              </article>
-            );
-          })}
-        </div>
-        <div className="mt-4 flex items-center gap-4 rounded-3xl bg-indigo-950 p-5 text-white">
-          <span className="flex h-12 w-12 flex-none items-center justify-center rounded-full bg-white/10 ring-1 ring-white/20">
-            <Star className="h-6 w-6 fill-amber-300 text-amber-300" />
-          </span>
-          <p className="text-sm text-indigo-100">
-            อคาเดมีระดับ Gold สามารถยื่นขอรับรองระดับเอเชีย <span className="font-bold text-white">AFC Elite Youth Scheme</span> (1 ดาว · 2 ดาว · 3 ดาว) ผ่านสมาคมฯ ได้
-          </p>
-        </div>
-      </section>
-
       {/* ทำเนียบ */}
-      <section id="directory" className="mx-auto max-w-6xl scroll-mt-20 px-6 pb-16">
-        <form action="/academies" className="flex flex-col gap-3 rounded-3xl bg-white p-4 shadow-sm ring-1 ring-slate-200 sm:flex-row sm:items-center">
+      <section id="directory" className="mx-auto max-w-6xl scroll-mt-20 px-4 py-14 sm:px-6">
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h2 className="text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl">ทำเนียบอคาเดมี</h2>
+            <p className="mt-1 text-sm text-slate-500">
+              {q || level || province ? `พบ ${list.length.toLocaleString()} จาก ${all.length.toLocaleString()} อคาเดมี` : `${all.length.toLocaleString()} อคาเดมีที่ได้รับการรับรอง`}
+            </p>
+          </div>
+          {(q || level || province) && (
+            <Link href="/academies#directory" className="inline-flex items-center gap-1 text-sm font-semibold text-indigo-600 hover:text-indigo-800">
+              <X className="h-4 w-4" />
+              ล้างตัวกรอง
+            </Link>
+          )}
+        </div>
+
+        <form action="/academies#directory" className="mt-5 flex flex-col gap-2 rounded-2xl bg-white p-2 shadow-sm ring-1 ring-slate-200 sm:flex-row sm:items-center">
           <label className="relative flex-1">
             <span className="sr-only">ค้นหาชื่ออคาเดมี</span>
             <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-            <input
-              name="q"
-              defaultValue={q}
-              placeholder="ค้นหาชื่ออคาเดมี (ไทย / อังกฤษ)"
-              className="w-full rounded-xl border border-slate-200 py-2.5 pl-10 pr-3 text-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100"
-            />
+            <input name="q" defaultValue={q} placeholder="ค้นหาชื่ออคาเดมี (ไทย / อังกฤษ)" className="w-full rounded-xl py-2.5 pl-10 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-100" />
           </label>
-          <select
-            name="province"
-            defaultValue={province ?? ""}
-            aria-label="จังหวัด"
-            className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100"
-          >
-            <option value="">ทุกจังหวัด</option>
-            {provinces.map(([p, n]) => (
-              <option key={p} value={p}>
-                {p} ({n})
-              </option>
-            ))}
-          </select>
-          {level && <input type="hidden" name="level" value={level} />}
-          <button type="submit" className="rounded-xl bg-indigo-700 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-indigo-800">
+          <div className="grid grid-cols-2 gap-2 sm:flex">
+            <select name="province" defaultValue={province ?? ""} aria-label="จังหวัด" className="rounded-xl bg-slate-50 px-3 py-2.5 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-100">
+              <option value="">ทุกจังหวัด</option>
+              {provinces.map(([p, n]) => (
+                <option key={p} value={p}>
+                  {p} ({n})
+                </option>
+              ))}
+            </select>
+            <select name="level" defaultValue={level ?? ""} aria-label="ระดับ" className="rounded-xl bg-slate-50 px-3 py-2.5 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-100">
+              <option value="">ทุกระดับ</option>
+              {[...ACADEMY_LEVELS].reverse().map((l) => (
+                <option key={l} value={l}>
+                  {LEVEL_META[l].label} ({count(l)})
+                </option>
+              ))}
+            </select>
+          </div>
+          <button type="submit" className="rounded-xl bg-indigo-700 px-6 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-indigo-800">
             ค้นหา
           </button>
         </form>
-
-        <div className="mt-4 flex flex-wrap items-center gap-2">
-          {[null, ...[...ACADEMY_LEVELS].reverse()].map((l) => (
-            <Link
-              key={l ?? "all"}
-              href={href({ level: l, page: null })}
-              aria-current={level === l ? "true" : undefined}
-              className={`rounded-full px-3.5 py-1.5 text-xs font-semibold ring-1 transition-colors ${
-                level === l ? "bg-indigo-700 text-white ring-indigo-700" : "bg-white text-slate-600 ring-slate-200 hover:bg-slate-50"
-              }`}
-            >
-              {l ? `${LEVEL_META[l].label} (${count(l)})` : `ทั้งหมด (${all.length})`}
-            </Link>
-          ))}
-          <p className="ml-auto text-xs text-slate-500">พบ {list.length.toLocaleString()} อคาเดมี</p>
-        </div>
 
         {shown.length === 0 ? (
           <p className="mt-6 rounded-3xl border border-dashed border-slate-300 bg-white px-6 py-16 text-center text-sm text-slate-400">ไม่พบอคาเดมีตามเงื่อนไขที่ค้นหา</p>
@@ -351,23 +295,21 @@ export default async function AcademiesPage({
               <li key={a.id}>
                 <Link
                   href={`/academies/${a.id}`}
-                  className="group flex h-full items-center gap-4 rounded-3xl bg-white p-4 shadow-sm ring-1 ring-slate-200 transition-all hover:-translate-y-0.5 hover:shadow-md hover:ring-indigo-200"
+                  className="group flex h-full items-center gap-3.5 rounded-2xl bg-white p-3.5 ring-1 ring-slate-200 transition-all hover:-translate-y-0.5 hover:shadow-md hover:ring-indigo-200"
                 >
-                  <LevelMedal level={a.level} />
+                  <LevelMedal level={a.level} size="sm" />
                   <div className="min-w-0 flex-1">
-                    <p className="truncate font-bold text-slate-900 group-hover:text-indigo-700">{a.nameEn}</p>
-                    {a.nameTh && <p className="truncate text-xs text-slate-500">{a.nameTh}</p>}
-                    <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                    <p className="truncate text-sm font-bold text-slate-900 group-hover:text-indigo-700">{a.nameEn}</p>
+                    <p className="flex min-w-0 items-center gap-1 text-xs text-slate-500">
                       {a.province && (
-                        <span className="inline-flex items-center gap-1 text-xs text-slate-500">
-                          <MapPin className="h-3 w-3" />
-                          {a.province}
-                        </span>
+                        <>
+                          <MapPin className="h-3 w-3 flex-none" />
+                          <span className="truncate">{a.province}</span>
+                        </>
                       )}
-                      {a.state !== "active" && <StateChip state={a.state} />}
-                    </div>
+                    </p>
                   </div>
-                  <ChevronRight className="h-4 w-4 flex-none text-slate-300 transition-transform group-hover:translate-x-0.5 group-hover:text-indigo-500" />
+                  {a.state !== "active" ? <StateChip state={a.state} /> : <ChevronRight className="h-4 w-4 flex-none text-slate-300 transition-transform group-hover:translate-x-0.5 group-hover:text-indigo-500" />}
                 </Link>
               </li>
             ))}
@@ -377,17 +319,15 @@ export default async function AcademiesPage({
         {pages > 1 && (
           <nav aria-label="หน้า" className="mt-8 flex items-center justify-center gap-2">
             {page > 1 && (
-              <Link href={href({ page: String(page - 1) })} className="inline-flex items-center gap-1 rounded-xl bg-white px-3 py-2 text-sm text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50">
+              <Link href={href({ page: String(page - 1) })} aria-label="หน้าก่อนหน้า" className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50">
                 <ChevronLeft className="h-4 w-4" />
-                ก่อนหน้า
               </Link>
             )}
-            <span className="px-2 text-sm text-slate-500">
+            <span className="px-3 text-sm text-slate-500">
               หน้า {page} / {pages}
             </span>
             {page < pages && (
-              <Link href={href({ page: String(page + 1) })} className="inline-flex items-center gap-1 rounded-xl bg-white px-3 py-2 text-sm text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50">
-                ถัดไป
+              <Link href={href({ page: String(page + 1) })} aria-label="หน้าถัดไป" className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50">
                 <ChevronRight className="h-4 w-4" />
               </Link>
             )}
@@ -395,19 +335,51 @@ export default async function AcademiesPage({
         )}
       </section>
 
-      {/* เกณฑ์มาตรฐาน */}
-      <section id="criteria" className="scroll-mt-20 border-t border-slate-200 bg-white py-14">
-        <div className="mx-auto max-w-6xl px-6">
-          <h2 className="text-xl font-extrabold text-slate-900 sm:text-2xl">เกณฑ์มาตรฐานอคาเดมี</h2>
-          <p className="mt-2 max-w-3xl text-sm text-slate-500">
-            เลือกระดับเพื่อดูสิ่งที่อคาเดมีต้องมี — ป้าย “เพิ่มใหม่” และ “ยกระดับ” บอกสิ่งที่ต้องทำเพิ่มจากระดับก่อนหน้า
-          </p>
-          <div className="mt-6">
-            <CriteriaExplorer key={criteriaLevel} initialLevel={criteriaLevel} />
+      {/* มาตรฐาน 3 ระดับ — สรุปสั้น · เกณฑ์ทั้งหมดอยู่ในกล่องที่เปิดจากปุ่ม */}
+      <section id="levels" className="scroll-mt-20 border-t border-slate-200 bg-white">
+        <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6">
+          <h2 className="text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl">มาตรฐาน 3 ระดับ</h2>
+          <p className="mt-1 text-sm text-slate-500">พัฒนาทีละขั้นจากระดับทองแดงสู่ระดับทอง — กดดูเกณฑ์ของแต่ละระดับได้</p>
+          <div className="mt-6 grid gap-4 md:grid-cols-3">
+            {ACADEMY_LEVELS.map((l) => {
+              const s = LEVEL_SUMMARY[l];
+              return (
+                <article key={l} className="flex flex-col rounded-3xl bg-slate-50 p-5 ring-1 ring-slate-200">
+                  <div className="flex items-center gap-3">
+                    <LevelMedal level={l} />
+                    <div className="min-w-0">
+                      <p className={`font-extrabold ${LEVEL_META[l].text}`}>{s.title}</p>
+                      <p className="text-xs text-slate-500">{count(l)} อคาเดมี</p>
+                    </div>
+                  </div>
+                  <p className="mt-3 flex-1 text-sm leading-relaxed text-slate-600">{s.audience.th}</p>
+                  <InfoDialog
+                    wide
+                    title="เกณฑ์มาตรฐานอคาเดมี"
+                    className="mt-4 inline-flex w-full items-center justify-center gap-1.5 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-indigo-700 ring-1 ring-slate-200 transition-colors hover:bg-indigo-50 hover:ring-indigo-200"
+                    label={
+                      <>
+                        ดูเกณฑ์ {criteriaCount(l)} ข้อ
+                        <ArrowRight className="h-4 w-4" />
+                      </>
+                    }
+                  >
+                    <CriteriaExplorer initialLevel={l} />
+                  </InfoDialog>
+                </article>
+              );
+            })}
           </div>
-          <p className="mt-5 text-xs text-slate-400">ที่มา: เกณฑ์ FAT Academy Licensing · โครงการ GROW TOGETHER · FIFA Talent Development Scheme</p>
         </div>
       </section>
+
+      {/* ลิงก์เดิม ?criteria=GOLD#criteria → เปิดกล่องเกณฑ์ของระดับนั้นทันที */}
+      <div id="criteria" />
+      {isLevel(sp.criteria) && (
+        <InfoDialog wide defaultOpen clearParam="criteria" title="เกณฑ์มาตรฐานอคาเดมี">
+          <CriteriaExplorer initialLevel={criteriaLevel} />
+        </InfoDialog>
+      )}
 
       <footer className="border-t border-slate-200 bg-white py-8 text-center text-xs text-slate-400">
         ข้อมูลจากทะเบียน Academy Licensing ของสมาคมกีฬาฟุตบอลแห่งประเทศไทย ในพระบรมราชูปถัมภ์ · หากข้อมูลไม่ถูกต้องโปรดติดต่อฝ่ายเทคนิคของสมาคมฯ

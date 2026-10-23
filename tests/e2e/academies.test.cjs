@@ -88,16 +88,25 @@ module.exports = {
     await pub.goto(`${BASE}/academies?q=${encodeURIComponent("แกมมา เอฟซี")}`, { waitUntil: "networkidle" });
     check("ค้นหาด้วยชื่อเรียกอื่น", (await pub.locator("#directory").innerText()).includes("Gamma Academy"));
 
-    // เกณฑ์มาตรฐาน: ระดับทองแดงไม่มีข้อตกลงรับผู้ฝึกสอนดูงาน · กดระดับ Gold แล้วเห็น · ตารางเทียบ
-    await pub.goto(`${BASE}/academies#criteria`, { waitUntil: "networkidle" });
-    const criteria = pub.locator("#criteria");
+    // เกณฑ์มาตรฐาน (กล่องที่เปิดจากปุ่ม): ระดับทองแดงไม่มีข้อตกลงรับผู้ฝึกสอนดูงาน · กดระดับ Gold แล้วเห็น · ตารางเทียบ
+    await pub.goto(`${BASE}/academies`, { waitUntil: "networkidle" });
+    check("หน้าแรกไม่แสดงเกณฑ์ทั้งหมดจนกว่าจะกดปุ่ม", (await pub.getByText("Internship agreement").count()) === 0 && (await pub.getByRole("dialog").count()) === 0);
+    await pub.locator("#levels").getByRole("button", { name: /ดูเกณฑ์/ }).first().click();
+    const criteria = pub.getByRole("dialog");
+    check("กดดูเกณฑ์ → เปิดกล่องเกณฑ์ (Bronze)", (await criteria.locator('[aria-label="ระดับ"] [aria-selected="true"]').innerText()).includes("Bronze"));
     check("เกณฑ์ Bronze ไม่มีข้อเฉพาะระดับทอง", (await criteria.getByText("Internship agreement").count()) === 0);
     await criteria.getByRole("tab", { name: /Gold/ }).click();
     check("เลือก Gold → เห็นเกณฑ์ระดับทอง + ป้ายเพิ่มใหม่", await until(async () => (await criteria.getByText("Internship agreement").count()) === 1, 3000));
+    await criteria.getByRole("tab", { name: /^3\./ }).click();
+    check("แยกดูทีละหมวด", (await criteria.getByText("Internship agreement").count()) === 0);
     await criteria.getByRole("button", { name: "ตารางเทียบ 3 ระดับ" }).click();
     check("ตารางเทียบ 3 ระดับ", (await criteria.locator("table th", { hasText: "ระดับทองแดง" }).count()) === 1);
+    await pub.keyboard.press("Escape");
+    check("กด Esc ปิดกล่องเกณฑ์", (await pub.getByRole("dialog").count()) === 0);
     await pub.goto(`${BASE}/academies?criteria=SILVER#criteria`, { waitUntil: "networkidle" });
-    check("ลิงก์ ?criteria=SILVER เปิดระดับเงิน", (await pub.locator('#criteria [role="tab"][aria-selected="true"]').innerText()).includes("Silver"));
+    check("ลิงก์ ?criteria=SILVER เปิดกล่องเกณฑ์ระดับเงิน", (await pub.getByRole("dialog").locator('[aria-label="ระดับ"] [aria-selected="true"]').innerText()).includes("Silver"));
+    await pub.getByRole("dialog").getByRole("button", { name: "ปิด", exact: true }).click();
+    check("ปิดกล่อง → ลบ ?criteria ออกจากลิงก์", !pub.url().includes("criteria"), pub.url());
 
     const alphaId = (await sql("select id from academies where name_en='ALPHA ACADEMY'"))[0].id;
     await pub.goto(`${BASE}/academies/${alphaId}`, { waitUntil: "networkidle" });

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Check, ListChecks, Table2, Plus, TrendingUp } from "lucide-react";
 import { ACADEMY_LEVELS, LEVEL_META, type AcademyLevel } from "@/lib/academy";
-import { ACADEMY_CRITERIA, LEVEL_INDEX, criteriaCount } from "@/lib/academy-criteria";
+import { ACADEMY_CRITERIA, LEVEL_INDEX, LEVEL_SUMMARY, criteriaCount } from "@/lib/academy-criteria";
 
 const COUNTS = Object.fromEntries(ACADEMY_LEVELS.map((l) => [l, criteriaCount(l)])) as Record<AcademyLevel, number>;
 const CHECK_TONE: Record<AcademyLevel, string> = {
@@ -17,11 +17,21 @@ const COLUMN_TONE: Record<AcademyLevel, string> = {
   GOLD: "bg-amber-50/60",
 };
 
-// เกณฑ์มาตรฐานแต่ละระดับ — ดูเป็นรายการของระดับที่เลือก (บอกข้อที่เพิ่มใหม่/ยกระดับจากระดับก่อนหน้า) หรือเป็นตารางเทียบ 3 ระดับ
+// เกณฑ์มาตรฐานแต่ละระดับ — ดูเป็นรายการของระดับที่เลือกทีละหมวด (บอกข้อที่เพิ่มใหม่/ยกระดับจากระดับก่อนหน้า) หรือเป็นตารางเทียบ 3 ระดับ
 export function CriteriaExplorer({ initialLevel = "BRONZE" }: { initialLevel?: AcademyLevel }) {
   const [level, setLevel] = useState<AcademyLevel>(initialLevel);
   const [view, setView] = useState<"list" | "table">("list");
+  const [catNo, setCatNo] = useState(ACADEMY_CRITERIA[0].no);
   const i = LEVEL_INDEX[level];
+  const s = LEVEL_SUMMARY[level];
+  const cat = ACADEMY_CRITERIA.find((c) => c.no === catNo) ?? ACADEMY_CRITERIA[0];
+  const catCount = (c: (typeof ACADEMY_CRITERIA)[number]) => c.subs.reduce((n, sub) => n + sub.rows.filter((r) => r[i]).length, 0);
+  const keyReqs = [
+    ["หัวหน้าอคาเดมี", s.head],
+    ["ผู้ฝึกสอน", s.coaches],
+    ...(s.assistants ? [["ผู้ช่วยผู้ฝึกสอน", s.assistants]] : []),
+    ["จำนวนทีม", s.teams],
+  ];
 
   return (
     <div>
@@ -63,55 +73,76 @@ export function CriteriaExplorer({ initialLevel = "BRONZE" }: { initialLevel?: A
       </div>
 
       {view === "list" ? (
-        <div className="mt-6 grid gap-5 lg:grid-cols-3">
-          {ACADEMY_CRITERIA.map((cat) => (
-            <section key={cat.no} className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
-              <p className="text-xs font-bold uppercase tracking-wider text-indigo-500">หมวดที่ {cat.no}</p>
-              <h3 className="font-bold text-slate-900">{cat.th}</h3>
-              <p className="text-xs text-slate-400">{cat.en}</p>
-              <div className="mt-4 space-y-4">
-                {cat.subs.map((sub) => {
-                  const rows = sub.rows.filter((r) => r[i]);
-                  if (!rows.length) return null;
-                  return (
-                    <div key={sub.code}>
-                      <p className="text-xs font-semibold text-slate-500">
-                        {sub.code} {sub.th} <span className="font-normal text-slate-400">· {sub.en}</span>
-                      </p>
-                      <ul className="mt-2 space-y-2">
-                        {rows.map((r, n) => {
-                          const cell = r[i]!;
-                          const prev = i > 0 ? r[i - 1] : cell;
-                          const tag = !prev ? "new" : prev.th !== cell.th ? "up" : null;
-                          return (
-                            <li key={n} className="flex gap-2.5">
-                              <span className={`mt-0.5 flex h-5 w-5 flex-none items-center justify-center rounded-full ${CHECK_TONE[level]}`}>
-                                <Check className="h-3 w-3" />
-                              </span>
-                              <span className="min-w-0 text-sm leading-snug text-slate-700">
-                                {cell.th}
-                                {tag && (
-                                  <span
-                                    className={`ml-1.5 inline-flex items-center gap-0.5 rounded-full px-1.5 py-px align-middle text-[10px] font-bold ${
-                                      tag === "new" ? "bg-emerald-50 text-emerald-700" : "bg-sky-50 text-sky-700"
-                                    }`}
-                                  >
-                                    {tag === "new" ? <Plus className="h-2.5 w-2.5" /> : <TrendingUp className="h-2.5 w-2.5" />}
-                                    {tag === "new" ? "เพิ่มใหม่" : "ยกระดับ"}
-                                  </span>
-                                )}
-                                <span className="block text-xs text-slate-400">{cell.en}</span>
-                              </span>
-                            </li>
-                          );
-                        })}
-                      </ul>
-                    </div>
-                  );
-                })}
+        <div className="mt-5">
+          <dl className={`grid grid-cols-2 gap-2 ${keyReqs.length === 4 ? "sm:grid-cols-4" : "sm:grid-cols-3"}`}>
+            {keyReqs.map(([k, v]) => (
+              <div key={k} className="rounded-2xl bg-slate-50 px-3.5 py-2.5">
+                <dt className="text-[11px] text-slate-500">{k}</dt>
+                <dd className="text-sm font-semibold text-slate-800">{v}</dd>
               </div>
-            </section>
-          ))}
+            ))}
+          </dl>
+          <div role="tablist" aria-label="หมวด" className="mt-5 flex gap-1 overflow-x-auto border-b border-slate-200">
+            {ACADEMY_CRITERIA.map((c) => (
+              <button
+                key={c.no}
+                type="button"
+                role="tab"
+                aria-selected={cat.no === c.no}
+                onClick={() => setCatNo(c.no)}
+                className={`-mb-px flex-none border-b-2 px-3 py-2.5 text-sm font-semibold transition-colors ${
+                  cat.no === c.no ? "border-indigo-600 text-indigo-700" : "border-transparent text-slate-500 hover:text-slate-800"
+                }`}
+              >
+                {c.no}. {c.th}
+                <span className="ml-1.5 rounded-full bg-slate-100 px-1.5 text-[11px] text-slate-500">{catCount(c)}</span>
+              </button>
+            ))}
+          </div>
+          <section key={`${level}-${cat.no}`} className="mt-5">
+            <p className="text-xs text-slate-400">{cat.en}</p>
+            <div className="mt-3 grid gap-x-8 gap-y-5 md:grid-cols-2">
+              {cat.subs.map((sub) => {
+                const rows = sub.rows.filter((r) => r[i]);
+                if (!rows.length) return null;
+                return (
+                  <div key={sub.code}>
+                    <p className="text-xs font-semibold text-slate-500">
+                      {sub.code} {sub.th} <span className="font-normal text-slate-400">· {sub.en}</span>
+                    </p>
+                    <ul className="mt-2 space-y-2">
+                      {rows.map((r, n) => {
+                        const cell = r[i]!;
+                        const prev = i > 0 ? r[i - 1] : cell;
+                        const tag = !prev ? "new" : prev.th !== cell.th ? "up" : null;
+                        return (
+                          <li key={n} className="flex gap-2.5">
+                            <span className={`mt-0.5 flex h-5 w-5 flex-none items-center justify-center rounded-full ${CHECK_TONE[level]}`}>
+                              <Check className="h-3 w-3" />
+                            </span>
+                            <span className="min-w-0 text-sm leading-snug text-slate-700">
+                              {cell.th}
+                              {tag && (
+                                <span
+                                  className={`ml-1.5 inline-flex items-center gap-0.5 rounded-full px-1.5 py-px align-middle text-[10px] font-bold ${
+                                    tag === "new" ? "bg-emerald-50 text-emerald-700" : "bg-sky-50 text-sky-700"
+                                  }`}
+                                >
+                                  {tag === "new" ? <Plus className="h-2.5 w-2.5" /> : <TrendingUp className="h-2.5 w-2.5" />}
+                                  {tag === "new" ? "เพิ่มใหม่" : "ยกระดับ"}
+                                </span>
+                              )}
+                              <span className="block text-xs text-slate-400">{cell.en}</span>
+                            </span>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
         </div>
       ) : (
         <div className="mt-6 overflow-x-auto rounded-3xl bg-white shadow-sm ring-1 ring-slate-200">

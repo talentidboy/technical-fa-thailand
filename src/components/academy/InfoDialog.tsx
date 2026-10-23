@@ -4,14 +4,45 @@ import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import styles from "./ThailandMap.module.css";
 
+function removeParam(name: string) {
+  const url = new URL(window.location.href);
+  url.searchParams.delete(name);
+  url.hash = "";
+  window.history.replaceState(null, "", url);
+}
+
 // ปุ่มเปิดกล่องข้อความ — เก็บรายละเอียดยาวๆ ไว้หลังปุ่มแทนการวางเต็มหน้า
-export function InfoDialog({ label, title, className, children }: { label: React.ReactNode; title: string; className?: string; children: React.ReactNode }) {
-  const [open, setOpen] = useState(false);
+// defaultOpen + clearParam = เปิดจากลิงก์ (เช่น ?criteria=GOLD) แล้วลบพารามิเตอร์ออกจาก URL ตอนปิด จะได้ไม่เด้งซ้ำเมื่อรีเฟรช
+export function InfoDialog({
+  label,
+  title,
+  className,
+  wide = false,
+  defaultOpen = false,
+  clearParam,
+  children,
+}: {
+  label?: React.ReactNode;
+  title: string;
+  className?: string;
+  wide?: boolean;
+  defaultOpen?: boolean;
+  clearParam?: string;
+  children: React.ReactNode;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+
+  function close() {
+    setOpen(false);
+    if (clearParam) removeParam(clearParam);
+  }
 
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpen(false);
+      if (e.key !== "Escape") return;
+      setOpen(false);
+      if (clearParam) removeParam(clearParam);
     };
     document.addEventListener("keydown", onKey);
     document.body.style.overflow = "hidden";
@@ -19,23 +50,25 @@ export function InfoDialog({ label, title, className, children }: { label: React
       document.removeEventListener("keydown", onKey);
       document.body.style.overflow = "";
     };
-  }, [open]);
+  }, [open, clearParam]);
 
   return (
     <>
-      <button type="button" onClick={() => setOpen(true)} aria-haspopup="dialog" className={className}>
-        {label}
-      </button>
+      {label && (
+        <button type="button" onClick={() => setOpen(true)} aria-haspopup="dialog" className={className}>
+          {label}
+        </button>
+      )}
       {open && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-indigo-950/60 p-4 backdrop-blur-sm sm:items-center" onClick={() => setOpen(false)}>
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-indigo-950/60 backdrop-blur-sm sm:items-center sm:p-4" onClick={close}>
           <div
             role="dialog"
             aria-modal="true"
             aria-label={title}
             onClick={(e) => e.stopPropagation()}
-            className={`${styles.sheet} relative max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-3xl bg-white p-6 text-slate-700 shadow-2xl sm:p-8`}
+            className={`${styles.sheet} relative max-h-[92svh] w-full overflow-y-auto rounded-t-3xl bg-white p-6 text-slate-700 shadow-2xl sm:rounded-3xl sm:p-8 ${wide ? "sm:max-w-5xl" : "sm:max-w-lg"}`}
           >
-            <button type="button" onClick={() => setOpen(false)} aria-label="ปิด" className="absolute right-4 top-4 rounded-full p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700">
+            <button type="button" onClick={close} aria-label="ปิด" className="absolute right-4 top-4 rounded-full p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700">
               <X className="h-5 w-5" />
             </button>
             <h2 className="pr-8 text-xl font-extrabold text-slate-900">{title}</h2>
