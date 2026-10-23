@@ -5,7 +5,8 @@ import { redirect, unstable_rethrow } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireUser, type CurrentUser } from "@/lib/auth";
 import { audit, changedFields } from "@/lib/audit";
-import { isLevel, parseFormDate, LEVEL_META, LICENCE_STATUS } from "@/lib/academy";
+import { ISSUE_KINDS, bangkokDay, currentLicence, isLevel, parseFormDate, LEVEL_META } from "@/lib/academy";
+import { nextLicenceNo } from "@/lib/academy-data";
 import type { FormResult } from "@/components/ResultForm";
 
 async function requireAdminOrStaff() {
@@ -88,6 +89,7 @@ export async function createAcademy(formData: FormData): Promise<FormResult> {
   const res = await attempt(async (user) => {
     const data = readAcademy(formData);
     const licence = readLicence(formData);
+    if (isLevel(licence.level) && !licence.licenceNo) licence.licenceNo = await nextLicenceNo(licence.level, licence.approvedAt ?? new Date());
     const academy = await prisma.academy.create({
       data: {
         ...data,
@@ -143,58 +145,118 @@ export async function deleteAcademy(formData: FormData): Promise<FormResult> {
     // เก็บสำเนาข้อมูลไว้ในบันทึก เผื่อต้องกู้คืน
     await audit(user.email, "ACADEMY_DELETE", { summary: `ลบอคาเดมี ${academy.nameEn} (ใบอนุญาต ${academy.licences.length} ใบ)`, details: academy });
   });
-  if (res.ok) redirect("/academies/manage");
+  if (res.ok) redirect("/academies/manage/academies");
   return res;
 }
 
 // ===================== ใบอนุญาต =====================
+// วงจรมาตรฐาน: ออกใบ → (ต่ออายุ / เปลี่ยนระดับ = ออกใบใหม่แทนใบเดิม) → พักใช้ ↔ คืนสถานะ
+// สถานะเปลี่ยนได้เฉพาะผ่านคำสั่งเหล่านี้ — ฟอร์มแก้ไขใช้แก้รายละเอียดที่บันทึกผิดเท่านั้น จึงไม่เกิดอคาเดมีที่ไม่มีใบที่มีผลโดยไม่ตั้งใจ
 
-// ออกใบใหม่ (ต่ออายุ / เลื่อนระดับ) — ติ๊ก "แทนที่ใบเดิม" = ใบที่มีผลอยู่เปลี่ยนเป็น "เลื่อนระดับ / ต่ออายุแล้ว"
-export async function addLicence(formData: FormData) {
+export async function issueLicence(formData: FormData) {
   return attempt(async (user) => {
     const academyId = idOf(formData, "academyId");
-    const academy = await prisma.academy.findUnique({ where: { id: academyId }, select: { nameEn: true } });
+    const kind = text(formData, "kind") as keyof typeof ISSUE_KINDS;
+    if (!(kind in ISSUE_KINDS)) throw new Error("ไม่รู้จักคำสั่ง");
+    const academy = await prisma.academy.findUnique({ where: { id: academyId }, include: { licences: { where: { status: "ACTIVE" } } } });
     if (!academy) throw new Error("ไม่พบอคาเดมี");
-    const licence = readLicence(formData);
-    // ใบใหม่ต้องระบุระดับ — ไม่งั้นติ๊ก "แทนที่ใบเดิม" แล้วอคาเดมีจะเหลือแต่ใบที่ไม่มีระดับ
-    if (!licence.level) throw new Error("กรุณาเลือกระดับของใบอนุญาตใหม่");
-    const supersede = formData.get("supersede") === "on";
+    const current = currentLicence(academy.licences);
+    const input = readLicence(formData);
+
+    let level = input.level;
+    if (kind === "NEW") {
+      if (current) throw new Error("อคาเดมีนี้มีใบอนุญาตที่มีผลอยู่แล้ว — ใช้ “ต่ออายุ” หรือ “เปลี่ยนระดับ” แทน");
+      if (!level) throw new Error("กรุณาเลือกระดับ");
+    } else {
+      if (!current) throw new Error("ไม่มีใบอนุญาตที่มีผลให้ต่ออายุหรือเปลี่ยนระดับ — ใช้ “ออกใบอนุญาต”");
+      if (kind === "RENEW") {
+        if (!isLevel(current.level)) throw new Error("ใบเดิมยังไม่ระบุระดับ — ใช้ “เปลี่ยนระดับ” เพื่อกำหนดระดับ");
+        level = current.level;
+      } else {
+        if (!level) throw new Error("กรุณาเลือกระดับใหม่");
+        if (level === current.level) throw new Error("ระดับใหม่ต้องต่างจากระดับเดิม — ถ้าระดับเดิมให้ใช้ “ต่ออายุ”");
+      }
+    }
+    if (!isLevel(level)) throw new Error("กรุณาเลือกระดับ");
+    const approvedAt = input.approvedAt ?? parseFormDate(bangkokDay(new Date()))!;
+    if (input.expiresAt && input.expiresAt <= approvedAt) throw new Error("วันหมดอายุต้องอยู่หลังวันที่อนุมัติ");
+    const licenceNo = input.licenceNo ?? (await nextLicenceNo(level, approvedAt));
+    if (await prisma.academyLicence.findFirst({ where: { licenceNo } })) throw new Error(`เลขที่ใบอนุญาต ${licenceNo} ถูกใช้แล้ว`);
+    const origin = kind === "RENEW" ? "ต่ออายุจากใบเดิม" : kind === "CHANGE" ? `เปลี่ยนระดับจาก ${levelText(current!.level)}` : null;
+
     await prisma.$transaction(async (tx) => {
-      if (supersede) await tx.academyLicence.updateMany({ where: { academyId, status: "ACTIVE" }, data: { status: "SUPERSEDED" } });
-      await tx.academyLicence.create({ data: { academyId, ...licence } });
+      if (current) await tx.academyLicence.updateMany({ where: { academyId, status: "ACTIVE" }, data: { status: "SUPERSEDED" } });
+      await tx.academyLicence.create({
+        data: { academyId, level, tier: input.tier, licenceNo, approvedAt, expiresAt: input.expiresAt, note: [origin, input.note].filter(Boolean).join(" · ") || null },
+      });
     });
     await audit(user.email, "ACADEMY_LICENCE_ADD", {
-      summary: `ออกใบอนุญาต ${levelText(licence.level)} ให้ ${academy.nameEn}${supersede ? " (แทนที่ใบเดิม)" : ""}`,
-      details: { academyId, supersede, ...licence },
+      summary: `${ISSUE_KINDS[kind]} ${levelText(level)} ให้ ${academy.nameEn} (${licenceNo})`,
+      details: { academyId, kind, level, licenceNo, approvedAt, expiresAt: input.expiresAt, replacedLicenceId: current?.id ?? null },
     });
   });
 }
 
+// พักใช้ / เพิกถอนใบที่มีผล (ต้องระบุเหตุผล) → อคาเดมีไม่แสดงบนหน้าสาธารณะ
+export async function revokeLicence(formData: FormData) {
+  return attempt(async (user) => {
+    const id = idOf(formData);
+    const reason = text(formData, "reason");
+    if (!reason) throw new Error("กรุณาระบุเหตุผลที่พักใช้ใบอนุญาต");
+    const licence = await prisma.academyLicence.findUnique({ where: { id }, include: { academy: { select: { nameEn: true } } } });
+    if (!licence) throw new Error("ไม่พบใบอนุญาต");
+    if (licence.status !== "ACTIVE") throw new Error("พักใช้ได้เฉพาะใบที่มีผลอยู่");
+    const stamp = `พักใช้ ${bangkokDay(new Date())}: ${reason}`;
+    await prisma.academyLicence.update({ where: { id }, data: { status: "REVOKED", note: [licence.note, stamp].filter(Boolean).join(" · ") } });
+    await audit(user.email, "ACADEMY_LICENCE_UPDATE", {
+      summary: `พักใช้ใบอนุญาต ${levelText(licence.level)} ของ ${licence.academy.nameEn} — ${reason}`,
+      details: { academyId: licence.academyId, licenceId: id, changes: { status: [licence.status, "REVOKED"] }, reason },
+    });
+  });
+}
+
+// คืนสถานะใบที่ถูกพักใช้ / ถูกแทนที่ ให้กลับมามีผล (ได้เมื่ออคาเดมีไม่มีใบอื่นที่มีผลอยู่)
+export async function reactivateLicence(formData: FormData) {
+  return attempt(async (user) => {
+    const id = idOf(formData);
+    const licence = await prisma.academyLicence.findUnique({ where: { id }, include: { academy: { select: { nameEn: true } } } });
+    if (!licence) throw new Error("ไม่พบใบอนุญาต");
+    if (licence.status === "ACTIVE") throw new Error("ใบนี้มีผลอยู่แล้ว");
+    if (await prisma.academyLicence.count({ where: { academyId: licence.academyId, status: "ACTIVE" } }))
+      throw new Error("อคาเดมีนี้มีใบอื่นที่มีผลอยู่แล้ว — คืนสถานะซ้อนไม่ได้");
+    await prisma.academyLicence.update({ where: { id }, data: { status: "ACTIVE" } });
+    await audit(user.email, "ACADEMY_LICENCE_UPDATE", {
+      summary: `คืนสถานะใบอนุญาต ${levelText(licence.level)} ของ ${licence.academy.nameEn} เป็นมีผล`,
+      details: { academyId: licence.academyId, licenceId: id, changes: { status: [licence.status, "ACTIVE"] } },
+    });
+  });
+}
+
+// แก้รายละเอียดที่บันทึกผิด (ระดับ เลขที่ วันที่ หมายเหตุ) — ไม่เปลี่ยนสถานะ
 export async function updateLicence(formData: FormData) {
   return attempt(async (user) => {
     const id = idOf(formData);
     const before = await prisma.academyLicence.findUnique({ where: { id }, include: { academy: { select: { nameEn: true } } } });
     if (!before) throw new Error("ไม่พบใบอนุญาต");
-    const status = text(formData, "status");
-    if (!(status in LICENCE_STATUS)) throw new Error("สถานะไม่ถูกต้อง");
-    const data = { ...readLicence(formData), status };
+    const data = readLicence(formData);
+    if (data.licenceNo && (await prisma.academyLicence.findFirst({ where: { licenceNo: data.licenceNo, id: { not: id } } }))) throw new Error(`เลขที่ใบอนุญาต ${data.licenceNo} ถูกใช้แล้ว`);
     await prisma.academyLicence.update({ where: { id }, data });
     const changes = changedFields(before, data);
     if (Object.keys(changes).length) {
       await audit(user.email, "ACADEMY_LICENCE_UPDATE", {
-        summary: `แก้ไขใบอนุญาต ${levelText(data.level)} ของ ${before.academy.nameEn} (${Object.keys(changes).join(", ")})`,
+        summary: `แก้ไขรายละเอียดใบอนุญาต ${levelText(data.level)} ของ ${before.academy.nameEn} (${Object.keys(changes).join(", ")})`,
         details: { academyId: before.academyId, licenceId: id, changes },
       });
     }
   });
 }
 
+// ลบใบที่บันทึกผิด — ถ้าลบใบที่มีผลใบสุดท้าย คืนใบล่าสุดที่ถูกแทนที่ให้กลับมามีผล ไม่ให้อคาเดมีหลุดจากทะเบียน
 export async function deleteLicence(formData: FormData) {
   return attempt(async (user) => {
     const id = idOf(formData);
     const licence = await prisma.academyLicence.findUnique({ where: { id }, include: { academy: { select: { nameEn: true } } } });
     if (!licence) throw new Error("ไม่พบใบอนุญาต");
-    // ลบใบที่มีผลใบสุดท้าย (เช่น ออกใบใหม่ผิดแล้วลบทิ้ง) → คืนใบล่าสุดที่ถูกแทนที่ให้กลับมามีผล ไม่ให้อคาเดมีหลุดจากทะเบียน
     const restored = await prisma.$transaction(async (tx) => {
       await tx.academyLicence.delete({ where: { id } });
       if (licence.status !== "ACTIVE" || (await tx.academyLicence.count({ where: { academyId: licence.academyId, status: "ACTIVE" } }))) return null;
@@ -207,21 +269,6 @@ export async function deleteLicence(formData: FormData) {
     await audit(user.email, "ACADEMY_LICENCE_DELETE", {
       summary: `ลบใบอนุญาต ${levelText(licence.level)} ของ ${licence.academy.nameEn}${restored ? ` · คืนใบ ${levelText(restored.level)} เดิมให้กลับมามีผล` : ""}`,
       details: { ...licence, restoredLicenceId: restored?.id ?? null },
-    });
-  });
-}
-
-// คืนสถานะใบอนุญาตที่ถูกแทนที่ / ระงับ ให้กลับมามีผล (แก้กรณีอคาเดมีไม่เหลือใบที่มีผล)
-export async function reactivateLicence(formData: FormData) {
-  return attempt(async (user) => {
-    const id = idOf(formData);
-    const licence = await prisma.academyLicence.findUnique({ where: { id }, include: { academy: { select: { nameEn: true } } } });
-    if (!licence) throw new Error("ไม่พบใบอนุญาต");
-    if (licence.status === "ACTIVE") throw new Error("ใบนี้มีผลอยู่แล้ว");
-    await prisma.academyLicence.update({ where: { id }, data: { status: "ACTIVE" } });
-    await audit(user.email, "ACADEMY_LICENCE_UPDATE", {
-      summary: `คืนสถานะใบอนุญาต ${levelText(licence.level)} ของ ${licence.academy.nameEn} เป็นมีผล`,
-      details: { academyId: licence.academyId, licenceId: id, changes: { status: [licence.status, "ACTIVE"] } },
     });
   });
 }

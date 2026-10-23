@@ -10,12 +10,11 @@ import { autoChecks, LICENCE_LEVELS, STAFF_ROLES, teamCheck } from "@/lib/academ
 import { loadStaff, loadTeams } from "@/lib/academy-data";
 import { ResultForm } from "@/components/ResultForm";
 import { ConfirmSubmit } from "@/components/ConfirmSubmit";
-import { ManageShell } from "@/components/academy/ManageShell";
-import { LevelMedal } from "@/components/academy/AcademyUi";
+import { PageBody, PageHeader } from "@/components/academy/ManageUi";
 import { AutoCheckBox, DocumentLink, EvidenceStatusChip } from "@/components/academy/EvidenceBits";
 import { fieldClass } from "@/components/academy/AcademyShell";
 import { approveApplication, passAllPending, rejectApplication, requestFix, reviewEvidence } from "../../review-actions";
-import { ArrowLeft, BadgeCheck, CheckCheck, CheckCircle2, Save, Send, ShieldCheck, TriangleAlert, XCircle } from "lucide-react";
+import { BadgeCheck, CheckCheck, CheckCircle2, Save, Send, ShieldCheck, TriangleAlert, XCircle } from "lucide-react";
 
 const REVIEW_OPTIONS = [
   { value: "PASS", label: "ผ่าน", tone: "has-checked:bg-emerald-600 has-checked:text-white has-checked:ring-emerald-600" },
@@ -48,48 +47,44 @@ export default async function ReviewApplicationPage({ params }: { params: Promis
   const status = APPLICATION_STATUS[app.status];
 
   return (
-    <ManageShell active="applications">
-      <main className="mx-auto max-w-7xl space-y-6 px-6 py-8">
-        <Link href="/academies/manage/applications" className="inline-flex items-center gap-1 text-sm text-slate-500 hover:text-slate-800">
-          <ArrowLeft className="h-4 w-4" />
-          ใบสมัครทั้งหมด
-        </Link>
-
-        <section className="flex flex-wrap items-center gap-4 rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
-          <LevelMedal level={app.level} />
-          <div className="min-w-0 flex-1">
-            <h1 className="text-xl font-bold text-slate-900">
-              <Link href={`/academies/manage/${app.academyId}`} className="hover:text-indigo-700">
-                {app.academy.nameEn}
-              </Link>
-            </h1>
-            <p className="text-sm text-slate-500">
-              FAT {LEVEL_META[app.level].label} · {APPLICATION_KINDS[app.kind]}
-              {app.academy.province && ` · ${app.academy.province}`}
-              {app.submittedAt && ` · ส่ง ${thaiDate(app.submittedAt)}`}
-            </p>
-          </div>
-          <span className={`rounded-full px-3 py-1 text-sm font-semibold ring-1 ${status.tone}`}>{status.label}</span>
-          <div className="flex w-full gap-2 text-xs sm:w-auto">
+    <>
+      <PageHeader
+        crumbs={[{ href: "/academies/manage/applications", label: "ใบสมัคร" }]}
+        title={
+          <Link href={`/academies/manage/${app.academyId}`} className="hover:underline">
+            {app.academy.nameEn}
+          </Link>
+        }
+        description={
+          <>
+            FAT {LEVEL_META[app.level].label} · {APPLICATION_KINDS[app.kind]}
+            {app.academy.province && ` · ${app.academy.province}`}
+            {app.submittedAt && ` · ส่ง ${thaiDate(app.submittedAt)}`}
+          </>
+        }
+        actions={
+          <>
+            <span className={`rounded-full px-3 py-1 text-sm font-semibold ring-1 ${status.tone}`}>{status.label}</span>
             {[
               ["PASS", "ผ่าน", "bg-emerald-50 text-emerald-700"],
               ["FIX", "แก้ไข", "bg-amber-50 text-amber-700"],
               ["FAIL", "ไม่ผ่าน", "bg-red-50 text-red-700"],
               ["PENDING", "รอตรวจ", "bg-slate-100 text-slate-600"],
-            ].map(([s, l, tone]) => (
-              <span key={s} className={`rounded-lg px-2.5 py-1 font-semibold ${tone}`}>
-                {l} {tally(s)}
+            ].map(([st, l, tone]) => (
+              <span key={st} className={`rounded-md px-2.5 py-1 text-xs font-semibold ${tone}`}>
+                {l} {tally(st)}
               </span>
             ))}
-          </div>
-        </section>
-
+          </>
+        }
+      />
+      <PageBody>
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
           <div className="space-y-3">
             {items.map((c) => {
               const e = byCode.get(c.code)!;
               return (
-                <article key={c.code} id={`c-${c.code}`} className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
+                <article key={c.code} id={`c-${c.code}`} className="rounded-lg border border-slate-200 bg-white p-5">
                   <div className="flex flex-wrap items-start justify-between gap-2">
                     <div className="min-w-0 flex-1">
                       <p className="text-xs font-semibold text-slate-400">
@@ -126,7 +121,7 @@ export default async function ReviewApplicationPage({ params }: { params: Promis
                         ))}
                       </div>
                       <input name="reviewNote" defaultValue={e.reviewNote ?? ""} placeholder="ความเห็น / สิ่งที่ต้องแก้ไข" className={`${fieldClass} min-w-48 flex-1 py-1.5`} />
-                      <button type="submit" aria-label={`บันทึกผลข้อ ${c.code}`} className="inline-flex items-center gap-1 rounded-lg bg-indigo-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-indigo-800">
+                      <button type="submit" aria-label={`บันทึกผลข้อ ${c.code}`} className="inline-flex items-center gap-1 rounded-lg bg-[#0b1f44] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#162d5c]">
                         <Save className="h-3.5 w-3.5" />
                         บันทึก
                       </button>
@@ -142,7 +137,7 @@ export default async function ReviewApplicationPage({ params }: { params: Promis
 
           <aside className="space-y-4 lg:sticky lg:top-28 lg:self-start">
             {reviewing && (
-              <section className="space-y-3 rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
+              <section className="space-y-3 rounded-lg border border-slate-200 bg-white p-5">
                 <h2 className="font-semibold text-slate-900">ผลการพิจารณา</h2>
                 <ResultForm action={passAllPending} quiet>
                   <input type="hidden" name="id" value={app.id} />
@@ -206,7 +201,7 @@ export default async function ReviewApplicationPage({ params }: { params: Promis
             )}
             {app.decisionNote && <p className="rounded-2xl bg-white p-4 text-sm text-slate-600 shadow-sm ring-1 ring-slate-200">หมายเหตุการตัดสิน: {app.decisionNote}</p>}
 
-            <section className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
+            <section className="rounded-lg border border-slate-200 bg-white p-5">
               <h2 className="font-semibold text-slate-900">บุคลากร ({staff.length})</h2>
               <ul className="mt-2 space-y-1.5 text-sm">
                 {staff.map((s) => (
@@ -227,7 +222,7 @@ export default async function ReviewApplicationPage({ params }: { params: Promis
                 {staff.length === 0 && <li className="text-slate-400">ยังไม่มีรายชื่อ</li>}
               </ul>
             </section>
-            <section className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
+            <section className="rounded-lg border border-slate-200 bg-white p-5">
               <h2 className="font-semibold text-slate-900">ทีม ({teams.length})</h2>
               <ul className="mt-2 space-y-1.5 text-sm">
                 {teams.map((t) => {
@@ -249,7 +244,7 @@ export default async function ReviewApplicationPage({ params }: { params: Promis
             </section>
           </aside>
         </div>
-      </main>
-    </ManageShell>
+      </PageBody>
+    </>
   );
 }

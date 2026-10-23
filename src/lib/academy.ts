@@ -51,6 +51,9 @@ export const LICENCE_STATUS: Record<string, string> = {
   REVOKED: "ระงับ",
 };
 
+// คำสั่งออกใบอนุญาต (หลังบ้าน): ออกใบแรก / ต่ออายุระดับเดิม / เปลี่ยนระดับ — สองแบบหลังแทนที่ใบเดิม
+export const ISSUE_KINDS = { NEW: "ออกใบอนุญาต", RENEW: "ต่ออายุ", CHANGE: "เปลี่ยนระดับ" } as const;
+
 // เตือนก่อนหมดอายุกี่วัน
 export const EXPIRING_DAYS = 60;
 

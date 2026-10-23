@@ -322,11 +322,18 @@ module.exports = {
     check("เปิดหน้าการแจ้งเตือน → อ่านแล้ว", await until(async () => (await one(`select count(*)::int n from academy_notices where academy_id=$1 and read_at is null`, [nsId])).n === 0));
 
     // ===== 11) หลังบ้าน: ข้อมูลพอร์ทัลในหน้าอคาเดมี + ห้ามลบอคาเดมีที่มีข้อมูลพอร์ทัล =====
-    await ad.goto(`${BASE}/academies/manage/${nsId}`, { waitUntil: "networkidle" });
-    const detail = await ad.locator("main").innerText();
-    check("หน้าอคาเดมี (แอดมิน): บัญชี ใบสมัคร บุคลากร ทีม", detail.includes("newstar@test.invalid") && detail.includes("อนุมัติแล้ว") && detail.includes("สมชาย") && detail.includes("U12"));
+    const tabText = async (tab) => {
+      await ad.goto(`${BASE}/academies/manage/${nsId}?tab=${tab}`, { waitUntil: "networkidle" });
+      return ad.locator("main").innerText();
+    };
+    check("แท็บบัญชีผู้ดูแล", (await tabText("accounts")).includes("newstar@test.invalid"));
+    check("แท็บใบสมัคร", (await tabText("applications")).includes("อนุมัติแล้ว"));
+    check("แท็บใบอนุญาต: ใบจากการอนุมัติ", (await tabText("licences")).includes("FAT-B-0001"));
+    const people = await tabText("people");
+    check("แท็บบุคลากรและทีม", people.includes("สมชาย") && people.includes("U12"));
     await ad.locator("summary", { hasText: "U12" }).click();
     check("แอดมินเห็นรายชื่อนักเตะ", (await ad.getByText("เด็กชายเอ ทดสอบ").count()) === 1);
+    await ad.goto(`${BASE}/academies/manage/${nsId}?tab=info`, { waitUntil: "networkidle" });
     const delRes = await submit(ad.locator("form", { has: ad.getByRole("button", { name: "ลบอคาเดมี" }) }), ad.getByRole("button", { name: "ลบอคาเดมี" }));
     check("ลบอคาเดมีที่มีข้อมูลพอร์ทัลไม่ได้", delRes.includes("ลบไม่ได้") && !!(await one(`select 1 from academies where id=$1`, [nsId])));
     await ad.goto(`${BASE}/academies/manage/applications/${appId}`, { waitUntil: "networkidle" });

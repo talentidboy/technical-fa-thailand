@@ -7,6 +7,7 @@ import { requireUser, hashPassword, type CurrentUser } from "@/lib/auth";
 import { audit } from "@/lib/audit";
 import { notifyAcademy, APPLICATION_KINDS } from "@/lib/academy-portal";
 import { isLevel, parseFormDate, LEVEL_META } from "@/lib/academy";
+import { nextLicenceNo } from "@/lib/academy-data";
 import type { FormResult } from "@/components/ResultForm";
 
 async function attempt(fn: (user: CurrentUser) => Promise<void>): Promise<FormResult> {
@@ -160,6 +161,9 @@ export async function approveApplication(formData: FormData) {
     if (expiresAt && expiresAt <= now) throw new Error("วันหมดอายุต้องเป็นวันในอนาคต");
     const note = optional(formData, "note");
     const level = app.level;
+    // เลขที่ใบอนุญาตเว้นว่าง = ออกเลขรูปแบบมาตรฐานให้อัตโนมัติ
+    const licenceNo = optional(formData, "licenceNo") ?? (await nextLicenceNo(level, now));
+    if (await prisma.academyLicence.findFirst({ where: { licenceNo } })) throw new Error(`เลขที่ใบอนุญาต ${licenceNo} ถูกใช้แล้ว`);
     await prisma.$transaction(async (tx) => {
       await tx.academyLicence.updateMany({ where: { academyId: app.academyId, status: "ACTIVE" }, data: { status: "SUPERSEDED" } });
       const licence = await tx.academyLicence.create({
@@ -167,7 +171,7 @@ export async function approveApplication(formData: FormData) {
           academyId: app.academyId,
           level,
           tier: optional(formData, "tier"),
-          licenceNo: optional(formData, "licenceNo"),
+          licenceNo,
           approvedAt: now,
           expiresAt,
           note: `อนุมัติจากใบสมัคร #${app.id} (${APPLICATION_KINDS[app.kind]})`,

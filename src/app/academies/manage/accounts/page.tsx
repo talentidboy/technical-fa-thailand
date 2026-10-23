@@ -6,7 +6,7 @@ import { MEMBER_STATUS } from "@/lib/academy-portal";
 import { thaiDate } from "@/lib/academy";
 import { ResultForm } from "@/components/ResultForm";
 import { ConfirmSubmit } from "@/components/ConfirmSubmit";
-import { ManageShell } from "@/components/academy/ManageShell";
+import { PageBody, PageHeader } from "@/components/academy/ManageUi";
 import { AcademyPicker } from "@/components/academy/AcademyPicker";
 import { fieldClass } from "@/components/academy/AcademyShell";
 import { createAcademyAccount, decideMember, resetAcademyPassword, toggleAcademyAccount } from "../review-actions";
@@ -31,14 +31,10 @@ export default async function AcademyAccountsPage({ searchParams }: { searchPara
   const initial = academies.find((a) => a.id === Number(sp.academy)) ?? null;
 
   return (
-    <ManageShell active="accounts">
-      <main className="mx-auto max-w-7xl space-y-6 px-6 py-8">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">บัญชีอคาเดมี</h1>
-          <p className="mt-1 text-sm text-slate-500">อคาเดมีใหม่ที่สมัครเองเริ่มใช้งานได้ทันที · การขอสิทธิ์ดูแลอคาเดมีที่มีในทะเบียนแล้วต้องอนุมัติที่นี่ก่อน</p>
-        </div>
-
-        <section className="rounded-2xl bg-white shadow-sm ring-1 ring-slate-200">
+    <>
+      <PageHeader title="บัญชีอคาเดมี" description="อคาเดมีใหม่ที่สมัครเองเริ่มใช้งานได้ทันที · การขอสิทธิ์ดูแลอคาเดมีที่มีในทะเบียนแล้วต้องอนุมัติที่นี่ก่อน" />
+      <PageBody>
+        <section className="rounded-lg border border-slate-200 bg-white">
           <h2 className="border-b border-slate-100 px-5 py-3.5 font-semibold text-slate-900">คำขอสิทธิ์ดูแลอคาเดมี ({pending.length})</h2>
           {pending.length === 0 ? (
             <p className="px-5 py-8 text-center text-sm text-slate-400">ไม่มีคำขอที่รออนุมัติ</p>
@@ -93,7 +89,7 @@ export default async function AcademyAccountsPage({ searchParams }: { searchPara
           )}
         </section>
 
-        <details className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200" open={!!initial}>
+        <details className="overflow-hidden rounded-lg border border-slate-200 bg-white" open={!!initial}>
           <summary className="flex cursor-pointer items-center gap-2 px-5 py-4 text-sm font-semibold text-slate-900">
             <Plus className="h-4 w-4 text-indigo-600" />
             สร้างบัญชีให้อคาเดมีในทะเบียน
@@ -122,7 +118,7 @@ export default async function AcademyAccountsPage({ searchParams }: { searchPara
               <input name="password" type="text" required minLength={8} autoComplete="off" className={fieldClass} />
             </label>
             <div className="sm:col-span-2">
-              <button type="submit" className="inline-flex items-center gap-2 rounded-lg bg-indigo-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-indigo-800">
+              <button type="submit" className="inline-flex items-center gap-2 rounded-lg bg-[#0b1f44] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#162d5c]">
                 <UserPlus className="h-4 w-4" />
                 สร้างบัญชี
               </button>
@@ -130,7 +126,7 @@ export default async function AcademyAccountsPage({ searchParams }: { searchPara
           </ResultForm>
         </details>
 
-        <section className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200">
+        <section className="overflow-hidden rounded-lg border border-slate-200 bg-white">
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-5 py-3">
             <h2 className="font-semibold text-slate-900">บัญชีทั้งหมด ({others.length})</h2>
             <form action="/academies/manage/accounts" className="relative">
@@ -169,7 +165,7 @@ export default async function AcademyAccountsPage({ searchParams }: { searchPara
                       <ResultForm action={resetAcademyPassword} resetOnSuccess successText="ตั้งรหัสผ่านใหม่แล้ว" className="absolute right-0 z-10 mt-1 w-64 space-y-2 rounded-xl bg-white p-3 shadow-lg ring-1 ring-slate-200">
                         <input type="hidden" name="id" value={m.id} />
                         <input name="password" type="text" required minLength={8} autoComplete="off" placeholder="รหัสผ่านใหม่ (8 ตัวขึ้นไป)" aria-label={`รหัสผ่านใหม่ของ ${m.user.email}`} className={`${fieldClass} py-2`} />
-                        <button type="submit" className="w-full rounded-lg bg-indigo-700 px-3 py-2 text-xs font-semibold text-white hover:bg-indigo-800">
+                        <button type="submit" className="w-full rounded-lg bg-[#0b1f44] px-3 py-2 text-xs font-semibold text-white hover:bg-[#162d5c]">
                           บันทึกรหัสผ่าน (ออกจากระบบทุกเครื่อง)
                         </button>
                       </ResultForm>
@@ -194,7 +190,7 @@ export default async function AcademyAccountsPage({ searchParams }: { searchPara
             </ul>
           )}
         </section>
-      </main>
-    </ManageShell>
+      </PageBody>
+    </>
   );
 }

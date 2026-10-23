@@ -1,18 +1,15 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { getCurrentUser } from "@/lib/auth";
 import { APPLICATION_KINDS, APPLICATION_STATUS } from "@/lib/academy-portal";
 import { LEVEL_META, thaiDate } from "@/lib/academy";
-import { ManageShell } from "@/components/academy/ManageShell";
-import { LevelMedal } from "@/components/academy/AcademyUi";
+import { LevelBadge } from "@/components/academy/AcademyUi";
+import { Card, Empty, PageBody, PageHeader, TabLinks } from "@/components/academy/ManageUi";
 import { ChevronRight } from "lucide-react";
 
 const TABS = ["SUBMITTED", "NEEDS_FIX", "DRAFT", "APPROVED", "REJECTED"] as const;
 
+// คิวใบสมัคร — ใบที่รอตรวจเรียงจากส่งก่อน
 export default async function ManageApplicationsPage({ searchParams }: { searchParams: Promise<{ status?: string }> }) {
-  const user = await getCurrentUser();
-  if (!user || (user.role !== "ADMIN" && user.role !== "STAFF")) redirect("/academies");
   const sp = await searchParams;
   const status = TABS.includes(sp.status as (typeof TABS)[number]) ? sp.status! : "SUBMITTED";
   const [counts, apps] = await Promise.all([
@@ -26,34 +23,25 @@ export default async function ManageApplicationsPage({ searchParams }: { searchP
   const n = (s: string) => counts.find((c) => c.status === s)?._count._all ?? 0;
 
   return (
-    <ManageShell active="applications">
-      <main className="mx-auto max-w-7xl space-y-5 px-6 py-8">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">ใบสมัคร</h1>
-          <p className="mt-1 text-sm text-slate-500">ใบที่รอตรวจเรียงจากส่งก่อน — เปิดเพื่อตรวจหลักฐานทีละข้อ แล้วอนุมัติหรือส่งกลับให้แก้ไข</p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {TABS.map((s) => (
-            <Link
-              key={s}
-              href={`/academies/manage/applications?status=${s}`}
-              className={`rounded-full px-3.5 py-1.5 text-sm font-semibold ring-1 ${status === s ? "bg-indigo-700 text-white ring-indigo-700" : "bg-white text-slate-600 ring-slate-200 hover:bg-slate-50"}`}
-            >
-              {APPLICATION_STATUS[s].label} ({n(s)})
-            </Link>
-          ))}
-        </div>
-        <section className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200">
+    <>
+      <PageHeader title="ใบสมัคร" description="เปิดใบสมัครเพื่อตรวจหลักฐานทีละข้อ แล้วอนุมัติ ส่งกลับให้แก้ไข หรือไม่อนุมัติ">
+        <TabLinks
+          active={status}
+          tabs={TABS.map((s) => ({ key: s, href: `/academies/manage/applications?status=${s}`, label: APPLICATION_STATUS[s].label, count: n(s), alert: s === "SUBMITTED" && n(s) > 0 }))}
+        />
+      </PageHeader>
+      <PageBody>
+        <Card flush>
           {apps.length === 0 ? (
-            <p className="px-6 py-14 text-center text-sm text-slate-400">ไม่มีใบสมัครในสถานะนี้</p>
+            <Empty>ไม่มีใบสมัครในสถานะนี้</Empty>
           ) : (
             <ul className="divide-y divide-slate-100">
               {apps.map((a) => {
                 const reviewed = a.evidence.filter((e) => e.status !== "PENDING").length;
                 return (
                   <li key={a.id}>
-                    <Link href={`/academies/manage/applications/${a.id}`} className="flex items-center gap-4 px-5 py-4 hover:bg-indigo-50/40">
-                      <LevelMedal level={a.level} size="sm" />
+                    <Link href={`/academies/manage/applications/${a.id}`} className="flex items-center gap-4 px-5 py-3.5 hover:bg-slate-50">
+                      <LevelBadge level={a.level} />
                       <span className="min-w-0 flex-1">
                         <span className="block font-semibold text-slate-900">{a.academy.nameEn}</span>
                         <span className="block text-xs text-slate-500">
@@ -74,8 +62,8 @@ export default async function ManageApplicationsPage({ searchParams }: { searchP
               })}
             </ul>
           )}
-        </section>
-      </main>
-    </ManageShell>
+        </Card>
+      </PageBody>
+    </>
   );
 }

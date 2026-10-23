@@ -1,5 +1,5 @@
 import { prisma } from "./prisma";
-import { currentLicence, licenceState } from "./academy";
+import { bangkokDay, currentLicence, licenceState, type AcademyLevel } from "./academy";
 import { verifiedCoachLicence, type StaffForCheck, type TeamForCheck } from "./academy-checks";
 
 // อคาเดมีทั้งหมด + ใบปัจจุบัน + สถานะ (ข้อมูลหลักร้อยแถว คำนวณ/กรองในโค้ดได้สบาย)
@@ -12,6 +12,14 @@ export async function loadAcademies(now = new Date()) {
 }
 
 export type AcademyRow = Awaited<ReturnType<typeof loadAcademies>>[number];
+
+// เลขที่ใบอนุญาตรูปแบบเดียวทั้งระบบ: FAT-{G|S|B}-{ปี ค.ศ. ที่อนุมัติ}-{ลำดับ 4 หลัก} เช่น FAT-G-2026-0007
+export async function nextLicenceNo(level: AcademyLevel, approvedAt: Date) {
+  const prefix = `FAT-${level[0]}-${bangkokDay(approvedAt).slice(0, 4)}-`;
+  const rows = await prisma.academyLicence.findMany({ where: { licenceNo: { startsWith: prefix } }, select: { licenceNo: true } });
+  const max = rows.reduce((m, r) => Math.max(m, Number(r.licenceNo?.slice(prefix.length)) || 0), 0);
+  return `${prefix}${String(max + 1).padStart(4, "0")}`;
+}
 
 export const matchesQuery = (a: { nameEn: string; nameTh: string | null; aliases: string | null }, q: string) =>
   !q || [a.nameEn, a.nameTh, a.aliases].some((v) => v?.toLowerCase().includes(q.toLowerCase()));

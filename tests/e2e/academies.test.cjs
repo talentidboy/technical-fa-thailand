@@ -126,14 +126,6 @@ module.exports = {
     const adminToken = await ctx.login("ADMIN");
     const ad = await ctx.page(adminToken);
     ad.on("dialog", (d) => d.accept());
-    await ad.goto(`${BASE}/academies/manage`, { waitUntil: "networkidle", timeout: 240_000 });
-    const manageText = await ad.locator("main").innerText();
-    check("แสดงข้อมูลติดต่อในหลังบ้าน", manageText.includes("คุณเอ"));
-    check(
-      "รายการควรตรวจสอบครบ",
-      manageText.includes("ยังไม่ระบุระดับ · 1") && manageText.includes("ไม่มีจังหวัด · 1") && manageText.includes("ยังไม่มีใบระดับใหม่ · 1"),
-    );
-
     const submit = async (form, button) => {
       await form.evaluate((f) => f.querySelectorAll('[role="status"], [role="alert"]').forEach((el) => el.setAttribute("data-old", "1")));
       await form.getByRole("button", { name: button, exact: true }).click();
@@ -144,9 +136,28 @@ module.exports = {
         .innerText({ timeout: 30_000 })
         .catch(() => "ไม่มีผลลัพธ์");
     };
+    const openTab = (id, tab) => ad.goto(`${BASE}/academies/manage/${id}${tab ? `?tab=${tab}` : ""}`, { waitUntil: "networkidle" });
 
-    // เพิ่มอคาเดมี + ใบอนุญาตใบแรก → ไปหน้ารายละเอียด
-    await ad.locator("summary", { hasText: "เพิ่มอคาเดมีใหม่" }).click();
+    // ภาพรวม: เมนูซ้ายครบ + งานที่ต้องทำ
+    await ad.goto(`${BASE}/academies/manage`, { waitUntil: "networkidle", timeout: 240_000 });
+    const nav = await ad.getByRole("navigation", { name: "เมนูจัดการ" }).innerText();
+    check("เมนูจัดการครบทุกหน้า", ["ภาพรวม", "อคาเดมี", "ใบอนุญาต", "ใบสมัคร", "บัญชีอคาเดมี", "บันทึกการแก้ไข"].every((x) => nav.includes(x)), nav.replace(/\n/g, " | "));
+    check("ภาพรวม: งานที่ต้องทำ + ข้อมูลที่ควรตรวจสอบ", (await ad.locator("main").innerText()).includes("ข้อมูลในทะเบียนที่ควรตรวจสอบ"));
+    await ad.goto(`${BASE}/academies/manage?state=expired`, { waitUntil: "networkidle" });
+    check("ลิงก์เดิม /academies/manage?state= → ส่งไปหน้าทะเบียน", new URL(ad.url()).pathname === "/academies/manage/academies" && ad.url().includes("state=expired"));
+
+    // ทะเบียน
+    await ad.goto(`${BASE}/academies/manage/academies`, { waitUntil: "networkidle" });
+    const manageText = await ad.locator("main").innerText();
+    check("แสดงข้อมูลติดต่อในหลังบ้าน", manageText.includes("คุณเอ"));
+    check(
+      "รายการควรตรวจสอบครบ",
+      manageText.includes("ยังไม่ระบุระดับ · 1") && manageText.includes("ไม่มีจังหวัด · 1") && manageText.includes("ยังไม่มีใบระดับใหม่ · 1"),
+    );
+
+    // เพิ่มอคาเดมี (หน้าแยก) + ใบอนุญาตใบแรก → ไปหน้ารายละเอียด · เลขที่ออกให้อัตโนมัติ
+    await ad.getByRole("link", { name: "เพิ่มอคาเดมี" }).first().click();
+    await ad.waitForURL(/\/academies\/manage\/academies\/new$/);
     const create = ad.locator("form", { has: ad.getByRole("button", { name: "เพิ่มอคาเดมี", exact: true }) });
     await create.locator('[name="nameEn"]').fill("Delta Academy");
     await create.locator('[name="nameTh"]').fill("เดลต้า อคาเดมี");
@@ -157,49 +168,66 @@ module.exports = {
     await create.getByRole("button", { name: "เพิ่มอคาเดมี", exact: true }).click();
     await ad.waitForURL(/\/academies\/manage\/\d+$/, { timeout: 60_000 });
     const deltaId = Number(new URL(ad.url()).pathname.split("/").pop());
+    const silverNo = (await sql(`select licence_no from academy_licences where academy_id=$1`, [deltaId]))[0]?.licence_no;
     check("เพิ่มอคาเดมี + ใบแรก (Silver)", (await licences("Delta Academy")).map((l) => `${l.level}:${l.status}`).join() === "SILVER:ACTIVE");
+    check("เลขที่ใบอนุญาตรูปแบบมาตรฐาน (FAT-S-ปี-0001)", /^FAT-S-\d{4}-0001$/.test(silverNo ?? ""), silverNo);
     check("บันทึกการแก้ไข: เพิ่มอคาเดมี", (await sql("select count(*)::int n from audit_logs where action='ACADEMY_CREATE'"))[0].n === 1);
+    const tabText = await ad.getByRole("navigation", { name: "แท็บ" }).innerText();
+    check("หน้ารายละเอียดแยกเป็นแท็บ", ["ภาพรวม", "ข้อมูลอคาเดมี", "ใบอนุญาต", "บุคลากรและทีม", "ใบสมัคร", "บัญชีผู้ดูแล", "ประวัติการแก้ไข"].every((x) => tabText.includes(x)), tabText.replace(/\n/g, " | "));
 
-    // เลื่อนระดับเป็น Gold (แทนที่ใบเดิม) พร้อมวันหมดอายุใกล้ถึง
-    const add = ad.locator("form", { has: ad.getByRole("button", { name: "ออกใบอนุญาต", exact: true }) });
-    await add.locator('select[name="level"]').selectOption("GOLD");
-    await add.locator('[name="approvedAt"]').fill(day(ctx.thaiMidnight(0)));
-    await add.locator('[name="expiresAt"]').fill(day(ctx.thaiMidnight(30)));
-    const addRes = await submit(add, "ออกใบอนุญาต");
+    // คำสั่งใบอนุญาต: เปลี่ยนระดับ (ระดับเดิมเลือกไม่ได้) → ใบเดิมถูกแทนที่อัตโนมัติ
+    await openTab(deltaId, "licences");
+    await ad.getByRole("button", { name: "เปลี่ยนระดับ", exact: true }).click();
+    const change = ad.locator("form", { has: ad.getByRole("button", { name: "ยืนยันเปลี่ยนระดับ" }) });
+    check("เปลี่ยนระดับ: ไม่มีระดับเดิมให้เลือก", (await change.locator('select[name="level"] option[value="SILVER"]').count()) === 0);
+    await change.locator('select[name="level"]').selectOption("GOLD");
+    await change.locator('[name="expiresAt"]').fill(day(ctx.thaiMidnight(30)));
+    const changeRes = await submit(change, "ยืนยันเปลี่ยนระดับ");
     const delta = await licences("Delta Academy");
-    check(
-      "เลื่อนระดับ: ใบเดิมเปลี่ยนเป็นเลื่อนระดับแล้ว",
-      delta.map((l) => `${l.level}:${l.status}`).join() === "SILVER:SUPERSEDED,GOLD:ACTIVE",
-      `${addRes} ${JSON.stringify(delta)}`,
-    );
-    await ad.goto(`${BASE}/academies/manage?state=expiring`, { waitUntil: "networkidle" });
-    check("ตัวกรองใกล้หมดอายุ", (await ad.locator("tbody").innerText()).includes("Delta Academy"));
+    check("เปลี่ยนระดับ: ใบเดิมเปลี่ยนเป็นเลื่อนระดับแล้ว", delta.map((l) => `${l.level}:${l.status}`).join() === "SILVER:SUPERSEDED,GOLD:ACTIVE", `${changeRes} ${JSON.stringify(delta)}`);
+    check("ใบใหม่ได้เลขที่ FAT-G + หมายเหตุที่มา", !!(await sql(`select 1 from academy_licences where academy_id=$1 and licence_no like 'FAT-G-%' and note like 'เปลี่ยนระดับจาก Silver%'`, [deltaId]))[0]);
+    await ad.goto(`${BASE}/academies/manage/licences?tab=expiring`, { waitUntil: "networkidle" });
+    check("หน้าใบอนุญาต: แท็บใกล้หมดอายุ", (await ad.locator("tbody").innerText()).includes("Delta Academy"));
 
-    // แก้ข้อมูลอคาเดมี
-    await ad.goto(`${BASE}/academies/manage/${deltaId}`, { waitUntil: "networkidle" });
+    // ต่ออายุ: ระดับคงเดิม ใบเดิมถูกแทนที่
+    await openTab(deltaId, "licences");
+    await ad.getByRole("button", { name: "ต่ออายุ", exact: true }).click();
+    const renew = ad.locator("form", { has: ad.getByRole("button", { name: "ยืนยันต่ออายุ" }) });
+    await renew.locator('[name="expiresAt"]').fill(day(ctx.thaiMidnight(400)));
+    await submit(renew, "ยืนยันต่ออายุ");
+    check("ต่ออายุ: ได้ใบ Gold ใหม่ ใบเดิมถูกแทนที่", (await licences("Delta Academy")).map((l) => `${l.level}:${l.status}`).join() === "SILVER:SUPERSEDED,GOLD:SUPERSEDED,GOLD:ACTIVE");
+
+    // แก้ข้อมูลอคาเดมี (แท็บข้อมูล)
+    await openTab(deltaId, "info");
     const info = ad.locator("form", { has: ad.getByRole("button", { name: "บันทึกข้อมูล", exact: true }) });
     await info.locator('[name="province"]').fill("พังงา");
     await submit(info, "บันทึกข้อมูล");
     const upd = await sql("select details from audit_logs where action='ACADEMY_UPDATE' order by id desc limit 1");
     check("แก้ไขจังหวัด + บันทึกค่าก่อน/หลัง", upd[0]?.details?.changes?.province?.[1] === "พังงา", JSON.stringify(upd[0]?.details));
 
-    // ระงับใบอนุญาต → หายจากหน้าสาธารณะ
-    await ad.locator("summary", { hasText: "แก้ไข / เปลี่ยนสถานะ" }).first().click();
-    const editLicence = ad.locator("details[open] form").first();
-    await editLicence.locator('select[name="status"]').selectOption("REVOKED");
-    await submit(editLicence, "บันทึกใบอนุญาต");
-    check("ระงับใบอนุญาต", (await licences("Delta Academy")).some((l) => l.level === "GOLD" && l.status === "REVOKED"));
+    // พักใช้ (ต้องมีเหตุผล) → หายจากหน้าสาธารณะ · ฟอร์มแก้ไขไม่มีช่องสถานะแล้ว
+    await openTab(deltaId, "licences");
+    check("ฟอร์มแก้ไขใบอนุญาตไม่มีช่องเปลี่ยนสถานะ", (await ad.locator('select[name="status"]').count()) === 0);
+    await ad.getByRole("button", { name: "พักใช้ / เพิกถอน" }).click();
+    const revoke = ad.locator("form", { has: ad.getByRole("button", { name: "ยืนยันพักใช้" }) });
+    await revoke.locator('[name="reason"]').fill("ไม่ผ่านการตรวจประเมินประจำปี");
+    await revoke.getByRole("button", { name: "ยืนยันพักใช้" }).click();
+    check("พักใช้ใบอนุญาต + เก็บเหตุผล", await until(async () => !!(await sql(`select 1 from academy_licences where academy_id=$1 and status='REVOKED' and note like '%ไม่ผ่านการตรวจประเมิน%'`, [deltaId]))[0]));
     const revokedPage = await pub.goto(`${BASE}/academies/${deltaId}`, { waitUntil: "networkidle" });
-    check("อคาเดมีที่ถูกระงับไม่มีหน้าสาธารณะ (404)", revokedPage.status() === 404);
+    check("อคาเดมีที่ถูกพักใช้ไม่มีหน้าสาธารณะ (404)", revokedPage.status() === 404);
 
-    // ลบใบอนุญาตเก่า (กดยืนยัน)
-    await ad.goto(`${BASE}/academies/manage/${deltaId}`, { waitUntil: "networkidle" });
+    // คืนสถานะใบที่ถูกพักใช้ → กลับมามีผล
+    await openTab(deltaId, "licences");
+    await ad.getByRole("button", { name: "คืนสถานะใบที่ถูกพักใช้" }).click();
+    check("คืนสถานะใบที่ถูกพักใช้", await until(async () => !!(await sql(`select 1 from academy_licences where academy_id=$1 and status='ACTIVE' and level='GOLD'`, [deltaId]))[0]));
+
+    // ลบใบเก่าที่บันทึกผิด (กดยืนยัน)
+    await openTab(deltaId, "licences");
     await ad.getByRole("button", { name: "ลบใบอนุญาต" }).last().click();
-    check("ลบใบอนุญาต", await until(async () => (await licences("Delta Academy")).length === 1));
-    check("ฟอร์มออกใบใหม่บังคับเลือกระดับ", (await ad.locator("form", { has: ad.getByRole("button", { name: "ออกใบอนุญาต", exact: true }) }).locator('select[name="level"]').getAttribute("required")) !== null);
+    check("ลบใบอนุญาต", await until(async () => (await licences("Delta Academy")).length === 2));
 
     // ลบใบที่มีผลใบสุดท้าย (เช่น ออกใบใหม่ผิด) → ใบเดิมที่ถูกแทนที่กลับมามีผล ไม่หลุดจากทะเบียน
-    await ad.goto(`${BASE}/academies/manage/${alphaId}`, { waitUntil: "networkidle" });
+    await openTab(alphaId, "licences");
     await ad.getByRole("button", { name: "ลบใบอนุญาต" }).first().click();
     check(
       "ลบใบ Gold ที่มีผล → คืนใบ Bronze เดิมให้มีผล",
@@ -210,12 +238,27 @@ module.exports = {
 
     // ข้อมูลค้าง: ใบถูกแทนที่หมดแต่ไม่มีใบใหม่ → แจ้งในรายการควรตรวจสอบ + ปุ่มคืนสถานะในหน้าอคาเดมี
     await sql(`update academy_licences set status='SUPERSEDED' where academy_id=$1`, [alphaId]);
-    await ad.goto(`${BASE}/academies/manage?issue=no-active`, { waitUntil: "networkidle" });
+    await ad.goto(`${BASE}/academies/manage/academies?issue=no-active`, { waitUntil: "networkidle" });
     check("รายการควรตรวจสอบ: ไม่มีใบที่มีผล", (await ad.locator("tbody").innerText()).includes("ALPHA ACADEMY"));
-    await ad.goto(`${BASE}/academies/manage/${alphaId}`, { waitUntil: "networkidle" });
+    await openTab(alphaId);
     check("หน้าอคาเดมีแจ้งว่าไม่มีใบที่มีผล", (await ad.getByRole("alert").filter({ hasText: "ไม่มีใบอนุญาตที่มีผล" }).count()) === 1);
     await ad.getByRole("button", { name: "คืนสถานะใบนี้เป็นมีผล" }).click();
     check("กดคืนสถานะ → ใบกลับมามีผล", await until(async () => (await licences("ALPHA ACADEMY"))[0]?.status === "ACTIVE"));
+
+    // ออกใบใหม่ต้องเลือกระดับ · ออกซ้อนใบที่มีผลไม่ได้ (ต้องใช้ต่ออายุ/เปลี่ยนระดับ)
+    const pendingId = (await sql("select id from academies where name_en='Pending Academy'"))[0].id;
+    await sql(`update academy_licences set status='SUPERSEDED' where academy_id=$1`, [pendingId]);
+    await openTab(pendingId, "licences");
+    await ad.getByRole("button", { name: "ออกใบอนุญาตใหม่" }).click();
+    const issue = ad.locator("form", { has: ad.getByRole("button", { name: "ออกใบอนุญาต", exact: true }) });
+    check("ฟอร์มออกใบใหม่บังคับเลือกระดับ", (await issue.locator('select[name="level"]').getAttribute("required")) !== null);
+    await issue.locator('select[name="level"]').selectOption("BRONZE");
+    const issueRes = await submit(issue, "ออกใบอนุญาต");
+    check("ออกใบอนุญาตใหม่ (Bronze)", !!(await sql(`select 1 from academy_licences where academy_id=$1 and status='ACTIVE' and level='BRONZE'`, [pendingId]))[0], issueRes);
+
+    // บันทึกการแก้ไข (หน้ารวม)
+    await ad.goto(`${BASE}/academies/manage/activity`, { waitUntil: "networkidle" });
+    check("หน้าบันทึกการแก้ไขแสดงรายการ", (await ad.locator("main").innerText()).includes("พักใช้ใบอนุญาต"));
 
     // ส่งออก Excel (เฉพาะแอดมิน)
     const xres = await fetch(`${BASE}/academies/manage/export`, { headers: { cookie: `session_token=${adminToken}` } });
@@ -224,28 +267,40 @@ module.exports = {
     const xs = xwb.getWorksheet("ทะเบียนอคาเดมี");
     check("ส่งออก Excel ครบทุกอคาเดมี + มีเบอร์ติดต่อ", xres.ok && xs?.rowCount === 8 && JSON.stringify(xs.getSheetValues()).includes("0811111111"), `${xres.status} rows=${xs?.rowCount}`);
 
-    // ปิดการแสดง → หายจากทำเนียบ · ลบอคาเดมี
+    // ปิดการแสดง → หายจากทำเนียบ · ลบอคาเดมี (แท็บข้อมูล)
     const gammaId = (await sql("select id from academies where name_en='Gamma Academy'"))[0].id;
-    await ad.goto(`${BASE}/academies/manage/${gammaId}`, { waitUntil: "networkidle" });
+    await openTab(gammaId);
     await ad.getByRole("button", { name: "ปิดการแสดงบนหน้าสาธารณะ" }).click();
     check("ปิดการแสดง", await until(async () => (await sql("select active from academies where id=$1", [gammaId]))[0].active === false));
     await pub.goto(`${BASE}/academies`, { waitUntil: "networkidle" });
     check("อคาเดมีที่ปิดการแสดงไม่อยู่ในทำเนียบ", !(await pub.locator("#directory").innerText()).includes("Gamma Academy"));
-    await ad.goto(`${BASE}/academies/manage/${deltaId}`, { waitUntil: "networkidle" });
+    await openTab(deltaId, "info");
     await ad.getByRole("button", { name: "ลบอคาเดมี" }).click();
-    await ad.waitForURL(/\/academies\/manage$/, { timeout: 30_000 });
+    await ad.waitForURL(/\/academies\/manage\/academies$/, { timeout: 30_000 });
     check("ลบอคาเดมี + เก็บสำเนาในบันทึก", (await academyCount()) === 6 && (await sql("select count(*)::int n from audit_logs where action='ACADEMY_DELETE'"))[0].n === 1);
 
-    // มือถือ: ทำเนียบไม่ล้นแนวนอน
+    // มือถือ: ทำเนียบ + หน้าจัดการไม่ล้นแนวนอน
     const mobile = await ctx.page(null, { width: 390, height: 844 });
     await mobile.goto(`${BASE}/academies`, { waitUntil: "networkidle" });
     const overflow = await mobile.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     check("มือถือ: ทำเนียบไม่ล้นแนวนอน", overflow <= 0, `${overflow}px`);
     await mobile.screenshot({ path: path.join(ctx.artifactsDir, "academies-mobile.png"), fullPage: true });
+    const madm = await ctx.page(adminToken, { width: 390, height: 844 });
+    await madm.goto(`${BASE}/academies/manage/${alphaId}?tab=licences`, { waitUntil: "networkidle" });
+    const mOverflow = await madm.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+    check("มือถือ: หน้าจัดการไม่ล้นแนวนอน", mOverflow <= 0, `${mOverflow}px`);
     await pub.goto(`${BASE}/academies`, { waitUntil: "networkidle" });
     await pub.screenshot({ path: path.join(ctx.artifactsDir, "academies-desktop.png"), fullPage: true });
-    await ad.goto(`${BASE}/academies/manage`, { waitUntil: "networkidle" });
-    await ad.screenshot({ path: path.join(ctx.artifactsDir, "academies-manage.png"), fullPage: true });
+    for (const [url, name] of [
+      ["/academies/manage", "manage-dashboard"],
+      ["/academies/manage/academies", "manage-registry"],
+      [`/academies/manage/${alphaId}`, "manage-academy"],
+      [`/academies/manage/${alphaId}?tab=licences`, "manage-licences-tab"],
+      ["/academies/manage/licences", "manage-licences"],
+    ]) {
+      await ad.goto(`${BASE}${url}`, { waitUntil: "networkidle" });
+      await ad.screenshot({ path: path.join(ctx.artifactsDir, `${name}.png`), fullPage: true });
+    }
 
     const errors = await sql("select count(*)::int n from error_logs where source='SERVER'");
     check("ไม่มี error ฝั่งเซิร์ฟเวอร์", errors[0].n === 0, JSON.stringify(await sql("select path, message from error_logs limit 3")));

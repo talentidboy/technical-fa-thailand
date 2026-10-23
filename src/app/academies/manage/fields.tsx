@@ -1,10 +1,10 @@
 import type { Academy, AcademyLicence } from "@/generated/prisma/client";
-import { ACADEMY_LEVELS, LEVEL_META, LICENCE_STATUS, bangkokDay } from "@/lib/academy";
+import { ACADEMY_LEVELS, LEVEL_META, bangkokDay } from "@/lib/academy";
+import { input } from "@/components/academy/ManageUi";
 
 // ช่องกรอกที่ใช้ร่วมกันระหว่างฟอร์มเพิ่ม/แก้ไขอคาเดมีและใบอนุญาต
 
-export const inputClass =
-  "rounded-lg border border-slate-200 px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100";
+export const inputClass = input;
 
 function Text({
   label,
@@ -62,18 +62,14 @@ export function AcademyFields({ academy, provinces }: { academy?: Academy; provi
   );
 }
 
-// requireLevel = ออกใบใหม่ (ต่ออายุ / เลื่อนระดับ) ต้องเลือกระดับ · ใบแรกตอนเพิ่มอคาเดมี / แก้ไขใบเดิม เว้นว่างได้
-export function LicenceFields({ licence, withStatus, requireLevel }: { licence?: AcademyLicence; withStatus?: boolean; requireLevel?: boolean }) {
+// ช่องข้อมูลใบอนุญาต: ใบแรกตอนเพิ่มอคาเดมี และแก้รายละเอียดที่บันทึกผิด (สถานะเปลี่ยนผ่านคำสั่งในแท็บใบอนุญาตเท่านั้น)
+export function LicenceFields({ licence }: { licence?: AcademyLicence }) {
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
       <label className="flex flex-col gap-1.5">
-        <span className="text-sm font-medium text-slate-700">
-          ระดับ{requireLevel && <span className="text-red-500"> *</span>}
-        </span>
-        <select name="level" required={requireLevel} defaultValue={licence?.level ?? ""} className={inputClass}>
-          <option value="" disabled={requireLevel}>
-            {requireLevel ? "เลือกระดับ" : "ยังไม่ระบุระดับ"}
-          </option>
+        <span className="text-sm font-medium text-slate-700">ระดับ</span>
+        <select name="level" defaultValue={licence?.level ?? ""} className={inputClass}>
+          <option value="">ยังไม่ระบุระดับ</option>
           {ACADEMY_LEVELS.map((l) => (
             <option key={l} value={l}>
               FAT {LEVEL_META[l].label} ({LEVEL_META[l].th})
@@ -84,23 +80,8 @@ export function LicenceFields({ licence, withStatus, requireLevel }: { licence?:
       <Text label="ลีกของสโมสร" name="tier" defaultValue={licence?.tier} placeholder="T1 / T2 / T3" />
       <Text label="วันที่อนุมัติ" name="approvedAt" type="date" defaultValue={licence?.approvedAt ? bangkokDay(licence.approvedAt) : undefined} />
       <Text label="วันหมดอายุ" name="expiresAt" type="date" defaultValue={licence?.expiresAt ? bangkokDay(licence.expiresAt) : undefined} />
-      <Text label="เลขที่ใบอนุญาต" name="licenceNo" defaultValue={licence?.licenceNo} />
-      {withStatus && (
-        <label className="flex flex-col gap-1.5">
-          <span className="text-sm font-medium text-slate-700">สถานะ</span>
-          <select name="status" defaultValue={licence?.status ?? "ACTIVE"} className={inputClass}>
-            {Object.entries(LICENCE_STATUS).map(([value, label]) => (
-              <option key={value} value={value}>
-                {label}
-              </option>
-            ))}
-          </select>
-        </label>
-      )}
-      <label className="flex flex-col gap-1.5 sm:col-span-2">
-        <span className="text-sm font-medium text-slate-700">หมายเหตุของใบอนุญาต</span>
-        <input name="licenceNote" defaultValue={licence?.note ?? ""} className={inputClass} />
-      </label>
+      <Text label="เลขที่ใบอนุญาต" name="licenceNo" defaultValue={licence?.licenceNo} placeholder={licence ? undefined : "เว้นว่าง = ออกเลขอัตโนมัติ"} />
+      <Text label="หมายเหตุของใบอนุญาต" name="licenceNote" defaultValue={licence?.note} />
     </div>
   );
 }

@@ -3,6 +3,7 @@ import ExcelJS from "exceljs";
 import { requireUser } from "@/lib/auth";
 import { LEVEL_META, LICENCE_STATUS, STATE_META, compareAcademies, isLevel, thaiDate, tierLabel, type AcademyState } from "@/lib/academy";
 import { loadAcademies, matchesQuery } from "@/lib/academy-data";
+import { ISSUES, type IssueKey } from "@/lib/academy-issues";
 
 const HEAD_FONT = { bold: true, color: { argb: "FF3730A3" } } as const;
 const HEAD_FILL = { type: "pattern", pattern: "solid", fgColor: { argb: "FFEEF2FF" } } as const;
@@ -18,6 +19,7 @@ export async function GET(request: NextRequest) {
   const level = sp.get("level");
   const state = sp.get("state");
   const province = sp.get("province");
+  const issue = (sp.get("issue") ?? "") in ISSUES ? (sp.get("issue") as IssueKey) : null;
   const now = new Date();
   const rows = (await loadAcademies(now))
     .filter(
@@ -25,6 +27,7 @@ export async function GET(request: NextRequest) {
         (!level || (level === "PENDING" ? a.state === "pending" : a.level === level)) &&
         (!state || (state === "inactive" ? !a.active : a.state === state)) &&
         (!province || a.province === province) &&
+        (!issue || ISSUES[issue].test(a)) &&
         matchesQuery(a, q),
     )
     .sort(compareAcademies);
