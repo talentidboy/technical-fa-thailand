@@ -1,9 +1,4 @@
-/* แผนที่อคาเดมี: สีจังหวัดตามจำนวน (โทนทองบนพื้นน้ำเงินเข้ม) + เอฟเฟกต์ตอนโหลด/ซูม */
-.map {
-  --zero: #2e2e62;
-  --edge: rgba(165, 180, 252, 0.28);
-}
-
+/* แผนที่อคาเดมี: เอฟเฟกต์ตอนโหลด / ซูม / แผ่นรายชื่อ */
 .zoom {
   transform-origin: 0 0;
   transition: transform 750ms cubic-bezier(0.2, 0.8, 0.2, 1);
@@ -18,7 +13,7 @@
   animation: reveal 700ms cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
 }
 .province:focus-visible {
-  stroke: #fff;
+  stroke: #c8202f;
   stroke-width: 2px;
 }
 .empty {
@@ -46,10 +41,6 @@
     opacity: 0;
     transform: scale(4);
   }
-}
-
-.glow {
-  filter: drop-shadow(0 0 5px rgba(255, 226, 131, 0.85));
 }
 
 /* แผ่นรายชื่อเลื่อนขึ้นจากล่าง · กล่องอันดับเด้งออกจากปุ่ม */

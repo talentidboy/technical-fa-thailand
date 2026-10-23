@@ -1,0 +1,10 @@
+/* โทนของหน้าสาธารณะ Academy Licensing: กระดาษสีนวล + น้ำเงินกรมท่า + แดงเป็นจุดเน้น (สีทอง/เงิน/ทองแดงใช้กับระดับเท่านั้น) */
+.theme {
+  --ink: #0b1f44;
+  --ink-soft: #3d4a63;
+  --paper: #f4f2ec;
+  --line: #dedad0;
+  --accent: #c8202f;
+  background: var(--paper);
+  color: #1d2638;
+}

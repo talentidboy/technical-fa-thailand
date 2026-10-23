@@ -49,7 +49,7 @@ module.exports = {
     check("แผนที่: ครบ 77 จังหวัด", (await pub.locator("svg path[data-code]").count()) === 77);
     check("แผนที่: จังหวัดที่มีอคาเดมีกดได้", (await pub.locator('svg path[role="button"]').count()) === 2);
     await pub.locator('svg path[aria-label^="เชียงใหม่"]').hover();
-    check("ชี้จังหวัด → เห็นจำนวน", await until(async () => (await pub.getByText("1 อคาเดมี").count()) > 0, 5000));
+    check("ชี้จังหวัด → ป้ายบอกจำนวน", await until(async () => /เชียงใหม่[\s\S]*1 อคาเดมี/.test(await pub.getByRole("tooltip").innerText().catch(() => "")), 5000));
     await pub.locator('svg path[aria-label^="เชียงใหม่"]').click();
     check("คลิกจังหวัด → รายชื่ออคาเดมีในจังหวัด", await until(async () => (await pub.getByRole("link", { name: /Existing Gold Academy/ }).count()) >= 2, 5000));
     check("แผนที่ซูมเข้า", await until(async () => (await pub.locator("svg g").first().getAttribute("style"))?.includes("scale(") && !(await pub.locator("svg g").first().getAttribute("style")).includes("scale(1)"), 3000));
@@ -66,7 +66,13 @@ module.exports = {
     check("กด Esc ปิดกล่องข้อมูล", (await pub.getByRole("dialog").count()) === 0);
     await pub.getByRole("button", { name: /^Bronze/ }).click();
     check("กรองระดับบนแผนที่ (Bronze → กดได้ 1 จังหวัด)", await until(async () => (await pub.locator('svg path[role="button"]').count()) === 1, 3000));
-    check("หน้าแรกมีปุ่มสมัคร / เข้าสู่ระบบอคาเดมี", (await pub.getByRole("link", { name: "สมัคร / ยื่นขอใบอนุญาต" }).count()) === 1 && (await pub.getByRole("link", { name: "เข้าสู่ระบบอคาเดมี" }).count()) === 1);
+    const top = pub.locator("header");
+    check(
+      "หัวเว็บมีปุ่มเข้าสู่ระบบ / สมัครอคาเดมี + หน้าแรกมีลิงก์ยื่นขอใบอนุญาต",
+      (await top.getByRole("link", { name: "เข้าสู่ระบบ", exact: true }).count()) === 1 &&
+        (await top.getByRole("link", { name: "สมัครอคาเดมี", exact: true }).count()) === 1 &&
+        (await pub.locator("#map").getByRole("link", { name: "ยื่นขอใบอนุญาต" }).count()) === 1,
+    );
     check("ข้อมูลติดต่อไม่หลุดไปกับข้อมูลแผนที่", !(await pub.content()).includes("0899999999") && !(await pub.content()).includes("คุณลับ"));
 
     // ===== 2) อคาเดมีใหม่สมัครเอง → เริ่มใช้งานพอร์ทัลได้ทันที =====

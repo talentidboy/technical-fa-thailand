@@ -20,6 +20,17 @@ export function LevelMedal({ level, size = "md" }: { level: string | null; size?
   );
 }
 
+// เครื่องหมายระดับแบบเรียบ (หน้าสาธารณะ): สี่เหลี่ยมสีระดับ + ชื่อระดับตัวพิมพ์ใหญ่
+export function LevelMark({ level, className = "" }: { level: string | null; className?: string }) {
+  const meta = isLevel(level) ? LEVEL_META[level] : null;
+  return (
+    <span className={`inline-flex items-center gap-1.5 text-[11px] font-bold text-slate-600 ${meta ? "uppercase tracking-[0.12em]" : ""} ${className}`}>
+      <span className="h-2.5 w-2.5 flex-none rounded-xs" style={{ background: meta?.hex ?? "#cbd5e1" }} />
+      {meta?.label ?? "รอระดับ"}
+    </span>
+  );
+}
+
 export function LevelBadge({ level, tier }: { level: string | null; tier?: string | null }) {
   if (!isLevel(level)) return <span className="inline-flex rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-500 ring-1 ring-slate-200">ยังไม่ระบุระดับ</span>;
   const meta = LEVEL_META[level];

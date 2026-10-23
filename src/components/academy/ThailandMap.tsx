@@ -4,36 +4,38 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import map from "@/lib/thailand-map.json";
 import { ACADEMY_LEVELS, LEVEL_META, levelRank, type AcademyLevel } from "@/lib/academy";
-import { LevelMedal } from "./AcademyUi";
+import { LevelMark } from "./AcademyUi";
+import { display } from "./fonts";
 import styles from "./ThailandMap.module.css";
-import { ArrowRight, ListOrdered, MapPin, MousePointerClick, X } from "lucide-react";
+import { ArrowRight, ListOrdered, X } from "lucide-react";
 
 export type MapAcademy = { id: number; nameEn: string; nameTh: string | null; province: string | null; level: string | null };
 type Filter = "ALL" | AcademyLevel;
 
 const W = map.width;
 const H = map.height;
-// ขอบรอบแผนที่ภายในกรอบ (ด้านบนเผื่อแถบเครื่องมือ)
+// ขอบรอบแผนที่ภายในกรอบ (ด้านบนเผื่อแถบเครื่องมือ · ด้านล่างเผื่อคำอธิบายสี)
 const PAD = 18;
 const TOP = 58;
-const BOTTOM = 52; // ที่ว่างใต้แผนที่สำหรับคำอธิบายสี
-// สีตามจำนวนอคาเดมีในจังหวัด (สีเดียว มืด → สว่าง)
+const BOTTOM = 52;
+// สีตามจำนวนอคาเดมีในจังหวัด: น้ำเงินสีเดียว อ่อน → เข้ม
+const ZERO = "#e6e8ee";
 const BINS = [
-  { min: 1, label: "1", color: "#854f15" },
-  { min: 2, label: "2", color: "#ae6c14" },
-  { min: 4, label: "4", color: "#d58d16" },
-  { min: 7, label: "7", color: "#f3b539" },
-  { min: 15, label: "15+", color: "#ffe283" },
+  { min: 1, label: "1", color: "#c3cee4" },
+  { min: 2, label: "2", color: "#8fa3cf" },
+  { min: 4, label: "4", color: "#5a76b5" },
+  { min: 7, label: "7", color: "#2c4a8f" },
+  { min: 15, label: "15+", color: "#0b1f44" },
 ];
 function fillFor(n: number) {
-  let color = "var(--zero)";
+  let color = ZERO;
   for (const b of BINS) if (n >= b.min) color = b.color;
   return color;
 }
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
 const LEVELS_DESC = [...ACADEMY_LEVELS].reverse();
 
-// แผนที่ประเทศไทย: จังหวัดระบายสีตามจำนวนอคาเดมี · ชี้ = ดูจำนวน · แตะ = ซูม + แผ่นรายชื่อเลื่อนขึ้นมา · อันดับจังหวัดอยู่หลังปุ่ม
+// แผนที่ประเทศไทย: จังหวัดระบายสีตามจำนวนอคาเดมี · ชี้ = ดูจำนวน · แตะ = ซูม + แผ่นรายชื่อ · อันดับจังหวัดอยู่หลังปุ่ม
 export function ThailandMap({ academies }: { academies: MapAcademy[] }) {
   const [filter, setFilter] = useState<Filter>("ALL");
   const [selected, setSelected] = useState<number | null>(null);
@@ -94,39 +96,12 @@ export function ThailandMap({ academies }: { academies: MapAcademy[] }) {
     setHover({ code, x: e.clientX - box.left, y: e.clientY - box.top, flip: e.clientX - box.left > box.width * 0.55 });
   }
 
-  const layer = map.provinces.map((p, i) => {
-    const n = countOf(p.th);
-    return (
-      <path
-        key={p.code}
-        data-code={p.code}
-        d={p.d}
-        fill={fillFor(n)}
-        stroke="var(--edge)"
-        strokeWidth={0.6}
-        vectorEffect="non-scaling-stroke"
-        className={`${styles.province} ${n ? "" : styles.empty}`}
-        style={{ animationDelay: `${Math.round((p.cy / H) * 900 + (i % 7) * 25)}ms`, opacity: selected && selected !== p.code ? 0.45 : 1 }}
-        tabIndex={n ? 0 : -1}
-        role={n ? "button" : undefined}
-        aria-label={n ? `${p.th}: ${n} อคาเดมี` : undefined}
-        onClick={() => n && select(p.code)}
-        onKeyDown={(e) => {
-          if (n && (e.key === "Enter" || e.key === " ")) {
-            e.preventDefault();
-            select(p.code);
-          }
-        }}
-      />
-    );
-  });
-
   const levelSplit = (list: MapAcademy[]) => LEVELS_DESC.map((l) => ({ l, k: list.filter((a) => a.level === l).length })).filter((x) => x.k > 0);
 
   return (
     <div
       ref={wrapRef}
-      className={`${styles.map} relative mx-auto w-full max-w-md overflow-hidden lg:max-w-[min(28rem,calc((100svh-9rem)*0.52))] rounded-[2.25rem] bg-linear-to-b from-white/8 to-white/2 shadow-[0_30px_90px_-30px_rgba(251,191,36,0.35)] ring-1 ring-white/12`}
+      className={`relative mx-auto w-full max-w-md overflow-hidden rounded-lg border border-(--line) bg-white lg:max-w-[min(28rem,calc((100svh-10rem)*0.52))]`}
       onKeyDown={(e) => {
         if (e.key !== "Escape") return;
         if (showRank) setShowRank(false);
@@ -135,14 +110,14 @@ export function ThailandMap({ academies }: { academies: MapAcademy[] }) {
     >
       {/* แถบเครื่องมือ: กรองระดับ + ปุ่มอันดับจังหวัด */}
       <div className="absolute inset-x-3 top-3 z-20 flex items-center justify-between gap-2">
-        <div role="group" aria-label="กรองตามระดับ" className="flex rounded-full bg-indigo-950/70 p-1 ring-1 ring-white/10 backdrop-blur-md">
+        <div role="group" aria-label="กรองตามระดับ" className="flex overflow-hidden rounded-md border border-(--line) bg-white text-xs font-semibold">
           {(["ALL", ...LEVELS_DESC] as Filter[]).map((f) => (
             <button
               key={f}
               type="button"
               aria-pressed={filter === f}
               onClick={() => setFilter(f)}
-              className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${filter === f ? "bg-amber-300 text-indigo-950 shadow" : "text-indigo-200 hover:text-white"}`}
+              className={`border-l border-(--line) px-3 py-1.5 transition-colors first:border-l-0 ${filter === f ? "bg-(--ink) text-white" : "text-(--ink-soft) hover:bg-(--paper)"}`}
             >
               {f === "ALL" ? "ทั้งหมด" : LEVEL_META[f].label}
             </button>
@@ -154,8 +129,8 @@ export function ThailandMap({ academies }: { academies: MapAcademy[] }) {
           aria-label="อันดับจังหวัด"
           title="อันดับจังหวัด"
           onClick={() => setShowRank((v) => !v)}
-          className={`flex h-9 w-9 flex-none items-center justify-center rounded-full ring-1 backdrop-blur-md transition-colors ${
-            showRank ? "bg-amber-300 text-indigo-950 ring-amber-300" : "bg-indigo-950/70 text-indigo-100 ring-white/10 hover:text-white"
+          className={`flex h-8 w-8 flex-none items-center justify-center rounded-md border transition-colors ${
+            showRank ? "border-(--ink) bg-(--ink) text-white" : "border-(--line) bg-white text-(--ink-soft) hover:bg-(--paper)"
           }`}
         >
           <ListOrdered className="h-4 w-4" />
@@ -175,33 +150,60 @@ export function ThailandMap({ academies }: { academies: MapAcademy[] }) {
         }}
       >
         <g className={styles.zoom} style={{ transform: `translate(${view.tx}px, ${view.ty}px) scale(${view.s})` }}>
-          {layer}
-          {hovered && hovered.code !== selected && <path d={hovered.d} fill="none" stroke="#fff" strokeWidth={1.4} vectorEffect="non-scaling-stroke" pointerEvents="none" />}
+          {map.provinces.map((p, i) => {
+            const n = countOf(p.th);
+            return (
+              <path
+                key={p.code}
+                data-code={p.code}
+                d={p.d}
+                fill={fillFor(n)}
+                stroke="#ffffff"
+                strokeWidth={0.7}
+                vectorEffect="non-scaling-stroke"
+                className={`${styles.province} ${n ? "" : styles.empty}`}
+                style={{ animationDelay: `${Math.round((p.cy / H) * 700 + (i % 7) * 20)}ms`, opacity: selected && selected !== p.code ? 0.35 : 1 }}
+                tabIndex={n ? 0 : -1}
+                role={n ? "button" : undefined}
+                aria-label={n ? `${p.th}: ${n} อคาเดมี` : undefined}
+                onClick={() => n && select(p.code)}
+                onKeyDown={(e) => {
+                  if (n && (e.key === "Enter" || e.key === " ")) {
+                    e.preventDefault();
+                    select(p.code);
+                  }
+                }}
+              />
+            );
+          })}
+          {hovered && hovered.code !== selected && <path d={hovered.d} fill="none" stroke="#0b1f44" strokeWidth={1.5} vectorEffect="non-scaling-stroke" pointerEvents="none" />}
           {sel && (
             <>
-              <path d={sel.d} fill="none" stroke="#fff7d6" strokeWidth={2} vectorEffect="non-scaling-stroke" pointerEvents="none" className={styles.glow} />
-              <circle cx={sel.cx} cy={sel.cy} r={3 / view.s} fill="#fff" pointerEvents="none" />
-              <circle key={sel.code} cx={sel.cx} cy={sel.cy} r={3 / view.s} fill="none" stroke="#fff" strokeWidth={1} vectorEffect="non-scaling-stroke" pointerEvents="none" className={styles.pulse} />
+              <path d={sel.d} fill="none" stroke="#c8202f" strokeWidth={2} vectorEffect="non-scaling-stroke" pointerEvents="none" />
+              <circle cx={sel.cx} cy={sel.cy} r={3 / view.s} fill="#c8202f" pointerEvents="none" />
+              <circle key={sel.code} cx={sel.cx} cy={sel.cy} r={3 / view.s} fill="none" stroke="#c8202f" strokeWidth={1} vectorEffect="non-scaling-stroke" pointerEvents="none" className={styles.pulse} />
             </>
           )}
         </g>
       </svg>
 
-      {/* ป้ายลอยตอนชี้จังหวัด */}
+      {/* ป้ายตอนชี้จังหวัด */}
       {hovered && hover && (
         <div
-          className="pointer-events-none absolute z-30 w-max max-w-56 rounded-xl bg-white px-3 py-2 text-slate-900 shadow-xl ring-1 ring-black/5"
+          role="tooltip"
+          className="pointer-events-none absolute z-30 w-max max-w-56 rounded-md bg-(--ink) px-3 py-2 text-white shadow-lg"
           style={{ left: hover.x, top: hover.y, transform: `translate(${hover.flip ? "calc(-100% - 14px)" : "14px"}, -50%)` }}
         >
-          <p className="text-sm font-bold">{hovered.th}</p>
-          <p className="text-xs text-slate-500">
+          <p className={`${display.className} text-sm font-semibold`}>{hovered.th}</p>
+          <p className="text-xs text-white/70">
             {countOf(hovered.th) ? `${countOf(hovered.th)} อคาเดมี` : "ยังไม่มีอคาเดมีที่ได้รับการรับรอง"}
             {filter !== "ALL" && countOf(hovered.th) > 0 && ` ระดับ ${LEVEL_META[filter].label}`}
           </p>
           {filter === "ALL" && countOf(hovered.th) > 0 && (
-            <p className="mt-1 flex gap-2 text-[11px] font-semibold">
+            <p className="mt-1 flex gap-2.5 text-[11px] text-white/80">
               {levelSplit(byProvince.get(hovered.th)!).map(({ l, k }) => (
-                <span key={l} className={LEVEL_META[l].text}>
+                <span key={l} className="inline-flex items-center gap-1">
+                  <span className="h-2 w-2 rounded-xs" style={{ background: LEVEL_META[l].hex }} />
                   {LEVEL_META[l].label} {k}
                 </span>
               ))}
@@ -210,51 +212,45 @@ export function ThailandMap({ academies }: { academies: MapAcademy[] }) {
         </div>
       )}
 
-      {/* คำแนะนำ (อ่าวไทย = ที่ว่าง) + คำอธิบายสีใต้แผนที่ */}
+      {/* คำอธิบายสีใต้แผนที่ */}
       {!sel && (
-        <>
-          <p className="pointer-events-none absolute right-4 top-[62%] z-10 hidden items-center gap-1 rounded-full bg-indigo-950/60 px-2.5 py-1 text-[11px] text-indigo-200 backdrop-blur sm:flex">
-            <MousePointerClick className="h-3.5 w-3.5 text-amber-300" />
-            แตะจังหวัดเพื่อดูรายชื่อ
-          </p>
-          <div aria-label="คำอธิบายสี: จำนวนอคาเดมีในจังหวัด" className="pointer-events-none absolute inset-x-4 bottom-3 z-10 flex items-end justify-between gap-3 text-[11px] text-indigo-200">
-            <p className="pb-0.5 font-semibold text-indigo-100">อคาเดมีต่อจังหวัด</p>
-            <div className="flex gap-0.5">
-              {[{ label: "0", color: "#2e2e62" }, ...BINS].map((b) => (
-                <span key={b.label} className="flex w-7 flex-col items-center gap-0.5">
-                  <span className="h-2 w-full rounded-sm ring-1 ring-white/10" style={{ background: b.color }} />
-                  <span className="tabular-nums">{b.label}</span>
-                </span>
-              ))}
-            </div>
+        <div aria-label="คำอธิบายสี: จำนวนอคาเดมีในจังหวัด" className="pointer-events-none absolute inset-x-4 bottom-3 z-10 flex items-end justify-between gap-3 text-[11px] text-(--ink-soft)">
+          <p className="pb-0.5 font-semibold text-(--ink)">อคาเดมีต่อจังหวัด</p>
+          <div className="flex">
+            {[{ label: "0", color: ZERO }, ...BINS].map((b) => (
+              <span key={b.label} className="flex w-7 flex-col items-center gap-0.5">
+                <span className="h-2 w-full" style={{ background: b.color }} />
+                <span className="tabular-nums">{b.label}</span>
+              </span>
+            ))}
           </div>
-        </>
+        </div>
       )}
 
       {/* อันดับจังหวัด (เปิดจากปุ่ม) */}
       {showRank && (
-        <div className={`${styles.pop} absolute right-3 top-15 z-30 flex max-h-[70%] w-72 max-w-[calc(100%-1.5rem)] flex-col rounded-3xl bg-indigo-950/90 p-4 shadow-2xl ring-1 ring-white/15 backdrop-blur-md`}>
-          <div className="flex items-center justify-between">
-            <p className="text-sm font-bold text-white">อันดับจังหวัด</p>
-            <p className="text-[11px] text-indigo-300">
+        <div className={`${styles.pop} absolute right-3 top-13 z-30 flex max-h-[70%] w-72 max-w-[calc(100%-1.5rem)] flex-col rounded-md border border-(--line) bg-white p-4 shadow-xl`}>
+          <div className="flex items-baseline justify-between gap-2 border-b border-(--line) pb-2">
+            <p className={`${display.className} font-semibold text-(--ink)`}>อันดับจังหวัด</p>
+            <p className="text-[11px] text-(--ink-soft)">
               {visible.length.toLocaleString()} อคาเดมี · {provinceCount} จังหวัด
             </p>
           </div>
-          <ol className="mt-3 -mr-2 min-h-0 flex-1 space-y-0.5 overflow-y-auto pr-2">
+          <ol className="-mr-2 mt-2 min-h-0 flex-1 overflow-y-auto pr-2">
             {ranking.map((p, i) => (
               <li key={p.code}>
-                <button type="button" onClick={() => select(p.code)} className="group flex w-full items-center gap-2.5 rounded-xl px-2 py-1.5 text-left hover:bg-white/5">
-                  <span className="w-5 text-right text-[11px] font-bold tabular-nums text-indigo-400">{i + 1}</span>
-                  <span className="w-24 flex-none truncate text-sm text-white group-hover:text-amber-200">{p.th}</span>
-                  <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-white/5">
-                    <span className="block h-full rounded-full" style={{ width: `${(p.n / ranking[0].n) * 100}%`, background: fillFor(p.n) }} />
+                <button type="button" onClick={() => select(p.code)} className="group flex w-full items-center gap-2.5 rounded px-1.5 py-1.5 text-left hover:bg-(--paper)">
+                  <span className="w-5 text-right text-[11px] font-semibold tabular-nums text-(--ink-soft)">{i + 1}</span>
+                  <span className="w-24 flex-none truncate text-sm text-(--ink)">{p.th}</span>
+                  <span className="h-1.5 flex-1 bg-(--paper)">
+                    <span className="block h-full" style={{ width: `${(p.n / ranking[0].n) * 100}%`, background: fillFor(p.n) }} />
                   </span>
-                  <span className="w-7 text-right text-sm font-bold tabular-nums text-white">{p.n}</span>
+                  <span className="w-7 text-right text-sm font-semibold tabular-nums text-(--ink)">{p.n}</span>
                 </button>
               </li>
             ))}
           </ol>
-          {unknown > 0 && <p className="mt-2 text-[11px] text-indigo-400">ไม่ระบุจังหวัดในทะเบียน {unknown} แห่ง</p>}
+          {unknown > 0 && <p className="mt-2 border-t border-(--line) pt-2 text-[11px] text-(--ink-soft)">ไม่ระบุจังหวัดในทะเบียน {unknown} แห่ง</p>}
         </div>
       )}
 
@@ -263,44 +259,42 @@ export function ThailandMap({ academies }: { academies: MapAcademy[] }) {
         <section
           key={`${sel.code}-${filter}`}
           aria-label={`อคาเดมีใน${sel.th}`}
-          className={`${styles.sheet} fixed inset-x-3 bottom-3 z-40 flex max-h-[60svh] flex-col rounded-3xl bg-indigo-950/95 p-4 shadow-2xl ring-1 ring-white/15 backdrop-blur-md lg:absolute lg:z-20 lg:max-h-[52%] lg:bg-indigo-950/90`}
+          className={`${styles.sheet} fixed inset-x-3 bottom-3 z-40 flex max-h-[60svh] flex-col rounded-lg border border-(--line) bg-white shadow-2xl lg:absolute lg:z-20 lg:max-h-[52%]`}
         >
-          <div className="flex items-start gap-3">
+          <div className="flex items-start gap-3 border-b border-(--line) px-4 py-3">
             <div className="min-w-0 flex-1">
-              <p className="flex items-center gap-1.5 text-lg font-extrabold text-white">
-                <MapPin className="h-4.5 w-4.5 flex-none text-amber-300" />
-                <span className="truncate">{sel.th}</span>
-              </p>
-              <p className="mt-0.5 flex flex-wrap items-center gap-x-2 text-xs text-indigo-300">
+              <p className={`${display.className} truncate text-xl font-semibold leading-tight text-(--ink)`}>{sel.th}</p>
+              <p className="mt-0.5 flex flex-wrap items-center gap-x-2.5 text-xs text-(--ink-soft)">
                 <span>{sel.en}</span>
                 {levelSplit(selList).map(({ l, k }) => (
-                  <span key={l} className="font-semibold text-indigo-100">
-                    · {LEVEL_META[l].label} {k}
+                  <span key={l} className="inline-flex items-center gap-1">
+                    <span className="h-2 w-2 rounded-xs" style={{ background: LEVEL_META[l].hex }} />
+                    {LEVEL_META[l].label} {k}
                   </span>
                 ))}
               </p>
             </div>
             <p className="text-right leading-none">
-              <span className="block text-3xl font-extrabold text-amber-300">{selList.length}</span>
-              <span className="text-[11px] text-indigo-300">อคาเดมี</span>
+              <span className={`${display.className} block text-3xl font-semibold text-(--ink)`}>{selList.length}</span>
+              <span className="text-[11px] text-(--ink-soft)">อคาเดมี</span>
             </p>
-            <button type="button" onClick={() => select(null)} aria-label="ปิด กลับไปดูทั้งประเทศ" className="-mr-1 -mt-1 rounded-full p-1.5 text-indigo-300 hover:bg-white/10 hover:text-white">
-              <X className="h-4.5 w-4.5" />
+            <button type="button" onClick={() => select(null)} aria-label="ปิด กลับไปดูทั้งประเทศ" className="-mr-1 rounded p-1 text-(--ink-soft) hover:bg-(--paper) hover:text-(--ink)">
+              <X className="h-5 w-5" />
             </button>
           </div>
           {selList.length === 0 ? (
-            <p className="mt-3 text-sm text-indigo-200">ไม่มีอคาเดมี{filter !== "ALL" && `ระดับ ${LEVEL_META[filter].label}`}ในจังหวัดนี้</p>
+            <p className="px-4 py-4 text-sm text-(--ink-soft)">ไม่มีอคาเดมี{filter !== "ALL" && `ระดับ ${LEVEL_META[filter].label}`}ในจังหวัดนี้</p>
           ) : (
-            <ul className="mt-3 -mr-2 min-h-0 flex-1 space-y-1 overflow-y-auto pr-2">
+            <ul className="min-h-0 flex-1 divide-y divide-(--line) overflow-y-auto">
               {selList.map((a) => (
                 <li key={a.id}>
-                  <Link href={`/academies/${a.id}`} className="group flex items-center gap-3 rounded-2xl p-1.5 pr-2 transition-colors hover:bg-white/8">
-                    <LevelMedal level={a.level} size="sm" />
+                  <Link href={`/academies/${a.id}`} className="group flex items-center gap-3 px-4 py-2.5 hover:bg-(--paper)">
                     <span className="min-w-0 flex-1">
-                      <span className="block truncate text-sm font-semibold text-white">{a.nameEn}</span>
-                      {a.nameTh && <span className="block truncate text-xs text-indigo-300">{a.nameTh}</span>}
+                      <span className="block truncate text-sm font-semibold text-(--ink)">{a.nameEn}</span>
+                      {a.nameTh && <span className="block truncate text-xs text-(--ink-soft)">{a.nameTh}</span>}
                     </span>
-                    <ArrowRight className="h-4 w-4 flex-none text-indigo-400 transition-transform group-hover:translate-x-0.5 group-hover:text-amber-300" />
+                    <LevelMark level={a.level} />
+                    <ArrowRight className="h-4 w-4 flex-none text-slate-300 group-hover:text-(--ink)" />
                   </Link>
                 </li>
               ))}
@@ -308,7 +302,7 @@ export function ThailandMap({ academies }: { academies: MapAcademy[] }) {
           )}
           <Link
             href={`/academies?province=${encodeURIComponent(sel.th)}${filter !== "ALL" ? `&level=${filter}` : ""}#directory`}
-            className="mt-3 inline-flex items-center gap-1 self-start text-sm font-semibold text-amber-300 hover:text-amber-200"
+            className="flex items-center justify-between border-t border-(--line) px-4 py-2.5 text-sm font-semibold text-(--ink) hover:bg-(--paper)"
           >
             ดูในทำเนียบ
             <ArrowRight className="h-4 w-4" />

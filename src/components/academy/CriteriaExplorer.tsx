@@ -36,7 +36,7 @@ export function CriteriaExplorer({ initialLevel = "BRONZE" }: { initialLevel?: A
   return (
     <div>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div role="tablist" aria-label="ระดับ" className="grid grid-cols-3 gap-1 rounded-2xl bg-slate-100 p-1">
+        <div role="tablist" aria-label="ระดับ" className="grid grid-cols-3 overflow-hidden rounded-md border border-slate-200">
           {ACADEMY_LEVELS.map((l) => (
             <button
               key={l}
@@ -44,14 +44,15 @@ export function CriteriaExplorer({ initialLevel = "BRONZE" }: { initialLevel?: A
               role="tab"
               aria-selected={level === l}
               onClick={() => setLevel(l)}
-              className={`rounded-xl px-3 py-2 text-sm font-bold transition-all ${level === l ? "bg-white shadow-sm" : "text-slate-500 hover:text-slate-800"}`}
+              className={`border-l border-slate-200 px-3 py-2 text-sm font-semibold transition-colors first:border-l-0 ${level === l ? "bg-[#0b1f44] text-white" : "text-slate-600 hover:bg-slate-50"}`}
             >
-              <span className={level === l ? LEVEL_META[l].text : ""}>{LEVEL_META[l].label}</span>
-              <span className="ml-1 text-xs font-medium text-slate-400">{COUNTS[l]} ข้อ</span>
+              <span className="mr-1.5 inline-block h-2 w-2 rounded-xs align-middle" style={{ background: LEVEL_META[l].hex }} />
+              {LEVEL_META[l].label}
+              <span className={`ml-1 text-xs font-medium ${level === l ? "text-white/60" : "text-slate-400"}`}>{COUNTS[l]} ข้อ</span>
             </button>
           ))}
         </div>
-        <div className="flex gap-1 self-start rounded-xl bg-slate-100 p-1 sm:self-auto">
+        <div className="flex self-start overflow-hidden rounded-md border border-slate-200 sm:self-auto">
           {(
             [
               ["list", ListChecks, "รายการ"],
@@ -63,7 +64,7 @@ export function CriteriaExplorer({ initialLevel = "BRONZE" }: { initialLevel?: A
               type="button"
               aria-pressed={view === key}
               onClick={() => setView(key)}
-              className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold ${view === key ? "bg-white text-indigo-700 shadow-sm" : "text-slate-500"}`}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold ${view === key ? "bg-slate-100 text-slate-900" : "text-slate-500 hover:bg-slate-50"}`}
             >
               <Icon className="h-3.5 w-3.5" />
               {label}
@@ -76,7 +77,7 @@ export function CriteriaExplorer({ initialLevel = "BRONZE" }: { initialLevel?: A
         <div className="mt-5">
           <dl className={`grid grid-cols-2 gap-2 ${keyReqs.length === 4 ? "sm:grid-cols-4" : "sm:grid-cols-3"}`}>
             {keyReqs.map(([k, v]) => (
-              <div key={k} className="rounded-2xl bg-slate-50 px-3.5 py-2.5">
+              <div key={k} className="border-l-2 border-slate-200 px-3 py-1">
                 <dt className="text-[11px] text-slate-500">{k}</dt>
                 <dd className="text-sm font-semibold text-slate-800">{v}</dd>
               </div>
@@ -91,7 +92,7 @@ export function CriteriaExplorer({ initialLevel = "BRONZE" }: { initialLevel?: A
                 aria-selected={cat.no === c.no}
                 onClick={() => setCatNo(c.no)}
                 className={`-mb-px flex-none border-b-2 px-3 py-2.5 text-sm font-semibold transition-colors ${
-                  cat.no === c.no ? "border-indigo-600 text-indigo-700" : "border-transparent text-slate-500 hover:text-slate-800"
+                  cat.no === c.no ? "border-[#c8202f] text-slate-900" : "border-transparent text-slate-500 hover:text-slate-800"
                 }`}
               >
                 {c.no}. {c.th}
@@ -145,14 +146,14 @@ export function CriteriaExplorer({ initialLevel = "BRONZE" }: { initialLevel?: A
           </section>
         </div>
       ) : (
-        <div className="mt-6 overflow-x-auto rounded-3xl bg-white shadow-sm ring-1 ring-slate-200">
+        <div className="mt-6 overflow-x-auto rounded-md border border-slate-200 bg-white">
           <table className="w-full min-w-[52rem] text-left text-sm">
             <thead>
-              <tr className="bg-indigo-950 text-white">
+              <tr className="bg-[#0b1f44] text-white">
                 <th className="w-40 px-4 py-3 text-xs font-semibold">หัวข้อ</th>
                 {ACADEMY_LEVELS.map((l) => (
                   <th key={l} className="px-4 py-3 text-xs font-semibold">
-                    ระดับ{LEVEL_META[l].th} <span className="font-normal text-indigo-300">· {LEVEL_META[l].label}</span>
+                    ระดับ{LEVEL_META[l].th} <span className="font-normal text-white/60">· {LEVEL_META[l].label}</span>
                   </th>
                 ))}
               </tr>
@@ -160,7 +161,7 @@ export function CriteriaExplorer({ initialLevel = "BRONZE" }: { initialLevel?: A
             {ACADEMY_CRITERIA.map((cat) => (
               <tbody key={cat.no}>
                 <tr>
-                  <th colSpan={4} className="bg-amber-100 px-4 py-2 text-xs font-bold text-amber-900">
+                  <th colSpan={4} className="bg-slate-100 px-4 py-2 text-xs font-bold text-slate-800">
                     {cat.no}. {cat.th} · {cat.en}
                   </th>
                 </tr>

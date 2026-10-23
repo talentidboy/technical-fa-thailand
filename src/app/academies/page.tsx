@@ -1,33 +1,17 @@
 import Link from "next/link";
-import Image from "next/image";
 import type { Metadata } from "next";
 import { getAcademyUser, getCurrentUser } from "@/lib/auth";
-import { LOGO_URL } from "@/lib/brand";
 import { ACADEMY_LEVELS, LEVEL_META, compareAcademies, isLevel, showPublicly } from "@/lib/academy";
 import { loadAcademies, matchesQuery } from "@/lib/academy-data";
 import { LEVEL_SUMMARY, criteriaCount } from "@/lib/academy-criteria";
-import { LevelMedal, StateChip } from "@/components/academy/AcademyUi";
+import { LevelMark, StateChip } from "@/components/academy/AcademyUi";
 import { CriteriaExplorer } from "@/components/academy/CriteriaExplorer";
 import { ThailandMap } from "@/components/academy/ThailandMap";
 import { InfoDialog } from "@/components/academy/InfoDialog";
-import {
-  ArrowLeft,
-  ArrowRight,
-  Award,
-  ChevronLeft,
-  ChevronRight,
-  ClipboardPen,
-  Info,
-  LayoutDashboard,
-  ListChecks,
-  LogIn,
-  MapPin,
-  Search,
-  Settings,
-  ShieldCheck,
-  Star,
-  X,
-} from "lucide-react";
+import { PublicFooter, PublicHeader } from "@/components/academy/PublicChrome";
+import { display } from "@/components/academy/fonts";
+import theme from "@/components/academy/public.module.css";
+import { ArrowRight, ChevronLeft, ChevronRight, Search } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Academy Licensing — ทำเนียบอคาเดมีที่ได้รับการรับรอง | FA Thailand",
@@ -35,6 +19,11 @@ export const metadata: Metadata = {
 };
 
 const PAGE = 12;
+const LEVELS_DESC = [...ACADEMY_LEVELS].reverse();
+const h = display.className;
+const eyebrow = "text-[11px] font-bold uppercase tracking-[0.2em] text-(--accent)";
+const btnPrimary = "inline-flex items-center justify-center gap-2 rounded-md bg-(--ink) px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-(--ink)/90";
+const textLink = "font-semibold text-(--ink) underline decoration-(--line) decoration-2 underline-offset-4 transition-colors hover:decoration-(--accent)";
 
 // หน้าสาธารณะ: ทำเนียบอคาเดมีที่ได้รับการรับรอง — ไม่แสดงชื่อผู้ประสานงาน เบอร์ และอีเมล (ข้อมูลส่วนบุคคล)
 export default async function AcademiesPage({
@@ -43,14 +32,14 @@ export default async function AcademiesPage({
   searchParams: Promise<{ q?: string; level?: string; province?: string; page?: string; criteria?: string }>;
 }) {
   const sp = await searchParams;
-  const criteriaLevel = isLevel(sp.criteria) ? sp.criteria : "BRONZE";
   const [user, academyUser, rows] = await Promise.all([getCurrentUser(), getAcademyUser(), loadAcademies()]);
-  const canManage = user?.role === "ADMIN" || user?.role === "STAFF";
+  const viewer = user?.role === "ADMIN" || user?.role === "STAFF" ? "admin" : academyUser ? "academy" : user ? "staff-other" : "guest";
 
   const all = rows.filter((a) => showPublicly(a.active, a.state));
   const q = (sp.q ?? "").trim();
   const level = isLevel(sp.level) ? sp.level : null;
   const province = sp.province?.trim() || null;
+  const filtered = !!(q || level || province);
   const list = all
     .filter((a) => (!level || a.level === level) && (!province || a.province === province) && matchesQuery(a, q))
     .sort(compareAcademies);
@@ -64,175 +53,81 @@ export default async function AcademiesPage({
   );
   const href = (patch: Record<string, string | null>) => {
     const p = new URLSearchParams();
-    const merged = { q: q || null, level, province, ...patch };
-    for (const [k, v] of Object.entries(merged)) if (v) p.set(k, v);
+    for (const [k, v] of Object.entries({ q: q || null, level, province, ...patch })) if (v) p.set(k, v);
     const s = p.toString();
     return `/academies${s ? `?${s}` : ""}#directory`;
   };
+  const applyHref = academyUser ? "/academies/portal" : "/academies/register";
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <header className="sticky top-0 z-30 border-b border-white/10 bg-indigo-950/90 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
-          <Link href="/academies" className="flex items-center gap-2.5">
-            <Image src={LOGO_URL} alt="FA Thailand" width={36} height={36} className="h-9 w-9 rounded-lg object-cover" />
-            <div>
-              <p className="text-sm font-bold text-white">Academy Licensing</p>
-              <p className="text-[11px] text-indigo-300">สมาคมกีฬาฟุตบอลแห่งประเทศไทยฯ</p>
-            </div>
-          </Link>
-          <div className="flex items-center gap-2">
-            {canManage ? (
-              <Link
-                href="/academies/manage"
-                className="inline-flex items-center gap-1.5 rounded-lg bg-amber-400 px-3 py-2 text-sm font-semibold text-indigo-950 transition-colors hover:bg-amber-300"
-              >
-                <Settings className="h-4 w-4" />
-                <span className="hidden sm:inline">จัดการข้อมูล</span>
-              </Link>
-            ) : academyUser ? (
-              <Link
-                href="/academies/portal"
-                className="inline-flex items-center gap-1.5 rounded-lg bg-amber-400 px-3 py-2 text-sm font-semibold text-indigo-950 transition-colors hover:bg-amber-300"
-              >
-                <LayoutDashboard className="h-4 w-4" />
-                <span className="hidden sm:inline">พอร์ทัลอคาเดมี</span>
-              </Link>
-            ) : (
-              !user && (
-                <Link
-                  href="/academies/login"
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-white px-3 py-2 text-sm font-semibold text-indigo-950 transition-colors hover:bg-indigo-50"
-                >
-                  <LogIn className="h-4 w-4" />
-                  <span className="hidden sm:inline">เข้าสู่ระบบอคาเดมี</span>
-                </Link>
-              )
-            )}
-            <Link
-              href="/"
-              className="inline-flex items-center gap-1.5 rounded-lg border border-white/15 px-3 py-2 text-sm font-medium text-indigo-200 transition-colors hover:bg-white/10 hover:text-white"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              <span className="hidden sm:inline">หน้าแรก</span>
-            </Link>
-          </div>
-        </div>
-      </header>
+    <div className={`${theme.theme} min-h-screen`}>
+      <PublicHeader viewer={viewer} />
 
-      {/* Hero: แผนที่อคาเดมีทั่วประเทศ */}
-      <section className="relative isolate overflow-hidden bg-indigo-950 text-white">
-        <div className="absolute -left-24 -top-24 -z-10 h-112 w-md rounded-full bg-indigo-500/25 blur-3xl" />
-        <div className="absolute -right-24 top-1/3 -z-10 h-120 w-120 rounded-full bg-amber-400/15 blur-3xl" />
-        <div
-          className="absolute inset-0 -z-10 opacity-[0.05]"
-          style={{ backgroundImage: "linear-gradient(white 1px, transparent 1px), linear-gradient(90deg, white 1px, transparent 1px)", backgroundSize: "36px 36px" }}
-        />
-        <div className="absolute inset-x-0 top-0 h-1 bg-linear-to-r from-amber-600 via-amber-300 to-amber-600" />
-        <div className="mx-auto grid max-w-6xl items-center gap-10 px-4 py-12 sm:px-6 lg:min-h-[calc(100svh-4.25rem)] lg:grid-cols-[minmax(0,1fr)_minmax(0,28rem)] lg:gap-14 lg:py-8">
+      {/* ===== แผนที่ ===== */}
+      <section id="map" className="scroll-mt-16 border-b border-(--line)">
+        <div className="mx-auto grid max-w-6xl items-center gap-10 px-4 py-10 sm:px-6 lg:min-h-[calc(100svh-6rem)] lg:grid-cols-[minmax(0,1fr)_minmax(0,28rem)] lg:gap-16 lg:py-8">
           <div>
-            <p className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-amber-300 ring-1 ring-white/15">
-              <ShieldCheck className="h-3.5 w-3.5" />
-              ใบอนุญาตรับรองมาตรฐานอคาเดมี · FAT
-            </p>
-            <h1 className="mt-5 text-5xl font-extrabold leading-[1.05] tracking-tight sm:text-6xl lg:text-7xl">
-              Academy
-              <span className="block bg-linear-to-r from-amber-200 via-amber-400 to-amber-200 bg-clip-text pb-1 text-transparent">Licensing</span>
+            <p className={eyebrow}>FAT Academy Licensing</p>
+            <h1 className={`${h} mt-4 text-[2.6rem] font-semibold leading-[1.08] tracking-tight text-(--ink) sm:text-6xl`}>
+              อคาเดมีฟุตบอลเยาวชน
+              <br />
+              ที่ผ่านการรับรอง
             </h1>
-            <p className="mt-5 max-w-md text-base leading-relaxed text-indigo-200 sm:text-lg">อคาเดมีฟุตบอลเยาวชนที่ได้รับการรับรองมาตรฐานจากสมาคมฯ ทั่วประเทศ บนแผนที่เดียว</p>
-
-            <dl className="mt-8 flex gap-10">
-              {[
-                [all.length.toLocaleString(), "อคาเดมีที่ได้รับการรับรอง"],
-                [String(provinces.length), "จังหวัด"],
-              ].map(([n, label]) => (
-                <div key={label} className="flex flex-col-reverse">
-                  <dt className="text-xs text-indigo-300">{label}</dt>
-                  <dd className="text-4xl font-extrabold tabular-nums">{n}</dd>
-                </div>
-              ))}
-            </dl>
-            <div className="mt-5 grid max-w-md grid-cols-3 gap-2">
-              {[...ACADEMY_LEVELS].reverse().map((l) => (
-                <Link key={l} href={href({ level: l, page: null })} className="flex items-center gap-2 rounded-2xl bg-white/5 p-1.5 pr-2 ring-1 ring-white/10 transition-colors hover:bg-white/10">
-                  <LevelMedal level={l} size="sm" />
-                  <span className="min-w-0 leading-tight">
-                    <span className="block text-base font-extrabold tabular-nums">{count(l)}</span>
-                    <span className="block text-[11px] font-semibold text-indigo-300">{LEVEL_META[l].label}</span>
-                  </span>
-                </Link>
-              ))}
-            </div>
-
-            <div className="mt-8 flex flex-wrap gap-3">
-              <a
-                href="#directory"
-                className="inline-flex items-center gap-2 rounded-full bg-amber-400 px-6 py-3 text-sm font-bold text-indigo-950 shadow-lg shadow-amber-500/25 transition-transform hover:scale-105"
-              >
+            <p className="mt-5 max-w-lg text-base leading-relaxed text-(--ink-soft)">
+              ทำเนียบศูนย์ฝึกเยาวชนที่ได้รับใบอนุญาตจากสมาคมฯ ตามเกณฑ์ FIFA และ AFC ค้นหาตามจังหวัด หรือดูตามระดับ Gold · Silver · Bronze
+            </p>
+            <div className="mt-7 flex flex-wrap items-center gap-x-6 gap-y-3">
+              <a href="#directory" className={btnPrimary}>
                 <Search className="h-4 w-4" />
                 ค้นหาอคาเดมี
               </a>
-              <Link
-                href={academyUser ? "/academies/portal" : "/academies/register"}
-                className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-bold text-indigo-950 transition-transform hover:scale-105"
-              >
-                <ClipboardPen className="h-4 w-4" />
-                {academyUser ? "พอร์ทัลอคาเดมีของฉัน" : "สมัคร / ยื่นขอใบอนุญาต"}
+              <Link href={applyHref} className={`${textLink} inline-flex items-center gap-1.5 text-sm`}>
+                {academyUser ? "พอร์ทัลอคาเดมีของฉัน" : "ยื่นขอใบอนุญาต"}
+                <ArrowRight className="h-4 w-4" />
               </Link>
             </div>
-            <div className="mt-5 flex flex-wrap gap-x-6 gap-y-2 text-sm font-semibold text-indigo-200">
-              <InfoDialog
-                title="Academy Licensing คืออะไร"
-                className="inline-flex items-center gap-1.5 transition-colors hover:text-white"
-                label={
-                  <>
-                    <Info className="h-4 w-4" />
-                    เกี่ยวกับโครงการ
-                  </>
-                }
-              >
+
+            {/* ตัวเลขสรุปแบบป้ายคะแนน */}
+            <dl className="mt-10 grid grid-cols-2 border-y border-(--line) sm:grid-cols-5">
+              {[
+                { key: "all", label: "อคาเดมี", n: all.length, mark: null },
+                { key: "prov", label: "จังหวัด", n: provinces.length, mark: null },
+                ...LEVELS_DESC.map((l) => ({ key: l, label: LEVEL_META[l].label, n: count(l), mark: LEVEL_META[l].hex })),
+              ].map((s, i) => (
+                <div key={s.key} className={`flex flex-col-reverse border-(--line) py-3.5 pr-3 ${i % 2 ? "border-l pl-4" : ""} ${i > 1 ? "border-t sm:border-t-0" : ""} ${i ? "sm:border-l sm:pl-4" : ""}`}>
+                  <dt className="flex items-center gap-1.5 text-xs text-(--ink-soft)">
+                    {s.mark && <span className="h-2 w-2 rounded-xs" style={{ background: s.mark }} />}
+                    {s.label}
+                  </dt>
+                  <dd className={`${h} text-3xl font-semibold tabular-nums text-(--ink)`}>{s.n.toLocaleString()}</dd>
+                </div>
+              ))}
+            </dl>
+
+            <div className="mt-6 flex flex-wrap gap-x-6 gap-y-2 text-sm">
+              <InfoDialog title="Academy Licensing คืออะไร" className={textLink} label="เกี่ยวกับโครงการ">
                 <p className="text-sm leading-relaxed">
                   ระบบการออกใบอนุญาตรับรองมาตรฐานศูนย์ฝึกเยาวชนหรืออคาเดมีฟุตบอล (Youth Football Academy) ที่จัดทำโดยสมาคมกีฬาฟุตบอลแห่งประเทศไทย ในพระบรมราชูปถัมภ์ (FAT)
                   ภายใต้โครงการความร่วมมือกับ FIFA (Grow Together) และอิงเกณฑ์มาตรฐานของสมาพันธ์ฟุตบอลแห่งเอเชีย (AFC)
                 </p>
-                <ul className="mt-5 space-y-2.5">
+                <ul className="mt-5 divide-y divide-slate-200 border-y border-slate-200">
                   {ACADEMY_LEVELS.map((l) => (
-                    <li key={l} className="flex items-center gap-3 rounded-2xl bg-slate-50 p-2.5">
-                      <LevelMedal level={l} size="sm" />
-                      <span className="min-w-0">
-                        <span className={`block text-sm font-bold ${LEVEL_META[l].text}`}>{LEVEL_SUMMARY[l].title}</span>
-                        <span className="block text-xs text-slate-500">{LEVEL_SUMMARY[l].th}</span>
+                    <li key={l} className="flex items-center gap-3 py-3">
+                      <span className="h-8 w-1.5 flex-none" style={{ background: LEVEL_META[l].hex }} />
+                      <span>
+                        <span className={`${h} block font-semibold text-slate-900`}>{LEVEL_SUMMARY[l].title}</span>
+                        <span className="block text-xs text-slate-500">{LEVEL_SUMMARY[l].audience.th}</span>
                       </span>
                     </li>
                   ))}
                 </ul>
-                <p className="mt-4 flex gap-2 rounded-2xl bg-indigo-50 p-3 text-xs leading-relaxed text-indigo-900">
-                  <Star className="mt-0.5 h-4 w-4 flex-none fill-amber-400 text-amber-400" />
-                  อคาเดมีระดับ Gold ยื่นขอรับรองระดับเอเชีย AFC Elite Youth Scheme (1–3 ดาว) ผ่านสมาคมฯ ได้
-                </p>
-                <Link
-                  href={academyUser ? "/academies/portal" : "/academies/register"}
-                  className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full bg-indigo-700 px-5 py-3 text-sm font-bold text-white hover:bg-indigo-800"
-                >
+                <p className="mt-4 text-xs leading-relaxed text-slate-500">อคาเดมีระดับ Gold ยื่นขอรับรองระดับเอเชีย AFC Elite Youth Scheme (1–3 ดาว) ผ่านสมาคมฯ ได้</p>
+                <Link href={applyHref} className={`${btnPrimary} mt-5 w-full bg-[#0b1f44]`}>
                   {academyUser ? "ไปที่พอร์ทัลอคาเดมี" : "สมัครและยื่นขอใบอนุญาตออนไลน์"}
                   <ArrowRight className="h-4 w-4" />
                 </Link>
               </InfoDialog>
-              <a href="#levels" className="inline-flex items-center gap-1.5 transition-colors hover:text-white">
-                <Award className="h-4 w-4" />
-                มาตรฐาน 3 ระดับ
-              </a>
-              <InfoDialog
-                wide
-                title="เกณฑ์มาตรฐานอคาเดมี"
-                className="inline-flex items-center gap-1.5 transition-colors hover:text-white"
-                label={
-                  <>
-                    <ListChecks className="h-4 w-4" />
-                    เกณฑ์มาตรฐาน
-                  </>
-                }
-              >
+              <InfoDialog wide title="เกณฑ์มาตรฐานอคาเดมี" className={textLink} label="เกณฑ์มาตรฐาน">
                 <CriteriaExplorer />
               </InfoDialog>
             </div>
@@ -241,31 +136,40 @@ export default async function AcademiesPage({
         </div>
       </section>
 
-      {/* ทำเนียบ */}
-      <section id="directory" className="mx-auto max-w-6xl scroll-mt-20 px-4 py-14 sm:px-6">
-        <div className="flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <h2 className="text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl">ทำเนียบอคาเดมี</h2>
-            <p className="mt-1 text-sm text-slate-500">
-              {q || level || province ? `พบ ${list.length.toLocaleString()} จาก ${all.length.toLocaleString()} อคาเดมี` : `${all.length.toLocaleString()} อคาเดมีที่ได้รับการรับรอง`}
+      {/* ===== ทำเนียบ ===== */}
+      <section id="directory" className="scroll-mt-16 bg-white">
+        <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
+          <div className="flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <p className={eyebrow}>Directory</p>
+              <h2 className={`${h} mt-2 text-3xl font-semibold tracking-tight text-(--ink) sm:text-4xl`}>อคาเดมีที่ได้รับการรับรอง</h2>
+            </div>
+            <p className="text-sm text-(--ink-soft)">
+              {filtered ? (
+                <>
+                  พบ <span className="font-semibold text-(--ink)">{list.length.toLocaleString()}</span> จาก {all.length.toLocaleString()} ·{" "}
+                  <Link href="/academies#directory" className={textLink}>
+                    ล้างตัวกรอง
+                  </Link>
+                </>
+              ) : (
+                `ทั้งหมด ${all.length.toLocaleString()} อคาเดมี`
+              )}
             </p>
           </div>
-          {(q || level || province) && (
-            <Link href="/academies#directory" className="inline-flex items-center gap-1 text-sm font-semibold text-indigo-600 hover:text-indigo-800">
-              <X className="h-4 w-4" />
-              ล้างตัวกรอง
-            </Link>
-          )}
-        </div>
 
-        <form action="/academies#directory" className="mt-5 flex flex-col gap-2 rounded-2xl bg-white p-2 shadow-sm ring-1 ring-slate-200 sm:flex-row sm:items-center">
-          <label className="relative flex-1">
-            <span className="sr-only">ค้นหาชื่ออคาเดมี</span>
-            <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-            <input name="q" defaultValue={q} placeholder="ค้นหาชื่ออคาเดมี (ไทย / อังกฤษ)" className="w-full rounded-xl py-2.5 pl-10 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-100" />
-          </label>
-          <div className="grid grid-cols-2 gap-2 sm:flex">
-            <select name="province" defaultValue={province ?? ""} aria-label="จังหวัด" className="rounded-xl bg-slate-50 px-3 py-2.5 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-100">
+          <form action="/academies#directory" className="mt-6 grid gap-2 sm:grid-cols-[minmax(0,1fr)_12rem_10rem_auto]">
+            <label className="relative">
+              <span className="sr-only">ค้นหาชื่ออคาเดมี</span>
+              <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <input
+                name="q"
+                defaultValue={q}
+                placeholder="ค้นหาชื่ออคาเดมี (ไทย / อังกฤษ)"
+                className="h-11 w-full rounded-md border border-(--line) bg-white pl-10 pr-3 text-sm text-(--ink) placeholder:text-slate-400 focus:border-(--ink) focus:outline-none"
+              />
+            </label>
+            <select name="province" defaultValue={province ?? ""} aria-label="จังหวัด" className="h-11 rounded-md border border-(--line) bg-white px-3 text-sm text-(--ink) focus:border-(--ink) focus:outline-none">
               <option value="">ทุกจังหวัด</option>
               {provinces.map(([p, n]) => (
                 <option key={p} value={p}>
@@ -273,99 +177,123 @@ export default async function AcademiesPage({
                 </option>
               ))}
             </select>
-            <select name="level" defaultValue={level ?? ""} aria-label="ระดับ" className="rounded-xl bg-slate-50 px-3 py-2.5 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-100">
+            <select name="level" defaultValue={level ?? ""} aria-label="ระดับ" className="h-11 rounded-md border border-(--line) bg-white px-3 text-sm text-(--ink) focus:border-(--ink) focus:outline-none">
               <option value="">ทุกระดับ</option>
-              {[...ACADEMY_LEVELS].reverse().map((l) => (
+              {LEVELS_DESC.map((l) => (
                 <option key={l} value={l}>
                   {LEVEL_META[l].label} ({count(l)})
                 </option>
               ))}
             </select>
-          </div>
-          <button type="submit" className="rounded-xl bg-indigo-700 px-6 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-indigo-800">
-            ค้นหา
-          </button>
-        </form>
+            <button type="submit" className={`${btnPrimary} h-11 py-0`}>
+              ค้นหา
+            </button>
+          </form>
 
-        {shown.length === 0 ? (
-          <p className="mt-6 rounded-3xl border border-dashed border-slate-300 bg-white px-6 py-16 text-center text-sm text-slate-400">ไม่พบอคาเดมีตามเงื่อนไขที่ค้นหา</p>
-        ) : (
-          <ul className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {shown.map((a) => (
-              <li key={a.id}>
-                <Link
-                  href={`/academies/${a.id}`}
-                  className="group flex h-full items-center gap-3.5 rounded-2xl bg-white p-3.5 ring-1 ring-slate-200 transition-all hover:-translate-y-0.5 hover:shadow-md hover:ring-indigo-200"
-                >
-                  <LevelMedal level={a.level} size="sm" />
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-bold text-slate-900 group-hover:text-indigo-700">{a.nameEn}</p>
-                    <p className="flex min-w-0 items-center gap-1 text-xs text-slate-500">
-                      {a.province && (
-                        <>
-                          <MapPin className="h-3 w-3 flex-none" />
-                          <span className="truncate">{a.province}</span>
-                        </>
-                      )}
-                    </p>
-                  </div>
-                  {a.state !== "active" ? <StateChip state={a.state} /> : <ChevronRight className="h-4 w-4 flex-none text-slate-300 transition-transform group-hover:translate-x-0.5 group-hover:text-indigo-500" />}
+          {shown.length === 0 ? (
+            <p className="mt-8 border-y border-(--line) py-16 text-center text-sm text-(--ink-soft)">ไม่พบอคาเดมีตามเงื่อนไขที่ค้นหา</p>
+          ) : (
+            <div className="mt-8 border-t-2 border-(--ink)">
+              <div className="hidden grid-cols-[7rem_minmax(0,1fr)_11rem_1.25rem] gap-4 border-b border-(--line) py-2.5 text-xs font-semibold text-(--ink-soft) md:grid">
+                <span>ระดับ</span>
+                <span>อคาเดมี</span>
+                <span>จังหวัด</span>
+                <span />
+              </div>
+              <ul className="divide-y divide-(--line) border-b border-(--line)">
+                {shown.map((a) => (
+                  <li key={a.id}>
+                    <Link
+                      href={`/academies/${a.id}`}
+                      className="group grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-1 py-3.5 transition-colors hover:bg-(--paper) md:grid-cols-[7rem_minmax(0,1fr)_11rem_1.25rem] md:px-0"
+                    >
+                      <LevelMark level={a.level} className="order-2 md:order-0" />
+                      <span className="order-1 min-w-0 md:order-0">
+                        <span className="flex min-w-0 items-center gap-2">
+                          <span className="truncate font-semibold text-(--ink) group-hover:underline group-hover:decoration-(--accent) group-hover:decoration-2 group-hover:underline-offset-4">
+                            {a.nameEn}
+                          </span>
+                          {a.state !== "active" && <StateChip state={a.state} />}
+                        </span>
+                        {a.nameTh && <span className="block truncate text-xs text-(--ink-soft)">{a.nameTh}</span>}
+                      </span>
+                      <span className="order-3 col-span-2 truncate text-sm text-(--ink-soft) md:order-0 md:col-span-1">{a.province ?? "—"}</span>
+                      <ArrowRight className="hidden h-4 w-4 text-slate-300 transition-transform group-hover:translate-x-0.5 group-hover:text-(--ink) md:block" />
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {pages > 1 && (
+            <nav aria-label="หน้า" className="mt-6 flex items-center justify-between gap-3 text-sm">
+              {page > 1 ? (
+                <Link href={href({ page: String(page - 1) })} className="inline-flex items-center gap-1 rounded-md border border-(--line) px-3 py-2 font-semibold text-(--ink) hover:bg-(--paper)">
+                  <ChevronLeft className="h-4 w-4" />
+                  ก่อนหน้า
                 </Link>
-              </li>
-            ))}
-          </ul>
-        )}
-
-        {pages > 1 && (
-          <nav aria-label="หน้า" className="mt-8 flex items-center justify-center gap-2">
-            {page > 1 && (
-              <Link href={href({ page: String(page - 1) })} aria-label="หน้าก่อนหน้า" className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50">
-                <ChevronLeft className="h-4 w-4" />
-              </Link>
-            )}
-            <span className="px-3 text-sm text-slate-500">
-              หน้า {page} / {pages}
-            </span>
-            {page < pages && (
-              <Link href={href({ page: String(page + 1) })} aria-label="หน้าถัดไป" className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50">
-                <ChevronRight className="h-4 w-4" />
-              </Link>
-            )}
-          </nav>
-        )}
+              ) : (
+                <span />
+              )}
+              <span className="text-(--ink-soft)">
+                หน้า <span className="font-semibold text-(--ink)">{page}</span> จาก {pages}
+              </span>
+              {page < pages ? (
+                <Link href={href({ page: String(page + 1) })} className="inline-flex items-center gap-1 rounded-md border border-(--line) px-3 py-2 font-semibold text-(--ink) hover:bg-(--paper)">
+                  ถัดไป
+                  <ChevronRight className="h-4 w-4" />
+                </Link>
+              ) : (
+                <span />
+              )}
+            </nav>
+          )}
+        </div>
       </section>
 
-      {/* มาตรฐาน 3 ระดับ — สรุปสั้น · เกณฑ์ทั้งหมดอยู่ในกล่องที่เปิดจากปุ่ม */}
-      <section id="levels" className="scroll-mt-20 border-t border-slate-200 bg-white">
-        <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6">
-          <h2 className="text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl">มาตรฐาน 3 ระดับ</h2>
-          <p className="mt-1 text-sm text-slate-500">พัฒนาทีละขั้นจากระดับทองแดงสู่ระดับทอง — กดดูเกณฑ์ของแต่ละระดับได้</p>
-          <div className="mt-6 grid gap-4 md:grid-cols-3">
-            {ACADEMY_LEVELS.map((l) => {
+      {/* ===== มาตรฐาน 3 ระดับ ===== */}
+      <section id="levels" className="scroll-mt-16 border-t border-(--line)">
+        <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
+          <p className={eyebrow}>Standards</p>
+          <h2 className={`${h} mt-2 text-3xl font-semibold tracking-tight text-(--ink) sm:text-4xl`}>ใบอนุญาต 3 ระดับ</h2>
+          <p className="mt-2 max-w-2xl text-sm text-(--ink-soft)">พัฒนาทีละขั้นจากระดับทองแดงสู่ระดับทอง แต่ละระดับมีเกณฑ์ 3 หมวด: การจัดการและองค์กร · การฝึกสอน · สุขภาพและสวัสดิการ</p>
+          <div className="mt-8 grid border border-(--line) bg-white md:grid-cols-3">
+            {ACADEMY_LEVELS.map((l, i) => {
               const s = LEVEL_SUMMARY[l];
+              const reqs = [["หัวหน้าอคาเดมี", s.head], ["ผู้ฝึกสอน", s.coaches], ...(s.assistants ? [["ผู้ช่วยผู้ฝึกสอน", s.assistants]] : []), ["จำนวนทีม", s.teams]];
               return (
-                <article key={l} className="flex flex-col rounded-3xl bg-slate-50 p-5 ring-1 ring-slate-200">
-                  <div className="flex items-center gap-3">
-                    <LevelMedal level={l} />
-                    <div className="min-w-0">
-                      <p className={`font-extrabold ${LEVEL_META[l].text}`}>{s.title}</p>
-                      <p className="text-xs text-slate-500">{count(l)} อคาเดมี</p>
+                <article key={l} className={`flex flex-col border-(--line) ${i ? "border-t md:border-l md:border-t-0" : ""}`}>
+                  <div className="h-1.5" style={{ background: LEVEL_META[l].hex }} />
+                  <div className="flex flex-1 flex-col p-6">
+                    <div className="flex items-baseline justify-between gap-3">
+                      <h3 className={`${h} text-2xl font-semibold text-(--ink)`}>{LEVEL_META[l].label}</h3>
+                      <span className="text-xs text-(--ink-soft)">{count(l)} อคาเดมี</span>
                     </div>
+                    <p className="text-xs font-semibold text-(--ink-soft)">{s.title}</p>
+                    <p className="mt-3 text-sm leading-relaxed text-(--ink-soft)">{s.audience.th}</p>
+                    <dl className="mt-5 flex-1 text-sm">
+                      {reqs.map(([k, v]) => (
+                        <div key={k} className="flex justify-between gap-3 border-t border-(--line) py-2">
+                          <dt className="text-(--ink-soft)">{k}</dt>
+                          <dd className="text-right font-semibold text-(--ink)">{v}</dd>
+                        </div>
+                      ))}
+                    </dl>
+                    <InfoDialog
+                      wide
+                      title="เกณฑ์มาตรฐานอคาเดมี"
+                      className="mt-5 inline-flex items-center justify-between gap-2 border-t-2 border-(--ink) pt-3 text-left text-sm font-semibold text-(--ink) hover:text-(--accent)"
+                      label={
+                        <>
+                          ดูเกณฑ์ทั้งหมด {criteriaCount(l)} ข้อ
+                          <ArrowRight className="h-4 w-4" />
+                        </>
+                      }
+                    >
+                      <CriteriaExplorer initialLevel={l} />
+                    </InfoDialog>
                   </div>
-                  <p className="mt-3 flex-1 text-sm leading-relaxed text-slate-600">{s.audience.th}</p>
-                  <InfoDialog
-                    wide
-                    title="เกณฑ์มาตรฐานอคาเดมี"
-                    className="mt-4 inline-flex w-full items-center justify-center gap-1.5 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-indigo-700 ring-1 ring-slate-200 transition-colors hover:bg-indigo-50 hover:ring-indigo-200"
-                    label={
-                      <>
-                        ดูเกณฑ์ {criteriaCount(l)} ข้อ
-                        <ArrowRight className="h-4 w-4" />
-                      </>
-                    }
-                  >
-                    <CriteriaExplorer initialLevel={l} />
-                  </InfoDialog>
                 </article>
               );
             })}
@@ -377,13 +305,11 @@ export default async function AcademiesPage({
       <div id="criteria" />
       {isLevel(sp.criteria) && (
         <InfoDialog wide defaultOpen clearParam="criteria" title="เกณฑ์มาตรฐานอคาเดมี">
-          <CriteriaExplorer initialLevel={criteriaLevel} />
+          <CriteriaExplorer initialLevel={sp.criteria} />
         </InfoDialog>
       )}
 
-      <footer className="border-t border-slate-200 bg-white py-8 text-center text-xs text-slate-400">
-        ข้อมูลจากทะเบียน Academy Licensing ของสมาคมกีฬาฟุตบอลแห่งประเทศไทย ในพระบรมราชูปถัมภ์ · หากข้อมูลไม่ถูกต้องโปรดติดต่อฝ่ายเทคนิคของสมาคมฯ
-      </footer>
+      <PublicFooter />
     </div>
   );
 }

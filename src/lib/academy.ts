@@ -4,7 +4,7 @@
 export const ACADEMY_LEVELS = ["BRONZE", "SILVER", "GOLD"] as const;
 export type AcademyLevel = (typeof ACADEMY_LEVELS)[number];
 
-export const LEVEL_META: Record<AcademyLevel, { label: string; th: string; rank: number; badge: string; medal: string; text: string }> = {
+export const LEVEL_META: Record<AcademyLevel, { label: string; th: string; rank: number; badge: string; medal: string; text: string; hex: string }> = {
   BRONZE: {
     label: "Bronze",
     th: "ทองแดง",
@@ -12,6 +12,7 @@ export const LEVEL_META: Record<AcademyLevel, { label: string; th: string; rank:
     badge: "bg-orange-50 text-orange-800 ring-orange-200",
     medal: "from-orange-200 via-orange-400 to-amber-700",
     text: "text-orange-700",
+    hex: "#b0662b", // สีเรียบ (หน้าสาธารณะ)
   },
   SILVER: {
     label: "Silver",
@@ -20,6 +21,7 @@ export const LEVEL_META: Record<AcademyLevel, { label: string; th: string; rank:
     badge: "bg-slate-100 text-slate-700 ring-slate-300",
     medal: "from-slate-100 via-slate-300 to-slate-500",
     text: "text-slate-600",
+    hex: "#8a96a6",
   },
   GOLD: {
     label: "Gold",
@@ -28,6 +30,7 @@ export const LEVEL_META: Record<AcademyLevel, { label: string; th: string; rank:
     badge: "bg-amber-50 text-amber-800 ring-amber-300",
     medal: "from-yellow-100 via-amber-300 to-yellow-600",
     text: "text-amber-700",
+    hex: "#c4962c",
   },
 };
 
