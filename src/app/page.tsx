@@ -5,9 +5,13 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { showPublicly } from "@/lib/academy";
 import { loadAcademies } from "@/lib/academy-data";
-import { COVER_URL } from "@/lib/brand";
+import { COVER_URL, PLAY_AND_LEARN_PASSPORT_URLS } from "@/lib/brand";
+import { coreProgramSteps } from "@/lib/coach-program";
+import { GRASSROOTS_YEAR, grassrootsPlayers } from "@/lib/grassroots-data";
 import { BrandLogo } from "@/components/BrandLogo";
 import { NewsSection } from "@/components/NewsSection";
+import { ProvinceMap, provinceName } from "@/components/ProvinceMap";
+import { levelTone } from "@/components/coach/CoachUi";
 import { HomeHeader } from "@/components/home/HomeHeader";
 import { DEPARTMENTS, departmentHref, type Department } from "@/components/home/departments";
 import { CountUp } from "@/components/play-and-learn/CountUp";
@@ -29,6 +33,12 @@ const TASKS = [
   { href: "/play-and-learn", icon: Sparkles, title: "Play and Learn สำหรับผู้ปกครอง", desc: "ฟุตบอลเด็กหญิงวัย 5–8 ปี" },
 ];
 
+// ระดับใบอนุญาตหลักของ AFC (ต่ำ → สูง)
+const CORE_LEVELS = ["G", "C", "B", "A", "PRO"];
+// แผนที่ผู้ฝึกสอน: ค่าขั้นต่ำของแต่ละช่วงสี (น้ำเงินสีเดียว อ่อน → เข้ม)
+const COACH_BINS = [1, 10, 30, 75, 200];
+const COACH_COLORS = ["#c3cee4", "#8fa3cf", "#5a76b5", "#2c4a8f", "#0b1f44"];
+
 // การ์ดหมวดงานแบบ bento: ขนาดตามความสำคัญ
 const SPAN: Record<string, string> = {
   coach: "lg:col-span-2 lg:row-span-2",
@@ -42,19 +52,20 @@ export default async function HomePage() {
   const isStaff = user?.role === "ADMIN" || user?.role === "STAFF";
   const now = new Date();
 
-  const [announcements, events, coachTotal, licensedCoaches, academies, g15Teams, results, sessions] = await Promise.all([
+  const [announcements, events, coachTotal, licensedCoaches, academies, g15Teams, levelCounts, byProvince, sessions] = await Promise.all([
     prisma.announcement.findMany({ orderBy: { createdAt: "desc" }, take: 6 }),
     isStaff ? prisma.event.findMany({ where: { endDate: { gte: now } }, orderBy: { startDate: "asc" }, take: 6 }) : Promise.resolve([]),
     prisma.coach.count(),
     prisma.coach.count({ where: { licenseRecords: { some: { OR: [{ expireDate: null }, { expireDate: { gte: now } }] } } } }),
     loadAcademies(now),
     prisma.g15Team.count(),
-    prisma.g15Match.findMany({
-      where: { status: "FINISHED", homeScore: { not: null }, awayScore: { not: null } },
-      include: { homeTeam: { select: { name: true, logoUrl: true } }, awayTeam: { select: { name: true, logoUrl: true } } },
-      orderBy: [{ matchDate: { sort: "desc", nulls: "last" } }, { id: "desc" }],
-      take: 3,
-    }),
+    // ผู้ฝึกสอนตามระดับใบอนุญาตสูงสุด (มีระดับนี้ และไม่มีระดับที่สูงกว่า)
+    Promise.all(
+      CORE_LEVELS.map((level, i) =>
+        prisma.coach.count({ where: { licenseRecords: { some: { licenseType: level }, none: { licenseType: { in: CORE_LEVELS.slice(i + 1) } } } } }),
+      ),
+    ),
+    prisma.coach.groupBy({ by: ["provinceCode"], where: { provinceCode: { not: null } }, _count: { _all: true } }),
     prisma.courseSession.findMany({
       where: { status: "OPEN", OR: [{ applicationDeadline: null }, { applicationDeadline: { gte: now } }] },
       include: { course: { select: { title: true } } },
@@ -64,6 +75,15 @@ export default async function HomePage() {
   ]);
   const academyCount = academies.filter((a) => showPublicly(a.active, a.state)).length;
   const loggedIn = !!user;
+  const levels = CORE_LEVELS.map((level, i) => ({ level, n: levelCounts[i], step: coreProgramSteps.find((s) => s.level === level) }));
+  const levelTotal = levelCounts.reduce((a, b) => a + b, 0);
+  const provinceValues = Object.fromEntries(byProvince.map((r) => [Number(r.provinceCode), r._count._all]));
+  const mappedCoaches = byProvince.reduce((n, r) => n + r._count._all, 0);
+  const topProvinces = byProvince
+    .map((r) => ({ code: Number(r.provinceCode), n: r._count._all }))
+    .sort((a, b) => b.n - a.n)
+    .slice(0, 8)
+    .map((r) => ({ ...r, name: provinceName(r.code) }));
 
   const headerUser = user
     ? { email: user.email, roleLabel: user.role === "ADMIN" ? "ผู้ดูแลระบบ" : "เจ้าหน้าที่", isAdmin: user.role === "ADMIN", isStaff }
@@ -105,15 +125,13 @@ export default async function HomePage() {
               <span className="h-px w-10 bg-amber-300" />
               FA Thailand · Technical Department
             </p>
-            <h1 className={`${h} ${styles.rise} mt-6 text-[2.9rem] font-semibold leading-[1.04] tracking-tight sm:text-7xl`} style={{ animationDelay: "120ms" }}>
-              พัฒนาฟุตบอลไทย
+            <h1 className={`${h} ${styles.rise} mt-6 text-[3.2rem] font-semibold leading-none tracking-tight sm:text-8xl`} style={{ animationDelay: "120ms" }}>
+              FA Thailand
               <br />
-              <span className="text-amber-300">จากรากหญ้า</span>
-              <br />
-              สู่ทีมชาติ
+              <span className="text-amber-300">Technical</span>
             </h1>
             <p className={`${styles.rise} mt-6 max-w-xl text-base leading-relaxed text-white/75 sm:text-lg`} style={{ animationDelay: "260ms" }}>
-              ศูนย์รวมงานเทคนิคของสมาคมกีฬาฟุตบอลแห่งประเทศไทย ในพระบรมราชูปถัมภ์ — ผู้ฝึกสอน หลักสูตรอบรม อคาเดมี การแข่งขันเยาวชน และฟุตบอลรากหญ้า
+              ฝ่ายเทคนิค สมาคมกีฬาฟุตบอลแห่งประเทศไทย ในพระบรมราชูปถัมภ์ — ระบบงานผู้ฝึกสอน หลักสูตรอบรม อคาเดมี การพัฒนาเยาวชน และการแข่งขัน
             </p>
             <div className={`${styles.rise} mt-9 flex flex-wrap gap-3`} style={{ animationDelay: "380ms" }}>
               <a href="#departments" className="inline-flex items-center gap-2 rounded-full bg-amber-400 px-6 py-3.5 text-sm font-semibold text-[#073c5e] transition-colors hover:bg-amber-300">
@@ -172,7 +190,7 @@ export default async function HomePage() {
           <Reveal className="flex flex-wrap items-end justify-between gap-4">
             <div>
               <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-amber-700">Departments</p>
-              <h2 className={`${h} mt-2 text-4xl font-semibold tracking-tight text-[#073c5e] sm:text-5xl`}>ทุกงานเทคนิค ในที่เดียว</h2>
+              <h2 className={`${h} mt-2 text-4xl font-semibold text-[#073c5e] sm:text-5xl`}>ทุกงานเทคนิค ในที่เดียว</h2>
             </div>
             <p className="max-w-md text-sm leading-relaxed text-slate-500">
               {DEPARTMENTS.length} หมวดงานของฝ่ายเทคนิค — หมวดที่มีรูปกุญแจสำหรับเจ้าหน้าที่ ต้องเข้าสู่ระบบก่อนใช้งาน
@@ -188,48 +206,120 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* ===== ความเคลื่อนไหว: ผล G15 + หลักสูตรที่เปิดรับ ===== */}
-      <section className="border-y border-slate-200 bg-white px-4 py-20 sm:px-6">
-        <div className="mx-auto grid max-w-7xl gap-12 lg:grid-cols-2">
-          <Reveal>
-            <SectionHead eyebrow="Match Centre" title="ผลการแข่งขันล่าสุด" href="/g15-womens-series/matches" linkLabel="ทั้งหมด" />
-            {results.length === 0 ? (
-              <p className="mt-6 text-sm text-slate-400">ยังไม่มีผลการแข่งขัน</p>
-            ) : (
-              <ul className="mt-6 divide-y divide-slate-100 border-y border-slate-100">
-                {results.map((m) => (
-                  <li key={m.id}>
-                    <Link href={`/g15-womens-series/matches/${m.id}`} className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3 py-4 transition-colors hover:bg-[#f5f4f0] sm:gap-5 sm:px-3">
-                      <TeamSide name={m.homeTeam.name} logo={m.homeTeam.logoUrl} align="right" />
-                      <span className="text-center">
-                        <span className={`${h} block rounded-md bg-[#073c5e] px-3 py-1 text-xl font-semibold tabular-nums text-white`}>
-                          {m.homeScore} – {m.awayScore}
-                        </span>
-                        {m.homePenalty !== null && m.awayPenalty !== null && <span className="mt-0.5 block text-[10px] text-slate-500">จุดโทษ {m.homePenalty}–{m.awayPenalty}</span>}
-                        <span className="mt-1 block text-[11px] text-slate-400">{m.matchDate ? day(m.matchDate) : m.round}</span>
-                      </span>
-                      <TeamSide name={m.awayTeam.name} logo={m.awayTeam.logoUrl} />
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            )}
+      {/* ===== เส้นทางพัฒนานักฟุตบอล ===== */}
+      <section className="bg-[#073c5e] px-4 py-20 text-white sm:px-6">
+        <div className="mx-auto max-w-7xl">
+          <Reveal className="flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-amber-300">Player Pathway</p>
+              <h2 className={`${h} mt-2 text-4xl font-semibold sm:text-5xl`}>เส้นทางพัฒนานักฟุตบอล</h2>
+            </div>
+            <p className="max-w-md text-sm leading-relaxed text-white/70">
+              งานของฝ่ายเทคนิคครอบคลุมตั้งแต่เด็กที่เริ่มเตะฟุตบอลครั้งแรก การคัดกรองดาวรุ่น อคาเดมี จนถึงเวทีการแข่งขันเยาวชนระดับชาติ
+            </p>
           </Reveal>
+          <ol className="mt-12 grid gap-px overflow-hidden rounded-xl bg-white/15 sm:grid-cols-2 lg:grid-cols-5">
+            {[
+              { href: "/play-and-learn", title: "Play and Learn", age: "5–8 ปี", desc: "ฟุตบอลสำหรับเด็กหญิง เรียนรู้ผ่านการเล่นกับ “กุ๋งกิ๋ง”", stat: String(PLAY_AND_LEARN_PASSPORT_URLS.length), statLabel: "บทในพาสปอร์ตแห่งการผจญภัย" },
+              { href: "/grassroots-football", title: "Grassroots", age: "6–15 ปี", desc: "ฟุตบอลรากหญ้า ปูพื้นฐานเยาวชนทั่วประเทศ", stat: grassrootsPlayers.total.toLocaleString("en-US"), statLabel: `นักฟุตบอลในโครงการปี ${GRASSROOTS_YEAR}` },
+              { href: "/talent-id", title: "Talent ID", age: "13–17 ปี", desc: "สืบค้นและคัดกรองนักฟุตบอลดาวรุ่นจากทุกภูมิภาค", stat: null, statLabel: "ข้อมูลสำหรับเจ้าหน้าที่" },
+              { href: "/academies", title: "Academy", age: "เยาวชน", desc: "อคาเดมีที่ผ่านมาตรฐาน FAT Bronze · Silver · Gold", stat: academyCount.toLocaleString("en-US"), statLabel: "อคาเดมีที่ได้รับการรับรอง" },
+              { href: "/g15-womens-series", title: "Competition", age: "U15", desc: "เวทีการแข่งขันฟุตบอลหญิงเยาวชน G15 Women's Series", stat: g15Teams.toLocaleString("en-US"), statLabel: "ทีมที่ร่วมการแข่งขัน" },
+            ].map((s, i) => (
+              <li key={s.title} className="bg-[#073c5e]">
+                <Reveal delay={i * 80} className="h-full">
+                  <Link href={s.href} className="group flex h-full flex-col p-6 transition-colors hover:bg-white/5">
+                    <span className="flex items-center justify-between text-xs text-white/50">
+                      <span className={`${h} tabular-nums`}>{String(i + 1).padStart(2, "0")}</span>
+                      <span>{s.age}</span>
+                    </span>
+                    <span className={`${h} mt-8 text-2xl font-semibold`}>{s.title}</span>
+                    <span className="mt-2 text-sm leading-relaxed text-white/65">{s.desc}</span>
+                    <span className="mt-auto pt-8">
+                      {s.stat && <span className={`${h} block text-4xl font-semibold text-amber-300`}>{s.stat}</span>}
+                      <span className="mt-1 flex items-center justify-between gap-2 text-xs text-white/55">
+                        {s.statLabel}
+                        <ArrowRight className="h-4 w-4 flex-none transition-transform group-hover:translate-x-1 group-hover:text-white" />
+                      </span>
+                    </span>
+                  </Link>
+                </Reveal>
+              </li>
+            ))}
+          </ol>
+          <p className="mt-6 flex items-center gap-3 text-sm text-white/60">
+            <span className="h-px w-10 bg-amber-300" />
+            ต่อยอดสู่ทีมชาติไทยชุดเยาวชนและชุดใหญ่
+          </p>
+        </div>
+      </section>
 
-          <Reveal delay={120}>
-            <SectionHead eyebrow="Coach Education" title="เปิดรับสมัครอบรม" href="/courses" linkLabel="หลักสูตรทั้งหมด" />
+      {/* ===== เส้นทางใบอนุญาตผู้ฝึกสอน + รุ่นที่เปิดรับสมัคร ===== */}
+      <section id="coach-education" className="scroll-mt-20 px-4 py-20 sm:px-6">
+        <div className="mx-auto max-w-7xl">
+          <Reveal>
+            <SectionHead eyebrow="Coach Education" title="เส้นทางใบอนุญาตผู้ฝึกสอน AFC" href="/courses" linkLabel="หลักสูตรทั้งหมด" />
+            <p className="mt-3 max-w-2xl text-sm text-slate-500">
+              ผู้ฝึกสอน {levelTotal.toLocaleString("en-US")} คนในฐานข้อมูล จำแนกตามใบอนุญาตระดับสูงสุดที่ได้รับ — เริ่มจากระดับพื้นฐาน G จนถึง PRO
+            </p>
+            {/* สัดส่วนผู้ฝึกสอนตามระดับ */}
+            <div className="mt-8 flex h-3 gap-0.5 overflow-hidden rounded-full" role="img" aria-label="สัดส่วนผู้ฝึกสอนตามระดับใบอนุญาตสูงสุด">
+              {levels.map((l) => (
+                <span key={l.level} className="h-full" style={{ width: `${Math.max(0.6, (l.n / Math.max(1, levelTotal)) * 100)}%`, background: levelTone(l.level).hex }} />
+              ))}
+            </div>
+          </Reveal>
+          <ol className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+            {levels.map((l, i) => (
+              <li key={l.level}>
+                <Reveal delay={i * 70} className="h-full">
+                  <div className="relative flex h-full flex-col overflow-hidden rounded-xl border border-slate-200 bg-white p-5">
+                    <span className="absolute inset-x-0 top-0 h-1" style={{ background: levelTone(l.level).hex }} />
+                    <div className="flex items-baseline justify-between gap-2">
+                      <span className={`${h} text-4xl font-semibold leading-none`} style={{ color: levelTone(l.level).hex }}>
+                        {l.level}
+                      </span>
+                      <span className="text-[11px] text-slate-400">ขั้นที่ {i + 1}</span>
+                    </div>
+                    <p className="mt-3 font-semibold leading-snug text-slate-900">{l.step?.title}</p>
+                    <p className="mt-1 text-xs text-slate-500">{l.step?.ageGroup}</p>
+                    {l.step && (
+                      <p className="mt-2 text-xs text-slate-500">
+                        {l.step.totalHours} ชม. · {l.step.days} วัน
+                      </p>
+                    )}
+                    <p className="mt-auto border-t border-slate-100 pt-4">
+                      <span className={`${h} block text-3xl font-semibold text-[#073c5e]`}>{l.n.toLocaleString("en-US")}</span>
+                      <span className="text-xs text-slate-500">ผู้ฝึกสอนที่ถือระดับนี้</span>
+                    </p>
+                  </div>
+                </Reveal>
+              </li>
+            ))}
+          </ol>
+
+          <Reveal className="mt-12 grid grid-cols-1 gap-8 rounded-xl border border-slate-200 bg-white p-6 sm:p-8 lg:grid-cols-[16rem_minmax(0,1fr)]">
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-amber-700">Open Courses</p>
+              <h3 className={`${h} mt-2 text-2xl font-semibold text-[#073c5e]`}>เปิดรับสมัครอบรม</h3>
+              <p className="mt-2 text-sm text-slate-500">ยังไม่มีบัญชีก็สมัครได้ ระบบสร้างบัญชีผู้ฝึกสอนให้พร้อมใบสมัคร</p>
+            </div>
             {sessions.length === 0 ? (
-              <div className="mt-6 rounded-xl border border-dashed border-slate-300 p-8 text-center">
-                <CalendarClock className="mx-auto h-8 w-8 text-slate-300" />
-                <p className="mt-3 text-sm font-medium text-slate-700">ยังไม่มีรุ่นที่เปิดรับสมัครในตอนนี้</p>
-                <p className="mt-1 text-xs text-slate-500">ติดตามประกาศรุ่นใหม่ได้ที่หน้าหลักสูตรอบรม หรือข่าวประกาศด้านล่าง</p>
-                <Link href="/courses" className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-[#073c5e] underline decoration-slate-300 underline-offset-4 hover:decoration-[#073c5e]">
-                  ดูหลักสูตรทั้งหมด
+              <div className="flex flex-col items-start justify-center gap-3 rounded-lg bg-[#f5f4f0] p-6 sm:flex-row sm:items-center sm:justify-between">
+                <span className="flex items-center gap-3">
+                  <CalendarClock className="h-8 w-8 flex-none text-slate-400" />
+                  <span>
+                    <span className="block text-sm font-medium text-slate-800">ยังไม่มีรุ่นที่เปิดรับสมัครในตอนนี้</span>
+                    <span className="block text-xs text-slate-500">ติดตามประกาศรุ่นใหม่ได้ที่หน้าหลักสูตรอบรมและข่าวประกาศ</span>
+                  </span>
+                </span>
+                <Link href="/coach-center" className="inline-flex flex-none items-center gap-1 text-sm font-semibold text-[#073c5e] underline decoration-slate-300 underline-offset-4 hover:decoration-[#073c5e]">
+                  ศูนย์อบรมผู้ฝึกสอน
                   <ArrowRight className="h-4 w-4" />
                 </Link>
               </div>
             ) : (
-              <ul className="mt-6 divide-y divide-slate-100 border-y border-slate-100">
+              <ul className="divide-y divide-slate-100 border-y border-slate-100">
                 {sessions.map((s) => {
                   const left = s.applicationDeadline ? Math.ceil((s.applicationDeadline.getTime() - now.getTime()) / 86_400_000) : null;
                   return (
@@ -253,12 +343,54 @@ export default async function HomePage() {
                           </span>
                         </span>
                         {left !== null && <span className={`flex-none rounded-full px-2.5 py-1 text-[11px] font-semibold ${left <= 7 ? "bg-red-50 text-red-700" : "bg-amber-50 text-amber-800"}`}>ปิดรับใน {left} วัน</span>}
+                        <ArrowRight className="h-4 w-4 flex-none text-slate-300 transition-transform group-hover:translate-x-0.5 group-hover:text-[#073c5e]" />
                       </Link>
                     </li>
                   );
                 })}
               </ul>
             )}
+          </Reveal>
+        </div>
+      </section>
+
+      {/* ===== ผู้ฝึกสอนทั่วประเทศ ===== */}
+      <section className="border-y border-slate-200 bg-white px-4 py-20 sm:px-6">
+        <div className="mx-auto grid max-w-7xl grid-cols-1 items-center gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,24rem)]">
+          <Reveal>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-amber-700">Coaches Nationwide</p>
+            <h2 className={`${h} mt-2 text-4xl font-semibold text-[#073c5e] sm:text-5xl`}>ผู้ฝึกสอนทั่วประเทศ</h2>
+            <p className="mt-3 max-w-xl text-sm leading-relaxed text-slate-500">
+              จำนวนผู้ฝึกสอนตามจังหวัดที่ระบุไว้ในระบบ ({mappedCoaches.toLocaleString("en-US")} จาก {coachTotal.toLocaleString("en-US")} คน) — ข้อมูลจังหวัดจะครบขึ้นเมื่อผู้ฝึกสอนอัปเดตข้อมูลของตนเอง
+            </p>
+            {topProvinces.length > 0 && (
+              <ol className="mt-8 space-y-3">
+                {topProvinces.map((p, i) => (
+                  <li key={p.code} className="grid grid-cols-[1.5rem_8rem_minmax(0,1fr)_3.5rem] items-center gap-3 text-sm">
+                    <span className={`${h} text-right text-slate-400 tabular-nums`}>{i + 1}</span>
+                    <span className="truncate font-medium text-slate-800">{p.name}</span>
+                    <span className="h-2 overflow-hidden rounded-full bg-slate-100">
+                      <span className="block h-full rounded-full bg-[#073c5e]" style={{ width: `${(p.n / topProvinces[0].n) * 100}%` }} />
+                    </span>
+                    <span className="text-right font-semibold tabular-nums text-slate-900">{p.n.toLocaleString("en-US")}</span>
+                  </li>
+                ))}
+              </ol>
+            )}
+            <div className="mt-8 flex items-center gap-3 text-xs text-slate-500" aria-label="คำอธิบายสีแผนที่">
+              <span>ผู้ฝึกสอนต่อจังหวัด</span>
+              <span className="flex">
+                {[{ l: "0", c: "#e6e8ee" }, ...COACH_BINS.map((b, i) => ({ l: i === COACH_BINS.length - 1 ? `${b}+` : String(b), c: COACH_COLORS[i] }))].map((b) => (
+                  <span key={b.l} className="flex w-8 flex-col items-center gap-1">
+                    <span className="h-2 w-full" style={{ background: b.c }} />
+                    <span className="tabular-nums">{b.l}</span>
+                  </span>
+                ))}
+              </span>
+            </div>
+          </Reveal>
+          <Reveal delay={120} className="mx-auto w-full max-w-sm">
+            <ProvinceMap values={provinceValues} bins={COACH_BINS} colors={COACH_COLORS} unit="คน" title={`แผนที่จำนวนผู้ฝึกสอนตามจังหวัด ${mappedCoaches} คน`} />
           </Reveal>
         </div>
       </section>
@@ -381,24 +513,13 @@ function SectionHead({ eyebrow, title, href, linkLabel }: { eyebrow: string; tit
     <div className="flex items-end justify-between gap-4">
       <div>
         <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-amber-700">{eyebrow}</p>
-        <h2 className={`${h} mt-2 text-3xl font-semibold tracking-tight text-[#073c5e]`}>{title}</h2>
+        <h2 className={`${h} mt-2 text-3xl font-semibold text-[#073c5e]`}>{title}</h2>
       </div>
       <Link href={href} className="inline-flex flex-none items-center gap-1 text-sm font-semibold text-[#073c5e] hover:underline">
         {linkLabel}
         <ArrowRight className="h-4 w-4" />
       </Link>
     </div>
-  );
-}
-
-function TeamSide({ name, logo, align = "left" }: { name: string; logo: string | null; align?: "left" | "right" }) {
-  return (
-    <span className={`flex min-w-0 items-center gap-2.5 ${align === "right" ? "flex-row-reverse text-right" : ""}`}>
-      <span className="relative h-9 w-9 flex-none overflow-hidden rounded-full bg-slate-100">
-        {logo && <Image src={logo} alt="" fill sizes="36px" className="object-contain p-0.5" />}
-      </span>
-      <span className="truncate text-sm font-semibold text-slate-800">{name}</span>
-    </span>
   );
 }
 

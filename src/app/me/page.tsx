@@ -583,7 +583,7 @@ export default async function CoachHomePage({
                   key={record.id}
                   className={`flex flex-col overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-slate-200 transition-all hover:-translate-y-0.5 hover:shadow-md ${isCurrent ? "" : "opacity-80"}`}
                 >
-                  <div className={`relative overflow-hidden bg-linear-to-br px-5 py-4 text-white ${isCurrent ? levelTone(record.licenseType).card : "from-slate-400 to-slate-600"}`}>
+                  <div className={`relative overflow-hidden px-5 py-4 text-white ${isCurrent ? levelTone(record.licenseType).card : "bg-slate-500"}`}>
                     <span aria-hidden className={`${display.className} absolute -bottom-7 -right-1 select-none text-8xl font-black leading-none text-white/12`}>
                       {labelFor(LICENSE_TYPES, record.licenseType)}
                     </span>

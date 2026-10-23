@@ -4,6 +4,7 @@ import { BrandLogo } from "@/components/BrandLogo";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LayoutDashboard, Users, Trophy, Activity, ArrowLeft } from "lucide-react";
+import { display } from "@/components/fonts";
 
 const NAV = [
   { href: "/talent-id", label: "ภาพรวม", icon: LayoutDashboard },
@@ -11,6 +12,10 @@ const NAV = [
   { href: "/talent-id/standouts", label: "ผู้เล่นโดดเด่นตามเกรด", icon: Trophy },
   { href: "/talent-id/stats", label: "สถิติการแข่งขัน", icon: Activity },
 ];
+
+// หน้าโปรไฟล์ผู้เล่น /talent-id/rec... นับเป็นเมนู "ผู้เล่นทั้งหมด"
+const isActive = (pathname: string, href: string) =>
+  pathname === href || (href === "/talent-id/players" && /^\/talent-id\/rec/.test(pathname));
 
 export function TalentIdSidebar({
   email,
@@ -22,54 +27,50 @@ export function TalentIdSidebar({
   const pathname = usePathname();
 
   return (
-    <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r border-white/10 bg-black/20 lg:flex">
-      <div className="flex items-center gap-2 px-5 py-5">
+    <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r border-white/10 bg-[#081528] lg:flex">
+      <div className="h-0.75 flex-none bg-amber-400" />
+      <Link href="/talent-id" className="flex items-center gap-3 px-5 py-5">
         <BrandLogo tone="white" className="h-9" />
-        <div>
-          <p className="text-sm font-bold text-white">FA Thailand Technical</p>
-          <p className="text-[11px] text-indigo-300">Talent ID</p>
-        </div>
-      </div>
+        <span className="h-7 w-px bg-white/20" />
+        <span className="leading-tight">
+          <span className={`${display.className} block text-base font-semibold text-white`}>Talent ID</span>
+          <span className="block text-[11px] text-indigo-300">FA Thailand Technical</span>
+        </span>
+      </Link>
 
-      <div className="px-3 pb-2">
-        <Link
-          href="/"
-          className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-indigo-300 transition-colors hover:bg-white/5 hover:text-white"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          กลับหน้าแรก
-        </Link>
-      </div>
-
-      <nav className="flex-1 space-y-1 px-3 py-2">
+      <nav className="flex-1 space-y-0.5 px-3 py-2">
         {NAV.map(({ href, label, icon: Icon }) => {
-          const active = pathname === href;
+          const active = isActive(pathname, href);
           return (
             <Link
               key={href}
               href={href}
-              className={`relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
-                active
-                  ? "bg-amber-400/15 text-amber-300"
-                  : "text-indigo-300 hover:bg-white/5 hover:text-white"
+              aria-current={active ? "page" : undefined}
+              className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+                active ? "bg-white text-indigo-950" : "text-indigo-200 hover:bg-white/8 hover:text-white"
               }`}
             >
-              {active && (
-                <span className="absolute -left-3 top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-full bg-amber-400" />
-              )}
-              <Icon className="h-4.5 w-4.5" strokeWidth={2} />
+              <Icon className={`h-4 w-4 flex-none ${active ? "text-amber-600" : "text-indigo-400"}`} strokeWidth={2} />
               <span>{label}</span>
             </Link>
           );
         })}
       </nav>
 
-      {email && (
-        <div className="border-t border-white/10 px-4 py-4">
-          <p className="truncate px-2 text-sm font-medium text-indigo-100">{email}</p>
-          {roleLabel && <p className="px-2 text-xs text-indigo-400">{roleLabel}</p>}
-        </div>
-      )}
+      <div className="border-t border-white/10 px-5 py-4">
+        {email && (
+          <>
+            <p className="truncate text-sm font-medium text-indigo-100" title={email}>
+              {email}
+            </p>
+            {roleLabel && <p className="text-[11px] text-indigo-400">{roleLabel}</p>}
+          </>
+        )}
+        <Link href="/" className="mt-3 inline-flex items-center gap-1.5 text-xs font-medium text-indigo-300 hover:text-white">
+          <ArrowLeft className="h-3.5 w-3.5" />
+          กลับหน้าแรก
+        </Link>
+      </div>
     </aside>
   );
 }

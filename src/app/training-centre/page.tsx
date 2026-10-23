@@ -1,28 +1,21 @@
-import { BrandLogo } from "@/components/BrandLogo";
 import Link from "next/link";
 import Image from "next/image";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { TRAINING_CENTRE_AREAS, labelFor } from "@/lib/constants";
-import {
-  ArrowLeft,
-  ArrowRight,
-  Calendar,
-  Database,
-  Settings,
-  LayoutGrid,
-  Target,
-  Dumbbell,
-  Globe2,
-  Megaphone as ArticleIcon,
-} from "lucide-react";
-import type { LucideIcon } from "lucide-react";
+import { display } from "@/components/fonts";
+import { ModuleHeader } from "@/components/ModuleHeader";
+import { ArrowRight, Plus, Settings } from "lucide-react";
 
-const AREA_ICONS: Record<string, LucideIcon> = {
-  THE_GAME: Target,
-  PRACTICE: Dumbbell,
-  ENVIRONMENT: Globe2,
+const h = display.className;
+const ACCENT = "#b45309";
+
+// คำอธิบายสั้นของแต่ละหมวด (แสดงบนการ์ดหมวด)
+const AREA_INFO: Record<string, { th: string; text: string }> = {
+  THE_GAME: { th: "เกมการแข่งขัน", text: "หลักการเล่น การวิเคราะห์เกม และรูปแบบการเล่นในแต่ละช่วงของเกม" },
+  PRACTICE: { th: "การฝึกซ้อม", text: "การออกแบบแบบฝึก การจัดการฝึกซ้อม และกิจกรรมที่เหมาะกับแต่ละช่วงวัย" },
+  ENVIRONMENT: { th: "สภาพแวดล้อม", text: "บทบาทผู้ฝึกสอน บรรยากาศการเรียนรู้ และการดูแลผู้เล่นทั้งในและนอกสนาม" },
 };
 
 function formatDate(date: Date) {
@@ -31,6 +24,19 @@ function formatDate(date: Date) {
     month: "short",
     day: "numeric",
   });
+}
+
+// ป้ายหมวด + ธีม + กลุ่มอายุ เป็นบรรทัดเดียว
+function Meta({ area, theme, ageGroup }: { area: string; theme: string | null; ageGroup: string | null }) {
+  return (
+    <p className="flex flex-wrap items-center gap-x-2 text-xs text-slate-500">
+      <span className="text-[11px] font-semibold uppercase tracking-[0.18em]" style={{ color: ACCENT }}>
+        {labelFor(TRAINING_CENTRE_AREAS, area)}
+      </span>
+      {theme && <span>· {theme}</span>}
+      {ageGroup && <span>· {ageGroup}</span>}
+    </p>
+  );
 }
 
 export default async function TrainingCentrePage({
@@ -42,253 +48,211 @@ export default async function TrainingCentrePage({
   if (!user) redirect("/login");
 
   const { area } = await searchParams;
-  const activeArea = TRAINING_CENTRE_AREAS.some((a) => a.value === area)
-    ? area
-    : undefined;
+  const activeArea = TRAINING_CENTRE_AREAS.some((a) => a.value === area) ? area : undefined;
 
-  const [articles, totalCount] = await Promise.all([
+  const [articles, byArea] = await Promise.all([
     prisma.trainingArticle.findMany({
       where: activeArea ? { area: activeArea } : undefined,
       orderBy: { createdAt: "desc" },
     }),
-    prisma.trainingArticle.count(),
+    prisma.trainingArticle.groupBy({ by: ["area"], _count: { _all: true } }),
   ]);
+  const areaCount = (value: string) => byArea.find((a) => a.area === value)?._count._all ?? 0;
+  const totalCount = byArea.reduce((s, a) => s + a._count._all, 0);
 
   const [featuredArticle, ...restArticles] = articles;
   const canManage = user.role === "ADMIN" || user.role === "STAFF";
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <header className="sticky top-0 z-20 border-b border-white/10 bg-indigo-950/80 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-6 py-4">
-          <Link href="/" className="flex items-center gap-2">
-            <BrandLogo tone="white" className="h-9" />
-            <div>
-              <p className="text-sm font-bold text-white">
-                FA Thailand Technical
-              </p>
-              <p className="text-[11px] text-indigo-300">
-                หมวด: Training Centre
-              </p>
-            </div>
-          </Link>
-          <div className="flex items-center gap-2">
-            {canManage && (
-              <Link
-                href="/training-centre/manage"
-                className="inline-flex items-center gap-1.5 rounded-lg border border-white/15 px-3 py-2 text-sm font-medium text-indigo-200 transition-colors hover:bg-white/10 hover:text-white"
-              >
-                <Settings className="h-4 w-4" />
-                จัดการบทความ
-              </Link>
-            )}
+    <div className="min-h-screen overflow-x-clip bg-[#f5f4f0] text-slate-900">
+      <ModuleHeader
+        title="Training Centre"
+        subtitle="ศูนย์ข้อมูลการฝึกสอน · FA Thailand"
+        accent={ACCENT}
+        links={[
+          { href: "#areas", label: "หมวด Area" },
+          { href: "#articles", label: "บทความ" },
+        ]}
+        actions={
+          canManage ? (
             <Link
-              href="/"
-              className="inline-flex items-center gap-1.5 rounded-lg border border-white/15 px-3 py-2 text-sm font-medium text-indigo-200 transition-colors hover:bg-white/10 hover:text-white"
+              href="/training-centre/manage"
+              className="inline-flex items-center gap-1.5 rounded-full border border-slate-300 px-3.5 py-2 text-sm font-medium text-slate-700 transition-colors hover:border-slate-400 hover:text-slate-900"
             >
-              <ArrowLeft className="h-4 w-4" />
-              กลับหน้าแรก
+              <Settings className="h-4 w-4" />
+              <span className="hidden sm:inline">จัดการบทความ</span>
             </Link>
+          ) : undefined
+        }
+      />
+
+      {/* ===== ฮีโร่ ===== */}
+      <section className="px-4 pb-14 pt-10 sm:px-6 lg:pt-16">
+        <div className="mx-auto grid max-w-6xl items-end gap-10 lg:grid-cols-[minmax(0,1fr)_auto] lg:gap-16">
+          <div>
+            <p className="flex items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.28em]" style={{ color: ACCENT }}>
+              <span className="h-px w-10" style={{ background: ACCENT }} />
+              Technical Department · FA Thailand
+            </p>
+            <h1 className={`${h} mt-6 text-6xl font-semibold leading-none tracking-tight text-[#073c5e] sm:text-8xl`}>Training Centre</h1>
+            <p className={`${h} mt-3 text-2xl font-medium text-slate-400 sm:text-3xl`}>ศูนย์ข้อมูลและบทความด้านเทคนิค</p>
+            <p className="mt-6 max-w-xl text-base leading-relaxed text-slate-600 sm:text-lg">
+              ศูนย์รวบรวมข้อมูลและบทความวิเคราะห์ด้านเทคนิคและการฝึกอบรมของ ฝ่ายเทคนิค สมาคมกีฬาฟุตบอลแห่งประเทศไทย
+            </p>
           </div>
-        </div>
-      </header>
-
-      {/* Hero */}
-      <section className="relative overflow-hidden bg-linear-to-br from-indigo-950 via-indigo-900 to-indigo-700">
-        <div className="absolute inset-x-0 top-0 h-1 bg-linear-to-r from-amber-600 via-amber-400 to-amber-600" />
-        <div className="absolute -left-24 -top-24 h-80 w-80 rounded-full bg-indigo-400/30 blur-3xl" />
-        <div className="absolute -right-16 top-1/3 h-96 w-96 rounded-full bg-amber-500/20 blur-3xl" />
-        <div
-          className="absolute inset-0 opacity-[0.04]"
-          style={{
-            backgroundImage:
-              "linear-gradient(white 1px, transparent 1px), linear-gradient(90deg, white 1px, transparent 1px)",
-            backgroundSize: "32px 32px",
-          }}
-        />
-
-        <div className="relative mx-auto max-w-4xl px-6 py-16 text-center">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-white/10 ring-1 ring-white/20">
-            <Database className="h-7 w-7 text-amber-300" />
-          </div>
-          <h1 className="mt-5 text-3xl font-bold tracking-tight text-white sm:text-4xl">
-            Training Centre
-          </h1>
-          <p className="mx-auto mt-3 max-w-xl text-indigo-200">
-            ศูนย์รวบรวมข้อมูลและบทความวิเคราะห์ด้านเทคนิคและการฝึกอบรมของ
-            ฝ่ายเทคนิค สมาคมกีฬาฟุตบอลแห่งประเทศไทย
-          </p>
-
-          <div className="mx-auto mt-8 grid max-w-xs grid-cols-2 gap-4 border-t border-amber-400/20 pt-6">
-            <div>
-              <p className="text-2xl font-bold text-amber-400">{totalCount}</p>
-              <p className="text-xs text-indigo-300">บทความทั้งหมด</p>
+          <dl className="flex divide-x divide-slate-300 border-y border-slate-300 py-4 lg:mb-2">
+            <div className="pr-8">
+              <dd className={`${h} text-5xl font-semibold tabular-nums text-[#073c5e]`}>{totalCount}</dd>
+              <dt className="mt-1 text-xs text-slate-500">บทความทั้งหมด</dt>
             </div>
-            <div>
-              <p className="text-2xl font-bold text-amber-400">
-                {TRAINING_CENTRE_AREAS.length}
-              </p>
-              <p className="text-xs text-indigo-300">หมวด Area</p>
+            <div className="pl-8">
+              <dd className={`${h} text-5xl font-semibold tabular-nums text-[#073c5e]`}>{TRAINING_CENTRE_AREAS.length}</dd>
+              <dt className="mt-1 text-xs text-slate-500">หมวด Area</dt>
             </div>
-          </div>
+          </dl>
         </div>
-
-        <svg
-          className="relative block w-full text-slate-50"
-          viewBox="0 0 1440 60"
-          preserveAspectRatio="none"
-        >
-          <path fill="currentColor" d="M0,32 C480,72 960,0 1440,32 L1440,60 L0,60 Z" />
-        </svg>
       </section>
 
-      <div className="mx-auto max-w-6xl px-6 pb-16">
-        {/* Area filter tabs */}
-        <div className="-mt-4 mb-10 flex flex-wrap gap-2 rounded-2xl border border-slate-200 bg-white p-2 shadow-sm">
-          <Link
-            href="/training-centre"
-            className={`inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-medium transition-colors ${
-              !activeArea
-                ? "bg-indigo-600 text-white shadow-sm shadow-indigo-200"
-                : "text-slate-600 hover:bg-slate-50"
-            }`}
-          >
-            <LayoutGrid className="h-3.5 w-3.5" />
-            ทั้งหมด
-          </Link>
-          {TRAINING_CENTRE_AREAS.map((a) => {
-            const AreaIcon = AREA_ICONS[a.value] ?? LayoutGrid;
+      {/* ===== หมวด ===== */}
+      <section id="areas" className="scroll-mt-20 px-4 sm:px-6">
+        <div className="mx-auto grid max-w-6xl grid-cols-1 gap-px overflow-hidden rounded-xl border border-slate-300 bg-slate-300 md:grid-cols-3">
+          {TRAINING_CENTRE_AREAS.map((a, i) => {
+            const info = AREA_INFO[a.value];
+            const active = activeArea === a.value;
+            const n = areaCount(a.value);
             return (
               <Link
                 key={a.value}
-                href={`/training-centre?area=${a.value}`}
-                className={`inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-medium transition-colors ${
-                  activeArea === a.value
-                    ? "bg-indigo-600 text-white shadow-sm shadow-indigo-200"
-                    : "text-slate-600 hover:bg-slate-50"
-                }`}
+                href={active ? "/training-centre#articles" : `/training-centre?area=${a.value}#articles`}
+                aria-current={active ? "page" : undefined}
+                className={`group flex flex-col p-6 transition-colors sm:p-7 ${active ? "bg-[#073c5e] text-white" : "bg-white hover:bg-[#fbfaf7]"}`}
               >
-                <AreaIcon className="h-3.5 w-3.5" />
-                {a.label}
+                <div className="flex items-baseline justify-between gap-3">
+                  <span className={`${h} text-sm font-semibold ${active ? "text-amber-300" : "text-slate-400"}`}>{String(i + 1).padStart(2, "0")}</span>
+                  <span className={`text-xs ${active ? "text-white/70" : "text-slate-500"}`}>{n} บทความ</span>
+                </div>
+                <p className={`${h} mt-6 text-3xl font-semibold leading-none ${active ? "text-white" : "text-[#073c5e]"}`}>{a.label}</p>
+                {info && (
+                  <>
+                    <p className={`mt-1.5 text-sm font-semibold ${active ? "text-amber-200" : ""}`} style={active ? undefined : { color: ACCENT }}>
+                      {info.th}
+                    </p>
+                    <p className={`mt-3 text-sm leading-relaxed ${active ? "text-white/75" : "text-slate-600"}`}>{info.text}</p>
+                  </>
+                )}
+                <span className={`mt-6 inline-flex items-center gap-1.5 text-sm font-semibold ${active ? "text-white" : "text-[#073c5e]"}`}>
+                  {active ? "แสดงทุกหมวด" : "ดูบทความในหมวดนี้"}
+                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                </span>
               </Link>
             );
           })}
         </div>
+      </section>
 
-        {articles.length === 0 ? (
-          <div className="flex flex-col items-center justify-center gap-3 rounded-3xl border border-dashed border-slate-300 bg-white px-6 py-20 text-center">
-            <ArticleIcon className="h-8 w-8 text-slate-300" />
-            <p className="font-medium text-slate-500">ยังไม่มีบทความในหมวดนี้</p>
-            <p className="text-sm text-slate-400">
-              อยู่ระหว่างการพัฒนา เร็วๆ นี้จะมีบทความวิเคราะห์เทคนิคเพิ่มเติม
-            </p>
+      {/* ===== บทความ ===== */}
+      <section id="articles" className="scroll-mt-20 px-4 py-14 sm:px-6">
+        <div className="mx-auto max-w-6xl">
+          <div className="mb-8 flex flex-wrap items-end justify-between gap-4 border-b border-slate-300 pb-4">
+            <h2 className={`${h} text-3xl font-semibold text-[#073c5e]`}>{activeArea ? labelFor(TRAINING_CENTRE_AREAS, activeArea) : "บทความล่าสุด"}</h2>
+            <nav aria-label="หมวดบทความ" className="flex flex-wrap gap-1 text-sm">
+              {[{ value: undefined, label: "ทั้งหมด" }, ...TRAINING_CENTRE_AREAS].map((a) => {
+                const active = activeArea === a.value;
+                return (
+                  <Link
+                    key={a.label}
+                    href={a.value ? `/training-centre?area=${a.value}#articles` : "/training-centre#articles"}
+                    className={`rounded-full px-3.5 py-1.5 font-medium transition-colors ${active ? "bg-[#073c5e] text-white" : "text-slate-600 hover:bg-white hover:text-slate-900"}`}
+                  >
+                    {a.label}
+                  </Link>
+                );
+              })}
+            </nav>
           </div>
-        ) : (
-          <div className="space-y-10">
-            {/* Featured article */}
-            {featuredArticle && (
-              <Link
-                href={`/training-centre/${featuredArticle.id}`}
-                className="group grid grid-cols-1 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl shadow-indigo-900/10 transition-all hover:-translate-y-1 hover:shadow-2xl hover:shadow-indigo-900/15 lg:grid-cols-2"
-              >
-                <div className="relative h-56 overflow-hidden lg:h-full">
-                  {featuredArticle.coverImageUrl ? (
-                    <Image
-                      src={featuredArticle.coverImageUrl}
-                      alt={featuredArticle.title}
-                      fill
-                      className="object-cover transition-transform duration-300 group-hover:scale-105"
-                    />
-                  ) : (
-                    <div className="h-full w-full bg-linear-to-br from-indigo-700 via-indigo-800 to-indigo-950" />
-                  )}
-                  <span className="absolute left-4 top-4 inline-flex items-center gap-1 rounded-full bg-amber-400 px-2.5 py-1 text-xs font-bold text-indigo-950">
-                    บทความล่าสุด
-                  </span>
-                </div>
-                <div className="flex flex-col justify-center p-8">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-medium text-indigo-600">
-                      {labelFor(TRAINING_CENTRE_AREAS, featuredArticle.area)}
-                    </span>
-                    {featuredArticle.theme && (
-                      <span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700">
-                        {featuredArticle.theme}
-                      </span>
+
+          {articles.length === 0 ? (
+            <div className="grid gap-6 rounded-xl border border-dashed border-slate-300 bg-white p-8 sm:p-10 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
+              <div>
+                <p className={`${h} text-2xl font-semibold text-slate-900`}>ยังไม่มีบทความในหมวดนี้</p>
+                <p className="mt-2 max-w-lg text-sm leading-relaxed text-slate-500">อยู่ระหว่างการพัฒนา เร็วๆ นี้จะมีบทความวิเคราะห์เทคนิคเพิ่มเติม</p>
+              </div>
+              {canManage && (
+                <Link
+                  href="/training-centre/manage"
+                  className="inline-flex items-center justify-center gap-2 rounded-full bg-[#073c5e] px-5 py-3 text-sm font-semibold text-white hover:bg-[#0a4a73]"
+                >
+                  <Plus className="h-4 w-4" />
+                  เพิ่มบทความ
+                </Link>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-12">
+              {featuredArticle && (
+                <Link href={`/training-centre/${featuredArticle.id}`} className="group grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)] lg:gap-10">
+                  <div className="relative aspect-16/10 overflow-hidden rounded-xl bg-[#073c5e]">
+                    {featuredArticle.coverImageUrl ? (
+                      <Image
+                        src={featuredArticle.coverImageUrl}
+                        alt={featuredArticle.title}
+                        fill
+                        sizes="(min-width: 1024px) 40rem, 100vw"
+                        className="object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+                      />
+                    ) : (
+                      <span className={`${h} absolute bottom-5 left-6 text-4xl font-semibold text-white/90`}>{labelFor(TRAINING_CENTRE_AREAS, featuredArticle.area)}</span>
                     )}
                   </div>
-                  <h2 className="mt-3 text-xl font-bold text-slate-900 group-hover:text-indigo-700 sm:text-2xl">
-                    {featuredArticle.title}
-                  </h2>
-                  <p className="mt-2 text-sm text-slate-500">
-                    {featuredArticle.excerpt}
-                  </p>
-                  <div className="mt-5 flex items-center gap-1.5 border-t border-slate-100 pt-4 text-xs text-slate-400">
-                    <Calendar className="h-3.5 w-3.5" />
-                    {formatDate(featuredArticle.createdAt)}
-                    {featuredArticle.ageGroup && ` · ${featuredArticle.ageGroup}`}
+                  <div className="flex flex-col justify-center">
+                    <p className="text-xs font-semibold text-amber-700">บทความล่าสุด</p>
+                    <div className="mt-3">
+                      <Meta area={featuredArticle.area} theme={featuredArticle.theme} ageGroup={featuredArticle.ageGroup} />
+                    </div>
+                    <h3 className={`${h} mt-3 text-3xl font-semibold leading-snug text-slate-900 group-hover:text-[#073c5e] sm:text-4xl`}>{featuredArticle.title}</h3>
+                    <p className="mt-3 text-base leading-relaxed text-slate-600">{featuredArticle.excerpt}</p>
+                    <p className="mt-6 flex items-center justify-between gap-3 border-t border-slate-300 pt-4 text-sm">
+                      <span className="text-slate-500">{formatDate(featuredArticle.createdAt)}</span>
+                      <span className="inline-flex items-center gap-1.5 font-semibold text-[#073c5e]">
+                        อ่านบทความ
+                        <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                      </span>
+                    </p>
                   </div>
-                  <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-indigo-600 group-hover:gap-2.5">
-                    อ่านบทความ
-                    <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
-                  </span>
-                </div>
-              </Link>
-            )}
+                </Link>
+              )}
 
-            {restArticles.length > 0 && (
-              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                {restArticles.map((article) => (
-                  <Link
-                    key={article.id}
-                    href={`/training-centre/${article.id}`}
-                    className="group flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all hover:-translate-y-1 hover:shadow-md"
-                  >
-                    <div className="relative h-36 overflow-hidden">
-                      {article.coverImageUrl ? (
-                        <Image
-                          src={article.coverImageUrl}
-                          alt={article.title}
-                          fill
-                          className="object-cover transition-transform duration-300 group-hover:scale-105"
-                        />
-                      ) : (
-                        <div className="h-full w-full bg-linear-to-br from-indigo-600 to-indigo-900" />
-                      )}
-                      <div className="absolute left-3 top-3 flex flex-wrap gap-1.5">
-                        <span className="rounded-full bg-indigo-950/80 px-2.5 py-1 text-xs font-medium text-amber-300 backdrop-blur-sm">
-                          {labelFor(TRAINING_CENTRE_AREAS, article.area)}
-                        </span>
+              {restArticles.length > 0 && (
+                <div className="grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
+                  {restArticles.map((article) => (
+                    <Link key={article.id} href={`/training-centre/${article.id}`} className="group flex flex-col">
+                      <div className="relative aspect-16/10 overflow-hidden rounded-lg bg-[#073c5e]">
+                        {article.coverImageUrl ? (
+                          <Image
+                            src={article.coverImageUrl}
+                            alt={article.title}
+                            fill
+                            sizes="(min-width: 1024px) 22rem, (min-width: 640px) 50vw, 100vw"
+                            className="object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+                          />
+                        ) : (
+                          <span className={`${h} absolute bottom-3 left-4 text-xl font-semibold text-white/90`}>{labelFor(TRAINING_CENTRE_AREAS, article.area)}</span>
+                        )}
                       </div>
-                    </div>
-                    <div className="flex flex-1 flex-col p-5">
-                      {article.theme && (
-                        <span className="inline-flex w-fit rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-medium text-indigo-600">
-                          {article.theme}
-                        </span>
-                      )}
-                      <h3 className="mt-3 font-semibold text-slate-900 group-hover:text-indigo-700">
-                        {article.title}
-                      </h3>
-                      <p className="mt-2 flex-1 text-sm text-slate-500">
-                        {article.excerpt}
-                      </p>
-                      <div className="mt-4 flex items-center justify-between gap-1.5 border-t border-slate-100 pt-3 text-xs text-slate-400">
-                        <span className="flex items-center gap-1.5">
-                          <Calendar className="h-3.5 w-3.5" />
-                          {formatDate(article.createdAt)}
-                          {article.ageGroup && ` · ${article.ageGroup}`}
-                        </span>
-                        <ArrowRight className="h-3.5 w-3.5 text-indigo-400 opacity-0 transition-opacity group-hover:opacity-100" />
+                      <div className="mt-4">
+                        <Meta area={article.area} theme={article.theme} ageGroup={article.ageGroup} />
                       </div>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-      </div>
+                      <h3 className={`${h} mt-2 text-xl font-semibold leading-snug text-slate-900 group-hover:text-[#073c5e]`}>{article.title}</h3>
+                      <p className="mt-2 line-clamp-3 flex-1 text-sm leading-relaxed text-slate-600">{article.excerpt}</p>
+                      <p className="mt-4 border-t border-slate-200 pt-3 text-xs text-slate-500">{formatDate(article.createdAt)}</p>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </section>
     </div>
   );
 }

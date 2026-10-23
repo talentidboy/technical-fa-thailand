@@ -1,20 +1,22 @@
-import { Montserrat } from "next/font/google";
 import { coreProgramSteps } from "@/lib/coach-program";
+import { display } from "@/components/fonts";
 
 // ชิ้นส่วนดีไซน์ร่วมของศูนย์อบรมผู้ฝึกสอน (หน้าทางเข้า / หลักสูตร / หน้าโค้ช)
-export const display = Montserrat({ weight: ["700", "800", "900"], subsets: ["latin"], display: "swap" });
+// ตัวหัวข้อใช้ Kanit ตัวเดียวกับทั้งเว็บ
+export { display };
 
-// สีประจำระดับ (ไล่เฉด) — ใช้ทั้งบันไดเส้นทางใบอนุญาต การ์ดใบอนุญาต และป้ายระดับ
-export const LEVEL_TONE: Record<string, { bar: string; text: string; soft: string; card: string }> = {
-  G: { bar: "from-slate-300 to-slate-500", text: "text-slate-600", soft: "bg-slate-100 text-slate-700", card: "from-slate-600 via-slate-700 to-slate-900" },
-  C: { bar: "from-sky-300 to-sky-600", text: "text-sky-600", soft: "bg-sky-50 text-sky-700", card: "from-sky-500 via-sky-700 to-indigo-900" },
-  B: { bar: "from-violet-300 to-violet-600", text: "text-violet-600", soft: "bg-violet-50 text-violet-700", card: "from-violet-500 via-violet-700 to-indigo-950" },
-  A: { bar: "from-orange-300 to-orange-600", text: "text-orange-600", soft: "bg-orange-50 text-orange-700", card: "from-orange-500 via-rose-600 to-indigo-950" },
-  PRO: { bar: "from-amber-200 to-amber-500", text: "text-amber-600", soft: "bg-amber-50 text-amber-700", card: "from-amber-400 via-amber-600 to-stone-900" },
+// สีประจำระดับใบอนุญาต (สีทึบ ไม่ไล่เฉด) — ใช้ทั้งเส้นทางใบอนุญาต การ์ดใบอนุญาต และป้ายระดับ
+// hex = ใช้กับ style โดยตรง · bar = พื้นแถบ · card = พื้นการ์ด · text / soft = ตัวอักษร / ป้ายอ่อน
+export const LEVEL_TONE: Record<string, { hex: string; bar: string; text: string; soft: string; card: string }> = {
+  G: { hex: "#64748b", bar: "bg-slate-500", text: "text-slate-600", soft: "bg-slate-100 text-slate-700", card: "bg-slate-700" },
+  C: { hex: "#0369a1", bar: "bg-sky-700", text: "text-sky-700", soft: "bg-sky-50 text-sky-800", card: "bg-sky-800" },
+  B: { hex: "#6d28d9", bar: "bg-violet-700", text: "text-violet-700", soft: "bg-violet-50 text-violet-800", card: "bg-violet-800" },
+  A: { hex: "#c2410c", bar: "bg-orange-700", text: "text-orange-700", soft: "bg-orange-50 text-orange-800", card: "bg-orange-800" },
+  PRO: { hex: "#a16207", bar: "bg-yellow-700", text: "text-yellow-700", soft: "bg-yellow-50 text-yellow-800", card: "bg-[#6b4a0c]" },
 };
 export const levelTone = (level: string | null | undefined) => LEVEL_TONE[level ?? ""] ?? LEVEL_TONE.G;
 
-// หัวข้อ section แบบชิดซ้าย: ลำดับ + ป้ายเล็ก + หัวข้อใหญ่
+// หัวข้อ section แบบชิดซ้าย: ป้ายภาษาอังกฤษเล็ก + หัวข้อใหญ่ (no = ลำดับ ใส่หรือไม่ก็ได้)
 export function SectionHead({
   no,
   eyebrow,
@@ -33,20 +35,20 @@ export function SectionHead({
   return (
     <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
       <div className="min-w-0">
-        <p className={`flex items-center gap-2.5 text-xs font-bold tracking-wide ${dark ? "text-amber-300" : "text-amber-600"}`}>
-          {no && <span className={`${display.className} ${dark ? "text-white/40" : "text-slate-400"}`}>{no}</span>}
-          {no && <span className={`h-px w-6 ${dark ? "bg-amber-300/60" : "bg-amber-500/60"}`} />}
+        <p className={`flex items-center gap-2.5 text-[11px] font-semibold uppercase tracking-[0.24em] ${dark ? "text-amber-300" : "text-amber-700"}`}>
+          {no && <span className={`${display.className} tracking-normal ${dark ? "text-white/40" : "text-slate-400"}`}>{no}</span>}
+          {no && <span className={`h-px w-6 ${dark ? "bg-amber-300/60" : "bg-amber-600/50"}`} />}
           {eyebrow}
         </p>
-        <h2 className={`mt-1.5 text-2xl font-extrabold leading-tight sm:text-3xl ${dark ? "text-white" : "text-slate-900"}`}>{title}</h2>
-        {sub && <p className={`mt-1 text-sm ${dark ? "text-white/60" : "text-slate-500"}`}>{sub}</p>}
+        <h2 className={`${display.className} mt-2 text-3xl font-semibold leading-tight sm:text-4xl ${dark ? "text-white" : "text-[#073c5e]"}`}>{title}</h2>
+        {sub && <p className={`mt-1.5 text-sm ${dark ? "text-white/60" : "text-slate-500"}`}>{sub}</p>}
       </div>
       {action}
     </div>
   );
 }
 
-// บัตรใบอนุญาตดิจิทัล (สไตล์บัตรในวอลเล็ต) — สีตามระดับ
+// บัตรใบอนุญาตดิจิทัล — พื้นสีทึบตามระดับ ตัวอักษรระดับขนาดใหญ่เป็นลายพื้น
 export function LicenceCard({
   level,
   name,
@@ -64,22 +66,20 @@ export function LicenceCard({
 }) {
   const tone = levelTone(level);
   return (
-    <div className={`relative aspect-[1.6/1] w-full overflow-hidden rounded-2xl bg-linear-to-br ${tone.card} p-5 text-white shadow-2xl shadow-black/40 ring-1 ring-white/20`}>
-      <div aria-hidden className="absolute -right-10 -top-16 h-48 w-48 rounded-full bg-white/15 blur-2xl" />
-      <div aria-hidden className="absolute inset-0 bg-[repeating-linear-gradient(115deg,rgba(255,255,255,0.05)_0px,rgba(255,255,255,0.05)_2px,transparent_2px,transparent_14px)]" />
-      <span aria-hidden className={`${display.className} absolute -bottom-8 -right-2 select-none text-[7.5rem] font-black leading-none text-white/12`}>
+    <div className={`relative aspect-[1.6/1] w-full overflow-hidden rounded-xl p-5 text-white shadow-xl shadow-black/25 ${tone.card}`}>
+      <span aria-hidden className={`${display.className} absolute -bottom-10 -right-2 select-none text-[8.5rem] font-semibold leading-none text-white/10`}>
         {level}
       </span>
       <div className="relative flex h-full flex-col">
         <div className="flex items-start justify-between gap-2">
-          <p className={`${display.className} text-[10px] font-extrabold uppercase tracking-[0.22em] text-white/75`}>AFC Coaching Licence</p>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-white/70">AFC Coaching Licence</p>
           <span className="inline-flex flex-none items-center gap-1.5 rounded-full bg-black/25 px-2 py-0.5 text-[10px] font-bold">
             <span className={`h-1.5 w-1.5 rounded-full ${statusDot}`} />
             {statusLabel}
           </span>
         </div>
-        <p className={`${display.className} mt-1 text-4xl font-black leading-none drop-shadow`}>{level}</p>
-        <div className="mt-auto">
+        <p className={`${display.className} mt-1 text-4xl font-semibold leading-none`}>{level}</p>
+        <div className="mt-auto border-t border-white/20 pt-3">
           <p className="truncate text-sm font-bold">{name}</p>
           <div className="mt-1 flex items-end justify-between gap-2 text-[11px] text-white/75">
             <span className="truncate font-mono">{certificateNo ?? "—"}</span>
@@ -91,26 +91,23 @@ export function LicenceCard({
   );
 }
 
-// บันได G → C → B → A → PRO (แท่งสูงขึ้นตามระดับ) — highlight = ระดับปัจจุบันของโค้ช (ถ้ามี)
-export function PathwayStairs({ current, compact = false }: { current?: string | null; compact?: boolean }) {
+// เส้นทาง G → C → B → A → PRO เป็นขั้นบันได (แท่งสูงขึ้นตามลำดับขั้น ไม่ใช่ตามจำนวน) — highlight = ระดับปัจจุบันของโค้ช (ถ้ามี)
+export function PathwayStairs({ current, compact = false, dark = true }: { current?: string | null; compact?: boolean; dark?: boolean }) {
   const currentIdx = current ? coreProgramSteps.findIndex((s) => s.level === current) : -1;
   return (
-    <ol className={`grid grid-cols-5 items-end ${compact ? "gap-1.5" : "gap-2 sm:gap-3"}`}>
+    <ol className={`grid grid-cols-5 items-end ${compact ? "gap-1" : "gap-1.5 sm:gap-2"}`}>
       {coreProgramSteps.map((s, i) => {
         const tone = levelTone(s.level);
         const done = currentIdx >= 0 && i <= currentIdx;
         const dim = currentIdx >= 0 && i > currentIdx;
         return (
           <li key={s.level} className="flex flex-col items-center">
-            <span className={`mb-2 text-[10px] font-semibold tabular-nums ${compact ? "hidden" : "text-white/50"}`}>{s.totalHours} ชม.</span>
+            <span className={`mb-1.5 text-[10px] font-semibold tabular-nums ${compact ? "hidden" : dark ? "text-white/55" : "text-slate-500"}`}>{s.totalHours} ชม.</span>
             <div
-              className={`relative flex w-full items-start justify-center overflow-hidden rounded-t-xl bg-linear-to-b ${tone.bar} ${dim ? "opacity-30" : ""} ${
-                i === currentIdx ? "ring-2 ring-white" : ""
-              }`}
-              style={{ height: `${(compact ? 34 : 56) + i * (compact ? 14 : 26)}px` }}
+              className={`relative flex w-full items-start justify-center rounded-t-md ${dim ? "opacity-30" : ""} ${i === currentIdx ? "ring-2 ring-white ring-offset-2 ring-offset-transparent" : ""}`}
+              style={{ height: `${(compact ? 34 : 52) + i * (compact ? 14 : 24)}px`, background: tone.hex }}
             >
-              <div aria-hidden className="absolute inset-x-0 top-0 h-1/2 bg-linear-to-b from-white/35 to-transparent" />
-              <span className={`${display.className} relative mt-1.5 font-black text-white drop-shadow ${compact ? "text-xs" : "text-sm sm:text-base"}`}>{s.level}</span>
+              <span className={`${display.className} mt-1.5 font-semibold text-white ${compact ? "text-xs" : "text-sm sm:text-base"}`}>{s.level}</span>
               {done && !compact && <span className="absolute bottom-1.5 text-[10px] font-bold text-white/90">✓</span>}
             </div>
           </li>

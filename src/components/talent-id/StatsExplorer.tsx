@@ -45,7 +45,7 @@ function MiniLeaderboard({
     .slice(0, 5);
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+    <div className="rounded-xl border border-white/10 bg-[#081528] p-5">
       <div className="mb-4 flex items-center gap-2">
         <Icon className="h-4 w-4 text-amber-400" />
         <h3 className="text-sm font-semibold text-white">{title}</h3>
@@ -137,7 +137,7 @@ function PlayerCard({ row }: { row: MatchStatsRow }) {
         ].map((s) => (
           <div key={s.label} className="text-center">
             <p className="text-sm font-bold text-white">{s.value}</p>
-            <p className="text-[10px] uppercase tracking-wide text-indigo-400">{s.label}</p>
+            <p className="text-[10px] text-indigo-400">{s.label}</p>
           </div>
         ))}
       </div>
@@ -145,7 +145,7 @@ function PlayerCard({ row }: { row: MatchStatsRow }) {
   );
 
   const className =
-    "group flex flex-col rounded-2xl border border-white/10 bg-linear-to-b from-white/7 to-white/2 p-4 text-left transition-all hover:-translate-y-0.5 hover:border-amber-400/40";
+    "group flex flex-col rounded-lg border border-white/10 bg-[#081528] p-4 text-left transition-colors hover:border-amber-400/40";
 
   if (!row.playerId) {
     return <div className={className}>{body}</div>;
@@ -188,7 +188,7 @@ export function StatsExplorer({ data }: { data: MatchStatsRow[] }) {
   return (
     <div>
       {/* ตัวกรอง */}
-      <div className="mb-5 flex flex-col gap-4 rounded-2xl border border-white/10 bg-white/5 p-5 sm:flex-row sm:flex-wrap">
+      <div className="mb-5 flex flex-col gap-4 rounded-xl border border-white/10 bg-[#081528] p-5 sm:flex-row sm:flex-wrap">
         <div className="relative flex-1 sm:min-w-55">
           <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-indigo-400" />
           <input
@@ -250,7 +250,7 @@ export function StatsExplorer({ data }: { data: MatchStatsRow[] }) {
 
         <div className="min-w-0 flex-1 lg:order-1">
           {filtered.length === 0 ? (
-            <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-white/15 bg-white/5 px-6 py-16 text-center">
+            <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-white/15 px-6 py-16 text-center">
               <p className="text-sm text-indigo-300">ไม่พบนักเตะที่ตรงกับเงื่อนไขที่เลือก</p>
             </div>
           ) : (

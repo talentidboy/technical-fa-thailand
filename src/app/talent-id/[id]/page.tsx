@@ -12,6 +12,7 @@ import { PositionPitch } from "@/components/PositionPitch";
 import { PlayerTabs } from "@/components/talent-id/PlayerTabs";
 import { InfoPill } from "@/components/talent-id/InfoPill";
 import { Breadcrumb } from "@/components/talent-id/Breadcrumb";
+import { display } from "@/components/talent-id/TalentUi";
 import { MatchStatsPanel } from "@/components/talent-id/MatchStatsPanel";
 import { MiniRadar } from "@/components/talent-id/MiniRadar";
 import { TopStatsChart } from "@/components/talent-id/TopStatsChart";
@@ -212,7 +213,7 @@ export default async function TalentIdDetailPage({
     <>
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:items-start">
         {/* การ์ด 1 — ตำแหน่งและร่างกาย */}
-        <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
+        <div className="rounded-xl border border-white/10 bg-[#081528] p-6">
           <div className="mb-4 flex items-center gap-2">
             <Users2 className="h-4 w-4 text-amber-400" />
             <h2 className="font-semibold text-white">ตำแหน่งและร่างกาย</h2>
@@ -248,7 +249,7 @@ export default async function TalentIdDetailPage({
               {stats.map((s) => (
                 <div
                   key={s.label}
-                  className="flex flex-col items-center gap-1 rounded-2xl bg-black/20 p-3 text-center"
+                  className="flex flex-col items-center gap-1 rounded-lg bg-white/5 p-3 text-center"
                 >
                   <s.icon className="h-4 w-4 text-amber-400" />
                   <p className="text-base font-bold text-white">{s.value}</p>
@@ -262,7 +263,7 @@ export default async function TalentIdDetailPage({
         </div>
 
         {/* การ์ด 2 — เรดาร์/สถิติเด่น + คะแนนสแกาต์ + จุดแข็ง/จุดที่ควรพัฒนา */}
-        <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
+        <div className="rounded-xl border border-white/10 bg-[#081528] p-6">
           <div className="mb-4 flex items-center gap-2">
             <Gauge className="h-4 w-4 text-amber-400" />
             <h2 className="font-semibold text-white">ความสามารถ</h2>
@@ -270,12 +271,12 @@ export default async function TalentIdDetailPage({
 
           {matchStats ? (
             <>
-              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-indigo-300">
+              <p className="mb-2 text-xs font-semibold text-indigo-300">
                 โปรไฟล์เทียบกับผู้เล่นทั้งหมด
               </p>
               <MiniRadar row={matchStats.row} statsMax={matchStats.statsMax} />
 
-              <p className="mb-2 mt-4 border-t border-white/10 pt-4 text-xs font-semibold uppercase tracking-wide text-indigo-300">
+              <p className="mb-2 mt-4 border-t border-white/10 pt-4 text-xs font-semibold text-indigo-300">
                 สถิติเด่น
               </p>
               <TopStatsChart row={matchStats.row} statsDist={matchStats.statsDist} limit={6} />
@@ -289,7 +290,7 @@ export default async function TalentIdDetailPage({
 
           {player.scoutScores.length > 0 && (
             <div className={matchStats ? "mt-4 border-t border-white/10 pt-4" : ""}>
-              <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-indigo-300">
+              <p className="mb-3 text-xs font-semibold text-indigo-300">
                 คะแนนจากสแกาต์รายบุคคล
               </p>
               <ScoutScoresBars scores={player.scoutScores} />
@@ -300,7 +301,7 @@ export default async function TalentIdDetailPage({
             <div className="mt-4 grid grid-cols-1 gap-4 border-t border-white/10 pt-4 sm:grid-cols-2">
               {strengths.length > 0 && (
                 <div>
-                  <div className="mb-1.5 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-emerald-400">
+                  <div className="mb-1.5 flex items-center gap-1.5 text-xs font-bold text-emerald-400">
                     <ThumbsUp className="h-3.5 w-3.5" />
                     จุดแข็ง
                   </div>
@@ -315,7 +316,7 @@ export default async function TalentIdDetailPage({
               )}
               {weaknesses.length > 0 && (
                 <div>
-                  <div className="mb-1.5 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-rose-400">
+                  <div className="mb-1.5 flex items-center gap-1.5 text-xs font-bold text-rose-400">
                     <ThumbsDown className="h-3.5 w-3.5" />
                     จุดที่ควรพัฒนา
                   </div>
@@ -336,7 +337,7 @@ export default async function TalentIdDetailPage({
       {(player.talent.length > 0 || player.tags.length > 0) && (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {player.talent.length > 0 && (
-            <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
+            <div className="rounded-xl border border-white/10 bg-[#081528] p-6">
               <div className="mb-3 flex items-center gap-2">
                 <Tag className="h-4 w-4 text-rose-400" />
                 <h2 className="font-semibold text-white">ความสามารถโดดเด่น</h2>
@@ -355,7 +356,7 @@ export default async function TalentIdDetailPage({
           )}
 
           {player.tags.length > 0 && (
-            <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
+            <div className="rounded-xl border border-white/10 bg-[#081528] p-6">
               <div className="mb-3 flex items-center gap-2">
                 <Tag className="h-4 w-4 text-emerald-400" />
                 <h2 className="font-semibold text-white">สถานะการคัดเลือก</h2>
@@ -376,14 +377,14 @@ export default async function TalentIdDetailPage({
       )}
 
       {(gradeBadges.length > 0 || ratingPoints.some((p) => p.value != null)) && (
-        <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/5">
+        <div className="overflow-hidden rounded-xl border border-white/10 bg-[#081528]">
           <div className="flex items-center gap-2 border-b border-white/10 px-6 py-4">
             <TrendingUp className="h-4 w-4 text-amber-400" />
             <h2 className="font-semibold text-white">คะแนนตามรอบการประเมิน</h2>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
-              <thead className="text-[11px] uppercase tracking-wide text-indigo-400">
+              <thead className="text-[11px] text-indigo-400">
                 <tr>
                   <th className="px-6 py-2 font-medium">รอบ</th>
                   <th className="px-6 py-2 font-medium">เกรด</th>
@@ -424,14 +425,14 @@ export default async function TalentIdDetailPage({
   const ratingsTab = (
     <>
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-6 lg:col-span-2">
+        <div className="rounded-xl border border-white/10 bg-[#081528] p-6 lg:col-span-2">
           <div className="mb-4 flex items-center gap-2">
             <TrendingUp className="h-4 w-4 text-amber-400" />
             <h2 className="font-semibold text-white">แนวโน้มคะแนนประเมิน</h2>
           </div>
           <RatingSparkline points={ratingPoints} />
         </div>
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
+        <div className="rounded-xl border border-white/10 bg-[#081528] p-6">
           <div className="mb-4 flex items-center gap-2">
             <Star className="h-4 w-4 text-amber-400" />
             <h2 className="font-semibold text-white">เกรดล่าสุด</h2>
@@ -462,7 +463,7 @@ export default async function TalentIdDetailPage({
   const mediaTab = (
     <>
       {player.hudlVideoLeg1 || player.hudlVideoLeg2 ? (
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
+        <div className="rounded-xl border border-white/10 bg-[#081528] p-6">
           <div className="mb-3 flex items-center gap-2">
             <Video className="h-4 w-4 text-amber-400" />
             <h2 className="font-semibold text-white">วิดีโอ HUDL</h2>
@@ -493,7 +494,7 @@ export default async function TalentIdDetailPage({
           </div>
         </div>
       ) : (
-        <p className="rounded-2xl border border-dashed border-white/15 bg-white/5 px-6 py-10 text-center text-sm text-indigo-300">
+        <p className="rounded-xl border border-dashed border-white/15 px-6 py-10 text-center text-sm text-indigo-300">
           ยังไม่มีวิดีโอสำหรับผู้เล่นคนนี้
         </p>
       )}
@@ -511,32 +512,16 @@ export default async function TalentIdDetailPage({
       />
 
       {/* Profile hero */}
-      <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-linear-to-br from-indigo-900 via-indigo-950 to-slate-950 shadow-2xl">
-        <div
-          className="absolute inset-x-0 top-0 h-1"
-          style={{ background: `linear-gradient(90deg, transparent, ${heroColor}, transparent)` }}
-        />
-        <div
-          className="pointer-events-none absolute -left-20 -top-20 h-80 w-80 rounded-full opacity-20 blur-3xl"
-          style={{ backgroundColor: heroColor }}
-        />
-        <div
-          className="pointer-events-none absolute -bottom-24 -right-24 h-72 w-72 rounded-full opacity-10 blur-3xl"
-          style={{ backgroundColor: heroColor }}
-        />
+      <div className="relative overflow-hidden rounded-xl border border-white/10 bg-[#081528]">
+        <div className="absolute inset-x-0 top-0 h-1" style={{ background: heroColor }} />
         <div className="relative flex flex-col gap-6 p-6 sm:p-8 lg:flex-row lg:items-start">
           <div className="flex flex-none items-end gap-4">
             {player.photoUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={player.photoUrl}
-                alt=""
-                className="h-32 w-32 flex-none rounded-2xl border-2 object-cover shadow-lg"
-                style={{ borderColor: heroColor }}
-              />
+              <img src={player.photoUrl} alt="" className="h-32 w-32 flex-none rounded-xl border-2 object-cover" style={{ borderColor: heroColor }} />
             ) : (
               <div
-                className="flex h-32 w-32 flex-none items-center justify-center rounded-2xl border-2 bg-white/10 text-4xl font-semibold text-indigo-200 shadow-lg"
+                className="flex h-32 w-32 flex-none items-center justify-center rounded-xl border-2 bg-indigo-900 text-4xl font-semibold text-indigo-200"
                 style={{ borderColor: heroColor }}
               >
                 {player.fullNameTh.charAt(0)}
@@ -546,49 +531,37 @@ export default async function TalentIdDetailPage({
 
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">
-                  {player.fullNameTh}
-                </h1>
+              <div className="min-w-0">
+                <h1 className={`${display.className} text-3xl font-semibold leading-tight text-white sm:text-4xl`}>{player.fullNameTh}</h1>
                 <p className="mt-0.5 text-sm text-indigo-300">
-                  {[player.fullNameEn, player.nickname && `"${player.nickname}"`]
-                    .filter(Boolean)
-                    .join(" · ") || "-"}
+                  {[player.fullNameEn, player.nickname && `"${player.nickname}"`].filter(Boolean).join(" · ") || "-"}
                 </p>
               </div>
               {player.playerId != null && (
-                <span className="flex-none text-4xl font-black text-white/10 sm:text-5xl">
-                  #{player.playerId}
-                </span>
+                <p className="flex-none text-right">
+                  <span className="block text-[10px] font-semibold uppercase tracking-[0.2em] text-indigo-400">Player ID</span>
+                  <span className={`${display.className} text-xl font-semibold tabular-nums text-white`}>#{player.playerId}</span>
+                </p>
               )}
             </div>
 
-            <div className="mt-3 flex flex-wrap items-center gap-1.5">
-              {player.position1 && (
-                <span
-                  className="flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold"
-                  style={{ backgroundColor: `${heroColor}26`, color: heroColor, boxShadow: `inset 0 0 0 1px ${heroColor}66` }}
-                >
-                  <ShieldHalf className="h-3 w-3" />
-                  {player.position1}
-                </span>
-              )}
-              {player.styleOfPlay && (
-                <span className="rounded-full bg-white/10 px-2.5 py-1 text-xs font-medium text-indigo-200">
-                  {player.styleOfPlay}
-                </span>
-              )}
-            </div>
+            {(player.position1 || player.styleOfPlay) && (
+              <p className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+                {player.position1 && (
+                  <span className="inline-flex items-center gap-1.5 font-semibold" style={{ color: heroColor }}>
+                    <ShieldHalf className="h-3.5 w-3.5" />
+                    {player.position1}
+                  </span>
+                )}
+                {player.styleOfPlay && <span className="text-indigo-200">{player.styleOfPlay}</span>}
+              </p>
+            )}
 
             <div className="mt-6 grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-6">
               <InfoPill icon={Calendar} label="ปีเกิด" value={player.yearOfBirth ?? "-"} />
               <InfoPill icon={Users2} label="อายุ" value={player.age != null ? `${player.age} ปี` : "-"} />
               <InfoPill icon={MapPin} label="จังหวัด" value={player.province ?? "-"} />
-              <InfoPill
-                icon={Building2}
-                label="สโมสร / โรงเรียน"
-                value={player.club || player.school || "-"}
-              />
+              <InfoPill icon={Building2} label="สโมสร / โรงเรียน" value={player.club || player.school || "-"} />
               <InfoPill icon={Footprints} label="เท้าถนัด" value={player.strongFoot ?? "-"} />
               <InfoPill icon={ShieldHalf} label="ตำแหน่งหลัก" value={player.position1 ?? "-"} accent />
             </div>
@@ -605,7 +578,7 @@ export default async function TalentIdDetailPage({
 
         {/* Contact — ADMIN/STAFF only, always visible regardless of tab */}
         {canSeeContact && (
-          <div className="rounded-2xl border border-amber-400/20 bg-amber-400/5">
+          <div className="rounded-xl border border-amber-400/25 bg-[#081528]">
             <div className="flex items-center gap-2 border-b border-amber-400/10 px-6 py-4">
               <IdCard className="h-4 w-4 text-amber-400" />
               <h2 className="font-semibold text-white">

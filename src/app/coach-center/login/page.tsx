@@ -4,8 +4,17 @@ import Image from "next/image";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { coachLogin } from "./actions";
-import { COVER_URL } from "@/lib/brand";
-import { ArrowLeft } from "lucide-react";
+import { COACH_CENTRE_IMAGE_URL } from "@/lib/brand";
+import { display } from "@/components/fonts";
+import { authInputClass } from "@/components/academy/AcademyShell";
+import { LoginSubmit, PasswordInput } from "@/components/academy/AuthFields";
+import { AlertCircle, ArrowLeft, User, UserPlus } from "lucide-react";
+
+const POINTS = [
+  { title: "ใบอนุญาตทุกระดับในที่เดียว", text: "ดูสถานะและวันหมดอายุ พร้อมบัตรผู้ฝึกสอนดิจิทัลที่ตรวจสอบได้ด้วย QR" },
+  { title: "ดาวน์โหลดเอกสารได้เอง", text: "Diploma และ Licence ของทุกหลักสูตรที่ผ่านการอบรม" },
+  { title: "สมัครอบรมและต่ออายุออนไลน์", text: "ติดตามสถานะใบสมัครและคำขอต่ออายุได้ทันที" },
+];
 
 export default async function CoachLoginPage({
   searchParams,
@@ -20,96 +29,109 @@ export default async function CoachLoginPage({
   const { error } = await searchParams;
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden px-4">
-      <div className="absolute inset-0">
-        <Image
-          src={COVER_URL}
-          alt="สำนักงานสมาคมกีฬาฟุตบอลแห่งประเทศไทย"
-          fill
-          priority
-          className="object-cover"
-        />
-        <div className="absolute inset-0 bg-linear-to-br from-indigo-950/90 via-indigo-900/85 to-indigo-700/90" />
-      </div>
-      <div className="absolute inset-x-0 top-0 h-1 bg-linear-to-r from-amber-600 via-amber-400 to-amber-600" />
-
-      <div className="relative w-full max-w-sm overflow-hidden rounded-2xl bg-white shadow-2xl">
-        <div className="h-1.5 bg-linear-to-r from-amber-500 via-amber-300 to-amber-500" />
-        <div className="p-8">
-          <Link
-            href="/coach-center"
-            className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-400 hover:text-slate-600"
-          >
-            <ArrowLeft className="h-3.5 w-3.5" />
-            กลับหน้าศูนย์อบรมผู้ฝึกสอน
+    <div className="min-h-screen bg-white lg:grid lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
+      <aside className="relative isolate overflow-hidden bg-[#04223a] text-white lg:sticky lg:top-0 lg:h-screen">
+        <Image src={COACH_CENTRE_IMAGE_URL} alt="" fill priority sizes="(min-width: 1024px) 55vw, 100vw" className="-z-10 object-cover opacity-35" />
+        <div className="absolute inset-x-0 top-0 h-1 bg-amber-400" />
+        <div className="flex h-full flex-col justify-between gap-10 px-6 py-6 sm:px-10 lg:py-10">
+          <Link href="/coach-center" className="flex w-fit items-center gap-3">
+            <BrandLogo tone="white" className="h-10" />
+            <span className="h-7 w-px bg-white/25" />
+            <span className="leading-tight">
+              <span className={`${display.className} block font-semibold`}>ศูนย์อบรมผู้ฝึกสอนฟุตบอล</span>
+              <span className="block text-[11px] text-white/60">Coach Education · FA Thailand</span>
+            </span>
           </Link>
 
-          <div className="mt-4 flex flex-col items-center gap-2 text-center">
-            <BrandLogo tone="navy" className="h-12" />
-            <h2 className="mt-2 text-lg font-bold text-slate-900">
-              ศูนย์อบรมผู้ฝึกสอนฟุตบอล
-            </h2>
-            <p className="text-xs font-medium uppercase tracking-wide text-amber-600">
-              เข้าสู่ระบบ
+          <div className="hidden max-w-lg lg:block">
+            <p className="flex items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.28em] text-amber-300">
+              <span className="h-px w-10 bg-amber-300/70" />
+              Coach Account
             </p>
-            <p className="text-sm text-slate-500">สำหรับผู้ฝึกสอนเท่านั้น</p>
+            <h1 className={`${display.className} mt-5 text-5xl font-semibold leading-[1.08]`}>
+              ใบอนุญาต ใบประกาศ
+              <br />
+              และการต่ออายุ
+              <br />
+              ในบัญชีเดียว
+            </h1>
+            <ol className="mt-10 space-y-5 border-t border-white/15 pt-6">
+              {POINTS.map((p, i) => (
+                <li key={p.title} className="flex gap-5">
+                  <span className={`${display.className} w-8 flex-none text-xl font-semibold text-amber-300`}>{String(i + 1).padStart(2, "0")}</span>
+                  <span>
+                    <span className="block font-semibold">{p.title}</span>
+                    <span className="block text-sm text-white/60">{p.text}</span>
+                  </span>
+                </li>
+              ))}
+            </ol>
           </div>
 
-          <form action={coachLogin} className="mt-6 space-y-4">
-            {error && (
-              <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">
-                {error === "disabled"
-                  ? "บัญชีนี้ถูกระงับการใช้งาน กรุณาติดต่อผู้ดูแลระบบ"
-                  : error === "staff"
-                    ? (
-                        <>
-                          บัญชีนี้ไม่ใช่บัญชีผู้ฝึกสอน กรุณาเข้าสู่ระบบที่{" "}
-                          <Link href="/login" className="font-medium underline">
-                            หน้าเข้าสู่ระบบผู้ดูแลระบบ
-                          </Link>
-                        </>
-                      )
-                    : "อีเมล/Username หรือรหัสผ่านไม่ถูกต้อง"}
-              </p>
-            )}
-            <label className="flex flex-col gap-1.5">
-              <span className="text-sm font-medium text-slate-700">อีเมล / Username</span>
-              <input
-                name="email"
-                type="text"
-                autoComplete="username"
-                autoCapitalize="none"
-                spellCheck={false}
-                required
-                autoFocus
-                className="rounded-lg border border-slate-200 px-3.5 py-2.5 text-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100"
-              />
+          <p className="hidden text-xs text-white/45 lg:block">ฝ่ายเทคนิค สมาคมกีฬาฟุตบอลแห่งประเทศไทย ในพระบรมราชูปถัมภ์</p>
+        </div>
+      </aside>
+
+      <main className="flex items-center justify-center px-5 py-10 sm:px-10 lg:py-16">
+        <div className="w-full max-w-sm">
+          <Link href="/coach-center" className="inline-flex items-center gap-1 text-sm text-slate-500 hover:text-slate-800">
+            <ArrowLeft className="h-4 w-4" />
+            กลับหน้าศูนย์อบรมผู้ฝึกสอน
+          </Link>
+          <h2 className={`${display.className} mt-6 text-4xl font-semibold text-[#073c5e]`}>เข้าสู่ระบบ</h2>
+          <p className="mt-2 text-sm text-slate-500">สำหรับผู้ฝึกสอนเท่านั้น</p>
+
+          {error && (
+            <p role="alert" className="mt-6 flex items-start gap-2 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 ring-1 ring-red-100">
+              <AlertCircle className="mt-0.5 h-4 w-4 flex-none" />
+              <span>
+                {error === "disabled" ? (
+                  "บัญชีนี้ถูกระงับการใช้งาน กรุณาติดต่อผู้ดูแลระบบ"
+                ) : error === "staff" ? (
+                  <>
+                    บัญชีนี้ไม่ใช่บัญชีผู้ฝึกสอน กรุณาเข้าสู่ระบบที่{" "}
+                    <Link href="/login" className="font-medium underline">
+                      หน้าเข้าสู่ระบบผู้ดูแลระบบ
+                    </Link>
+                  </>
+                ) : (
+                  "อีเมล/Username หรือรหัสผ่านไม่ถูกต้อง"
+                )}
+              </span>
+            </p>
+          )}
+
+          <form action={coachLogin} className="mt-8 space-y-5">
+            <label className="block">
+              <span className="text-sm font-semibold text-slate-700">อีเมล / Username</span>
+              <span className="relative mt-1.5 block">
+                <User className="pointer-events-none absolute left-4 top-1/2 h-4.5 w-4.5 -translate-y-1/2 text-slate-400" />
+                <input name="email" type="text" autoComplete="username" autoCapitalize="none" spellCheck={false} required autoFocus className={authInputClass} />
+              </span>
             </label>
-            <label className="flex flex-col gap-1.5">
-              <span className="text-sm font-medium text-slate-700">รหัสผ่าน</span>
-              <input
-                name="password"
-                type="password"
-                required
-                className="rounded-lg border border-slate-200 px-3.5 py-2.5 text-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100"
-              />
+            <label className="block">
+              <span className="text-sm font-semibold text-slate-700">รหัสผ่าน</span>
+              <span className="mt-1.5 block">
+                <PasswordInput name="password" autoComplete="current-password" />
+              </span>
             </label>
-            <button
-              type="submit"
-              className="w-full rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm shadow-indigo-200 transition-colors hover:bg-indigo-700"
-            >
-              เข้าสู่ระบบ
-            </button>
+            <LoginSubmit tone="bg-[#073c5e] hover:bg-[#0a4a73]" />
           </form>
 
-          <p className="mt-4 text-center text-sm text-slate-500">
-            ยังไม่มีบัญชี?{" "}
-            <Link href="/register" className="font-medium text-indigo-600 hover:text-indigo-700">
-              สมัครสมาชิกผู้ฝึกสอน
-            </Link>
-          </p>
+          <div className="mt-10 flex items-center gap-3 text-xs text-slate-400">
+            <span className="h-px flex-1 bg-slate-200" />
+            ยังไม่มีบัญชี?
+            <span className="h-px flex-1 bg-slate-200" />
+          </div>
+          <Link
+            href="/register"
+            className="mt-4 inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-slate-200 text-sm font-bold text-slate-800 transition hover:border-[#073c5e] hover:text-[#073c5e]"
+          >
+            <UserPlus className="h-4 w-4" />
+            สมัครสมาชิกผู้ฝึกสอน
+          </Link>
         </div>
-      </div>
+      </main>
     </div>
   );
 }

@@ -168,6 +168,26 @@ function photoUrl(v: unknown): string | null {
   return first?.thumbnails?.large?.url ?? first?.url ?? null;
 }
 
+// ปีเกิด ค.ศ. จากค่าเช่น "2012 / 2555" (รับได้ทั้ง ค.ศ. และ พ.ศ.)
+export function birthYearCE(yearOfBirth: string | null): number | null {
+  const y = Number(yearOfBirth?.match(/\d{4}/)?.[0]);
+  if (!y) return null;
+  return y > 2400 ? y - 543 : y;
+}
+
+// อายุตามปีเกิด (แบบนับรุ่นอายุฟุตบอล = ปีปัจจุบัน − ปีเกิด) — ฟิลด์ "Age" ใน Airtable คำนวณผิดสำหรับผู้เล่นที่บันทึกวันเกิดเป็น พ.ศ.
+// (ได้ค่าติดลบหลักร้อย) จึงใช้ปีเกิดเป็นหลัก · ไม่มีปีเกิดค่อยใช้ค่าจาก Airtable ถ้าอยู่ในช่วงที่เป็นไปได้
+function playerAge(yearOfBirth: string | null, airtableAge: number | null): number | null {
+  const y = birthYearCE(yearOfBirth);
+  if (y) return Number(new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Bangkok" }).slice(0, 4)) - y;
+  return airtableAge != null && airtableAge >= 5 && airtableAge <= 40 ? airtableAge : null;
+}
+
+// ค่าที่พิมพ์ผิดใน Airtable (เช่น ส่วนสูง 179180) ทำให้ค่าเฉลี่ยเพี้ยน — นอกช่วงที่เป็นไปได้ถือว่าไม่มีข้อมูล
+function inRange(v: number | null, min: number, max: number): number | null {
+  return v != null && v >= min && v <= max ? v : null;
+}
+
 function mapPlayer(record: AirtableRecord<RawFields>): TalentPlayer {
   const f = record.fields;
 
@@ -188,10 +208,10 @@ function mapPlayer(record: AirtableRecord<RawFields>): TalentPlayer {
     club: str(f[FIELD.club]),
     province: str(f[FIELD.province]),
     yearOfBirth: str(f[FIELD.yearOfBirth]),
-    age: num(f[FIELD.age]),
-    height: num(f[FIELD.height]),
-    weight: num(f[FIELD.weight]),
-    bmi: num(f[FIELD.bmi]),
+    age: playerAge(str(f[FIELD.yearOfBirth]), num(f[FIELD.age])),
+    height: inRange(num(f[FIELD.height]), 100, 220),
+    weight: inRange(num(f[FIELD.weight]), 15, 150),
+    bmi: inRange(num(f[FIELD.bmi]), 10, 45),
     strongFoot: str(f[FIELD.strongFoot]),
     position1: str(f[FIELD.position1]),
     position2: strArr(f[FIELD.position2]),
@@ -242,7 +262,8 @@ const SORT_FIELD: Record<TalentSortKey, string> = {
   name: FIELD.fullNameTh,
   position: FIELD.position1,
   club: FIELD.club,
-  age: FIELD.age,
+  // เรียงอายุด้วยปีเกิด (ฟิลด์ Age ใน Airtable เชื่อถือไม่ได้) — ทิศทางกลับด้าน: อายุน้อย→มาก = ปีเกิดมาก→น้อย
+  age: FIELD.yearOfBirth,
   height: FIELD.height,
   weight: FIELD.weight,
   // ไม่มีฟิลด์ "คะแนนล่าสุด" รวมเดียวใน Airtable (เราคำนวณเอง = Camp2026 ?? Leg2 ?? Leg1)
@@ -300,9 +321,10 @@ export async function getTalentPlayersPage(
   query: TalentPlayerQuery,
 ): Promise<{ players: TalentPlayer[]; offset?: string }> {
   const sortKey = query.sortKey ?? "name";
+  const asc = (query.sortAsc !== false) !== (sortKey === "age");
   const { records, offset } = await queryAirtablePage<RawFields>(TABLE_NAME, {
     filterByFormula: buildFilterFormula(query),
-    sort: [{ field: SORT_FIELD[sortKey], direction: query.sortAsc === false ? "desc" : "asc" }],
+    sort: [{ field: SORT_FIELD[sortKey], direction: asc ? "asc" : "desc" }],
     pageSize: query.pageSize ?? 50,
     offset: query.offset,
   });

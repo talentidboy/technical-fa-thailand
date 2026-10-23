@@ -1,333 +1,314 @@
-import { BrandLogo } from "@/components/BrandLogo";
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
-import {
-  ArrowLeft,
-  Sprout,
-  Heart,
-  Users,
-  Smile,
-  Trophy,
-  UserCog,
-  MapPin,
-} from "lucide-react";
+import { GRASSROOTS_YEAR, grassrootsCoaches as coaches, grassrootsPlayers as players } from "@/lib/grassroots-data";
+import { display } from "@/components/fonts";
+import { ModuleHeader } from "@/components/ModuleHeader";
+import { ProvinceMap, provinceCodeByName } from "@/components/ProvinceMap";
 
-// ข้อมูลสถิติปี 2025 จากรายงานสรุปโครงการฟุตบอลรากหญ้า (ข้อมูลนิ่ง กรอกด้วยมือ ไม่ได้ดึงจากฐานข้อมูล)
-const coachStats = {
-  total: 518,
-  male: 446,
-  malePercent: 86.1,
-  female: 72,
-  femalePercent: 13.9,
-  provinces: 18,
-  topProvinces: [
-    { name: "สุราษฎร์ธานี", count: 107 },
-    { name: "ชลบุรี", count: 88 },
-    { name: "สงขลา", count: 65 },
-    { name: "ภูเก็ต", count: 62 },
-    { name: "น่าน", count: 48 },
-  ],
-  noLicense: 387,
-  licenses: [
-    { label: "G-Diploma", count: 80 },
-    { label: "C-Diploma", count: 27 },
-    { label: "T-License", count: 10 },
-  ],
-};
+const h = display.className;
+const ACCENT = "#047857";
 
-const playerStats = {
-  total: 2888,
-  male: 2414,
-  malePercent: 83.6,
-  female: 474,
-  femalePercent: 16.4,
-  provinces: 18,
-  topProvinces: [
-    { name: "สุราษฎร์ธานี", count: 799 },
-    { name: "ชลบุรี", count: 487 },
-    { name: "สงขลา", count: 267 },
-    { name: "ร้อยเอ็ด", count: 148 },
-    { name: "น่าน", count: 134 },
-  ],
-  ageRanges: [
-    { label: "2–7 ปี", count: 93 },
-    { label: "8–10 ปี", count: 1006 },
-    { label: "11–12 ปี", count: 1496 },
-    { label: "13–15 ปี", count: 293 },
-  ],
-};
+const PILLARS = [
+  { title: "สนุกเป็นหลัก", description: "ปลูกฝังความรักในกีฬาฟุตบอลผ่านกิจกรรมที่สนุกและเหมาะสมกับวัย" },
+  { title: "การมีส่วนร่วม", description: "เปิดโอกาสให้เด็กและเยาวชนทุกคนได้ร่วมกิจกรรมฟุตบอลอย่างทั่วถึง" },
+  { title: "พัฒนาการรอบด้าน", description: "เสริมสร้างทักษะกาย ใจ สังคม และการคิด ควบคู่ไปกับทักษะฟุตบอล" },
+  { title: "รากฐานที่มั่นคง", description: "วางรากฐานสู่เส้นทางนักกีฬาและผู้ฝึกสอนในระดับที่สูงขึ้น" },
+];
 
-function GenderSplitBar({
-  male,
-  malePercent,
-  female,
-  femalePercent,
-}: {
-  male: number;
-  malePercent: number;
-  female: number;
-  femalePercent: number;
-}) {
+const MALE = "#2f5799";
+const FEMALE = "#f43f5e";
+
+// แผนที่: ระบายสีเฉพาะ 5 จังหวัดที่มีนักฟุตบอลมากที่สุด (ข้อมูลรายจังหวัดมีแค่ 5 อันดับแรก)
+const MAP_BINS = [1, 200, 400, 700];
+const MAP_COLORS = ["#a7f3d0", "#34d399", "#059669", "#065f46"];
+
+function Eyebrow({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="flex items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.28em]" style={{ color: ACCENT }}>
+      <span className="h-px w-10" style={{ background: ACCENT }} />
+      {children}
+    </p>
+  );
+}
+
+function GenderSplit({ male, malePercent, female, femalePercent }: { male: number; malePercent: number; female: number; femalePercent: number }) {
   return (
     <div>
-      <div className="flex h-2.5 overflow-hidden rounded-full bg-slate-100">
-        <div className="bg-indigo-500" style={{ width: `${malePercent}%` }} />
-        <div className="bg-rose-400" style={{ width: `${femalePercent}%` }} />
+      <div className="flex h-2.5 gap-0.5 overflow-hidden rounded-full">
+        <span title={`ชาย ${male.toLocaleString()} คน`} style={{ width: `${malePercent}%`, background: MALE }} />
+        <span title={`หญิง ${female.toLocaleString()} คน`} style={{ width: `${femalePercent}%`, background: FEMALE }} />
       </div>
-      <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
-        <span className="flex items-center gap-1.5 font-medium text-indigo-700">
-          <span className="h-2 w-2 flex-none rounded-full bg-indigo-500" />
-          ชาย {male.toLocaleString()} คน ({malePercent}%)
-        </span>
-        <span className="flex items-center gap-1.5 font-medium text-rose-600">
-          <span className="h-2 w-2 flex-none rounded-full bg-rose-400" />
-          หญิง {female.toLocaleString()} คน ({femalePercent}%)
-        </span>
+      <div className="mt-2.5 grid grid-cols-2 gap-4 text-sm">
+        <p className="flex items-baseline gap-2">
+          <span className="h-2.5 w-2.5 flex-none translate-y-px rounded-sm" style={{ background: MALE }} />
+          <span className="text-slate-500">ชาย</span>
+          <b className="font-semibold tabular-nums text-slate-900">{male.toLocaleString()}</b>
+          <span className="text-xs text-slate-400">{malePercent}%</span>
+        </p>
+        <p className="flex items-baseline gap-2">
+          <span className="h-2.5 w-2.5 flex-none translate-y-px rounded-sm" style={{ background: FEMALE }} />
+          <span className="text-slate-500">หญิง</span>
+          <b className="font-semibold tabular-nums text-slate-900">{female.toLocaleString()}</b>
+          <span className="text-xs text-slate-400">{femalePercent}%</span>
+        </p>
       </div>
     </div>
   );
 }
 
-function ProvinceLeaderboard({ items }: { items: { name: string; count: number }[] }) {
+function Leaderboard({ items, total, unit = "คน" }: { items: { name: string; count: number }[]; total: number; unit?: string }) {
+  const max = Math.max(...items.map((i) => i.count), 1);
   return (
-    <ul className="space-y-2">
+    <ol className="space-y-3">
       {items.map((item, i) => (
-        <li key={item.name} className="flex items-center gap-2.5">
-          <span
-            className={`flex h-6 w-6 flex-none items-center justify-center rounded-full text-[11px] font-bold ${
-              i === 0
-                ? "bg-amber-400 text-amber-950"
-                : i === 1
-                  ? "bg-slate-300 text-slate-900"
-                  : i === 2
-                    ? "bg-orange-300 text-orange-950"
-                    : "bg-slate-100 text-slate-400"
-            }`}
-          >
-            {i + 1}
+        <li key={item.name} className="grid grid-cols-[1.5rem_1fr] gap-3" title={`${item.name}: ${item.count.toLocaleString()} ${unit} (${((item.count / total) * 100).toFixed(1)}%)`}>
+          <span className={`${h} text-lg font-semibold leading-tight ${i === 0 ? "text-emerald-700" : "text-slate-400"}`}>{i + 1}</span>
+          <span>
+            <span className="flex items-baseline justify-between gap-3 text-sm">
+              <span className="truncate font-medium text-slate-800">{item.name}</span>
+              <span className="flex-none font-semibold tabular-nums text-slate-900">
+                {item.count.toLocaleString()} <span className="text-xs font-normal text-slate-400">{unit}</span>
+              </span>
+            </span>
+            <span className="mt-1.5 block h-1.5 rounded-full bg-slate-100">
+              <span className="block h-full rounded-full" style={{ width: `${(item.count / max) * 100}%`, background: ACCENT }} />
+            </span>
           </span>
-          <span className="min-w-0 flex-1 truncate text-sm text-slate-700">{item.name}</span>
-          <span className="flex-none text-sm font-bold text-emerald-600">{item.count.toLocaleString()} คน</span>
         </li>
       ))}
-    </ul>
+    </ol>
   );
 }
-
-function RankedBarList({ items }: { items: { label: string; count: number }[] }) {
-  const max = Math.max(...items.map((i) => i.count));
-  return (
-    <div className="space-y-2.5">
-      {items.map((item) => (
-        <div key={item.label}>
-          <div className="mb-1 flex items-center justify-between text-xs">
-            <span className="font-medium text-slate-700">{item.label}</span>
-            <span className="font-bold text-slate-900">{item.count.toLocaleString()} คน</span>
-          </div>
-          <div className="h-2 overflow-hidden rounded-full bg-slate-100">
-            <div
-              className="h-full rounded-full bg-emerald-500"
-              style={{ width: `${(item.count / max) * 100}%` }}
-            />
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-const pillars = [
-  {
-    icon: Smile,
-    title: "สนุกเป็นหลัก",
-    description: "ปลูกฝังความรักในกีฬาฟุตบอลผ่านกิจกรรมที่สนุกและเหมาะสมกับวัย",
-  },
-  {
-    icon: Users,
-    title: "การมีส่วนร่วม",
-    description: "เปิดโอกาสให้เด็กและเยาวชนทุกคนได้ร่วมกิจกรรมฟุตบอลอย่างทั่วถึง",
-  },
-  {
-    icon: Heart,
-    title: "พัฒนาการรอบด้าน",
-    description: "เสริมสร้างทักษะกาย ใจ สังคม และการคิด ควบคู่ไปกับทักษะฟุตบอล",
-  },
-  {
-    icon: Trophy,
-    title: "รากฐานที่มั่นคง",
-    description: "วางรากฐานสู่เส้นทางนักกีฬาและผู้ฝึกสอนในระดับที่สูงขึ้น",
-  },
-];
 
 export default async function GrassrootsFootballPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
 
+  // ใบอนุญาตของผู้ฝึกสอนในโครงการ — ส่วนที่เหลือจากรายการหลัก = ระดับ A/B Diploma และอื่นๆ
+  const licensed = coaches.licenses.reduce((s, l) => s + l.count, 0);
+  const otherLicences = Math.max(0, coaches.total - coaches.noLicense - licensed);
+  const licenceMix = [
+    ...coaches.licenses.map((l, i) => ({ label: l.label, count: l.count, color: ["#475569", "#0369a1", ACCENT][i] ?? "#a16207" })),
+    ...(otherLicences > 0 ? [{ label: "A/B Diploma และอื่นๆ", count: otherLicences, color: "#a16207" }] : []),
+    { label: "ยังไม่มีใบอนุญาต", count: coaches.noLicense, color: "#d6d3d1" },
+  ];
+
+  const ageMax = Math.max(...players.ageRanges.map((a) => a.count), 1);
+  const peakAge = players.ageRanges.reduce((a, b) => (b.count > a.count ? b : a));
+
+  const mapValues: Record<number, number> = {};
+  const markers: { code: number; label: string }[] = [];
+  for (const p of players.topProvinces) {
+    const code = provinceCodeByName(p.name);
+    if (code == null) continue;
+    mapValues[code] = p.count;
+    markers.push({ code, label: p.count.toLocaleString() });
+  }
+
   return (
-    <div className="min-h-screen bg-slate-50">
-      <header className="sticky top-0 z-20 border-b border-white/10 bg-indigo-950/80 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-6 py-4">
-          <Link href="/" className="flex items-center gap-2">
-            <BrandLogo tone="white" className="h-9" />
-            <div>
-              <p className="text-sm font-bold text-white">
-                FA Thailand Technical
-              </p>
-              <p className="text-[11px] text-indigo-300">
-                หมวด: Grassroots Football
-              </p>
-            </div>
-          </Link>
-          <Link
-            href="/"
-            className="inline-flex items-center gap-1.5 rounded-lg border border-white/15 px-3 py-2 text-sm font-medium text-indigo-200 transition-colors hover:bg-white/10 hover:text-white"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            กลับหน้าแรก
-          </Link>
-        </div>
-      </header>
+    <div className="min-h-screen overflow-x-clip bg-[#f5f4f0] text-slate-900">
+      <ModuleHeader
+        title="Grassroots Football"
+        subtitle="ฟุตบอลรากหญ้า · FA Thailand"
+        accent={ACCENT}
+        links={[
+          { href: "#principles", label: "หลักการ" },
+          { href: "#stats", label: `สถิติ ${GRASSROOTS_YEAR}` },
+          { href: "#map", label: "พื้นที่กิจกรรม" },
+        ]}
+      />
 
-      {/* Hero */}
-      <section className="relative overflow-hidden bg-linear-to-br from-emerald-950 via-emerald-900 to-emerald-700">
-        <div className="absolute inset-x-0 top-0 h-1 bg-linear-to-r from-amber-600 via-amber-400 to-amber-600" />
-        <div className="absolute -left-24 -top-24 h-80 w-80 rounded-full bg-emerald-400/20 blur-3xl" />
-        <div className="absolute -right-16 top-1/3 h-96 w-96 rounded-full bg-amber-500/20 blur-3xl" />
-
-        <div className="relative mx-auto max-w-4xl px-6 py-20 text-center">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-white/10 ring-1 ring-white/20">
-            <Sprout className="h-7 w-7 text-amber-300" />
+      {/* ===== ฮีโร่ ===== */}
+      <section className="px-4 pb-16 pt-10 sm:px-6 lg:pt-16">
+        <div className="mx-auto grid max-w-6xl items-end gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,26rem)] lg:gap-16">
+          <div>
+            <Eyebrow>Grassroots Football · FA Thailand</Eyebrow>
+            <h1 className={`${h} mt-6 text-6xl font-semibold leading-none text-[#064e3b] sm:text-8xl`}>
+              {/* ตัดบรรทัดได้เฉพาะระหว่าง "ฟุตบอล" กับ "รากหญ้า" — ไม่ให้ตัดกลางคำบนจอแคบ */}
+              <span className="whitespace-nowrap">ฟุตบอล</span>
+              <wbr />
+              <span className="whitespace-nowrap">รากหญ้า</span>
+            </h1>
+            <p className={`${h} mt-3 text-2xl font-medium text-slate-400 sm:text-3xl`}>Grassroots Football</p>
+            <p className="mt-6 max-w-xl text-base leading-relaxed text-slate-600 sm:text-lg">
+              ฟุตบอลรากหญ้า — จุดเริ่มต้นของการพัฒนานักกีฬาและผู้ฝึกสอนฟุตบอลไทย มุ่งส่งเสริมให้เด็กและเยาวชนได้เล่นฟุตบอลอย่างมีความสุขและถูกวิธี
+            </p>
           </div>
-          <h1 className="mt-5 text-3xl font-bold tracking-tight text-white sm:text-4xl">
-            Grassroots Football
-          </h1>
-          <p className="mx-auto mt-3 max-w-xl text-emerald-100">
-            ฟุตบอลรากหญ้า — จุดเริ่มต้นของการพัฒนานักกีฬาและผู้ฝึกสอนฟุตบอลไทย
-            มุ่งส่งเสริมให้เด็กและเยาวชนได้เล่นฟุตบอลอย่างมีความสุขและถูกวิธี
-          </p>
-        </div>
 
-        <svg
-          className="relative block w-full text-slate-50"
-          viewBox="0 0 1440 60"
-          preserveAspectRatio="none"
-        >
-          <path fill="currentColor" d="M0,32 C480,72 960,0 1440,32 L1440,60 L0,60 Z" />
-        </svg>
+          <div className="rounded-xl bg-[#053b2c] p-6 text-white sm:p-7">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-emerald-300">Season {GRASSROOTS_YEAR}</p>
+            <dl className="mt-5 divide-y divide-white/10">
+              {[
+                { value: players.total.toLocaleString(), label: "นักฟุตบอลที่เข้าร่วม" },
+                { value: coaches.total.toLocaleString(), label: "ผู้ฝึกสอนที่เข้าร่วม" },
+                { value: String(players.provinces), label: "จังหวัดที่มีกิจกรรม" },
+              ].map((s) => (
+                <div key={s.label} className="flex items-baseline justify-between gap-4 py-3.5 first:pt-0 last:pb-0">
+                  <dt className="text-sm text-white/65">{s.label}</dt>
+                  <dd className={`${h} text-4xl font-semibold tabular-nums sm:text-5xl`}>{s.value}</dd>
+                </div>
+              ))}
+            </dl>
+          </div>
+        </div>
       </section>
 
-      <div className="mx-auto max-w-6xl px-6 pb-20">
-        <div className="-mt-4 mb-10 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {pillars.map(({ icon: Icon, title, description }) => (
-            <div
-              key={title}
-              className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
-            >
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
-                <Icon className="h-5 w-5" />
-              </div>
-              <h3 className="font-semibold text-slate-900">{title}</h3>
-              <p className="text-sm text-slate-500">{description}</p>
-            </div>
-          ))}
+      {/* ===== หลักการ ===== */}
+      <section id="principles" className="scroll-mt-20 border-y border-slate-200 bg-white px-4 py-16 sm:px-6">
+        <div className="mx-auto max-w-6xl">
+          <Eyebrow>Our principles</Eyebrow>
+          <h2 className={`${h} mt-3 text-3xl font-semibold text-[#064e3b] sm:text-4xl`}>
+            หลักการของ<span className="whitespace-nowrap">ฟุตบอลรากหญ้า</span>
+          </h2>
+          <ol className="mt-10 grid grid-cols-1 gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-4">
+            {PILLARS.map((p, i) => (
+              <li key={p.title} className="border-t-2 pt-5" style={{ borderColor: ACCENT }}>
+                <span className={`${h} text-4xl font-semibold leading-none text-amber-500`}>{String(i + 1).padStart(2, "0")}</span>
+                <h3 className={`${h} mt-4 text-xl font-semibold text-slate-900`}>{p.title}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-slate-600">{p.description}</p>
+              </li>
+            ))}
+          </ol>
         </div>
+      </section>
 
-        <div className="mb-6">
-          <h2 className="text-xl font-bold text-slate-900">สถิติโครงการฟุตบอลรากหญ้า ปี 2025</h2>
-          <p className="mt-1 text-sm text-slate-500">สรุปข้อมูลผู้ฝึกสอนและนักฟุตบอลที่เข้าร่วมโครงการทั่วประเทศ</p>
-        </div>
+      {/* ===== สถิติ ===== */}
+      <section id="stats" className="scroll-mt-20 px-4 py-16 sm:px-6">
+        <div className="mx-auto max-w-6xl">
+          <Eyebrow>Season report {GRASSROOTS_YEAR}</Eyebrow>
+          <h2 className={`${h} mt-3 text-3xl font-semibold text-[#064e3b] sm:text-4xl`}>
+            สถิติโครงการ<span className="whitespace-nowrap">ฟุตบอลรากหญ้า</span> ปี {GRASSROOTS_YEAR}
+          </h2>
+          <p className="mt-1.5 text-sm text-slate-500">สรุปข้อมูลผู้ฝึกสอนและนักฟุตบอลที่เข้าร่วมโครงการทั่วประเทศ</p>
 
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          {/* ผู้ฝึกสอน */}
-          <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-            <div className="flex items-center gap-2.5 bg-emerald-600 px-6 py-4">
-              <UserCog className="h-5 w-5 text-white" />
-              <h3 className="text-lg font-bold text-white">ผู้ฝึกสอน (โค้ช) 2025</h3>
-            </div>
-            <div className="space-y-6 p-6">
-              <div>
-                <p className="text-3xl font-extrabold text-slate-900">
-                  {coachStats.total.toLocaleString()} <span className="text-base font-medium text-slate-400">คน</span>
+          <div className="mt-8 grid grid-cols-1 gap-5 lg:grid-cols-2">
+            {/* นักฟุตบอล */}
+            <article className="rounded-xl border border-slate-200 bg-white p-6 sm:p-7">
+              <div className="flex items-baseline justify-between gap-3 border-b border-slate-100 pb-4">
+                <h3 className={`${h} text-xl font-semibold text-slate-900`}>นักฟุตบอล {GRASSROOTS_YEAR}</h3>
+                <p className="text-xs text-slate-400">{players.provinces} จังหวัด</p>
+              </div>
+              <p className="mt-5 flex items-baseline gap-2">
+                <span className={`${h} text-5xl font-semibold tabular-nums text-[#064e3b]`}>{players.total.toLocaleString()}</span>
+                <span className="text-sm text-slate-500">คน · ผู้เข้าร่วมทั้งหมด</span>
+              </p>
+              <div className="mt-4">
+                <GenderSplit male={players.male} malePercent={players.malePercent} female={players.female} femalePercent={players.femalePercent} />
+              </div>
+
+              <div className="mt-8">
+                <p className="text-sm font-semibold text-slate-700">ช่วงอายุผู้เข้าร่วม</p>
+                <p className="text-xs text-slate-400">
+                  มากที่สุดคือ {peakAge.label} ({((peakAge.count / players.total) * 100).toFixed(0)}%)
                 </p>
-                <p className="text-sm text-slate-500">ผู้เข้าร่วมทั้งหมด</p>
-                <div className="mt-3">
-                  <GenderSplitBar
-                    male={coachStats.male}
-                    malePercent={coachStats.malePercent}
-                    female={coachStats.female}
-                    femalePercent={coachStats.femalePercent}
-                  />
+                <div className="mt-4 flex h-40 items-end gap-3">
+                  {players.ageRanges.map((a) => (
+                    <div key={a.label} className="flex h-full flex-1 flex-col items-center justify-end" title={`${a.label}: ${a.count.toLocaleString()} คน`}>
+                      <span className="text-sm font-semibold tabular-nums text-slate-900">{a.count.toLocaleString()}</span>
+                      <span
+                        className="mt-1.5 block w-full rounded-t-md"
+                        style={{ height: `${(a.count / ageMax) * 78}%`, minHeight: 2, background: a === peakAge ? ACCENT : "#a7d7c5" }}
+                      />
+                    </div>
+                  ))}
+                </div>
+                <div className="flex gap-3 border-t border-slate-200 pt-2">
+                  {players.ageRanges.map((a) => (
+                    <p key={a.label} className="flex-1 text-center text-xs font-medium text-slate-600">
+                      {a.label}
+                    </p>
+                  ))}
                 </div>
               </div>
+            </article>
 
-              <div className="flex items-center gap-3 rounded-2xl bg-slate-50 p-4">
-                <MapPin className="h-8 w-8 flex-none text-emerald-600" />
-                <div>
-                  <p className="text-2xl font-bold text-slate-900">{coachStats.provinces} จังหวัด</p>
-                  <p className="text-xs text-slate-500">จังหวัดที่มีกิจกรรม</p>
-                </div>
+            {/* ผู้ฝึกสอน */}
+            <article className="rounded-xl border border-slate-200 bg-white p-6 sm:p-7">
+              <div className="flex items-baseline justify-between gap-3 border-b border-slate-100 pb-4">
+                <h3 className={`${h} text-xl font-semibold text-slate-900`}>ผู้ฝึกสอน (โค้ช) {GRASSROOTS_YEAR}</h3>
+                <p className="text-xs text-slate-400">{coaches.provinces} จังหวัด</p>
+              </div>
+              <p className="mt-5 flex items-baseline gap-2">
+                <span className={`${h} text-5xl font-semibold tabular-nums text-[#064e3b]`}>{coaches.total.toLocaleString()}</span>
+                <span className="text-sm text-slate-500">คน · ผู้เข้าร่วมทั้งหมด</span>
+              </p>
+              <div className="mt-4">
+                <GenderSplit male={coaches.male} malePercent={coaches.malePercent} female={coaches.female} femalePercent={coaches.femalePercent} />
               </div>
 
-              <div>
-                <h4 className="mb-3 text-sm font-semibold text-slate-700">5 อันดับจังหวัดที่มีผู้เข้าร่วมมากที่สุด</h4>
-                <ProvinceLeaderboard items={coachStats.topProvinces} />
-              </div>
-
-              <div>
-                <h4 className="mb-3 text-sm font-semibold text-slate-700">ระดับใบอนุญาตผู้ฝึกสอน</h4>
-                <RankedBarList items={coachStats.licenses} />
-                <p className="mt-3 text-xs text-slate-400">
-                  ยังไม่มีใบอนุญาตผู้ฝึกสอน {coachStats.noLicense.toLocaleString()} คน
-                  (รวมระดับ A/B Diploma และอื่นๆ จำนวนเล็กน้อย)
+              <div className="mt-8">
+                <p className="text-sm font-semibold text-slate-700">ระดับใบอนุญาตผู้ฝึกสอน</p>
+                <p className="text-xs text-slate-400">
+                  มีใบอนุญาตแล้ว {(coaches.total - coaches.noLicense).toLocaleString()} คน ({(((coaches.total - coaches.noLicense) / coaches.total) * 100).toFixed(0)}%)
                 </p>
-              </div>
-            </div>
-          </div>
-
-          {/* นักฟุตบอล */}
-          <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-            <div className="flex items-center gap-2.5 bg-emerald-600 px-6 py-4">
-              <Users className="h-5 w-5 text-white" />
-              <h3 className="text-lg font-bold text-white">นักฟุตบอล 2025</h3>
-            </div>
-            <div className="space-y-6 p-6">
-              <div>
-                <p className="text-3xl font-extrabold text-slate-900">
-                  {playerStats.total.toLocaleString()} <span className="text-base font-medium text-slate-400">คน</span>
-                </p>
-                <p className="text-sm text-slate-500">ผู้เข้าร่วมทั้งหมด</p>
-                <div className="mt-3">
-                  <GenderSplitBar
-                    male={playerStats.male}
-                    malePercent={playerStats.malePercent}
-                    female={playerStats.female}
-                    femalePercent={playerStats.femalePercent}
-                  />
+                <div className="mt-4 flex h-3 gap-0.5 overflow-hidden rounded-full">
+                  {licenceMix.map((l) => (
+                    <span key={l.label} title={`${l.label}: ${l.count.toLocaleString()} คน`} style={{ width: `${(l.count / coaches.total) * 100}%`, minWidth: 3, background: l.color }} />
+                  ))}
                 </div>
+                <ul className="mt-4 divide-y divide-slate-100">
+                  {licenceMix.map((l) => (
+                    <li key={l.label} className="flex items-center gap-3 py-2 text-sm">
+                      <span className="h-2.5 w-2.5 flex-none rounded-sm" style={{ background: l.color }} />
+                      <span className="flex-1 text-slate-700">{l.label}</span>
+                      <span className="font-semibold tabular-nums text-slate-900">{l.count.toLocaleString()}</span>
+                      <span className="w-12 text-right text-xs tabular-nums text-slate-400">{((l.count / coaches.total) * 100).toFixed(1)}%</span>
+                    </li>
+                  ))}
+                </ul>
               </div>
-
-              <div className="flex items-center gap-3 rounded-2xl bg-slate-50 p-4">
-                <MapPin className="h-8 w-8 flex-none text-emerald-600" />
-                <div>
-                  <p className="text-2xl font-bold text-slate-900">{playerStats.provinces} จังหวัด</p>
-                  <p className="text-xs text-slate-500">จังหวัดที่มีกิจกรรม</p>
-                </div>
-              </div>
-
-              <div>
-                <h4 className="mb-3 text-sm font-semibold text-slate-700">5 อันดับจังหวัดที่มีผู้เข้าร่วมมากที่สุด</h4>
-                <ProvinceLeaderboard items={playerStats.topProvinces} />
-              </div>
-
-              <div>
-                <h4 className="mb-3 text-sm font-semibold text-slate-700">ช่วงอายุผู้เข้าร่วม</h4>
-                <RankedBarList items={playerStats.ageRanges} />
-              </div>
-            </div>
+            </article>
           </div>
         </div>
-      </div>
+      </section>
+
+      {/* ===== พื้นที่กิจกรรม ===== */}
+      <section id="map" className="scroll-mt-20 border-t border-slate-200 bg-white px-4 py-16 sm:px-6">
+        <div className="mx-auto grid max-w-6xl gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] lg:gap-14">
+          <div>
+            <Eyebrow>Where we play</Eyebrow>
+            <h2 className={`${h} mt-3 text-3xl font-semibold text-[#064e3b] sm:text-4xl`}>พื้นที่กิจกรรม {players.provinces} จังหวัด</h2>
+            <p className="mt-1.5 max-w-xl text-sm text-slate-500">จังหวัดที่มีผู้เข้าร่วมมากที่สุด — ตัวเลขบนแผนที่คือจำนวนนักฟุตบอลใน 5 จังหวัดแรก</p>
+
+            <div className="mt-10 grid grid-cols-1 gap-10 sm:grid-cols-2">
+              <div>
+                <p className="mb-4 text-sm font-semibold text-slate-700">นักฟุตบอล · 5 อันดับจังหวัด</p>
+                <Leaderboard items={players.topProvinces} total={players.total} />
+              </div>
+              <div>
+                <p className="mb-4 text-sm font-semibold text-slate-700">ผู้ฝึกสอน · 5 อันดับจังหวัด</p>
+                <Leaderboard items={coaches.topProvinces} total={coaches.total} />
+              </div>
+            </div>
+            <p className="mt-8 text-xs text-slate-400">ข้อมูลจากรายงานสรุปโครงการฟุตบอลรากหญ้า ปี {GRASSROOTS_YEAR}</p>
+          </div>
+
+          <figure className="mx-auto w-full max-w-sm">
+            <ProvinceMap
+              values={mapValues}
+              bins={MAP_BINS}
+              colors={MAP_COLORS}
+              zero="#e7e5e4"
+              unit="คน"
+              markers={markers}
+              markerColor="#064e3b"
+              title={`แผนที่ 5 จังหวัดที่มีนักฟุตบอลรากหญ้าเข้าร่วมมากที่สุด ปี ${GRASSROOTS_YEAR}`}
+            />
+            <figcaption className="mt-3 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[11px] text-slate-500">
+              {MAP_BINS.map((b, i) => (
+                <span key={b} className="inline-flex items-center gap-1.5">
+                  <span className="h-2.5 w-4 rounded-sm" style={{ background: MAP_COLORS[i] }} />
+                  {MAP_BINS[i + 1] ? `${b.toLocaleString()}–${(MAP_BINS[i + 1] - 1).toLocaleString()}` : `${b.toLocaleString()}+`}
+                </span>
+              ))}
+              <span className="inline-flex items-center gap-1.5">
+                <span className="h-2.5 w-4 rounded-sm bg-stone-200" />
+                ไม่อยู่ใน 5 อันดับ
+              </span>
+            </figcaption>
+          </figure>
+        </div>
+      </section>
     </div>
   );
 }

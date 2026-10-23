@@ -17,7 +17,7 @@ export function AdminTabs() {
   if (!pathname.startsWith("/dashboard")) return null;
 
   return (
-    <div className="inline-flex items-center gap-1 rounded-xl border border-slate-200 bg-white p-1 shadow-sm">
+    <div className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white p-1">
       {TABS.map(({ href, label, icon: Icon }) => {
         const active = pathname === href;
         return (
@@ -26,7 +26,7 @@ export function AdminTabs() {
             href={href}
             className={`inline-flex items-center gap-2 rounded-lg px-3.5 py-2 text-sm font-medium transition-colors ${
               active
-                ? "bg-indigo-700 text-white shadow-sm shadow-indigo-200"
+                ? "bg-[#073c5e] text-white"
                 : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
             }`}
           >

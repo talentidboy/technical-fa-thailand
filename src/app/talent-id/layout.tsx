@@ -32,8 +32,6 @@ export default async function TalentIdLayout({
       <div className="flex min-h-screen flex-1 flex-col">
         <TalentIdMobileHeader />
         <main className="relative flex-1 overflow-x-hidden pb-20 lg:pb-0">
-          <div className="pointer-events-none absolute -left-24 -top-10 h-72 w-72 rounded-full bg-indigo-500/10 blur-3xl" />
-          <div className="pointer-events-none absolute -right-16 top-40 h-80 w-80 rounded-full bg-amber-500/10 blur-3xl" />
           <div className="relative mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8 lg:py-10">
             {children}
           </div>

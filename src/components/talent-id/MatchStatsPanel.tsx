@@ -56,7 +56,7 @@ export function MatchStatsPanel({
   return (
     <div className="space-y-5">
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-5 lg:items-start">
-        <div className="rounded-3xl border border-white/10 bg-linear-to-b from-white/6 to-white/2 p-6 lg:col-span-2">
+        <div className="rounded-xl border border-white/10 bg-[#081528] p-6 lg:col-span-2">
           {rates.length > 0 && (
             <div className="mb-4 flex flex-wrap gap-x-4 gap-y-1 text-xs text-indigo-300">
               {rates.map((r) => (
@@ -67,7 +67,7 @@ export function MatchStatsPanel({
             </div>
           )}
 
-          <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-indigo-300">
+          <h3 className="mb-1 text-xs font-semibold text-indigo-300">
             โปรไฟล์เทียบกับผู้เล่นทั้งหมด
           </h3>
           <div className="h-64 w-full">
@@ -81,8 +81,8 @@ export function MatchStatsPanel({
           </div>
         </div>
 
-        <div className="rounded-3xl border border-white/10 bg-white/5 p-6 lg:col-span-3">
-          <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-indigo-300">
+        <div className="rounded-xl border border-white/10 bg-[#081528] p-6 lg:col-span-3">
+          <h3 className="mb-3 text-xs font-semibold text-indigo-300">
             สถิติเด่น (Top 8)
           </h3>
           <TopStatsChart row={row} statsDist={statsDist} />
@@ -90,14 +90,14 @@ export function MatchStatsPanel({
       </div>
 
       {nonEmptyGroups.length > 0 && (
-        <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
-          <h3 className="mb-4 text-xs font-semibold uppercase tracking-wide text-indigo-300">
+        <div className="rounded-xl border border-white/10 bg-[#081528] p-6">
+          <h3 className="mb-4 text-xs font-semibold text-indigo-300">
             รายละเอียดสถิติทั้งหมด
           </h3>
           <div className="grid grid-cols-1 gap-x-6 gap-y-4 text-sm sm:grid-cols-2 lg:grid-cols-3">
             {nonEmptyGroups.map((group) => (
               <div key={group.title}>
-                <p className="mb-1.5 text-[11px] font-bold uppercase tracking-wide text-amber-400">
+                <p className="mb-1.5 text-[11px] font-bold text-amber-400">
                   {group.title}
                 </p>
                 <div className="space-y-0.5">

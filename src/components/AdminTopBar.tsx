@@ -1,17 +1,7 @@
 import Link from "next/link";
-import {
-  Search,
-  UserPlus,
-  Download,
-  Bell,
-  Users,
-  GraduationCap,
-  AlertTriangle,
-  Inbox,
-  Clock,
-  BookOpen,
-} from "lucide-react";
+import { Search, UserPlus, Download, Bell, Inbox, Clock } from "lucide-react";
 import { AdminTabs } from "@/components/AdminTabs";
+import { display } from "@/components/fonts";
 import { LICENSE_TYPES, labelFor } from "@/lib/constants";
 
 type ExpiringLicense = {
@@ -56,39 +46,29 @@ export function AdminTopBar({
 
   return (
     <div className="mb-8 space-y-4">
-      {/* แถบค้นหา + ปุ่มลัด + แจ้งเตือน บนพื้นกรมท่า */}
-      <div className="relative overflow-visible rounded-3xl bg-linear-to-r from-indigo-900 via-indigo-800 to-indigo-700 p-3 shadow-xl shadow-indigo-950/15 sm:p-4">
-        <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden rounded-3xl">
-          <div className="absolute -right-10 -top-16 h-48 w-48 rounded-full bg-amber-400/15 blur-2xl" />
-          <div
-            className="absolute inset-0 opacity-[0.06]"
-            style={{
-              backgroundImage: "linear-gradient(white 1px, transparent 1px), linear-gradient(90deg, white 1px, transparent 1px)",
-              backgroundSize: "26px 26px",
-            }}
-          />
-        </div>
-        <div className="relative flex flex-wrap items-center gap-2.5">
+      {/* แถบค้นหา + ปุ่มลัด + แจ้งเตือน */}
+      <div className="rounded-xl border border-slate-200 bg-white p-2.5 sm:p-3">
+        <div className="flex flex-wrap items-center gap-2">
           <form action="/coaches" className="relative min-w-0 flex-[1_1_16rem]">
             <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4.5 w-4.5 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
               name="q"
               placeholder="ค้นหาผู้ฝึกสอน — ชื่อ, ID AFC, สโมสร..."
-              className="h-11 w-full rounded-xl border-0 bg-white py-2 pl-10 pr-3 text-sm text-slate-900 shadow-sm placeholder:text-slate-400 focus:outline-none focus:ring-4 focus:ring-amber-300/40"
+              className="h-11 w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-10 pr-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#073c5e] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#073c5e]/15"
             />
           </form>
 
           <Link
             href="/coaches?new=1"
-            className="inline-flex h-11 flex-none items-center gap-1.5 rounded-xl bg-amber-400 px-4 text-sm font-bold text-amber-950 shadow-sm transition-colors hover:bg-amber-300"
+            className="inline-flex h-11 flex-none items-center gap-1.5 rounded-lg bg-[#073c5e] px-4 text-sm font-semibold text-white transition-colors hover:bg-[#0a4a73]"
           >
             <UserPlus className="h-4 w-4" />
             <span className="hidden sm:inline">เพิ่มผู้ฝึกสอน</span>
           </Link>
           <Link
             href="/coaches/export"
-            className="inline-flex h-11 flex-none items-center gap-1.5 rounded-xl bg-white/10 px-4 text-sm font-semibold text-white ring-1 ring-white/20 transition-colors hover:bg-white/20"
+            className="inline-flex h-11 flex-none items-center gap-1.5 rounded-lg border border-slate-200 px-4 text-sm font-semibold text-slate-700 transition-colors hover:border-slate-300 hover:bg-slate-50"
           >
             <Download className="h-4 w-4" />
             <span className="hidden sm:inline">ส่งออก Excel</span>
@@ -98,16 +78,16 @@ export function AdminTopBar({
             <button
               type="button"
               aria-label="การแจ้งเตือน"
-              className="relative inline-flex h-11 w-11 items-center justify-center rounded-xl bg-white/10 text-white ring-1 ring-white/20 transition-colors hover:bg-white/20"
+              className="relative inline-flex h-11 w-11 items-center justify-center rounded-lg border border-slate-200 text-slate-600 transition-colors hover:border-slate-300 hover:bg-slate-50"
             >
               <Bell className="h-4.5 w-4.5" />
               {notificationCount > 0 && (
-                <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white ring-2 ring-indigo-800">
+                <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-bold text-white ring-2 ring-white">
                   {notificationCount > 99 ? "99+" : notificationCount}
                 </span>
               )}
             </button>
-            <div className="invisible absolute right-0 z-30 mt-2 max-h-96 w-80 overflow-y-auto rounded-2xl border border-slate-200 bg-white opacity-0 shadow-2xl transition-all group-focus-within:visible group-focus-within:opacity-100 group-hover:visible group-hover:opacity-100">
+            <div className="invisible absolute right-0 z-30 mt-2 max-h-96 w-80 overflow-y-auto rounded-xl border border-slate-200 bg-white opacity-0 shadow-xl transition-all group-focus-within:visible group-focus-within:opacity-100 group-hover:visible group-hover:opacity-100">
               {role === "ADMIN" && (
                 <>
                   <div className="border-b border-slate-100 px-4 py-2.5">
@@ -172,7 +152,7 @@ export function AdminTopBar({
               )}
               <Link
                 href="/dashboard"
-                className="block border-t border-slate-100 px-4 py-2.5 text-center text-xs font-medium text-indigo-600 hover:bg-indigo-50"
+                className="block border-t border-slate-100 px-4 py-2.5 text-center text-xs font-semibold text-[#073c5e] hover:bg-slate-50"
               >
                 ดูทั้งหมด
               </Link>
@@ -181,22 +161,17 @@ export function AdminTopBar({
         </div>
       </div>
 
-      {/* การ์ดสถิติ — กดเพื่อไปหน้านั้น · ตัวที่ต้องจัดการ (ใกล้หมดอายุ/คำขอ) เน้นสีเมื่อมีรายการ */}
-      <div className={`grid grid-cols-2 gap-3 sm:grid-cols-3 [&>*:last-child]:col-span-2 sm:[&>*:last-child]:col-span-1 ${role === "ADMIN" ? "lg:grid-cols-5" : ""}`}>
-        <StatCard icon={Users} label="ผู้ฝึกสอน (มีใบอนุญาต)" value={coachCount} href="/coaches" tone="indigo" />
-        <StatCard icon={GraduationCap} label="วิทยากรทั้งหมด" value={instructorCount} href="/instructors" tone="emerald" />
-        <StatCard
-          icon={AlertTriangle}
-          label="ใบอนุญาตใกล้หมดอายุ (90 วัน)"
-          value={expiringSoonCount}
-          href="/dashboard#expiring"
-          tone="amber"
-          alert={expiringSoonCount > 0}
-        />
+      {/* ตัวเลขหลัก — กดเพื่อไปหน้านั้น · ตัวที่ต้องจัดการ (ใกล้หมดอายุ/คำขอ) ขึ้นสีเตือนเมื่อมีรายการ */}
+      <div
+        className={`grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-slate-200 bg-slate-200 sm:grid-cols-3 [&>*:last-child]:col-span-2 sm:[&>*:last-child]:col-span-1 ${role === "ADMIN" ? "lg:grid-cols-5" : ""}`}
+      >
+        <StatCard label="ผู้ฝึกสอน (มีใบอนุญาต)" value={coachCount} href="/coaches" />
+        <StatCard label="วิทยากรทั้งหมด" value={instructorCount} href="/instructors" />
+        <StatCard label="ใบอนุญาตใกล้หมดอายุ (90 วัน)" value={expiringSoonCount} href="/dashboard#expiring" alert={expiringSoonCount > 0 ? "amber" : undefined} />
         {role === "ADMIN" && (
           <>
-            <StatCard icon={BookOpen} label="รอบอบรมทั้งหมด" value={courseSessionCount} href="/course-sessions" tone="violet" />
-            <StatCard icon={Inbox} label="คำขอรอตรวจสอบ" value={pendingRequestCount} href="/requests" tone="red" alert={pendingRequestCount > 0} />
+            <StatCard label="รอบอบรมทั้งหมด" value={courseSessionCount} href="/course-sessions" />
+            <StatCard label="คำขอรอตรวจสอบ" value={pendingRequestCount} href="/requests" alert={pendingRequestCount > 0 ? "red" : undefined} />
           </>
         )}
       </div>
@@ -207,44 +182,18 @@ export function AdminTopBar({
   );
 }
 
-const TONES = {
-  indigo: { icon: "bg-indigo-50 text-indigo-600", ring: "hover:ring-indigo-300", alert: "" },
-  emerald: { icon: "bg-emerald-50 text-emerald-600", ring: "hover:ring-emerald-300", alert: "" },
-  amber: { icon: "bg-amber-50 text-amber-600", ring: "hover:ring-amber-300", alert: "bg-amber-50/60 ring-amber-300" },
-  violet: { icon: "bg-violet-50 text-violet-600", ring: "hover:ring-violet-300", alert: "" },
-  red: { icon: "bg-red-50 text-red-600", ring: "hover:ring-red-300", alert: "bg-red-50/60 ring-red-300" },
+const ALERT = {
+  amber: { bar: "bg-amber-500", text: "text-amber-700" },
+  red: { bar: "bg-red-600", text: "text-red-700" },
 } as const;
 
-function StatCard({
-  icon: Icon,
-  label,
-  value,
-  href,
-  tone,
-  alert = false,
-}: {
-  icon: typeof Users;
-  label: string;
-  value: number;
-  href: string;
-  tone: keyof typeof TONES;
-  alert?: boolean;
-}) {
-  const t = TONES[tone];
+function StatCard({ label, value, href, alert }: { label: string; value: number; href: string; alert?: keyof typeof ALERT }) {
+  const a = alert ? ALERT[alert] : null;
   return (
-    <Link
-      href={href}
-      className={`group flex items-center gap-3 rounded-2xl p-3.5 shadow-sm ring-1 transition-all hover:-translate-y-0.5 hover:shadow-md ${
-        alert ? t.alert : `bg-white ring-slate-200 ${t.ring}`
-      }`}
-    >
-      <span className={`flex h-10 w-10 flex-none items-center justify-center rounded-xl ${t.icon}`}>
-        <Icon className="h-5 w-5" />
-      </span>
-      <span className="min-w-0">
-        <span className="block text-xl font-extrabold leading-tight text-slate-900">{value.toLocaleString()}</span>
-        <span className="block text-[11px] font-medium leading-snug text-slate-500">{label}</span>
-      </span>
+    <Link href={href} className="group relative flex flex-col justify-between gap-1 bg-white px-4 py-3.5 transition-colors hover:bg-slate-50">
+      {a && <span className={`absolute inset-x-0 top-0 h-0.5 ${a.bar}`} />}
+      <span className={`block text-[11px] font-medium leading-snug ${a ? a.text : "text-slate-500"}`}>{label}</span>
+      <span className={`${display.className} block text-2xl font-semibold leading-tight tabular-nums ${a ? a.text : "text-slate-900"}`}>{value.toLocaleString()}</span>
     </Link>
   );
 }

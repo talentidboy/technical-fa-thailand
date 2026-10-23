@@ -1,4 +1,3 @@
-import { BrandLogo } from "@/components/BrandLogo";
 import Link from "next/link";
 import Image from "next/image";
 import { redirect } from "next/navigation";
@@ -7,7 +6,9 @@ import { getCurrentUser } from "@/lib/auth";
 import { createTrainingArticle, deleteTrainingArticle } from "./actions";
 import { Field, SelectField } from "@/components/FormField";
 import { TRAINING_CENTRE_AREAS, labelFor } from "@/lib/constants";
-import { Database, Trash2, Plus, ArrowLeft, ImagePlus } from "lucide-react";
+import { Trash2, Plus, ArrowLeft, ImagePlus } from "lucide-react";
+import { display } from "@/components/fonts";
+import { ModuleHeader } from "@/components/ModuleHeader";
 
 function formatDate(date: Date) {
   return date.toLocaleDateString("th-TH", {
@@ -32,46 +33,34 @@ export default async function TrainingCentreManagePage() {
   });
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <header className="sticky top-0 z-20 border-b border-white/10 bg-indigo-950/80 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-6 py-4">
-          <Link href="/training-centre" className="flex items-center gap-2">
-            <BrandLogo tone="white" className="h-9" />
-            <div>
-              <p className="text-sm font-bold text-white">
-                FA Thailand Technical
-              </p>
-              <p className="text-[11px] text-indigo-300">
-                จัดการบทความ Training Centre
-              </p>
-            </div>
-          </Link>
+    <div className="min-h-screen bg-[#f5f4f0]">
+      <ModuleHeader
+        title="Training Centre"
+        subtitle="จัดการบทความ Training Centre"
+        accent="#b45309"
+        actions={
           <Link
             href="/training-centre"
-            className="inline-flex items-center gap-1.5 rounded-lg border border-white/15 px-3 py-2 text-sm font-medium text-indigo-200 transition-colors hover:bg-white/10 hover:text-white"
+            className="inline-flex items-center gap-1.5 rounded-full border border-slate-300 px-3.5 py-2 text-sm font-medium text-slate-700 transition-colors hover:border-slate-400 hover:text-slate-900"
           >
             <ArrowLeft className="h-4 w-4" />
-            กลับหน้า Training Centre
+            <span className="hidden sm:inline">กลับหน้า Training Centre</span>
           </Link>
-        </div>
-      </header>
+        }
+      />
 
-      <div className="mx-auto max-w-6xl space-y-8 px-6 py-10">
+      <div className="mx-auto max-w-6xl space-y-8 px-4 py-10 sm:px-6">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">
-            จัดการบทความ Training Centre
-          </h1>
+          <h1 className={`${display.className} text-3xl font-semibold text-[#073c5e]`}>จัดการบทความ Training Centre</h1>
           <p className="mt-1 text-sm text-slate-500">
             เพิ่มบทความวิเคราะห์เทคนิคและแนวทางการฝึกสอน แบ่งตามหมวด The Game /
             Practice / Environment
           </p>
         </div>
 
-        <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <div className="rounded-xl border border-slate-200 bg-white">
           <div className="flex items-center gap-2 border-b border-slate-100 px-6 py-4">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
-              <Database className="h-4 w-4" />
-            </div>
+            <Plus className="h-4 w-4 text-amber-700" />
             <h2 className="font-semibold text-slate-900">เพิ่มบทความใหม่</h2>
           </div>
           <form
@@ -133,7 +122,7 @@ export default async function TrainingCentreManagePage() {
             <div className="sm:col-span-2">
               <button
                 type="submit"
-                className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-medium text-white shadow-sm shadow-indigo-200 transition-colors hover:bg-indigo-700"
+                className="inline-flex items-center gap-2 rounded-lg bg-[#073c5e] px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#0a4a73]"
               >
                 <Plus className="h-4 w-4" />
                 เพิ่มบทความ
@@ -142,7 +131,7 @@ export default async function TrainingCentreManagePage() {
           </form>
         </div>
 
-        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
           {articles.length === 0 ? (
             <p className="px-6 py-16 text-center text-sm text-slate-400">
               ยังไม่มีบทความ
@@ -152,9 +141,9 @@ export default async function TrainingCentreManagePage() {
               {articles.map((item) => (
                 <li
                   key={item.id}
-                  className="flex items-start justify-between gap-4 px-6 py-5"
+                  className="flex items-start justify-between gap-4 px-4 py-5 sm:px-6"
                 >
-                  <div className="flex items-start gap-4">
+                  <div className="flex min-w-0 items-start gap-4">
                     {item.coverImageUrl ? (
                       <Image
                         src={item.coverImageUrl}
@@ -164,24 +153,18 @@ export default async function TrainingCentreManagePage() {
                         className="h-16 w-16 shrink-0 rounded-lg object-cover"
                       />
                     ) : (
-                      <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg bg-indigo-50 text-indigo-400">
+                      <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-400">
                         <ImagePlus className="h-6 w-6" />
                       </div>
                     )}
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-medium text-indigo-600">
+                    <div className="min-w-0">
+                      <p className="flex flex-wrap items-center gap-x-2">
+                        <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-amber-700">
                           {labelFor(TRAINING_CENTRE_AREAS, item.area)}
                         </span>
-                        {item.theme && (
-                          <span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700">
-                            {item.theme}
-                          </span>
-                        )}
-                        <p className="font-medium text-slate-900">
-                          {item.title}
-                        </p>
-                      </div>
+                        {item.theme && <span className="text-xs text-slate-500">· {item.theme}</span>}
+                      </p>
+                      <p className="mt-0.5 font-medium text-slate-900">{item.title}</p>
                       <p className="mt-1 text-sm text-slate-500">
                         {item.excerpt}
                       </p>

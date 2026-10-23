@@ -13,12 +13,12 @@ export function InfoPill({
 }) {
   return (
     <div
-      className={`rounded-xl border px-3 py-2 ${
+      className={`rounded-lg border px-3 py-2 ${
         accent ? "border-amber-400/40 bg-amber-400/10" : "border-white/10 bg-white/5"
       }`}
     >
       <p
-        className={`text-[9px] font-semibold uppercase tracking-wider ${
+        className={`text-[11px] font-medium ${
           accent ? "text-amber-400/80" : "text-indigo-400"
         }`}
       >

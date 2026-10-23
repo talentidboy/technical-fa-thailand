@@ -24,13 +24,14 @@ export function PasswordInput({ name, autoComplete }: { name: string; autoComple
   );
 }
 
-export function LoginSubmit() {
+// tone = สีปุ่ม (ค่าเริ่มต้นของ Academy Licensing) — หน้าอื่นส่งสีของตัวเองมาแทนได้
+export function LoginSubmit({ tone = "bg-linear-to-r from-indigo-700 to-indigo-900 shadow-lg shadow-indigo-900/20 hover:brightness-110" }: { tone?: string }) {
   const { pending } = useFormStatus();
   return (
     <button
       type="submit"
       disabled={pending}
-      className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-linear-to-r from-indigo-700 to-indigo-900 text-sm font-bold text-white shadow-lg shadow-indigo-900/20 transition hover:brightness-110 disabled:opacity-70"
+      className={`inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl text-sm font-bold text-white transition disabled:opacity-70 ${tone}`}
     >
       {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <LogIn className="h-4 w-4" />}
       {pending ? "กำลังเข้าสู่ระบบ..." : "เข้าสู่ระบบ"}

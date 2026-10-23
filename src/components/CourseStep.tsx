@@ -12,7 +12,7 @@ export function CourseStep({ step, index, last }: { step: CoreStep; index: numbe
   const [open, setOpen] = useState(index === 0);
   const tone = levelTone(step.level);
   const parts = [
-    { label: "ทฤษฎี", hours: step.theoryHours, cls: "bg-indigo-600" },
+    { label: "ทฤษฎี", hours: step.theoryHours, cls: "bg-[#073c5e]" },
     { label: "ปฏิบัติ", hours: step.practicalHours, cls: "bg-sky-400" },
     { label: "ประสบการณ์/ดูงาน", hours: step.experienceHours, cls: "bg-amber-400" },
   ];
@@ -22,45 +22,45 @@ export function CourseStep({ step, index, last }: { step: CoreStep; index: numbe
     <li className="relative grid grid-cols-[3.5rem_1fr] gap-4 sm:grid-cols-[4.5rem_1fr] sm:gap-6">
       {/* ราวเส้นเวลา */}
       <div className="relative flex justify-center">
-        {!last && <span aria-hidden className="absolute top-14 -bottom-5 w-0.5 bg-linear-to-b from-slate-300 to-slate-200 sm:top-16" />}
+        {!last && <span aria-hidden className="absolute top-14 -bottom-5 w-0.5 bg-slate-200 sm:top-16" />}
         <span
-          className={`${display.className} relative flex h-14 w-14 items-center justify-center rounded-2xl bg-linear-to-br text-lg font-black text-white shadow-lg ring-4 ring-slate-50 sm:h-16 sm:w-16 sm:text-xl ${tone.bar}`}
+          className={`${display.className} relative flex h-14 w-14 items-center justify-center rounded-xl text-lg font-semibold text-white ring-4 ring-white sm:h-16 sm:w-16 sm:text-xl ${tone.bar}`}
         >
           {step.level}
         </span>
       </div>
 
-      <div className={`overflow-hidden rounded-3xl bg-white shadow-sm ring-1 transition-shadow ${open ? "shadow-md ring-slate-300" : "ring-slate-200 hover:shadow-md"}`}>
+      <div className={`overflow-hidden rounded-xl bg-white ring-1 transition-colors ${open ? "ring-slate-300" : "ring-slate-200 hover:ring-slate-300"}`}>
         <button type="button" onClick={() => setOpen((v) => !v)} aria-expanded={open} className="flex w-full items-start justify-between gap-3 p-5 text-left">
           <div className="min-w-0">
-            <p className={`text-[11px] font-bold uppercase tracking-wider ${tone.text}`}>ขั้นที่ {index + 1}</p>
-            <h3 className="text-lg font-extrabold leading-snug text-slate-900">{step.title}</h3>
+            <p className={`text-xs font-semibold ${tone.text}`}>ขั้นที่ {index + 1}</p>
+            <h3 className={`${display.className} text-xl font-semibold leading-snug text-slate-900`}>{step.title}</h3>
             <p className="mt-0.5 flex items-center gap-1.5 text-sm text-slate-500">
               <Users className="h-3.5 w-3.5 flex-none" />
               {step.ageGroup}
             </p>
-            <div className="mt-3 flex flex-wrap gap-2 text-xs font-semibold">
-              <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 ${tone.soft}`}>
-                <Clock className="h-3.5 w-3.5" />
-                {step.totalHours} ชั่วโมง
+            <p className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-slate-600">
+              <span className="inline-flex items-center gap-1.5">
+                <Clock className="h-3.5 w-3.5 text-slate-400" />
+                <b className="font-semibold text-slate-900">{step.totalHours}</b> ชั่วโมง
               </span>
-              <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 ${tone.soft}`}>
-                <CalendarDays className="h-3.5 w-3.5" />
-                {step.days} วัน
+              <span className="inline-flex items-center gap-1.5">
+                <CalendarDays className="h-3.5 w-3.5 text-slate-400" />
+                <b className="font-semibold text-slate-900">{step.days}</b> วัน
               </span>
-              <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 ${tone.soft}`}>
-                <BookOpen className="h-3.5 w-3.5" />
-                {step.subjects.length} รายวิชา
+              <span className="inline-flex items-center gap-1.5">
+                <BookOpen className="h-3.5 w-3.5 text-slate-400" />
+                <b className="font-semibold text-slate-900">{step.subjects.length}</b> รายวิชา
               </span>
-            </div>
+            </p>
           </div>
-          <span className={`mt-1 flex h-8 w-8 flex-none items-center justify-center rounded-full bg-slate-100 text-slate-500 transition-transform ${open ? "rotate-180" : ""}`}>
+          <span className={`mt-1 flex h-8 w-8 flex-none items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition-transform ${open ? "rotate-180" : ""}`}>
             <ChevronDown className="h-4 w-4" />
           </span>
         </button>
 
         {open && (
-          <div className="space-y-5 border-t border-slate-100 bg-slate-50/60 p-5">
+          <div className="space-y-5 border-t border-slate-100 bg-[#f5f4f0] p-5">
             <p className="text-sm leading-relaxed text-slate-600">{step.description}</p>
 
             {/* สัดส่วนชั่วโมงเรียน */}
@@ -82,13 +82,14 @@ export function CourseStep({ step, index, last }: { step: CoreStep; index: numbe
 
             <div>
               <p className="mb-2 text-xs font-semibold text-slate-500">รายวิชาในหลักสูตร</p>
-              <div className="flex flex-wrap gap-1.5">
+              <ul className="grid grid-cols-1 gap-x-6 sm:grid-cols-2">
                 {step.subjects.map((subject) => (
-                  <span key={subject} className="rounded-full bg-white px-2.5 py-1 text-xs font-medium text-slate-700 ring-1 ring-slate-200">
+                  <li key={subject} className="flex gap-2 border-b border-slate-200/80 py-1.5 text-sm text-slate-700">
+                    <span className="mt-2 h-1 w-1 flex-none rounded-full" style={{ background: tone.hex }} />
                     {subject}
-                  </span>
+                  </li>
                 ))}
-              </div>
+              </ul>
             </div>
           </div>
         )}

@@ -10,7 +10,7 @@ export default function Loading() {
       </div>
       <div className="space-y-8">
         {Array.from({ length: 3 }).map((_, i) => (
-          <div key={i} className="rounded-2xl border border-white/10 bg-white/5">
+          <div key={i} className="rounded-xl border border-white/10 bg-[#081528]">
             <div className="flex items-center gap-2 border-b border-white/10 px-6 py-4">
               <Pulse className="h-8 w-8" />
               <Pulse className="h-4 w-24" />
