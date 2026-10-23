@@ -1,7 +1,6 @@
+import { BrandLogo } from "@/components/BrandLogo";
 import Link from "next/link";
-import Image from "next/image";
 import type { LucideIcon } from "lucide-react";
-import { LOGO_URL } from "@/lib/brand";
 import { ThailandSilhouette } from "./ThailandSilhouette";
 
 // โครงหน้าเข้าสู่ระบบ / สมัครของ Academy Licensing: ซ้ายแผงสีเข้มพร้อมแผนที่ · ขวาฟอร์ม (มือถือ: แผงสีเข้มย่อเป็นแถบบน)
@@ -33,7 +32,7 @@ export function AuthShell({
         <ThailandSilhouette className="pointer-events-none absolute left-[42%] top-1/2 -z-10 hidden h-[108%] -translate-y-1/2 opacity-70 lg:block" />
 
         <Link href="/academies" className="flex w-fit items-center gap-2.5">
-          <Image src={LOGO_URL} alt="FA Thailand" width={40} height={40} className="h-10 w-10 rounded-xl object-cover" />
+          <BrandLogo tone="white" className="h-10" />
           <span>
             <span className="block text-sm font-bold">Academy Licensing</span>
             <span className="block text-[11px] text-indigo-300">สมาคมกีฬาฟุตบอลแห่งประเทศไทยฯ</span>

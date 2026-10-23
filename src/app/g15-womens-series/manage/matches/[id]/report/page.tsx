@@ -1,3 +1,4 @@
+import { BrandLogo } from "@/components/BrandLogo";
 import { Fragment } from "react";
 import { parseId } from "@/lib/route-id";
 import Link from "next/link";
@@ -7,7 +8,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { formatMatchDateTime } from "@/lib/g15";
 import { stageInfo, matchdayMap, hasPenalties, type G15Stage } from "@/lib/g15-stage";
 import { formatMinute, minuteOrder } from "@/lib/g15-clock";
-import { LOGO_URL, G15_IMAGE_URL } from "@/lib/brand";
+import { G15_IMAGE_URL } from "@/lib/brand";
 import { PrintButton } from "@/components/g15/PrintButton";
 import { BallIcon } from "@/components/g15/BallIcon";
 import { ArrowLeft } from "lucide-react";
@@ -189,8 +190,7 @@ export default async function G15MatchReportPage({ params }: { params: Promise<{
       <article className="mx-auto max-w-[210mm] bg-white px-[12mm] py-[10mm] text-slate-900 shadow-xl print:max-w-none print:p-0 print:shadow-none">
         {/* หัวรายงาน */}
         <header className="flex items-center gap-4 border-b-4 border-g15-700 pb-3">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={LOGO_URL} alt="FA Thailand" className="h-14 w-14 object-contain" />
+          <BrandLogo tone="navy" className="h-14" priority />
           <div className="min-w-0 flex-1 text-center">
             <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-g15-700">FA Thailand G15 Women&apos;s Football Series 2026</p>
             <h1 className="text-xl font-extrabold leading-tight">รายงานการแข่งขัน / MATCH REPORT</h1>

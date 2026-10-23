@@ -1,9 +1,8 @@
-import Image from "next/image";
+import { BrandLogo } from "@/components/BrandLogo";
 import Link from "next/link";
 import { requireCoach } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { logout } from "@/app/login/actions";
-import { LOGO_URL } from "@/lib/brand";
 import { MeNav } from "@/components/MeNav";
 import { LogOut } from "lucide-react";
 
@@ -20,7 +19,7 @@ export default async function MeLayout({
       <header className="sticky top-0 z-20 border-b border-white/10 bg-indigo-950/90 backdrop-blur">
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
           <Link href="/me" className="flex min-w-0 items-center gap-2.5">
-            <Image src={LOGO_URL} alt="FA Thailand" width={36} height={36} className="h-9 w-9 flex-none rounded-lg object-cover" />
+            <BrandLogo tone="white" className="h-9" />
             <div className="min-w-0">
               <p className="truncate text-sm font-bold text-white">ศูนย์อบรมผู้ฝึกสอน</p>
               <p className="truncate text-[11px] text-indigo-300">FA Thailand Technical</p>

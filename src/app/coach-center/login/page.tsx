@@ -1,9 +1,10 @@
+import { BrandLogo } from "@/components/BrandLogo";
 import Link from "next/link";
 import Image from "next/image";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { coachLogin } from "./actions";
-import { LOGO_URL, COVER_URL } from "@/lib/brand";
+import { COVER_URL } from "@/lib/brand";
 import { ArrowLeft } from "lucide-react";
 
 export default async function CoachLoginPage({
@@ -44,13 +45,7 @@ export default async function CoachLoginPage({
           </Link>
 
           <div className="mt-4 flex flex-col items-center gap-2 text-center">
-            <Image
-              src={LOGO_URL}
-              alt="FA Thailand"
-              width={48}
-              height={48}
-              className="h-12 w-12 rounded-xl shadow-sm ring-4 ring-amber-400/30"
-            />
+            <BrandLogo tone="navy" className="h-12" />
             <h2 className="mt-2 text-lg font-bold text-slate-900">
               ศูนย์อบรมผู้ฝึกสอนฟุตบอล
             </h2>

@@ -1,5 +1,4 @@
-export const LOGO_URL =
-  "https://res.cloudinary.com/dkmi9kye7/image/upload/v1782467146/channels4_profile_cxsouz.jpg";
+// โลโก้ FA Thailand: ใช้ <BrandLogo /> (src/components/BrandLogo.tsx) — ไฟล์อยู่ที่ src/assets/brand/ · ไอคอนแท็บอยู่ที่ src/app/icon.png, apple-icon.png, favicon.ico
 
 export const COVER_URL =
   "https://res.cloudinary.com/dkmi9kye7/image/upload/v1782467152/2b17abf_elj4pq.jpg";

@@ -1,9 +1,8 @@
+import { BrandLogo } from "@/components/BrandLogo";
 import Link from "next/link";
-import Image from "next/image";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
-import { LOGO_URL } from "@/lib/brand";
 import { OfficialCountdown } from "@/components/g15/OfficialCountdown";
 import { matchdayMap } from "@/lib/g15-stage";
 import { ArrowLeft, ClipboardList } from "lucide-react";
@@ -47,7 +46,7 @@ export default async function G15CountdownPage() {
       <header className="sticky top-0 z-20 border-b border-white/10 bg-indigo-950/80 backdrop-blur">
         <div className="mx-auto flex max-w-4xl items-center justify-between gap-2 px-4 py-3 sm:gap-3 sm:px-6 sm:py-4">
           <Link href="/g15-womens-series/manage" className="flex min-w-0 items-center gap-2">
-            <Image src={LOGO_URL} alt="FA Thailand" width={36} height={36} className="h-9 w-9 flex-none rounded-lg object-cover" />
+            <BrandLogo tone="white" className="h-9" />
             <div className="min-w-0">
               <p className="truncate text-sm font-bold text-white">FA Thailand Technical</p>
               <p className="truncate text-[11px] text-indigo-300">Official Countdown · G15 Women&apos;s Football Series</p>

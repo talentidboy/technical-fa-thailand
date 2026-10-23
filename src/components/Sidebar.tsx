@@ -1,8 +1,8 @@
 "use client";
 
+import { BrandLogo } from "@/components/BrandLogo";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
@@ -22,7 +22,6 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { logout } from "@/app/login/actions";
-import { LOGO_URL } from "@/lib/brand";
 
 type NavItem = {
   href: string;
@@ -122,7 +121,7 @@ export function Sidebar({
 
   const brand = (
     <Link href="/dashboard" className="flex items-center gap-3">
-      <Image src={LOGO_URL} alt="FA Thailand" width={40} height={40} className="h-10 w-10 flex-none rounded-xl object-cover ring-2 ring-white/15" />
+      <BrandLogo tone="white" className="h-10" />
       <div className="min-w-0">
         <p className="truncate text-sm font-bold leading-tight text-white">ศูนย์อบรมผู้ฝึกสอนฟุตบอล</p>
         <p className="truncate text-[11px] text-indigo-300">Coach Education · FA Thailand</p>

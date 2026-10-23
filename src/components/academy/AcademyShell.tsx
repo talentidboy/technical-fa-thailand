@@ -1,6 +1,5 @@
+import { BrandLogo } from "@/components/BrandLogo";
 import Link from "next/link";
-import Image from "next/image";
-import { LOGO_URL } from "@/lib/brand";
 
 // แถบบนของหน้าในโหมด Academy Licensing (เข้าสู่ระบบ / สมัคร / พอร์ทัล)
 export function AcademyTopBar({ subtitle, children }: { subtitle: string; children?: React.ReactNode }) {
@@ -8,7 +7,7 @@ export function AcademyTopBar({ subtitle, children }: { subtitle: string; childr
     <header className="sticky top-0 z-30 border-b border-white/10 bg-indigo-950/95 backdrop-blur">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
         <Link href="/academies" className="flex min-w-0 items-center gap-2.5">
-          <Image src={LOGO_URL} alt="FA Thailand" width={36} height={36} className="h-9 w-9 flex-none rounded-lg object-cover" />
+          <BrandLogo tone="white" className="h-9" />
           <div className="min-w-0">
             <p className="text-sm font-bold text-white">Academy Licensing</p>
             <p className="truncate text-[11px] text-indigo-300">{subtitle}</p>

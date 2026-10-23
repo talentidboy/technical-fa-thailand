@@ -1,10 +1,9 @@
 "use client";
 
+import { BrandLogo } from "@/components/BrandLogo";
 import Link from "next/link";
-import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { LayoutDashboard, Users, Trophy, Activity, ArrowLeft } from "lucide-react";
-import { LOGO_URL } from "@/lib/brand";
 
 const NAV = [
   { href: "/talent-id", label: "ภาพรวม", icon: LayoutDashboard },
@@ -25,13 +24,7 @@ export function TalentIdSidebar({
   return (
     <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r border-white/10 bg-black/20 lg:flex">
       <div className="flex items-center gap-2 px-5 py-5">
-        <Image
-          src={LOGO_URL}
-          alt="FA Thailand"
-          width={36}
-          height={36}
-          className="h-9 w-9 rounded-lg object-cover"
-        />
+        <BrandLogo tone="white" className="h-9" />
         <div>
           <p className="text-sm font-bold text-white">FA Thailand Technical</p>
           <p className="text-[11px] text-indigo-300">Talent ID</p>

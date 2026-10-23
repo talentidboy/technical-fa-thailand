@@ -1,9 +1,10 @@
+import { BrandLogo } from "@/components/BrandLogo";
 import Link from "next/link";
 import Image from "next/image";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { LOGO_URL, COVER_URL } from "@/lib/brand";
+import { COVER_URL } from "@/lib/brand";
 import { LIVE_APPLICATION_STATUSES } from "@/lib/course-workflow";
 import { coreProgramSteps } from "@/lib/coach-program";
 import { Reveal } from "@/components/g15/Reveal";
@@ -84,7 +85,7 @@ export default async function CoachCenterPage() {
         {/* แถบบน */}
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-5 pt-5 sm:px-6">
           <Link href="/" className="flex min-w-0 items-center gap-2.5">
-            <Image src={LOGO_URL} alt="FA Thailand" width={36} height={36} className="h-9 w-9 flex-none rounded-lg object-cover ring-1 ring-white/20" />
+            <BrandLogo tone="white" className="h-9" />
             <span className="min-w-0">
               <span className="block truncate text-sm font-bold">FA Thailand Technical</span>
               <span className="flex items-center gap-1 text-[11px] text-white/50">
@@ -415,7 +416,7 @@ export default async function CoachCenterPage() {
         </Reveal>
 
         <div className="flex items-center justify-center gap-2">
-          <Image src={LOGO_URL} alt="FA Thailand" width={20} height={20} className="h-5 w-5 rounded object-cover" />
+          <BrandLogo tone="white" className="h-5" />
           <p className="text-xs text-slate-400">
             FA Thailand Technical · <BookOpen className="inline h-3 w-3" /> Coach Education
           </p>

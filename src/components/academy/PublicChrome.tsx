@@ -1,6 +1,5 @@
+import { BrandLogo } from "@/components/BrandLogo";
 import Link from "next/link";
-import Image from "next/image";
-import { LOGO_URL } from "@/lib/brand";
 import { display } from "./fonts";
 import { ArrowUpRight } from "lucide-react";
 
@@ -28,7 +27,7 @@ export function PublicHeader({ viewer, manageHref = "/academies/manage" }: { vie
       <header className="sticky top-0 z-30 border-b border-(--line) bg-white/95 backdrop-blur-sm">
         <div className="mx-auto flex h-16 max-w-6xl items-center gap-6 px-4 sm:px-6">
           <Link href="/academies" className="flex flex-none items-center gap-3">
-            <Image src={LOGO_URL} alt="FA Thailand" width={36} height={36} className="h-9 w-9 rounded-md object-cover" />
+            <BrandLogo tone="navy" className="h-9" />
             <span className="h-7 w-px bg-(--line)" />
             <span className={`${display.className} text-lg font-semibold leading-none tracking-tight text-(--ink)`}>
               Academy
@@ -75,7 +74,7 @@ export function PublicFooter() {
       <div className="mx-auto grid max-w-6xl gap-8 px-4 py-12 sm:px-6 md:grid-cols-[1.5fr_1fr_1fr]">
         <div>
           <div className="flex items-center gap-3">
-            <Image src={LOGO_URL} alt="FA Thailand" width={40} height={40} className="h-10 w-10 rounded-md object-cover" />
+            <BrandLogo tone="white" className="h-10" />
             <p className={`${display.className} text-lg font-semibold leading-tight text-white`}>FAT Academy Licensing</p>
           </div>
           <p className="mt-4 max-w-sm text-sm leading-relaxed">

@@ -1,3 +1,4 @@
+import { BrandLogo } from "@/components/BrandLogo";
 import Link from "next/link";
 import Image from "next/image";
 import { redirect } from "next/navigation";
@@ -5,15 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { logout } from "@/app/login/actions";
 import { NewsSection } from "@/components/NewsSection";
-import {
-  LOGO_URL,
-  COVER_URL,
-  COACH_CENTRE_IMAGE_URL,
-  G15_IMAGE_URL,
-  GRASSROOTS_LOGO_URL,
-  TALENT_ID_LOGO_URL,
-  PLAY_AND_LEARN_LOGO_URL,
-} from "@/lib/brand";
+import { COVER_URL, COACH_CENTRE_IMAGE_URL, G15_IMAGE_URL, GRASSROOTS_LOGO_URL, TALENT_ID_LOGO_URL, PLAY_AND_LEARN_LOGO_URL } from "@/lib/brand";
 import {
   FileBadge,
   GraduationCap,
@@ -186,13 +179,7 @@ export default async function HomePage() {
       <header className="sticky top-0 z-20 border-b border-white/10 bg-indigo-950/80 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-6 py-4">
           <div className="flex items-center gap-2">
-            <Image
-              src={LOGO_URL}
-              alt="FA Thailand"
-              width={36}
-              height={36}
-              className="h-9 w-9 rounded-lg object-cover"
-            />
+            <BrandLogo tone="white" className="h-9" />
             <div>
               <p className="text-sm font-bold text-white">
                 FA Thailand Technical
@@ -352,13 +339,7 @@ export default async function HomePage() {
         <div className="mx-auto grid max-w-6xl items-center gap-10 px-6 pb-28 pt-14 sm:pt-20 lg:grid-cols-[1.25fr_1fr] lg:pb-32">
           <div className="text-center lg:text-left">
             <div className="flex items-center justify-center gap-3 lg:justify-start">
-              <Image
-                src={LOGO_URL}
-                alt="FA Thailand"
-                width={64}
-                height={64}
-                className="h-14 w-14 rounded-2xl shadow-lg shadow-black/30 ring-2 ring-white/20 sm:h-16 sm:w-16"
-              />
+              <BrandLogo tone="white" className="h-14 sm:h-16" />
               <span className="rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-[11px] font-medium text-indigo-200 backdrop-blur-sm sm:text-xs">
                 สมาคมกีฬาฟุตบอลแห่งประเทศไทย ในพระบรมราชูปถัมภ์
               </span>
@@ -579,13 +560,7 @@ export default async function HomePage() {
         <div className="mx-auto max-w-6xl px-6 py-12">
           <div className="flex flex-wrap items-start justify-between gap-10">
             <div className="flex items-center gap-3">
-              <Image
-                src={LOGO_URL}
-                alt="FA Thailand"
-                width={40}
-                height={40}
-                className="h-10 w-10 rounded-lg object-cover"
-              />
+              <BrandLogo tone="white" className="h-10" />
               <div>
                 <p className="font-bold text-white">FA Thailand Technical</p>
                 <p className="mt-0.5 text-sm text-indigo-300">

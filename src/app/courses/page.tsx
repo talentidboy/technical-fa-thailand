@@ -1,7 +1,6 @@
+import { BrandLogo } from "@/components/BrandLogo";
 import Link from "next/link";
-import Image from "next/image";
 import { CoursesSection } from "@/components/CoursesSection";
-import { LOGO_URL } from "@/lib/brand";
 import { coreProgramSteps } from "@/lib/coach-program";
 import { display, PathwayStairs } from "@/components/coach/CoachUi";
 import { ArrowLeft, ArrowRight, GraduationCap } from "lucide-react";
@@ -13,7 +12,7 @@ export default function CoursesPage() {
       <header className="sticky top-0 z-20 border-b border-white/10 bg-[#070b1f]/85 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-5 py-3.5 sm:px-6">
           <Link href="/" className="flex min-w-0 items-center gap-2.5">
-            <Image src={LOGO_URL} alt="FA Thailand" width={36} height={36} className="h-9 w-9 flex-none rounded-lg object-cover ring-1 ring-white/20" />
+            <BrandLogo tone="white" className="h-9" />
             <div className="min-w-0">
               <p className="truncate text-sm font-bold text-white">FA Thailand Technical</p>
               <p className="truncate text-[11px] text-white/50">ศูนย์อบรมผู้ฝึกสอนฟุตบอล</p>

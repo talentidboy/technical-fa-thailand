@@ -1,3 +1,4 @@
+import { BrandLogo } from "@/components/BrandLogo";
 import Link from "next/link";
 import Image from "next/image";
 import { redirect } from "next/navigation";
@@ -6,7 +7,6 @@ import { getCurrentUser } from "@/lib/auth";
 import { createAnnouncement, updateAnnouncement, deleteAnnouncement } from "./actions";
 import { Field } from "@/components/FormField";
 import { ModalTrigger } from "@/components/Modal";
-import { LOGO_URL } from "@/lib/brand";
 import { Megaphone, Trash2, Plus, ArrowLeft, ImagePlus, Link2, Pencil } from "lucide-react";
 
 function formatDate(date: Date) {
@@ -118,13 +118,7 @@ export default async function AnnouncementsPage() {
       <header className="sticky top-0 z-20 border-b border-white/10 bg-indigo-950/80 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-6 py-4">
           <Link href="/" className="flex items-center gap-2">
-            <Image
-              src={LOGO_URL}
-              alt="FA Thailand"
-              width={36}
-              height={36}
-              className="h-9 w-9 rounded-lg object-cover"
-            />
+            <BrandLogo tone="white" className="h-9" />
             <div>
               <p className="text-sm font-bold text-white">
                 FA Thailand Technical

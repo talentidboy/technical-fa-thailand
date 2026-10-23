@@ -1,11 +1,10 @@
+import { BrandLogo } from "@/components/BrandLogo";
 import Link from "next/link";
-import Image from "next/image";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { createTeam, deleteTeam, createMatch, deleteMatch, updateMatch } from "./actions";
 import { Field } from "@/components/FormField";
-import { LOGO_URL } from "@/lib/brand";
 import { toDateTimeLocalValue } from "@/lib/g15";
 import { REGION_ORDER, REGION_STYLE, DEFAULT_REGION_STYLE, parseRegionGroup } from "@/lib/g15-region";
 import { ManageTabs } from "@/components/g15/ManageTabs";
@@ -44,13 +43,7 @@ function ManageShell({ stage, children }: { stage: ReturnType<typeof parseStage>
       <header className="sticky top-0 z-20 border-b border-white/10 bg-indigo-950/80 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-2 px-4 py-3 sm:gap-3 sm:px-6 sm:py-4">
           <Link href={withStage("/g15-womens-series", stage)} className="flex min-w-0 items-center gap-2">
-            <Image
-              src={LOGO_URL}
-              alt="FA Thailand"
-              width={36}
-              height={36}
-              className="h-9 w-9 flex-none rounded-lg object-cover"
-            />
+            <BrandLogo tone="white" className="h-9" />
             <div className="min-w-0">
               <p className="truncate text-sm font-bold text-white">
                 FA Thailand Technical

@@ -1,3 +1,4 @@
+import { BrandLogo } from "@/components/BrandLogo";
 import Link from "next/link";
 import { parseId } from "@/lib/route-id";
 import Image from "next/image";
@@ -7,7 +8,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { getHighestCoreLevel, getNextCoreLevel } from "@/lib/license-rank";
 import { LIVE_APPLICATION_STATUSES, APPLICATION_STATUS } from "@/lib/course-workflow";
 import { applyToSession } from "@/app/me/courses/actions";
-import { LOGO_URL, COVER_URL } from "@/lib/brand";
+import { COVER_URL } from "@/lib/brand";
 import { ApplyForm } from "./ApplyForm";
 import { ArrowLeft, CalendarDays, MapPin, Users, Clock, LogIn, CheckCircle2, Lock, Send } from "lucide-react";
 
@@ -107,13 +108,7 @@ export default async function ApplyPage({ params }: { params: Promise<{ sessionI
             ศูนย์อบรมผู้ฝึกสอน
           </Link>
           <div className="mt-4 flex items-start gap-4">
-            <Image
-              src={LOGO_URL}
-              alt="FA Thailand"
-              width={52}
-              height={52}
-              className="h-13 w-13 flex-none rounded-xl ring-4 ring-amber-400/30"
-            />
+            <BrandLogo tone="white" className="h-13" />
             <div className="min-w-0">
               <span className="inline-block rounded-full bg-amber-400 px-2.5 py-0.5 text-xs font-bold text-amber-950">
                 {isGeneral ? "อบรมทั่วไป" : `License ${session.course.licenseType}`}

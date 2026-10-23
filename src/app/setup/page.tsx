@@ -1,9 +1,8 @@
-import Image from "next/image";
+import { BrandLogo } from "@/components/BrandLogo";
 import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createFirstAdmin } from "./actions";
-import { LOGO_URL } from "@/lib/brand";
 
 export default async function SetupPage() {
   await connection(); // นับผู้ใช้ตอนมีคนเปิดหน้าจริง ไม่ใช่ตอน build
@@ -18,13 +17,7 @@ export default async function SetupPage() {
         <div className="h-1.5 bg-linear-to-r from-amber-500 via-amber-300 to-amber-500" />
         <div className="p-8">
           <div className="flex flex-col items-center gap-2 text-center">
-            <Image
-              src={LOGO_URL}
-              alt="FA Thailand"
-              width={48}
-              height={48}
-              className="h-12 w-12 rounded-xl shadow-sm ring-4 ring-amber-400/30"
-            />
+            <BrandLogo tone="navy" className="h-12" />
             <h1 className="mt-2 text-lg font-bold text-slate-900">
               ตั้งค่าผู้ดูแลระบบคนแรก
             </h1>

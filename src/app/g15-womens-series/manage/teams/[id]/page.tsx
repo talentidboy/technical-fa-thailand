@@ -1,6 +1,6 @@
+import { BrandLogo } from "@/components/BrandLogo";
 import Link from "next/link";
 import { parseId } from "@/lib/route-id";
-import Image from "next/image";
 import { notFound, redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
@@ -18,7 +18,6 @@ import {
 import { Field } from "@/components/FormField";
 import { LogoPasteField } from "@/components/g15/LogoPasteField";
 import { ModalTrigger } from "@/components/Modal";
-import { LOGO_URL } from "@/lib/brand";
 import { ArrowLeft, Shield, Users, UserCog, Trash2, ChevronDown, UserMinus, UserPlus } from "lucide-react";
 
 function toDateInputValue(date: Date | null) {
@@ -119,13 +118,7 @@ export default async function G15ManageTeamPage({
       <header className="sticky top-0 z-20 border-b border-white/10 bg-indigo-950/80 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-2 px-4 py-3 sm:gap-3 sm:px-6 sm:py-4">
           <Link href="/g15-womens-series/manage" className="flex min-w-0 items-center gap-2">
-            <Image
-              src={LOGO_URL}
-              alt="FA Thailand"
-              width={36}
-              height={36}
-              className="h-9 w-9 flex-none rounded-lg object-cover"
-            />
+            <BrandLogo tone="white" className="h-9" />
             <div className="min-w-0">
               <p className="truncate text-sm font-bold text-white">FA Thailand Technical</p>
               <p className="truncate text-[11px] text-indigo-300">จัดการข้อมูลทีม G15</p>

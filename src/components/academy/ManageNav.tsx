@@ -1,9 +1,8 @@
 "use client";
 
+import { BrandLogo } from "@/components/BrandLogo";
 import Link from "next/link";
-import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { LOGO_URL } from "@/lib/brand";
 import { ArrowUpRight, BadgeCheck, Building2, FileCheck2, History, LayoutDashboard, UserCheck } from "lucide-react";
 
 type Counts = { applications: number; accounts: number; expiring: number };
@@ -27,7 +26,7 @@ export function ManageNav({ counts, email }: { counts: Counts; email: string }) 
   return (
     <div className="bg-[#0b1f44] text-white lg:sticky lg:top-0 lg:flex lg:h-screen lg:w-60 lg:flex-none lg:flex-col">
       <Link href="/academies/manage" className="flex items-center gap-2.5 px-4 py-3 lg:px-5 lg:py-5">
-        <Image src={LOGO_URL} alt="FA Thailand" width={32} height={32} className="h-8 w-8 rounded-md object-cover" />
+        <BrandLogo tone="white" className="h-8" />
         <span className="leading-tight">
           <span className="block text-sm font-semibold">Academy Licensing</span>
           <span className="block text-[11px] text-white/60">ระบบจัดการ (สมาคมฯ)</span>
