@@ -9,13 +9,16 @@ import { LEVEL_SUMMARY, criteriaCount } from "@/lib/academy-criteria";
 import { LevelMedal, StateChip } from "@/components/academy/AcademyUi";
 import { CriteriaExplorer } from "@/components/academy/CriteriaExplorer";
 import { ThailandMap } from "@/components/academy/ThailandMap";
+import { InfoDialog } from "@/components/academy/InfoDialog";
 import {
   ArrowLeft,
   ArrowRight,
+  Award,
   Check,
   ChevronLeft,
   ChevronRight,
   ClipboardPen,
+  Info,
   LayoutDashboard,
   ListChecks,
   LogIn,
@@ -126,52 +129,106 @@ export default async function AcademiesPage({
           style={{ backgroundImage: "linear-gradient(white 1px, transparent 1px), linear-gradient(90deg, white 1px, transparent 1px)", backgroundSize: "36px 36px" }}
         />
         <div className="absolute inset-x-0 top-0 h-1 bg-linear-to-r from-amber-600 via-amber-300 to-amber-600" />
-        <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:py-16">
-          <ThailandMap academies={all.map((a) => ({ id: a.id, nameEn: a.nameEn, nameTh: a.nameTh, province: a.province, level: a.level }))}>
+        <div className="mx-auto grid max-w-6xl items-center gap-10 px-4 py-12 sm:px-6 lg:min-h-[calc(100svh-4.25rem)] lg:grid-cols-[minmax(0,1fr)_minmax(0,28rem)] lg:gap-14 lg:py-8">
+          <div>
             <p className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-amber-300 ring-1 ring-white/15">
               <ShieldCheck className="h-3.5 w-3.5" />
-              ใบอนุญาตรับรองมาตรฐานอคาเดมี
+              ใบอนุญาตรับรองมาตรฐานอคาเดมี · FAT
             </p>
-            <h1 className="mt-4 text-3xl font-extrabold leading-tight sm:text-5xl">Academy Licensing</h1>
-            <p className="mt-4 max-w-xl text-sm leading-relaxed text-indigo-200 sm:text-base">
-              แผนที่ศูนย์ฝึกเยาวชนและอคาเดมีฟุตบอลที่ได้รับการรับรองมาตรฐานจากสมาคมกีฬาฟุตบอลแห่งประเทศไทย ในพระบรมราชูปถัมภ์ ทั่วประเทศ 3 ระดับ
-              ภายใต้โครงการ GROW TOGETHER ร่วมกับ FIFA Talent Development Scheme
-            </p>
-            <div className="mt-6 grid max-w-md grid-cols-3 gap-2.5">
+            <h1 className="mt-5 text-5xl font-extrabold leading-[1.05] tracking-tight sm:text-6xl lg:text-7xl">
+              Academy
+              <span className="block bg-linear-to-r from-amber-200 via-amber-400 to-amber-200 bg-clip-text pb-1 text-transparent">Licensing</span>
+            </h1>
+            <p className="mt-5 max-w-md text-base leading-relaxed text-indigo-200 sm:text-lg">อคาเดมีฟุตบอลเยาวชนที่ได้รับการรับรองมาตรฐานจากสมาคมฯ ทั่วประเทศ บนแผนที่เดียว</p>
+
+            <dl className="mt-8 flex gap-10">
+              {[
+                [all.length.toLocaleString(), "อคาเดมีที่ได้รับการรับรอง"],
+                [String(provinces.length), "จังหวัด"],
+              ].map(([n, label]) => (
+                <div key={label} className="flex flex-col-reverse">
+                  <dt className="text-xs text-indigo-300">{label}</dt>
+                  <dd className="text-4xl font-extrabold tabular-nums">{n}</dd>
+                </div>
+              ))}
+            </dl>
+            <div className="mt-5 grid max-w-md grid-cols-3 gap-2">
               {[...ACADEMY_LEVELS].reverse().map((l) => (
-                <Link key={l} href={href({ level: l, page: null })} className="flex items-center gap-2.5 rounded-2xl bg-white/5 p-2.5 ring-1 ring-white/10 transition-colors hover:bg-white/10">
+                <Link key={l} href={href({ level: l, page: null })} className="flex items-center gap-2 rounded-2xl bg-white/5 p-1.5 pr-2 ring-1 ring-white/10 transition-colors hover:bg-white/10">
                   <LevelMedal level={l} size="sm" />
-                  <span>
-                    <span className="block text-xl font-extrabold leading-none">{count(l)}</span>
-                    <span className="text-[11px] font-semibold text-indigo-200">{LEVEL_META[l].label}</span>
+                  <span className="min-w-0 leading-tight">
+                    <span className="block text-base font-extrabold tabular-nums">{count(l)}</span>
+                    <span className="block text-[11px] font-semibold text-indigo-300">{LEVEL_META[l].label}</span>
                   </span>
                 </Link>
               ))}
             </div>
-            <div className="mt-6 flex flex-wrap gap-3">
+
+            <div className="mt-8 flex flex-wrap gap-3">
               <a
                 href="#directory"
-                className="inline-flex items-center gap-2 rounded-full bg-amber-400 px-5 py-2.5 text-sm font-bold text-indigo-950 shadow-lg shadow-amber-500/20 transition-transform hover:scale-105"
+                className="inline-flex items-center gap-2 rounded-full bg-amber-400 px-6 py-3 text-sm font-bold text-indigo-950 shadow-lg shadow-amber-500/25 transition-transform hover:scale-105"
               >
                 <Search className="h-4 w-4" />
                 ค้นหาอคาเดมี
               </a>
               <Link
                 href={academyUser ? "/academies/portal" : "/academies/register"}
-                className="inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-bold text-indigo-950 transition-transform hover:scale-105"
+                className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-bold text-indigo-950 transition-transform hover:scale-105"
               >
                 <ClipboardPen className="h-4 w-4" />
                 {academyUser ? "พอร์ทัลอคาเดมีของฉัน" : "สมัคร / ยื่นขอใบอนุญาต"}
               </Link>
-              <a
-                href="#criteria"
-                className="inline-flex items-center gap-2 rounded-full border border-white/25 px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-white/10"
+            </div>
+            <div className="mt-5 flex flex-wrap gap-x-6 gap-y-2 text-sm font-semibold text-indigo-200">
+              <InfoDialog
+                title="Academy Licensing คืออะไร"
+                className="inline-flex items-center gap-1.5 transition-colors hover:text-white"
+                label={
+                  <>
+                    <Info className="h-4 w-4" />
+                    เกี่ยวกับโครงการ
+                  </>
+                }
               >
+                <p className="text-sm leading-relaxed">
+                  ระบบการออกใบอนุญาตรับรองมาตรฐานศูนย์ฝึกเยาวชนหรืออคาเดมีฟุตบอล (Youth Football Academy) ที่จัดทำโดยสมาคมกีฬาฟุตบอลแห่งประเทศไทย ในพระบรมราชูปถัมภ์ (FAT)
+                  ภายใต้โครงการความร่วมมือกับ FIFA (Grow Together) และอิงเกณฑ์มาตรฐานของสมาพันธ์ฟุตบอลแห่งเอเชีย (AFC)
+                </p>
+                <ul className="mt-5 space-y-2.5">
+                  {ACADEMY_LEVELS.map((l) => (
+                    <li key={l} className="flex items-center gap-3 rounded-2xl bg-slate-50 p-2.5">
+                      <LevelMedal level={l} size="sm" />
+                      <span className="min-w-0">
+                        <span className={`block text-sm font-bold ${LEVEL_META[l].text}`}>{LEVEL_SUMMARY[l].title}</span>
+                        <span className="block text-xs text-slate-500">{LEVEL_SUMMARY[l].th}</span>
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+                <p className="mt-4 flex gap-2 rounded-2xl bg-indigo-50 p-3 text-xs leading-relaxed text-indigo-900">
+                  <Star className="mt-0.5 h-4 w-4 flex-none fill-amber-400 text-amber-400" />
+                  อคาเดมีระดับ Gold ยื่นขอรับรองระดับเอเชีย AFC Elite Youth Scheme (1–3 ดาว) ผ่านสมาคมฯ ได้
+                </p>
+                <Link
+                  href={academyUser ? "/academies/portal" : "/academies/register"}
+                  className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full bg-indigo-700 px-5 py-3 text-sm font-bold text-white hover:bg-indigo-800"
+                >
+                  {academyUser ? "ไปที่พอร์ทัลอคาเดมี" : "สมัครและยื่นขอใบอนุญาตออนไลน์"}
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              </InfoDialog>
+              <a href="#levels" className="inline-flex items-center gap-1.5 transition-colors hover:text-white">
+                <Award className="h-4 w-4" />
+                มาตรฐาน 3 ระดับ
+              </a>
+              <a href="#criteria" className="inline-flex items-center gap-1.5 transition-colors hover:text-white">
                 <ListChecks className="h-4 w-4" />
                 เกณฑ์มาตรฐาน
               </a>
             </div>
-          </ThailandMap>
+          </div>
+          <ThailandMap academies={all.map((a) => ({ id: a.id, nameEn: a.nameEn, nameTh: a.nameTh, province: a.province, level: a.level }))} />
         </div>
       </section>
 

@@ -2,9 +2,11 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { getAcademyUser, getCurrentUser } from "@/lib/auth";
-import { AcademyTopBar, TextField } from "@/components/academy/AcademyShell";
+import { authInputClass } from "@/components/academy/AcademyShell";
+import { AuthShell } from "@/components/academy/AuthShell";
+import { LoginSubmit, PasswordInput } from "@/components/academy/AuthFields";
 import { academyLogin } from "../account-actions";
-import { ArrowLeft, LogIn, ShieldCheck, UserPlus } from "lucide-react";
+import { AlertCircle, ArrowLeft, Bell, ClipboardCheck, Mail, UserPlus, Users } from "lucide-react";
 
 export const metadata: Metadata = { title: "เข้าสู่ระบบอคาเดมี | Academy Licensing" };
 
@@ -14,6 +16,12 @@ const ERRORS: Record<string, string> = {
   coach: "บัญชีผู้ฝึกสอนเข้าสู่ระบบที่ศูนย์อบรมผู้ฝึกสอน",
 };
 
+const POINTS = [
+  { icon: Users, title: "ข้อมูลอคาเดมี บุคลากร ทีมและนักเตะ", desc: "อัปเดตเองได้ตลอด ระบบตรวจเกณฑ์ที่นับได้ให้อัตโนมัติ" },
+  { icon: ClipboardCheck, title: "ยื่นขอ ต่ออายุ หรือเลื่อนระดับ", desc: "แนบหลักฐานทีละข้อตามเกณฑ์ของระดับที่ขอ" },
+  { icon: Bell, title: "ติดตามผลการตรวจ", desc: "เห็นความเห็นจากสมาคมฯ รายข้อ พร้อมแจ้งเตือน" },
+];
+
 export default async function AcademyLoginPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
   if (await getAcademyUser()) redirect("/academies/portal");
   const staff = await getCurrentUser();
@@ -21,43 +29,56 @@ export default async function AcademyLoginPage({ searchParams }: { searchParams:
   const { error } = await searchParams;
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <AcademyTopBar subtitle="เข้าสู่ระบบสำหรับอคาเดมี">
-        <Link href="/academies" className="inline-flex items-center gap-1.5 rounded-lg border border-white/15 px-3 py-2 text-sm text-indigo-200 hover:bg-white/10">
-          <ArrowLeft className="h-4 w-4" />
-          <span className="hidden sm:inline">ทำเนียบอคาเดมี</span>
-        </Link>
-      </AcademyTopBar>
-      <main className="mx-auto grid max-w-5xl items-center gap-8 px-4 py-12 sm:px-6 lg:grid-cols-2">
-        <section className="hidden lg:block">
-          <ShieldCheck className="h-12 w-12 text-amber-500" />
-          <h1 className="mt-4 text-3xl font-extrabold text-slate-900">พอร์ทัลอคาเดมี</h1>
-          <p className="mt-3 text-slate-600">จัดการข้อมูลอคาเดมี บุคลากร ทีมและนักเตะ ยื่นขอใบอนุญาต ต่ออายุ หรือเลื่อนระดับ และติดตามผลการตรวจได้ในที่เดียว</p>
-        </section>
-        <section className="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200 sm:p-8">
-          <h2 className="text-xl font-bold text-slate-900">เข้าสู่ระบบ</h2>
-          {error && ERRORS[error] && <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{ERRORS[error]}</p>}
-          <form action={academyLogin} className="mt-5 space-y-4">
-            <TextField label="อีเมล" name="email" type="email" required autoComplete="email" />
-            <TextField label="รหัสผ่าน" name="password" type="password" required autoComplete="current-password" />
-            <button type="submit" className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-indigo-700 px-5 py-3 text-sm font-semibold text-white hover:bg-indigo-800">
-              <LogIn className="h-4 w-4" />
-              เข้าสู่ระบบ
-            </button>
-          </form>
-          <p className="mt-4 text-xs text-slate-500">ลืมรหัสผ่าน: ติดต่อฝ่ายเทคนิคของสมาคมฯ เพื่อตั้งรหัสผ่านใหม่</p>
-          <div className="mt-6 border-t border-slate-100 pt-5">
-            <p className="text-sm text-slate-600">ยังไม่มีบัญชี?</p>
-            <Link
-              href="/academies/register"
-              className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-lg border border-indigo-200 px-5 py-3 text-sm font-semibold text-indigo-700 hover:bg-indigo-50"
-            >
-              <UserPlus className="h-4 w-4" />
-              สมัครบัญชีอคาเดมี
-            </Link>
-          </div>
-        </section>
-      </main>
-    </div>
+    <AuthShell eyebrow="Academy Portal" title="พอร์ทัลอคาเดมี" intro="จัดการทุกอย่างของอคาเดมีและใบอนุญาต FAT ได้ในที่เดียว" points={POINTS}>
+      <Link href="/academies" className="inline-flex items-center gap-1 text-sm text-slate-500 hover:text-slate-800">
+        <ArrowLeft className="h-4 w-4" />
+        ทำเนียบอคาเดมี
+      </Link>
+      <h2 className="mt-6 text-3xl font-extrabold tracking-tight text-slate-900">เข้าสู่ระบบ</h2>
+      <p className="mt-2 text-sm text-slate-500">สำหรับผู้ดูแลอคาเดมี และเจ้าหน้าที่สมาคมฯ</p>
+
+      {error && ERRORS[error] && (
+        <p role="alert" className="mt-6 flex items-center gap-2 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 ring-1 ring-red-100">
+          <AlertCircle className="h-4 w-4 flex-none" />
+          {ERRORS[error]}
+        </p>
+      )}
+
+      <form action={academyLogin} className="mt-8 space-y-5">
+        <label className="block">
+          <span className="text-sm font-semibold text-slate-700">อีเมล</span>
+          <span className="relative mt-1.5 block">
+            <Mail className="pointer-events-none absolute left-4 top-1/2 h-4.5 w-4.5 -translate-y-1/2 text-slate-400" />
+            <input name="email" type="email" required autoComplete="email" placeholder="name@academy.com" className={authInputClass} />
+          </span>
+        </label>
+        <label className="block">
+          <span className="text-sm font-semibold text-slate-700">รหัสผ่าน</span>
+          <span className="mt-1.5 block">
+            <PasswordInput name="password" autoComplete="current-password" />
+          </span>
+        </label>
+        <LoginSubmit />
+      </form>
+      <details className="group mt-4 text-sm">
+        <summary className="cursor-pointer list-none text-right font-semibold text-indigo-600 hover:text-indigo-800">ลืมรหัสผ่าน?</summary>
+        <p className="mt-2 rounded-xl bg-slate-50 p-3 text-xs leading-relaxed text-slate-600">
+          ติดต่อฝ่ายเทคนิคของสมาคมฯ แจ้งชื่ออคาเดมีและอีเมลที่ใช้สมัคร — เจ้าหน้าที่จะตั้งรหัสผ่านใหม่ให้
+        </p>
+      </details>
+
+      <div className="mt-10 flex items-center gap-3 text-xs text-slate-400">
+        <span className="h-px flex-1 bg-slate-200" />
+        ยังไม่มีบัญชี?
+        <span className="h-px flex-1 bg-slate-200" />
+      </div>
+      <Link
+        href="/academies/register"
+        className="mt-4 inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-slate-200 text-sm font-bold text-slate-800 transition hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-800"
+      >
+        <UserPlus className="h-4 w-4" />
+        สมัครบัญชีอคาเดมี
+      </Link>
+    </AuthShell>
   );
 }

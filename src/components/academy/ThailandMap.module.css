@@ -52,13 +52,24 @@
   filter: drop-shadow(0 0 5px rgba(255, 226, 131, 0.85));
 }
 
-.panelIn {
-  animation: panelIn 350ms ease backwards;
+/* แผ่นรายชื่อเลื่อนขึ้นจากล่าง · กล่องอันดับเด้งออกจากปุ่ม */
+.sheet {
+  animation: sheetIn 420ms cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
 }
-@keyframes panelIn {
+@keyframes sheetIn {
   from {
     opacity: 0;
-    transform: translateY(6px);
+    transform: translateY(24px);
+  }
+}
+.pop {
+  transform-origin: top right;
+  animation: pop 220ms cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+}
+@keyframes pop {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
   }
 }
 
@@ -69,7 +80,8 @@
     animation: none;
   }
   .pulse,
-  .panelIn {
+  .sheet,
+  .pop {
     animation: none;
   }
 }

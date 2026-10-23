@@ -20,6 +20,10 @@ export function AcademyTopBar({ subtitle, children }: { subtitle: string; childr
   );
 }
 
+// ช่องกรอกแบบมีไอคอนด้านซ้าย (หน้าเข้าสู่ระบบ)
+export const authInputClass =
+  "h-12 w-full rounded-xl border border-slate-200 bg-slate-50/70 pl-11 pr-4 text-sm text-slate-900 placeholder:text-slate-400 transition focus:border-indigo-400 focus:bg-white focus:outline-none focus:ring-4 focus:ring-indigo-100";
+
 export const fieldClass =
   "w-full rounded-lg border border-slate-200 px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100";
 

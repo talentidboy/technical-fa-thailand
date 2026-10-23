@@ -55,6 +55,15 @@ module.exports = {
     check("แผนที่ซูมเข้า", await until(async () => (await pub.locator("svg g").first().getAttribute("style"))?.includes("scale(") && !(await pub.locator("svg g").first().getAttribute("style")).includes("scale(1)"), 3000));
     await pub.screenshot({ path: path.join(ctx.artifactsDir, "academies-map-selected.png") });
     await pub.getByRole("button", { name: "ทั้งประเทศ" }).click();
+    check("ปิดแผ่นรายชื่อ → กลับทั้งประเทศ", await until(async () => (await pub.locator('section[aria-label^="อคาเดมีใน"]').count()) === 0, 3000));
+    await pub.getByRole("button", { name: "อันดับจังหวัด" }).click();
+    await pub.getByRole("button", { name: /^\d+\s*กรุงเทพมหานคร/ }).click();
+    check("ปุ่มอันดับจังหวัด → เลือกจังหวัดจากอันดับ", await until(async () => (await pub.getByRole("link", { name: /Bangkok Bronze Academy/ }).count()) >= 2, 5000));
+    await pub.keyboard.press("Escape");
+    await pub.getByRole("button", { name: "เกี่ยวกับโครงการ" }).click();
+    check("ปุ่มเกี่ยวกับโครงการ → เปิดกล่องข้อมูล", await pub.getByRole("dialog").getByText("Grow Together", { exact: false }).isVisible());
+    await pub.keyboard.press("Escape");
+    check("กด Esc ปิดกล่องข้อมูล", (await pub.getByRole("dialog").count()) === 0);
     await pub.getByRole("button", { name: /^Bronze/ }).click();
     check("กรองระดับบนแผนที่ (Bronze → กดได้ 1 จังหวัด)", await until(async () => (await pub.locator('svg path[role="button"]').count()) === 1, 3000));
     check("หน้าแรกมีปุ่มสมัคร / เข้าสู่ระบบอคาเดมี", (await pub.getByRole("link", { name: "สมัคร / ยื่นขอใบอนุญาต" }).count()) === 1 && (await pub.getByRole("link", { name: "เข้าสู่ระบบอคาเดมี" }).count()) === 1);
@@ -246,6 +255,9 @@ module.exports = {
     check("รหัสเดิมใช้ไม่ได้หลังตั้งใหม่", bkk.url().includes("error=1"));
     await bkk.locator('[name="email"]').fill("bkk@test.invalid");
     await bkk.locator('[name="password"]').fill("bkk-pass-02");
+    await bkk.getByRole("button", { name: "แสดงรหัสผ่าน" }).click();
+    check("ปุ่มแสดงรหัสผ่าน", (await bkk.locator('[name="password"]').getAttribute("type")) === "text");
+    await bkk.screenshot({ path: path.join(ctx.artifactsDir, "academy-login.png") });
     await bkk.getByRole("button", { name: "เข้าสู่ระบบ" }).click();
     await bkk.waitForURL(/\/academies\/portal$/, { timeout: 30_000 }).catch(() => {});
     check("เข้าสู่ระบบอคาเดมีด้วยรหัสใหม่ → พอร์ทัล", new URL(bkk.url()).pathname === "/academies/portal" && (await bkk.locator("main").innerText()).includes("Bangkok Bronze Academy"));
