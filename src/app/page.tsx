@@ -196,9 +196,9 @@ export default async function HomePage() {
               {DEPARTMENTS.length} หมวดงานของฝ่ายเทคนิค — หมวดที่มีรูปกุญแจสำหรับเจ้าหน้าที่ ต้องเข้าสู่ระบบก่อนใช้งาน
             </p>
           </Reveal>
-          <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:auto-rows-[15.5rem] lg:grid-cols-4">
+          <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:auto-rows-[17rem] lg:grid-cols-4">
             {DEPARTMENTS.map((d, i) => (
-              <Reveal key={d.key} delay={i * 70} className={`h-full min-h-60 lg:min-h-0 ${SPAN[d.key] ?? ""}`}>
+              <Reveal key={d.key} delay={i * 70} className={`h-full lg:min-h-0 ${d.key === "coach" ? "min-h-[24rem]" : "min-h-[17rem]"} ${SPAN[d.key] ?? ""}`}>
                 <DepartmentTile d={d} href={departmentHref(d, loggedIn)} locked={!d.public && !loggedIn} big={d.key === "coach"} extra={d.key === "academy" ? `${academyCount} อคาเดมีบนแผนที่` : undefined} />
               </Reveal>
             ))}
@@ -457,56 +457,55 @@ export default async function HomePage() {
   );
 }
 
+// การ์ดหมวดงาน: ภาพอยู่ช่วงบน (ยืดเต็มพื้นที่ที่เหลือ) ไล่กลืนลงพื้นสีประจำหมวด · ตัวอักษรอยู่บนพื้นสีทึบเสมอ → อ่านง่ายทุกการ์ด และยังเห็นภาพชัด
 function DepartmentTile({ d, href, locked, big, extra }: { d: Department; href: string; locked: boolean; big?: boolean; extra?: string }) {
   const Icon = d.icon;
   return (
-    <Link href={href} className={`group relative flex h-full flex-col justify-end overflow-hidden rounded-xl p-6 text-white ${d.tone}`}>
-      {d.image && (
-        <>
-          <Image
-            src={d.image}
-            alt=""
-            fill
-            sizes={big ? "(min-width: 1024px) 50vw, 100vw" : "(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"}
-            placeholder={typeof d.image === "string" ? "empty" : "blur"}
-            style={d.imagePosition ? { objectPosition: d.imagePosition } : undefined}
-            className="object-cover transition-transform duration-700 group-hover:scale-105"
-          />
-          <div className="absolute inset-0 bg-linear-to-t from-black/90 via-black/50 to-black/10" />
-        </>
-      )}
-      {d.art && (
-        <span className="absolute -bottom-3 right-0 h-[88%] w-[46%] transition-transform duration-500 group-hover:-translate-y-1.5 group-hover:rotate-2">
-          <Image src={d.art} alt="" fill sizes="(min-width: 1024px) 12vw, 45vw" className="object-contain object-bottom-right drop-shadow-xl" />
-        </span>
-      )}
-      {!d.image && !d.art && <Icon className="absolute -right-6 -top-6 h-36 w-36 text-white/10 transition-transform duration-700 group-hover:-rotate-6 group-hover:scale-110" />}
-      <div className="absolute left-6 top-6 flex items-center gap-2">
-        {d.logo ? (
-          <span className={`flex h-12 items-center ${d.logoBoxed ? "rounded-lg bg-white px-3 shadow" : ""}`}>
-            <Image src={d.logo} alt="" className={`w-auto ${d.logoBoxed ? "h-7" : "h-12"}`} />
-          </span>
-        ) : d.badge ? (
-          <span className="relative h-12 w-12 overflow-hidden rounded-lg bg-white shadow">
-            <Image src={d.badge} alt="" fill sizes="48px" className="object-contain p-1.5" />
-          </span>
+    <Link href={href} style={{ "--tile": d.hex } as React.CSSProperties} className="group flex h-full flex-col overflow-hidden rounded-xl bg-(--tile) text-white">
+      <div className="relative min-h-24 flex-1 overflow-hidden">
+        {d.image ? (
+          <>
+            <Image
+              src={d.image}
+              alt=""
+              fill
+              sizes={big ? "(min-width: 1024px) 50vw, 100vw" : "(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"}
+              placeholder={typeof d.image === "string" ? "empty" : "blur"}
+              style={d.imagePosition ? { objectPosition: d.imagePosition } : undefined}
+              className="object-cover transition-transform duration-700 group-hover:scale-105"
+            />
+            <div className="absolute inset-x-0 bottom-0 h-16 bg-linear-to-t from-(--tile) to-transparent" />
+          </>
         ) : (
-          <span className="flex h-12 w-12 items-center justify-center rounded-lg bg-white/15">
-            <Icon className="h-6 w-6" />
+          <Icon className="absolute -right-6 -top-6 h-36 w-36 text-white/10 transition-transform duration-700 group-hover:-rotate-6 group-hover:scale-110" />
+        )}
+        <div className="absolute left-5 top-5 flex items-center gap-2">
+          {d.logo ? (
+            <span className={`flex h-11 items-center ${d.logoBoxed ? "rounded-lg bg-white px-3 shadow" : ""}`}>
+              <Image src={d.logo} alt="" className={`w-auto ${d.logoBoxed ? "h-6" : "h-11"}`} />
+            </span>
+          ) : d.badge ? (
+            <span className="relative h-11 w-11 overflow-hidden rounded-lg bg-white shadow">
+              <Image src={d.badge} alt="" fill sizes="44px" className="object-contain p-1.5" />
+            </span>
+          ) : (
+            <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-white shadow" style={{ color: d.hex }}>
+              <Icon className="h-5 w-5" />
+            </span>
+          )}
+        </div>
+        {locked && (
+          <span className="absolute right-4 top-4 inline-flex items-center gap-1 rounded-full bg-black/55 px-2.5 py-1 text-[11px] font-medium">
+            <Lock className="h-3 w-3" />
+            เจ้าหน้าที่
           </span>
         )}
       </div>
-      {locked && (
-        <span className="absolute right-5 top-5 inline-flex items-center gap-1 rounded-full bg-black/35 px-2.5 py-1 text-[11px] font-medium">
-          <Lock className="h-3 w-3" />
-          เจ้าหน้าที่
-        </span>
-      )}
-      <div className={`relative ${d.art ? "max-w-[58%]" : ""}`}>
+      <div className={`relative ${big ? "px-6 pb-6 pt-1 sm:px-7 sm:pb-7" : "px-5 pb-5 pt-1"}`}>
         {extra && <p className="mb-1 text-xs font-semibold text-amber-300">{extra}</p>}
         <h3 className={`${h} font-semibold leading-tight ${big ? "text-3xl sm:text-4xl" : "text-xl"}`}>{d.title}</h3>
-        <p className={`mt-1.5 text-white/75 ${big ? "max-w-md text-sm sm:text-base" : "line-clamp-2 text-xs"}`}>{d.subtitle}</p>
-        <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-white">
+        <p className={`mt-1 text-white/80 ${big ? "max-w-md text-sm sm:text-base" : "line-clamp-2 text-[13px] leading-snug"}`}>{d.subtitle}</p>
+        <span className="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold text-white">
           {locked ? (d.guestHref ? "เข้าสู่ระบบ / สมัครสมาชิก" : "เข้าสู่ระบบเพื่อใช้งาน") : "เข้าใช้งาน"}
           <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
         </span>

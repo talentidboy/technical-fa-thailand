@@ -59,6 +59,8 @@ module.exports = {
           "/academies",
           "/academies/login",
           "/academies/register",
+          "/grassroots-football",
+          "/training-centre",
           `/apply/${s.session}`,
           `/verify/${s.coach}`,
           "/g15-womens-series",

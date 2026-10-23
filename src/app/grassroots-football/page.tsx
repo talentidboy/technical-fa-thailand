@@ -1,6 +1,4 @@
 import Image from "next/image";
-import { redirect } from "next/navigation";
-import { getCurrentUser } from "@/lib/auth";
 import { GRASSROOTS_YEAR, grassrootsCoaches as coaches, grassrootsPlayers as players } from "@/lib/grassroots-data";
 import { display } from "@/components/fonts";
 import { ModuleHeader } from "@/components/ModuleHeader";
@@ -82,10 +80,8 @@ function Leaderboard({ items, total, unit = "คน" }: { items: { name: string;
   );
 }
 
-export default async function GrassrootsFootballPage() {
-  const user = await getCurrentUser();
-  if (!user) redirect("/login");
-
+// หน้าสาธารณะ — ไม่ต้องเข้าสู่ระบบ (ข้อมูลสรุปโครงการ ไม่มีข้อมูลส่วนบุคคล)
+export default function GrassrootsFootballPage() {
   // ใบอนุญาตของผู้ฝึกสอนในโครงการ — ส่วนที่เหลือจากรายการหลัก = ระดับ A/B Diploma และอื่นๆ
   const licensed = coaches.licenses.reduce((s, l) => s + l.count, 0);
   const otherLicences = Math.max(0, coaches.total - coaches.noLicense - licensed);

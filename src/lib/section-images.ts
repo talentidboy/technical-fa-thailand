@@ -5,5 +5,7 @@ import g15Bg from "@/assets/sections/g15-bg.jpg";
 import talentIdBg from "@/assets/sections/talent-id-bg.jpg";
 import grassrootsBg from "@/assets/sections/grassroots-bg.jpg";
 import academyBg from "@/assets/sections/academy-bg.jpg";
+import playAndLearnBg from "@/assets/sections/play-and-learn-bg.jpg";
+import dataCenterBg from "@/assets/sections/data-center-bg.webp";
 
-export { coachCentreBg, g15Bg, talentIdBg, grassrootsBg, academyBg };
+export { coachCentreBg, g15Bg, talentIdBg, grassrootsBg, academyBg, playAndLearnBg, dataCenterBg };

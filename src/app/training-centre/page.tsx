@@ -1,11 +1,11 @@
 import Link from "next/link";
 import Image from "next/image";
-import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { TRAINING_CENTRE_AREAS, labelFor } from "@/lib/constants";
 import { display } from "@/components/fonts";
 import { ModuleHeader } from "@/components/ModuleHeader";
+import { dataCenterBg } from "@/lib/section-images";
 import { ArrowRight, Plus, Settings } from "lucide-react";
 
 const h = display.className;
@@ -44,8 +44,8 @@ export default async function TrainingCentrePage({
 }: {
   searchParams: Promise<{ area?: string }>;
 }) {
+  // อ่านบทความได้ทุกคน · ปุ่มจัดการบทความแสดงเฉพาะผู้ดูแลระบบ/เจ้าหน้าที่
   const user = await getCurrentUser();
-  if (!user) redirect("/login");
 
   const { area } = await searchParams;
   const activeArea = TRAINING_CENTRE_AREAS.some((a) => a.value === area) ? area : undefined;
@@ -61,7 +61,7 @@ export default async function TrainingCentrePage({
   const totalCount = byArea.reduce((s, a) => s + a._count._all, 0);
 
   const [featuredArticle, ...restArticles] = articles;
-  const canManage = user.role === "ADMIN" || user.role === "STAFF";
+  const canManage = user?.role === "ADMIN" || user?.role === "STAFF";
 
   return (
     <div className="min-h-screen overflow-x-clip bg-[#f5f4f0] text-slate-900">
@@ -87,29 +87,40 @@ export default async function TrainingCentrePage({
       />
 
       {/* ===== ฮีโร่ ===== */}
-      <section className="px-4 pb-14 pt-10 sm:px-6 lg:pt-16">
-        <div className="mx-auto grid max-w-6xl items-end gap-10 lg:grid-cols-[minmax(0,1fr)_auto] lg:gap-16">
+      <section className="px-4 pb-14 pt-10 sm:px-6 lg:pt-14">
+        <div className="mx-auto grid max-w-6xl grid-cols-1 items-center gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,30rem)] lg:gap-14">
           <div>
             <p className="flex items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.28em]" style={{ color: ACCENT }}>
               <span className="h-px w-10" style={{ background: ACCENT }} />
               Technical Department · FA Thailand
             </p>
-            <h1 className={`${h} mt-6 text-6xl font-semibold leading-none tracking-tight text-[#073c5e] sm:text-8xl`}>Training Centre</h1>
+            <h1 className={`${h} mt-6 text-6xl font-semibold leading-none tracking-tight text-[#073c5e] sm:text-7xl`}>Training Centre</h1>
             <p className={`${h} mt-3 text-2xl font-medium text-slate-400 sm:text-3xl`}>ศูนย์ข้อมูลและบทความด้านเทคนิค</p>
             <p className="mt-6 max-w-xl text-base leading-relaxed text-slate-600 sm:text-lg">
               ศูนย์รวบรวมข้อมูลและบทความวิเคราะห์ด้านเทคนิคและการฝึกอบรมของ ฝ่ายเทคนิค สมาคมกีฬาฟุตบอลแห่งประเทศไทย
             </p>
+            <dl className="mt-8 flex w-fit divide-x divide-slate-300 border-y border-slate-300 py-4">
+              <div className="pr-8">
+                <dd className={`${h} text-5xl font-semibold tabular-nums text-[#073c5e]`}>{totalCount}</dd>
+                <dt className="mt-1 text-xs text-slate-500">บทความทั้งหมด</dt>
+              </div>
+              <div className="pl-8">
+                <dd className={`${h} text-5xl font-semibold tabular-nums text-[#073c5e]`}>{TRAINING_CENTRE_AREAS.length}</dd>
+                <dt className="mt-1 text-xs text-slate-500">หมวด Area</dt>
+              </div>
+            </dl>
           </div>
-          <dl className="flex divide-x divide-slate-300 border-y border-slate-300 py-4 lg:mb-2">
-            <div className="pr-8">
-              <dd className={`${h} text-5xl font-semibold tabular-nums text-[#073c5e]`}>{totalCount}</dd>
-              <dt className="mt-1 text-xs text-slate-500">บทความทั้งหมด</dt>
-            </div>
-            <div className="pl-8">
-              <dd className={`${h} text-5xl font-semibold tabular-nums text-[#073c5e]`}>{TRAINING_CENTRE_AREAS.length}</dd>
-              <dt className="mt-1 text-xs text-slate-500">หมวด Area</dt>
-            </div>
-          </dl>
+          <figure className="relative aspect-4/3 overflow-hidden rounded-xl bg-[#073c5e]">
+            <Image
+              src={dataCenterBg}
+              alt="ผู้ฝึกสอนอธิบายแผนการฝึกบนกระดาน"
+              fill
+              priority
+              placeholder="blur"
+              sizes="(min-width: 1024px) 30rem, 100vw"
+              className="object-cover object-[40%_50%]"
+            />
+          </figure>
         </div>
       </section>
 

@@ -1,9 +1,8 @@
 import Link from "next/link";
 import { parseId } from "@/lib/route-id";
 import Image from "next/image";
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { getCurrentUser } from "@/lib/auth";
 import { TRAINING_CENTRE_AREAS, labelFor } from "@/lib/constants";
 import { ArrowLeft, Calendar } from "lucide-react";
 import { display } from "@/components/fonts";
@@ -14,9 +13,6 @@ export default async function TrainingArticlePage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const user = await getCurrentUser();
-  if (!user) redirect("/login");
-
   const { id } = await params;
   const article = await prisma.trainingArticle.findUnique({
     where: { id: parseId(id) ?? 0 },

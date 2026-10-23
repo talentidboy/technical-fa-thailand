@@ -1,14 +1,8 @@
 import type { StaticImageData } from "next/image";
 import type { LucideIcon } from "lucide-react";
 import { Database, GraduationCap, ShieldCheck, Sparkles, Sprout, Target, Trophy } from "lucide-react";
-import {
-  G15_IMAGE_URL,
-  GRASSROOTS_LOGO_URL,
-  PLAY_AND_LEARN_LOGO_URL,
-  PLAY_AND_LEARN_MASCOT,
-  TALENT_ID_LOGO_URL,
-} from "@/lib/brand";
-import { academyBg, coachCentreBg, g15Bg, grassrootsBg, talentIdBg } from "@/lib/section-images";
+import { G15_IMAGE_URL, GRASSROOTS_LOGO_URL, PLAY_AND_LEARN_LOGO_URL, TALENT_ID_LOGO_URL } from "@/lib/brand";
+import { academyBg, coachCentreBg, dataCenterBg, g15Bg, grassrootsBg, playAndLearnBg, talentIdBg } from "@/lib/section-images";
 import academyLogo from "@/assets/sections/academy-logo.png";
 import coachCentreLogo from "@/assets/sections/coach-centre-logo.png";
 
@@ -30,9 +24,9 @@ export type Department = {
   // ภาพพื้นหลังการ์ด + ตำแหน่งจุดสนใจของภาพ (object-position)
   image?: string | StaticImageData;
   imagePosition?: string;
-  // ภาพตกแต่งมุมขวาล่าง (พื้นโปร่งใส เช่น มาสคอต)
-  art?: string;
-  // สีพื้นการ์ด (ใช้เมื่อไม่มีภาพ หรือเป็นสีทับภาพ)
+  // สีประจำหมวด (เข้ม) — ไล่ทับภาพจากล่างขึ้นบนให้ตัวอักษรบนการ์ดอ่านง่ายทุกภาพ
+  hex: string;
+  // สีไอคอนหมวดในเมนูบน (คลาส Tailwind)
   tone: string;
 };
 
@@ -49,7 +43,8 @@ export const DEPARTMENTS: Department[] = [
     logo: coachCentreLogo,
     logoBoxed: true,
     image: coachCentreBg,
-    imagePosition: "50% 35%",
+    imagePosition: "50% 25%",
+    hex: "#04223a",
     tone: "bg-[#073c5e]",
   },
   {
@@ -61,7 +56,8 @@ export const DEPARTMENTS: Department[] = [
     icon: Trophy,
     badge: G15_IMAGE_URL,
     image: g15Bg,
-    imagePosition: "50% 62%",
+    imagePosition: "50% 45%",
+    hex: "#210d4f",
     tone: "bg-g15-900",
   },
   {
@@ -73,6 +69,8 @@ export const DEPARTMENTS: Department[] = [
     icon: ShieldCheck,
     logo: academyLogo,
     image: academyBg,
+    imagePosition: "50% 20%",
+    hex: "#0b1f44",
     tone: "bg-[#0b1f44]",
   },
   {
@@ -83,7 +81,9 @@ export const DEPARTMENTS: Department[] = [
     public: true,
     icon: Sparkles,
     badge: PLAY_AND_LEARN_LOGO_URL,
-    art: PLAY_AND_LEARN_MASCOT.wave,
+    image: playAndLearnBg,
+    imagePosition: "50% 85%",
+    hex: "#881337",
     tone: "bg-rose-500",
   },
   {
@@ -91,11 +91,12 @@ export const DEPARTMENTS: Department[] = [
     title: "Grassroots Football",
     subtitle: "ฟุตบอลรากหญ้า ปูพื้นฐานเยาวชนทั่วประเทศ",
     href: "/grassroots-football",
-    public: false,
+    public: true,
     icon: Sprout,
     badge: GRASSROOTS_LOGO_URL,
     image: grassrootsBg,
     imagePosition: "50% 35%",
+    hex: "#064e3b",
     tone: "bg-emerald-700",
   },
   {
@@ -108,6 +109,7 @@ export const DEPARTMENTS: Department[] = [
     badge: TALENT_ID_LOGO_URL,
     image: talentIdBg,
     imagePosition: "50% 60%",
+    hex: "#0b1b34",
     tone: "bg-amber-600",
   },
   {
@@ -115,8 +117,11 @@ export const DEPARTMENTS: Department[] = [
     title: "FA Thailand Data Center",
     subtitle: "ศูนย์รวมข้อมูลการฝึกอบรมและงานเทคนิคของสมาคมฯ",
     href: "/training-centre",
-    public: false,
+    public: true,
     icon: Database,
+    image: dataCenterBg,
+    imagePosition: "50% 29%",
+    hex: "#0c4a6e",
     tone: "bg-sky-800",
   },
 ];
