@@ -9,7 +9,7 @@ import { CriteriaExplorer } from "@/components/academy/CriteriaExplorer";
 import { ThailandMap } from "@/components/academy/ThailandMap";
 import { InfoDialog } from "@/components/academy/InfoDialog";
 import { PublicFooter, PublicHeader } from "@/components/academy/PublicChrome";
-import { display } from "@/components/academy/fonts";
+import { display } from "@/components/fonts";
 import theme from "@/components/academy/public.module.css";
 import { ArrowRight, ChevronLeft, ChevronRight, Search } from "lucide-react";
 

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import styles from "./ThailandMap.module.css";
-import { display } from "./fonts";
+import { display } from "@/components/fonts";
 
 function removeParam(name: string) {
   const url = new URL(window.location.href);

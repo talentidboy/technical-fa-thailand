@@ -1,6 +1,6 @@
 import { BrandLogo } from "@/components/BrandLogo";
 import Link from "next/link";
-import { display } from "./fonts";
+import { display } from "@/components/fonts";
 import { ArrowUpRight } from "lucide-react";
 
 type Viewer = "admin" | "academy" | "staff-other" | "guest";

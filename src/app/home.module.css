@@ -1,0 +1,31 @@
+/* ภาพอาคารสมาคมในฮีโร่ค่อยๆ ซูม (ช้ามาก ไม่รบกวนการอ่าน) */
+.kenburns {
+  animation: kenburns 28s ease-out both;
+  transform-origin: 70% 40%;
+}
+@keyframes kenburns {
+  from {
+    transform: scale(1.12);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+/* ข้อความฮีโร่เลื่อนขึ้นทีละบรรทัดตอนเปิดหน้า */
+.rise {
+  animation: rise 900ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(28px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kenburns,
+  .rise {
+    animation: none;
+  }
+}

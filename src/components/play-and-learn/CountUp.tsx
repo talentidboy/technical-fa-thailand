@@ -39,7 +39,14 @@ export function CountUp({ value, duration = 1400 }: { value: string; duration?: 
     };
   }, [value, duration]);
 
-  const shown = progress >= 1 ? value : value.replace(/\d+/g, (n) => String(Math.round(Number(n) * progress)));
+  // ตัวเลขมีจุลภาค (เช่น 7,789) นับเป็นตัวเลขเดียว แล้วใส่จุลภาคกลับ
+  const shown =
+    progress >= 1
+      ? value
+      : value.replace(/\d{1,3}(?:,\d{3})+|\d+/g, (n) => {
+          const v = Math.round(Number(n.replace(/,/g, "")) * progress);
+          return n.includes(",") ? v.toLocaleString("en-US") : String(v);
+        });
   return (
     <span ref={ref} className="tabular-nums">
       {shown}

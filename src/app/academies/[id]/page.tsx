@@ -8,7 +8,7 @@ import { LEVEL_META, LICENCE_STATUS, currentLicence, isLevel, licenceState, show
 import { LEVEL_SUMMARY } from "@/lib/academy-criteria";
 import { LevelMark, StateChip } from "@/components/academy/AcademyUi";
 import { PublicFooter, PublicHeader } from "@/components/academy/PublicChrome";
-import { display } from "@/components/academy/fonts";
+import { display } from "@/components/fonts";
 import theme from "@/components/academy/public.module.css";
 import { ArrowLeft, ArrowRight, Building2, Globe, MapPin } from "lucide-react";
 

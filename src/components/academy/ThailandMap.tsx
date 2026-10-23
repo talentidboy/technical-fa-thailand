@@ -5,7 +5,7 @@ import Link from "next/link";
 import map from "@/lib/thailand-map.json";
 import { ACADEMY_LEVELS, LEVEL_META, levelRank, type AcademyLevel } from "@/lib/academy";
 import { LevelMark } from "./AcademyUi";
-import { display } from "./fonts";
+import { display } from "@/components/fonts";
 import styles from "./ThailandMap.module.css";
 import { ArrowRight, ListOrdered, X } from "lucide-react";
 
