@@ -44,5 +44,5 @@ export function LevelBadge({ level, tier }: { level: string | null; tier?: strin
 
 export function StateChip({ state }: { state: AcademyState }) {
   const meta = STATE_META[state];
-  return <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold ring-1 ${meta.tone}`}>{meta.label}</span>;
+  return <span className={`inline-flex rounded-md px-2 py-0.5 text-xs font-semibold ring-1 ${meta.tone}`}>{meta.label}</span>;
 }

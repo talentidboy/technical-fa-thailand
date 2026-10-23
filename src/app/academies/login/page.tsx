@@ -5,6 +5,7 @@ import { getAcademyUser, getCurrentUser } from "@/lib/auth";
 import { authInputClass } from "@/components/academy/AcademyShell";
 import { AuthShell } from "@/components/academy/AuthShell";
 import { LoginSubmit, PasswordInput } from "@/components/academy/AuthFields";
+import { academySerif } from "@/components/typefaces/academy";
 import { academyLogin } from "../account-actions";
 import { AlertCircle, ArrowLeft, Bell, ClipboardCheck, Mail, UserPlus, Users } from "lucide-react";
 
@@ -34,7 +35,7 @@ export default async function AcademyLoginPage({ searchParams }: { searchParams:
         <ArrowLeft className="h-4 w-4" />
         ทำเนียบอคาเดมี
       </Link>
-      <h2 className="mt-6 text-3xl font-extrabold tracking-tight text-slate-900">เข้าสู่ระบบ</h2>
+      <h2 className={`${academySerif.className} mt-6 text-4xl font-bold text-[#0b1f44]`}>เข้าสู่ระบบ</h2>
       <p className="mt-2 text-sm text-slate-500">สำหรับผู้ดูแลอคาเดมี และเจ้าหน้าที่สมาคมฯ</p>
 
       {error && ERRORS[error] && (
@@ -58,7 +59,7 @@ export default async function AcademyLoginPage({ searchParams }: { searchParams:
             <PasswordInput name="password" autoComplete="current-password" />
           </span>
         </label>
-        <LoginSubmit />
+        <LoginSubmit tone="bg-[#0b1f44] hover:bg-[#13306a]" />
       </form>
       <details className="group mt-4 text-sm">
         <summary className="cursor-pointer list-none text-right font-semibold text-indigo-600 hover:text-indigo-800">ลืมรหัสผ่าน?</summary>
