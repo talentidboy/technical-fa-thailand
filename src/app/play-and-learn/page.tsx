@@ -22,6 +22,7 @@ import { VideoGrid, type PlVideo } from "@/components/play-and-learn/VideoGrid";
 import { PassportIcon } from "@/components/play-and-learn/PassportIcon";
 import { PassportScene, PassportZone, PassportZoneDefs, passportTint } from "@/components/play-and-learn/PassportScene";
 import { Reveal } from "@/components/g15/Reveal";
+import { HomeButton } from "@/components/HomeButton";
 import styles from "./pl.module.css";
 import {
   ArrowLeft,
@@ -255,13 +256,7 @@ export default async function PlayAndLearnPage() {
                 <span className="hidden sm:inline">จัดการข้อมูล</span>
               </Link>
             )}
-            <Link
-              href="/"
-              className="inline-flex items-center gap-1.5 rounded-lg border border-purple-200 px-3 py-2 text-sm font-medium text-purple-600 transition-colors hover:bg-purple-50"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              <span className="hidden sm:inline">กลับหน้าแรก</span>
-            </Link>
+            <HomeButton />
           </div>
         </div>
         <SectionNav sections={sections} />

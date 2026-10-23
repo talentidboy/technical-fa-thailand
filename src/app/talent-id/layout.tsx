@@ -1,8 +1,7 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
-import { TalentIdSidebar } from "@/components/talent-id/TalentIdSidebar";
+import { TalentIdTopBar } from "@/components/talent-id/TalentIdTopBar";
 import { TalentIdMobileNav } from "@/components/talent-id/TalentIdMobileNav";
-import { TalentIdMobileHeader } from "@/components/talent-id/TalentIdMobileHeader";
 
 // สำคัญ: getCurrentUser() อ่าน cookies() ก่อนหน้านี้เสมอ (auth guard) ทำให้ fetch ของ Airtable
 // ที่เรียกทีหลังถูกจัดเป็น "หลัง Request-time API" — ค่า default ของ Next.js คือไม่ cache ให้
@@ -18,6 +17,25 @@ const ROLE_LABELS: Record<string, string> = {
   COACH: "ผู้ฝึกสอน",
 };
 
+// ธีม "ห้องวิเคราะห์" ของ Talent ID: เปลี่ยนชุดสี indigo เป็นเทาถ่าน + เหลือง amber สดขึ้น เฉพาะภายในหมวดนี้
+// (ทุกหน้า/คอมโพเนนต์ของ Talent ID ใช้คลาส indigo-* / amber-* อยู่แล้ว จึงเปลี่ยนทั้งหมวดได้จากจุดเดียว)
+const SCOUT_THEME = {
+  "--color-indigo-50": "#f4f5f7",
+  "--color-indigo-100": "#e6e9ee",
+  "--color-indigo-200": "#cdd3dc",
+  "--color-indigo-300": "#a6b0bf",
+  "--color-indigo-400": "#7b8698",
+  "--color-indigo-500": "#4a5466",
+  "--color-indigo-600": "#323a47",
+  "--color-indigo-700": "#232a35",
+  "--color-indigo-800": "#171c25",
+  "--color-indigo-900": "#0f131a",
+  "--color-indigo-950": "#07090d",
+  "--color-amber-200": "#fef08a",
+  "--color-amber-300": "#fde047",
+  "--color-amber-400": "#facc15",
+} as React.CSSProperties;
+
 export default async function TalentIdLayout({
   children,
 }: {
@@ -27,16 +45,11 @@ export default async function TalentIdLayout({
   if (!user) redirect("/login");
 
   return (
-    <div className="flex min-h-screen bg-indigo-950 text-white">
-      <TalentIdSidebar email={user.email} roleLabel={ROLE_LABELS[user.role] ?? user.role} />
-      <div className="flex min-h-screen flex-1 flex-col">
-        <TalentIdMobileHeader />
-        <main className="relative flex-1 overflow-x-hidden pb-20 lg:pb-0">
-          <div className="relative mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8 lg:py-10">
-            {children}
-          </div>
-        </main>
-      </div>
+    <div style={SCOUT_THEME} className="min-h-screen bg-indigo-950 text-white">
+      <TalentIdTopBar email={user.email} roleLabel={ROLE_LABELS[user.role] ?? user.role} />
+      <main className="relative overflow-x-hidden pb-24 md:pb-0">
+        <div className="relative mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8">{children}</div>
+      </main>
       <TalentIdMobileNav />
     </div>
   );

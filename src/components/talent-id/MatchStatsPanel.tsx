@@ -56,7 +56,7 @@ export function MatchStatsPanel({
   return (
     <div className="space-y-5">
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-5 lg:items-start">
-        <div className="rounded-xl border border-white/10 bg-[#081528] p-6 lg:col-span-2">
+        <div className="rounded-xl border border-white/10 bg-indigo-900 p-6 lg:col-span-2">
           {rates.length > 0 && (
             <div className="mb-4 flex flex-wrap gap-x-4 gap-y-1 text-xs text-indigo-300">
               {rates.map((r) => (
@@ -81,7 +81,7 @@ export function MatchStatsPanel({
           </div>
         </div>
 
-        <div className="rounded-xl border border-white/10 bg-[#081528] p-6 lg:col-span-3">
+        <div className="rounded-xl border border-white/10 bg-indigo-900 p-6 lg:col-span-3">
           <h3 className="mb-3 text-xs font-semibold text-indigo-300">
             สถิติเด่น (Top 8)
           </h3>
@@ -90,7 +90,7 @@ export function MatchStatsPanel({
       </div>
 
       {nonEmptyGroups.length > 0 && (
-        <div className="rounded-xl border border-white/10 bg-[#081528] p-6">
+        <div className="rounded-xl border border-white/10 bg-indigo-900 p-6">
           <h3 className="mb-4 text-xs font-semibold text-indigo-300">
             รายละเอียดสถิติทั้งหมด
           </h3>

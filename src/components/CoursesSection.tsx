@@ -65,7 +65,7 @@ export function CoursesSection() {
       </div>
 
       {/* ผู้รักษาประตู + ฟิตเนส */}
-      <div>
+      <div id="specialist" className="scroll-mt-24">
         <SectionHead no="02" eyebrow="Specialist Courses" title="หลักสูตรเฉพาะทาง" sub="สายหลักสูตรที่ 2 – 3 — ผู้ฝึกสอนผู้รักษาประตู และผู้ฝึกสอนฟิตเนส" />
         <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
           {simpleGroups.map(({ code, title, description, href, levels, hex }) => (

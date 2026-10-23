@@ -40,7 +40,7 @@ export function proxy(request: NextRequest) {
     // ทำเนียบอคาเดมี (Academy Licensing) — หน้าจัดการ /academies/manage ต้องล็อกอิน
     pathname === "/academies" ||
     (pathname.startsWith("/academies/") && !pathname.startsWith("/academies/manage")) ||
-    // ฟุตบอลรากหญ้า + Training Centre (FA Thailand Data Center) อ่านได้ทุกคน — หน้าจัดการบทความ /training-centre/manage ต้องล็อกอิน
+    // ฟุตบอลรากหญ้า + ศูนย์ข้อมูลและบทความด้านเทคนิค (/training-centre) อ่านได้ทุกคน — หน้าจัดการบทความ /training-centre/manage ต้องล็อกอิน
     pathname === "/grassroots-football" ||
     pathname === "/training-centre" ||
     (pathname.startsWith("/training-centre/") && !pathname.startsWith("/training-centre/manage")) ||

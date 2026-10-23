@@ -213,7 +213,7 @@ export default async function TalentIdDetailPage({
     <>
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:items-start">
         {/* การ์ด 1 — ตำแหน่งและร่างกาย */}
-        <div className="rounded-xl border border-white/10 bg-[#081528] p-6">
+        <div className="rounded-xl border border-white/10 bg-indigo-900 p-6">
           <div className="mb-4 flex items-center gap-2">
             <Users2 className="h-4 w-4 text-amber-400" />
             <h2 className="font-semibold text-white">ตำแหน่งและร่างกาย</h2>
@@ -263,7 +263,7 @@ export default async function TalentIdDetailPage({
         </div>
 
         {/* การ์ด 2 — เรดาร์/สถิติเด่น + คะแนนสแกาต์ + จุดแข็ง/จุดที่ควรพัฒนา */}
-        <div className="rounded-xl border border-white/10 bg-[#081528] p-6">
+        <div className="rounded-xl border border-white/10 bg-indigo-900 p-6">
           <div className="mb-4 flex items-center gap-2">
             <Gauge className="h-4 w-4 text-amber-400" />
             <h2 className="font-semibold text-white">ความสามารถ</h2>
@@ -337,7 +337,7 @@ export default async function TalentIdDetailPage({
       {(player.talent.length > 0 || player.tags.length > 0) && (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {player.talent.length > 0 && (
-            <div className="rounded-xl border border-white/10 bg-[#081528] p-6">
+            <div className="rounded-xl border border-white/10 bg-indigo-900 p-6">
               <div className="mb-3 flex items-center gap-2">
                 <Tag className="h-4 w-4 text-rose-400" />
                 <h2 className="font-semibold text-white">ความสามารถโดดเด่น</h2>
@@ -356,7 +356,7 @@ export default async function TalentIdDetailPage({
           )}
 
           {player.tags.length > 0 && (
-            <div className="rounded-xl border border-white/10 bg-[#081528] p-6">
+            <div className="rounded-xl border border-white/10 bg-indigo-900 p-6">
               <div className="mb-3 flex items-center gap-2">
                 <Tag className="h-4 w-4 text-emerald-400" />
                 <h2 className="font-semibold text-white">สถานะการคัดเลือก</h2>
@@ -377,7 +377,7 @@ export default async function TalentIdDetailPage({
       )}
 
       {(gradeBadges.length > 0 || ratingPoints.some((p) => p.value != null)) && (
-        <div className="overflow-hidden rounded-xl border border-white/10 bg-[#081528]">
+        <div className="overflow-hidden rounded-xl border border-white/10 bg-indigo-900">
           <div className="flex items-center gap-2 border-b border-white/10 px-6 py-4">
             <TrendingUp className="h-4 w-4 text-amber-400" />
             <h2 className="font-semibold text-white">คะแนนตามรอบการประเมิน</h2>
@@ -425,14 +425,14 @@ export default async function TalentIdDetailPage({
   const ratingsTab = (
     <>
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <div className="rounded-xl border border-white/10 bg-[#081528] p-6 lg:col-span-2">
+        <div className="rounded-xl border border-white/10 bg-indigo-900 p-6 lg:col-span-2">
           <div className="mb-4 flex items-center gap-2">
             <TrendingUp className="h-4 w-4 text-amber-400" />
             <h2 className="font-semibold text-white">แนวโน้มคะแนนประเมิน</h2>
           </div>
           <RatingSparkline points={ratingPoints} />
         </div>
-        <div className="rounded-xl border border-white/10 bg-[#081528] p-6">
+        <div className="rounded-xl border border-white/10 bg-indigo-900 p-6">
           <div className="mb-4 flex items-center gap-2">
             <Star className="h-4 w-4 text-amber-400" />
             <h2 className="font-semibold text-white">เกรดล่าสุด</h2>
@@ -463,7 +463,7 @@ export default async function TalentIdDetailPage({
   const mediaTab = (
     <>
       {player.hudlVideoLeg1 || player.hudlVideoLeg2 ? (
-        <div className="rounded-xl border border-white/10 bg-[#081528] p-6">
+        <div className="rounded-xl border border-white/10 bg-indigo-900 p-6">
           <div className="mb-3 flex items-center gap-2">
             <Video className="h-4 w-4 text-amber-400" />
             <h2 className="font-semibold text-white">วิดีโอ HUDL</h2>
@@ -512,7 +512,7 @@ export default async function TalentIdDetailPage({
       />
 
       {/* Profile hero */}
-      <div className="relative overflow-hidden rounded-xl border border-white/10 bg-[#081528]">
+      <div className="relative overflow-hidden rounded-xl border border-white/10 bg-indigo-900">
         <div className="absolute inset-x-0 top-0 h-1" style={{ background: heroColor }} />
         <div className="relative flex flex-col gap-6 p-6 sm:p-8 lg:flex-row lg:items-start">
           <div className="flex flex-none items-end gap-4">
@@ -578,7 +578,7 @@ export default async function TalentIdDetailPage({
 
         {/* Contact — ADMIN/STAFF only, always visible regardless of tab */}
         {canSeeContact && (
-          <div className="rounded-xl border border-amber-400/25 bg-[#081528]">
+          <div className="rounded-xl border border-amber-400/25 bg-indigo-900">
             <div className="flex items-center gap-2 border-b border-amber-400/10 px-6 py-4">
               <IdCard className="h-4 w-4 text-amber-400" />
               <h2 className="font-semibold text-white">

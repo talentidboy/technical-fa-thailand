@@ -1,0 +1,76 @@
+/* ศูนย์ข้อมูลและบทความด้านเทคนิค (กระดานแทคติก): เส้นปากกาค่อยๆ ถูกวาด · ผู้เล่นโผล่ทีละคน · ลูกศรขึ้นตามจังหวะ */
+
+.draw {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: draw 0.9s ease-out forwards;
+}
+
+.pop {
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: pop 0.45s cubic-bezier(0.2, 0.8, 0.2, 1.2) forwards;
+}
+
+.fade {
+  opacity: 0;
+  animation: fade 0.5s ease forwards;
+}
+
+@keyframes draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes pop {
+  from {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes fade {
+  to {
+    opacity: 1;
+  }
+}
+
+/* แท็บแฟ้ม (หมวด) ยกขึ้นเมื่อชี้ */
+.folder {
+  transition: transform 280ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.folder:hover {
+  transform: translateY(-6px);
+}
+
+/* ปากกาไฮไลต์หลังชื่อบทความเมื่อชี้ */
+.highlight {
+  background-image: linear-gradient(transparent 58%, rgb(253 224 71 / 0.75) 58%);
+  background-size: 0% 100%;
+  background-repeat: no-repeat;
+  transition: background-size 350ms ease;
+}
+.card:hover .highlight {
+  background-size: 100% 100%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .draw,
+  .pop,
+  .fade {
+    animation: none;
+    opacity: 1;
+    stroke-dashoffset: 0;
+  }
+  .folder,
+  .folder:hover {
+    transition: none;
+    transform: none;
+  }
+}

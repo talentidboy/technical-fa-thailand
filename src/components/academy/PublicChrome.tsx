@@ -1,8 +1,8 @@
 import { BrandLogo } from "@/components/BrandLogo";
 import Link from "next/link";
 import { AcademyLogo } from "@/components/SectionLogos";
+import { HomeButton } from "@/components/HomeButton";
 import { display } from "@/components/fonts";
-import { ArrowUpRight } from "lucide-react";
 
 type Viewer = "admin" | "academy" | "staff-other" | "guest";
 
@@ -19,10 +19,6 @@ export function PublicHeader({ viewer, manageHref = "/academies/manage" }: { vie
       <div className="bg-(--ink) text-[11px] text-white/70">
         <div className="mx-auto flex h-8 max-w-6xl items-center justify-between gap-3 px-4 sm:px-6">
           <span className="truncate">สมาคมกีฬาฟุตบอลแห่งประเทศไทย ในพระบรมราชูปถัมภ์ · ฝ่ายเทคนิค</span>
-          <Link href="/" className="inline-flex flex-none items-center gap-0.5 hover:text-white">
-            เว็บไซต์ฝ่ายเทคนิค
-            <ArrowUpRight className="h-3 w-3" />
-          </Link>
         </div>
       </div>
       <header className="sticky top-0 z-30 border-b border-(--line) bg-white/95 backdrop-blur-sm">
@@ -58,6 +54,7 @@ export function PublicHeader({ viewer, manageHref = "/academies/manage" }: { vie
                 </Link>
               </>
             ) : null}
+            <HomeButton />
           </div>
         </div>
       </header>

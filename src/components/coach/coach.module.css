@@ -1,0 +1,80 @@
+/* ศูนย์อบรมผู้ฝึกสอน: บัตรใบอนุญาต 5 ระดับวางเรียงแบบไพ่ในมือ (จอใหญ่) · โทรศัพท์เลื่อนแนวนอน */
+
+.fan {
+  position: relative;
+  height: 25rem;
+}
+
+.card {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 13rem;
+  height: 18.5rem;
+  transform-origin: 50% 120%;
+  transform: translateX(calc(-50% + var(--x))) rotate(var(--r));
+  transition:
+    transform 450ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    box-shadow 450ms ease;
+  box-shadow: 0 18px 40px -18px rgb(0 0 0 / 0.65);
+}
+
+.fan:hover .card {
+  transform: translateX(calc(-50% + var(--hx))) rotate(var(--hr));
+}
+
+.fan .card:hover {
+  z-index: 10;
+  transform: translateX(calc(-50% + var(--hx))) translateY(-1.25rem) rotate(var(--hr));
+  box-shadow: 0 28px 50px -18px rgb(0 0 0 / 0.75);
+}
+
+@media (max-width: 1023px) {
+  .fan {
+    display: flex;
+    height: auto;
+    gap: 0.875rem;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    padding-bottom: 0.5rem;
+    scrollbar-width: none;
+  }
+  .fan::-webkit-scrollbar {
+    display: none;
+  }
+  .card,
+  .fan:hover .card,
+  .fan .card:hover {
+    position: relative;
+    left: auto;
+    flex: none;
+    width: 11.5rem;
+    height: 16rem;
+    transform: none;
+    scroll-snap-align: start;
+  }
+}
+
+/* รอยปรุของตั๋วรุ่นอบรม: วงกลมเว้าบน-ล่างตรงรอยต่อ */
+.notch::before,
+.notch::after {
+  content: "";
+  position: absolute;
+  left: -0.75rem;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 9999px;
+  background: var(--paper);
+}
+.notch::before {
+  top: -0.75rem;
+}
+.notch::after {
+  bottom: -0.75rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card {
+    transition: none;
+  }
+}

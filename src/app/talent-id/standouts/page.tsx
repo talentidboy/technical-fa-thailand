@@ -34,7 +34,7 @@ function PlayerGradeCard({ player, rank }: { player: TalentPlayer; rank: number 
   return (
     <Link
       href={`/talent-id/${player.id}`}
-      className="group flex items-center gap-3 rounded-lg border border-white/10 bg-[#081528] px-3.5 py-3 transition-colors hover:border-white/25"
+      className="group flex items-center gap-3 rounded-lg border border-white/10 bg-indigo-900 px-3.5 py-3 transition-colors hover:border-white/25"
     >
       <span className={`${h} w-6 flex-none text-right text-base font-semibold tabular-nums ${rank <= 3 ? "text-amber-300" : "text-indigo-400"}`}>{rank}</span>
       <Avatar player={player} size="h-10 w-10" />
@@ -101,7 +101,7 @@ export default async function TalentIdStandoutsPage() {
           {champion && (
             <Link
               href={`/talent-id/${champion.id}`}
-              className="group relative flex flex-col gap-5 overflow-hidden rounded-xl border border-white/10 bg-[#081528] p-6 transition-colors hover:border-amber-400/40 sm:flex-row sm:items-center sm:p-8"
+              className="group relative flex flex-col gap-5 overflow-hidden rounded-xl border border-white/10 bg-indigo-900 p-6 transition-colors hover:border-amber-400/40 sm:flex-row sm:items-center sm:p-8"
             >
               <span className="absolute inset-y-0 left-0 w-1 bg-amber-400" />
               <Avatar player={champion} size="h-24 w-24 text-3xl sm:h-28 sm:w-28" />

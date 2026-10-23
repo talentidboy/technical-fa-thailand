@@ -4,7 +4,7 @@ export default function Loading() {
   return (
     <div className="space-y-6">
       <Pulse className="h-4 w-24" />
-      <div className="rounded-xl border border-white/10 bg-[#081528] p-8">
+      <div className="rounded-xl border border-white/10 bg-indigo-900 p-8">
         <div className="flex flex-wrap items-center gap-6">
           <Pulse className="h-28 w-28 rounded-2xl" />
           <div className="min-w-0 flex-1 space-y-2">

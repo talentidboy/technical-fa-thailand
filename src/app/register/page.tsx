@@ -10,7 +10,8 @@ import { ThaiAddressFields } from "@/components/ThaiAddressFields";
 import { GENDER_OPTIONS } from "@/lib/constants";
 import { getCountryOptions, getFlagEmoji } from "@/lib/countries";
 import { getProvinceOptions } from "@/lib/thai-address";
-import { COVER_URL } from "@/lib/brand";
+import { coachCentreBg } from "@/lib/section-images";
+import { HomeButton } from "@/components/HomeButton";
 import { ArrowLeft, UserPlus } from "lucide-react";
 
 export default async function RegisterPage({
@@ -32,21 +33,17 @@ export default async function RegisterPage({
   const provinces = getProvinceOptions();
 
   return (
-    <div className="relative min-h-screen overflow-hidden px-4 py-10">
-      <div className="fixed inset-0 -z-10">
-        <Image
-          src={COVER_URL}
-          alt="สำนักงานสมาคมกีฬาฟุตบอลแห่งประเทศไทย"
-          fill
-          priority
-          className="object-cover"
-        />
-        <div className="absolute inset-0 bg-linear-to-br from-indigo-950/90 via-indigo-900/85 to-indigo-700/90" />
+    <div className="relative min-h-screen overflow-hidden px-4 pb-10 pt-20">
+      <div className="fixed inset-0 -z-10 bg-[#031a2c]">
+        <Image src={coachCentreBg} alt="" fill priority placeholder="blur" sizes="100vw" className="object-cover opacity-20 grayscale" />
       </div>
-      <div className="fixed inset-x-0 top-0 h-1 bg-linear-to-r from-amber-600 via-amber-400 to-amber-600" />
+      <div className="fixed inset-x-0 top-0 h-1 bg-[#e3bb63]" />
+      <div className="absolute right-4 top-4 z-10">
+        <HomeButton tone="dark" />
+      </div>
 
       <div className="relative mx-auto w-full max-w-3xl overflow-hidden rounded-2xl bg-white shadow-2xl">
-        <div className="h-1.5 bg-linear-to-r from-amber-500 via-amber-300 to-amber-500" />
+        <div className="h-1.5 bg-[#e3bb63]" />
         <div className="p-8">
           <Link
             href="/coach-center/login"
@@ -135,7 +132,7 @@ export default async function RegisterPage({
 
             <button
               type="submit"
-              className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm shadow-indigo-200 transition-colors hover:bg-indigo-700"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[#031a2c] px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#073c5e]"
             >
               <UserPlus className="h-4 w-4" />
               สมัครสมาชิก

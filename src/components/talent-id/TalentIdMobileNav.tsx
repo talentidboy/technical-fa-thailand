@@ -15,7 +15,7 @@ export function TalentIdMobileNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-30 flex border-t border-white/10 bg-[#081528] lg:hidden">
+    <nav className="fixed inset-x-0 bottom-0 z-30 flex border-t border-white/10 bg-indigo-950 pb-[env(safe-area-inset-bottom)] md:hidden">
       {NAV.map(({ href, label, icon: Icon }) => {
         const active = pathname === href || (href === "/talent-id/players" && /^\/talent-id\/rec/.test(pathname));
         return (

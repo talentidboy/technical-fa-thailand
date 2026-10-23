@@ -5,7 +5,8 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { G15_IMAGE_URL } from "@/lib/brand";
 import { withStage, DEFAULT_STAGE, type G15Stage } from "@/lib/g15-stage";
-import { ArrowLeft, Settings, LogIn, Home, CalendarDays, Trophy, BarChart3, Users, MapPin, Images, Award } from "lucide-react";
+import { HomeButton } from "@/components/HomeButton";
+import { Settings, LogIn, Home, CalendarDays, Trophy, BarChart3, Users, MapPin, Images, Award } from "lucide-react";
 
 const NAV_LINKS = [
   { href: "/g15-womens-series", label: "หน้าแรก", short: "หน้าแรก", en: "Home", icon: Home },
@@ -85,10 +86,7 @@ export function G15Chrome({ user, stage = DEFAULT_STAGE }: { user: { role: strin
                 </Link>
               )
             )}
-            <Link href="/" className={headerButton} aria-label="กลับหน้าแรก">
-              <ArrowLeft className="h-4 w-4 flex-none" />
-              <span className="hidden xl:inline">กลับหน้าแรก</span>
-            </Link>
+            <HomeButton tone="dark" />
           </div>
         </div>
       </header>

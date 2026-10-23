@@ -45,7 +45,7 @@ function MiniLeaderboard({
     .slice(0, 5);
 
   return (
-    <div className="rounded-xl border border-white/10 bg-[#081528] p-5">
+    <div className="rounded-xl border border-white/10 bg-indigo-900 p-5">
       <div className="mb-4 flex items-center gap-2">
         <Icon className="h-4 w-4 text-amber-400" />
         <h3 className="text-sm font-semibold text-white">{title}</h3>
@@ -145,7 +145,7 @@ function PlayerCard({ row }: { row: MatchStatsRow }) {
   );
 
   const className =
-    "group flex flex-col rounded-lg border border-white/10 bg-[#081528] p-4 text-left transition-colors hover:border-amber-400/40";
+    "group flex flex-col rounded-lg border border-white/10 bg-indigo-900 p-4 text-left transition-colors hover:border-amber-400/40";
 
   if (!row.playerId) {
     return <div className={className}>{body}</div>;
@@ -188,7 +188,7 @@ export function StatsExplorer({ data }: { data: MatchStatsRow[] }) {
   return (
     <div>
       {/* ตัวกรอง */}
-      <div className="mb-5 flex flex-col gap-4 rounded-xl border border-white/10 bg-[#081528] p-5 sm:flex-row sm:flex-wrap">
+      <div className="mb-5 flex flex-col gap-4 rounded-xl border border-white/10 bg-indigo-900 p-5 sm:flex-row sm:flex-wrap">
         <div className="relative flex-1 sm:min-w-55">
           <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-indigo-400" />
           <input

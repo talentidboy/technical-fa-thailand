@@ -5,6 +5,7 @@ import { G15_IMAGE_URL, GRASSROOTS_LOGO_URL, PLAY_AND_LEARN_LOGO_URL, TALENT_ID_
 import { academyBg, coachCentreBg, dataCenterBg, g15Bg, grassrootsBg, playAndLearnBg, talentIdBg } from "@/lib/section-images";
 import academyLogo from "@/assets/sections/academy-logo.png";
 import coachCentreLogo from "@/assets/sections/coach-centre-logo.png";
+import dataCentreLogo from "@/assets/sections/data-centre-logo.png";
 
 // หมวดงานของฝ่ายเทคนิค — ใช้ทั้งหน้าแรก (การ์ด) และเมนูบน (เมนูหมวดงาน)
 export type Department = {
@@ -114,11 +115,12 @@ export const DEPARTMENTS: Department[] = [
   },
   {
     key: "data",
-    title: "FA Thailand Data Center",
-    subtitle: "ศูนย์รวมข้อมูลการฝึกอบรมและงานเทคนิคของสมาคมฯ",
+    title: "Technical Data & Articles Centre",
+    subtitle: "ศูนย์ข้อมูลและบทความด้านเทคนิค ของฝ่ายเทคนิค สมาคมฯ",
     href: "/training-centre",
     public: true,
     icon: Database,
+    badge: dataCentreLogo,
     image: dataCenterBg,
     imagePosition: "50% 29%",
     hex: "#0c4a6e",

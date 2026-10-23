@@ -19,12 +19,12 @@ export function CourseStep({ step, index, last }: { step: CoreStep; index: numbe
   const total = parts.reduce((s, p) => s + p.hours, 0) || 1;
 
   return (
-    <li className="relative grid grid-cols-[3.5rem_1fr] gap-4 sm:grid-cols-[4.5rem_1fr] sm:gap-6">
+    <li id={`level-${step.level}`} className="relative grid scroll-mt-24 grid-cols-[3.5rem_1fr] gap-4 sm:grid-cols-[4.5rem_1fr] sm:gap-6">
       {/* ราวเส้นเวลา */}
       <div className="relative flex justify-center">
         {!last && <span aria-hidden className="absolute top-14 -bottom-5 w-0.5 bg-slate-200 sm:top-16" />}
         <span
-          className={`${display.className} relative flex h-14 w-14 items-center justify-center rounded-xl text-lg font-semibold text-white ring-4 ring-white sm:h-16 sm:w-16 sm:text-xl ${tone.bar}`}
+          className={`${display.className} relative flex h-14 w-14 items-center justify-center rounded-xl text-lg font-semibold text-white ring-4 ring-[#f6f4ef] sm:h-16 sm:w-16 sm:text-xl ${tone.bar}`}
         >
           {step.level}
         </span>

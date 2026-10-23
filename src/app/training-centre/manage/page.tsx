@@ -7,8 +7,8 @@ import { createTrainingArticle, deleteTrainingArticle } from "./actions";
 import { Field, SelectField } from "@/components/FormField";
 import { TRAINING_CENTRE_AREAS, labelFor } from "@/lib/constants";
 import { Trash2, Plus, ArrowLeft, ImagePlus } from "lucide-react";
-import { display } from "@/components/fonts";
-import { ModuleHeader } from "@/components/ModuleHeader";
+import { trainingFont } from "@/components/typefaces/training";
+import { TrainingHeader } from "@/components/training/TrainingHeader";
 
 function formatDate(date: Date) {
   return date.toLocaleDateString("th-TH", {
@@ -33,25 +33,19 @@ export default async function TrainingCentreManagePage() {
   });
 
   return (
-    <div className="min-h-screen bg-[#f5f4f0]">
-      <ModuleHeader
-        title="Training Centre"
-        subtitle="จัดการบทความ Training Centre"
-        accent="#b45309"
+    <div className={`${trainingFont.className} min-h-screen bg-[#eceff2]`}>
+      <TrainingHeader
         actions={
-          <Link
-            href="/training-centre"
-            className="inline-flex items-center gap-1.5 rounded-full border border-slate-300 px-3.5 py-2 text-sm font-medium text-slate-700 transition-colors hover:border-slate-400 hover:text-slate-900"
-          >
+          <Link href="/training-centre" className="inline-flex h-10 items-center gap-1.5 rounded-lg px-3 text-sm font-semibold text-slate-700 hover:bg-slate-100">
             <ArrowLeft className="h-4 w-4" />
-            <span className="hidden sm:inline">กลับหน้า Training Centre</span>
+            <span className="hidden sm:inline">กลับหน้าศูนย์ข้อมูลและบทความ</span>
           </Link>
         }
       />
 
       <div className="mx-auto max-w-6xl space-y-8 px-4 py-10 sm:px-6">
         <div>
-          <h1 className={`${display.className} text-3xl font-semibold text-[#073c5e]`}>จัดการบทความ Training Centre</h1>
+          <h1 className="text-3xl font-bold text-[#111827]">จัดการบทความ · ศูนย์ข้อมูลและบทความด้านเทคนิค</h1>
           <p className="mt-1 text-sm text-slate-500">
             เพิ่มบทความวิเคราะห์เทคนิคและแนวทางการฝึกสอน แบ่งตามหมวด The Game /
             Practice / Environment
@@ -60,7 +54,7 @@ export default async function TrainingCentreManagePage() {
 
         <div className="rounded-xl border border-slate-200 bg-white">
           <div className="flex items-center gap-2 border-b border-slate-100 px-6 py-4">
-            <Plus className="h-4 w-4 text-amber-700" />
+            <Plus className="h-4 w-4 text-[#1d4ed8]" />
             <h2 className="font-semibold text-slate-900">เพิ่มบทความใหม่</h2>
           </div>
           <form
@@ -122,7 +116,7 @@ export default async function TrainingCentreManagePage() {
             <div className="sm:col-span-2">
               <button
                 type="submit"
-                className="inline-flex items-center gap-2 rounded-lg bg-[#073c5e] px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#0a4a73]"
+                className="inline-flex items-center gap-2 rounded-lg bg-[#111827] px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#1f2937]"
               >
                 <Plus className="h-4 w-4" />
                 เพิ่มบทความ

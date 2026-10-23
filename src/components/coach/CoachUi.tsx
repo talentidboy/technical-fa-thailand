@@ -1,4 +1,3 @@
-import { coreProgramSteps } from "@/lib/coach-program";
 import { display } from "@/components/fonts";
 
 // ชิ้นส่วนดีไซน์ร่วมของศูนย์อบรมผู้ฝึกสอน (หน้าทางเข้า / หลักสูตร / หน้าโค้ช)
@@ -88,31 +87,5 @@ export function LicenceCard({
         </div>
       </div>
     </div>
-  );
-}
-
-// เส้นทาง G → C → B → A → PRO เป็นขั้นบันได (แท่งสูงขึ้นตามลำดับขั้น ไม่ใช่ตามจำนวน) — highlight = ระดับปัจจุบันของโค้ช (ถ้ามี)
-export function PathwayStairs({ current, compact = false, dark = true }: { current?: string | null; compact?: boolean; dark?: boolean }) {
-  const currentIdx = current ? coreProgramSteps.findIndex((s) => s.level === current) : -1;
-  return (
-    <ol className={`grid grid-cols-5 items-end ${compact ? "gap-1" : "gap-1.5 sm:gap-2"}`}>
-      {coreProgramSteps.map((s, i) => {
-        const tone = levelTone(s.level);
-        const done = currentIdx >= 0 && i <= currentIdx;
-        const dim = currentIdx >= 0 && i > currentIdx;
-        return (
-          <li key={s.level} className="flex flex-col items-center">
-            <span className={`mb-1.5 text-[10px] font-semibold tabular-nums ${compact ? "hidden" : dark ? "text-white/55" : "text-slate-500"}`}>{s.totalHours} ชม.</span>
-            <div
-              className={`relative flex w-full items-start justify-center rounded-t-md ${dim ? "opacity-30" : ""} ${i === currentIdx ? "ring-2 ring-white ring-offset-2 ring-offset-transparent" : ""}`}
-              style={{ height: `${(compact ? 34 : 52) + i * (compact ? 14 : 24)}px`, background: tone.hex }}
-            >
-              <span className={`${display.className} mt-1.5 font-semibold text-white ${compact ? "text-xs" : "text-sm sm:text-base"}`}>{s.level}</span>
-              {done && !compact && <span className="absolute bottom-1.5 text-[10px] font-bold text-white/90">✓</span>}
-            </div>
-          </li>
-        );
-      })}
-    </ol>
   );
 }

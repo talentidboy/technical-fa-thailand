@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import type { LucideIcon } from "lucide-react";
 import { AcademyLogo } from "@/components/SectionLogos";
+import { HomeButton } from "@/components/HomeButton";
 import { academyBg } from "@/lib/section-images";
 
 // โครงหน้าเข้าสู่ระบบ / สมัครของ Academy Licensing: ซ้ายแผงภาพกิจกรรม Academy Visit ทับสีกรมท่า · ขวาฟอร์ม (มือถือ: แผงซ้ายย่อเป็นแถบบน)
@@ -28,11 +29,17 @@ export function AuthShell({
         <div className="absolute inset-0 -z-10 bg-indigo-950/85" />
         <div className="absolute inset-x-0 top-0 h-1 bg-amber-400" />
 
-        <Link href="/academies" className="flex w-fit items-center gap-3">
-          <BrandLogo tone="white" className="h-10" />
-          <span className="h-8 w-px bg-white/25" />
-          <AcademyLogo className="h-10" />
-        </Link>
+        <div className="flex items-center justify-between gap-3">
+          <Link href="/academies" className="flex w-fit items-center gap-3">
+            <BrandLogo tone="white" className="h-10" />
+            <span className="h-8 w-px bg-white/25" />
+            <AcademyLogo className="h-10" />
+          </Link>
+          {/* จอเล็ก: แผงซ้ายเป็นแถบบน ปุ่มกลับหน้าแรกอยู่มุมขวาของแถบนี้ */}
+          <div className="flex-none lg:hidden">
+            <HomeButton tone="dark" />
+          </div>
+        </div>
 
         <div className="mt-8 max-w-md lg:mt-0">
           <p className="text-xs font-bold uppercase tracking-[0.2em] text-amber-300">{eyebrow}</p>
@@ -56,7 +63,10 @@ export function AuthShell({
         <p className="hidden text-xs text-indigo-400 lg:block">ฝ่ายเทคนิค สมาคมกีฬาฟุตบอลแห่งประเทศไทย ในพระบรมราชูปถัมภ์</p>
       </aside>
 
-      <main className="flex items-center justify-center px-5 py-10 sm:px-10 lg:py-16">
+      <main className="relative flex items-center justify-center px-5 py-10 sm:px-10 lg:py-16">
+        <div className="absolute right-4 top-4 hidden lg:block">
+          <HomeButton />
+        </div>
         <div className={`w-full ${wide ? "max-w-2xl" : "max-w-sm"}`}>{children}</div>
       </main>
     </div>

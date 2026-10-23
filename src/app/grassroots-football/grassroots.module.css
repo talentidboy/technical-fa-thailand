@@ -1,0 +1,43 @@
+/* Grassroots Football: แถบข้อความวิ่ง (ริบบิ้นแบบงานเทศกาล) + พื้นหญ้าแบบแถบตัดหญ้าในสนาม */
+
+.marquee {
+  overflow: hidden;
+}
+
+.track {
+  display: flex;
+  width: max-content;
+  animation: marquee 38s linear infinite;
+}
+
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.grass {
+  background-color: #0f7a3d;
+  background-image: repeating-linear-gradient(90deg, rgb(255 255 255 / 0.045) 0 7rem, transparent 7rem 14rem);
+}
+
+.sticker {
+  transition: transform 300ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.sticker:hover {
+  transform: rotate(-4deg) scale(1.06);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .track {
+    animation: none;
+  }
+  .sticker,
+  .sticker:hover {
+    transition: none;
+    transform: none;
+  }
+}

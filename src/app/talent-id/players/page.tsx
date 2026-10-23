@@ -118,7 +118,7 @@ export default async function TalentIdPlayersPage({
       ) : (
         <>
           {/* ตัวกรอง */}
-          <form className="mb-6 space-y-4 rounded-xl border border-white/10 bg-[#081528] p-5">
+          <form className="mb-6 space-y-4 rounded-xl border border-white/10 bg-indigo-900 p-5">
             <div className="relative">
               <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-indigo-400" />
               <input
@@ -178,7 +178,7 @@ export default async function TalentIdPlayersPage({
               </p>
             </div>
           ) : (
-            <div className="overflow-hidden rounded-xl border border-white/10 bg-[#081528]">
+            <div className="overflow-hidden rounded-xl border border-white/10 bg-indigo-900">
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-sm">
                   <thead className="border-b border-white/10 text-xs font-medium text-indigo-300">

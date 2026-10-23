@@ -4,9 +4,12 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { TRAINING_CENTRE_AREAS, labelFor } from "@/lib/constants";
+import { markerFont, trainingFont } from "@/components/typefaces/training";
+import { TrainingHeader } from "@/components/training/TrainingHeader";
 import { ArrowLeft, Calendar } from "lucide-react";
-import { display } from "@/components/fonts";
-import { ModuleHeader } from "@/components/ModuleHeader";
+
+// สีปากกาประจำหมวด (ตรงกับแฟ้มในหน้าศูนย์ข้อมูลและบทความ)
+const AREA_COLOR: Record<string, string> = { THE_GAME: "#1d4ed8", PRACTICE: "#dc2626", ENVIRONMENT: "#15803d" };
 
 export default async function TrainingArticlePage({
   params,
@@ -30,82 +33,85 @@ export default async function TrainingArticlePage({
     year: "numeric",
     month: "long",
     day: "numeric",
+    timeZone: "Asia/Bangkok",
   });
+  const color = AREA_COLOR[article.area] ?? "#111827";
 
   return (
-    <div className="min-h-screen overflow-x-clip bg-[#f5f4f0] text-slate-900">
-      <ModuleHeader
-        title="Training Centre"
-        subtitle="ศูนย์ข้อมูลการฝึกสอน · FA Thailand"
-        accent="#b45309"
+    <div className={`${trainingFont.className} min-h-screen overflow-x-clip bg-[#eceff2] text-slate-900`}>
+      <TrainingHeader
         actions={
-          <Link
-            href="/training-centre"
-            className="inline-flex items-center gap-1.5 rounded-full border border-slate-300 px-3.5 py-2 text-sm font-medium text-slate-700 transition-colors hover:border-slate-400 hover:text-slate-900"
-          >
+          <Link href="/training-centre" className="inline-flex h-10 items-center gap-1.5 rounded-lg px-3 text-sm font-semibold text-slate-700 hover:bg-white">
             <ArrowLeft className="h-4 w-4" />
-            <span className="hidden sm:inline">กลับหน้า Training Centre</span>
+            <span className="hidden sm:inline">กลับหน้าศูนย์ข้อมูลและบทความ</span>
           </Link>
         }
       />
 
       <div className="mx-auto max-w-6xl px-4 pb-16 pt-10 sm:px-6 lg:pt-14">
-        {/* หัวบทความ */}
-        <header className="max-w-3xl">
-          <p className="flex flex-wrap items-center gap-x-2 text-sm text-slate-500">
-            <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-amber-700">{labelFor(TRAINING_CENTRE_AREAS, article.area)}</span>
-            {article.theme && <span>· {article.theme}</span>}
-            {article.ageGroup && <span>· {article.ageGroup}</span>}
-          </p>
-          <h1 className={`${display.className} mt-4 text-4xl font-semibold leading-tight text-[#073c5e] sm:text-5xl`}>{article.title}</h1>
-          <p className="mt-4 inline-flex items-center gap-1.5 text-sm text-slate-500">
-            <Calendar className="h-3.5 w-3.5" />
-            {date}
-          </p>
-        </header>
+        <div className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200">
+          <span className="block h-2" style={{ background: color }} />
+          {/* หัวบทความ */}
+          <header className="px-6 pt-8 sm:px-10 sm:pt-10">
+            <p className="flex flex-wrap items-center gap-x-2 text-sm text-slate-500">
+              <span className="font-mono text-xs font-semibold uppercase tracking-[0.16em]" style={{ color }}>
+                {labelFor(TRAINING_CENTRE_AREAS, article.area)}
+              </span>
+              {article.theme && <span>· {article.theme}</span>}
+              {article.ageGroup && <span>· {article.ageGroup}</span>}
+            </p>
+            <h1 className="mt-4 max-w-4xl text-4xl font-bold leading-tight text-[#111827] sm:text-5xl">{article.title}</h1>
+            <p className="mt-4 inline-flex items-center gap-1.5 font-mono text-sm text-slate-500">
+              <Calendar className="h-3.5 w-3.5" />
+              {date}
+            </p>
+          </header>
 
-        {article.coverImageUrl && (
-          <div className="relative mt-8 aspect-video overflow-hidden rounded-xl bg-slate-200">
-            <Image src={article.coverImageUrl} alt={article.title} fill priority sizes="(min-width: 1152px) 72rem, 100vw" className="object-cover" />
+          {article.coverImageUrl && (
+            <div className="relative mx-6 mt-8 aspect-video overflow-hidden rounded-xl bg-slate-200 sm:mx-10">
+              <Image src={article.coverImageUrl} alt={article.title} fill priority sizes="(min-width: 1152px) 68rem, 100vw" className="object-cover" />
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 gap-12 px-6 pb-10 pt-10 sm:px-10 lg:grid-cols-[minmax(0,1fr)_17rem]">
+            <article className="max-w-3xl">
+              {(article.content || article.excerpt).split(/\n\s*\n/).map((paragraph, index) => (
+                <p
+                  key={index}
+                  className={`whitespace-pre-line leading-relaxed ${index === 0 ? "text-xl font-medium text-slate-800" : "mt-6 text-[1.05rem] text-slate-700"}`}
+                >
+                  {paragraph}
+                </p>
+              ))}
+            </article>
+
+            <aside>
+              <h2 className={`${markerFont.className} -rotate-1 text-2xl text-[#dc2626]`}>บทความอื่นๆ</h2>
+              {otherArticles.length === 0 ? (
+                <p className="pt-3 text-sm text-slate-400">ยังไม่มีบทความอื่น</p>
+              ) : (
+                <ul className="mt-3 space-y-3">
+                  {otherArticles.map((item) => (
+                    <li key={item.id}>
+                      <Link
+                        href={`/training-centre/${item.id}`}
+                        className="group flex items-start gap-3 rounded-lg border-l-4 bg-[#f6f7f9] p-3 transition-colors hover:bg-[#eef1f5]"
+                        style={{ borderColor: AREA_COLOR[item.area] ?? "#111827" }}
+                      >
+                        {item.coverImageUrl && <Image src={item.coverImageUrl} alt={item.title} width={56} height={56} className="h-14 w-14 shrink-0 rounded-md object-cover" />}
+                        <span className="min-w-0">
+                          <span className="block font-mono text-[10px] font-semibold uppercase tracking-[0.16em]" style={{ color: AREA_COLOR[item.area] ?? "#111827" }}>
+                            {labelFor(TRAINING_CENTRE_AREAS, item.area)}
+                          </span>
+                          <span className="mt-0.5 block text-sm font-semibold leading-snug text-slate-900">{item.title}</span>
+                        </span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </aside>
           </div>
-        )}
-
-        <div className="mt-10 grid grid-cols-1 gap-12 lg:grid-cols-[minmax(0,1fr)_18rem]">
-          <article className="max-w-3xl">
-            {(article.content || article.excerpt).split(/\n\s*\n/).map((paragraph, index) => (
-              <p
-                key={index}
-                className={`whitespace-pre-line leading-relaxed ${index === 0 ? "text-xl font-medium text-slate-800" : "mt-6 text-[1.05rem] text-slate-700"}`}
-              >
-                {paragraph}
-              </p>
-            ))}
-          </article>
-
-          <aside>
-            <h2 className="border-b border-slate-300 pb-3 text-sm font-semibold text-slate-500">บทความอื่นๆ</h2>
-            {otherArticles.length === 0 ? (
-              <p className="pt-4 text-sm text-slate-400">ยังไม่มีบทความอื่น</p>
-            ) : (
-              <ul className="divide-y divide-slate-200">
-                {otherArticles.map((item) => (
-                  <li key={item.id}>
-                    <Link href={`/training-centre/${item.id}`} className="group flex items-start gap-3 py-4">
-                      {item.coverImageUrl ? (
-                        <Image src={item.coverImageUrl} alt={item.title} width={56} height={56} className="h-14 w-14 shrink-0 rounded-md object-cover" />
-                      ) : (
-                        <span className="h-14 w-14 shrink-0 rounded-md bg-[#073c5e]" />
-                      )}
-                      <span className="min-w-0">
-                        <span className="block text-[11px] font-semibold uppercase tracking-[0.18em] text-amber-700">{labelFor(TRAINING_CENTRE_AREAS, item.area)}</span>
-                        <span className="mt-0.5 block text-sm font-medium leading-snug text-slate-900 group-hover:text-[#073c5e]">{item.title}</span>
-                      </span>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </aside>
         </div>
       </div>
     </div>
