@@ -14,7 +14,7 @@ import { ConfirmSubmit } from "@/components/ConfirmSubmit";
 import { LevelBadge, LevelMedal, StateChip } from "@/components/academy/AcademyUi";
 import { ManageShell } from "@/components/academy/ManageShell";
 import { GENDERS } from "@/components/academy/TeamFields";
-import { addLicence, deleteAcademy, deleteLicence, toggleAcademyActive, updateAcademy, updateLicence } from "../actions";
+import { addLicence, deleteAcademy, deleteLicence, reactivateLicence, toggleAcademyActive, updateAcademy, updateLicence } from "../actions";
 import { AcademyFields, LicenceFields } from "../fields";
 import {
   ArrowLeft,
@@ -27,6 +27,7 @@ import {
   History,
   Pencil,
   Plus,
+  RotateCcw,
   Save,
   Shirt,
   Trash2,
@@ -66,6 +67,8 @@ export default async function AcademyEditPage({ params }: { params: Promise<{ id
     (a, b) => (b.approvedAt?.getTime() ?? 0) - (a.approvedAt?.getTime() ?? 0) || levelRank(b.level) - levelRank(a.level) || b.id - a.id,
   );
   const provinces = getProvinceOptions().map((p) => p.nameTh);
+  // มีใบอนุญาตแต่ไม่มีใบที่มีผลเลย (ทุกใบถูกแทนที่) → อคาเดมีหลุดจากทะเบียนสาธารณะ ต้องให้แอดมินเห็นและแก้ได้ทันที
+  const orphaned = !current && licences.find((l) => l.status === "SUPERSEDED");
 
   return (
     <ManageShell active="registry">
@@ -97,6 +100,23 @@ export default async function AcademyEditPage({ params }: { params: Promise<{ id
             <span className="text-xs text-slate-400">ไม่แสดงบนหน้าสาธารณะ</span>
           )}
         </div>
+
+        {orphaned && (
+          <div role="alert" className="mt-5 flex flex-wrap items-center gap-3 rounded-2xl bg-amber-50 p-4 ring-1 ring-amber-200">
+            <TriangleAlert className="h-5 w-5 flex-none text-amber-600" />
+            <p className="min-w-0 flex-1 text-sm text-amber-900">
+              อคาเดมีนี้ไม่มีใบอนุญาตที่มีผล — ใบ {LEVEL_META[orphaned.level as keyof typeof LEVEL_META]?.label ?? "ยังไม่ระบุระดับ"} (อนุมัติ {thaiDate(orphaned.approvedAt)}) ถูกตั้งเป็น “เลื่อนระดับ / ต่ออายุแล้ว” แต่ไม่มีใบใหม่มาแทน
+              จึงไม่แสดงบนหน้าสาธารณะ
+            </p>
+            <ResultForm action={reactivateLicence} quiet>
+              <input type="hidden" name="id" value={orphaned.id} />
+              <button type="submit" className="inline-flex items-center gap-1.5 rounded-lg bg-amber-600 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-700">
+                <RotateCcw className="h-4 w-4" />
+                คืนสถานะใบนี้เป็นมีผล
+              </button>
+            </ResultForm>
+          </div>
+        )}
 
         <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
           <section className="rounded-2xl bg-white shadow-sm ring-1 ring-slate-200">
@@ -169,7 +189,7 @@ export default async function AcademyEditPage({ params }: { params: Promise<{ id
               <h2 className="border-b border-slate-100 px-5 py-3.5 font-semibold text-slate-900">ออกใบอนุญาตใหม่ (ต่ออายุ / เลื่อนระดับ)</h2>
               <ResultForm action={addLicence} resetOnSuccess successText="ออกใบอนุญาตแล้ว" className="p-5">
                 <input type="hidden" name="academyId" value={academy.id} />
-                <LicenceFields />
+                <LicenceFields requireLevel />
                 <label className="mt-4 flex items-start gap-2 text-sm text-slate-600">
                   <input type="checkbox" name="supersede" defaultChecked className="mt-0.5 h-4 w-4 rounded border-slate-300" />
                   แทนที่ใบที่มีผลอยู่ (ใบเดิมเปลี่ยนสถานะเป็น “เลื่อนระดับ / ต่ออายุแล้ว”)

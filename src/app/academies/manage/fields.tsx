@@ -62,13 +62,18 @@ export function AcademyFields({ academy, provinces }: { academy?: Academy; provi
   );
 }
 
-export function LicenceFields({ licence, withStatus }: { licence?: AcademyLicence; withStatus?: boolean }) {
+// requireLevel = ออกใบใหม่ (ต่ออายุ / เลื่อนระดับ) ต้องเลือกระดับ · ใบแรกตอนเพิ่มอคาเดมี / แก้ไขใบเดิม เว้นว่างได้
+export function LicenceFields({ licence, withStatus, requireLevel }: { licence?: AcademyLicence; withStatus?: boolean; requireLevel?: boolean }) {
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
       <label className="flex flex-col gap-1.5">
-        <span className="text-sm font-medium text-slate-700">ระดับ</span>
-        <select name="level" defaultValue={licence?.level ?? ""} className={inputClass}>
-          <option value="">ยังไม่ระบุระดับ</option>
+        <span className="text-sm font-medium text-slate-700">
+          ระดับ{requireLevel && <span className="text-red-500"> *</span>}
+        </span>
+        <select name="level" required={requireLevel} defaultValue={licence?.level ?? ""} className={inputClass}>
+          <option value="" disabled={requireLevel}>
+            {requireLevel ? "เลือกระดับ" : "ยังไม่ระบุระดับ"}
+          </option>
           {ACADEMY_LEVELS.map((l) => (
             <option key={l} value={l}>
               FAT {LEVEL_META[l].label} ({LEVEL_META[l].th})
@@ -76,11 +81,11 @@ export function LicenceFields({ licence, withStatus }: { licence?: AcademyLicenc
           ))}
         </select>
       </label>
-      <Text label="ลีกของสโมสร (T1 / T2 / T3)" name="tier" defaultValue={licence?.tier} placeholder="เช่น T1 = ไทยลีก 1" />
-      <Text label="เลขที่ใบอนุญาต" name="licenceNo" defaultValue={licence?.licenceNo} />
+      <Text label="ลีกของสโมสร" name="tier" defaultValue={licence?.tier} placeholder="T1 / T2 / T3" />
       <Text label="วันที่อนุมัติ" name="approvedAt" type="date" defaultValue={licence?.approvedAt ? bangkokDay(licence.approvedAt) : undefined} />
       <Text label="วันหมดอายุ" name="expiresAt" type="date" defaultValue={licence?.expiresAt ? bangkokDay(licence.expiresAt) : undefined} />
-      {withStatus ? (
+      <Text label="เลขที่ใบอนุญาต" name="licenceNo" defaultValue={licence?.licenceNo} />
+      {withStatus && (
         <label className="flex flex-col gap-1.5">
           <span className="text-sm font-medium text-slate-700">สถานะ</span>
           <select name="status" defaultValue={licence?.status ?? "ACTIVE"} className={inputClass}>
@@ -91,10 +96,8 @@ export function LicenceFields({ licence, withStatus }: { licence?: AcademyLicenc
             ))}
           </select>
         </label>
-      ) : (
-        <span className="hidden sm:block" />
       )}
-      <label className="flex flex-col gap-1.5 sm:col-span-3">
+      <label className="flex flex-col gap-1.5 sm:col-span-2">
         <span className="text-sm font-medium text-slate-700">หมายเหตุของใบอนุญาต</span>
         <input name="licenceNote" defaultValue={licence?.note ?? ""} className={inputClass} />
       </label>

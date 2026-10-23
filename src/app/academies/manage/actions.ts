@@ -156,6 +156,8 @@ export async function addLicence(formData: FormData) {
     const academy = await prisma.academy.findUnique({ where: { id: academyId }, select: { nameEn: true } });
     if (!academy) throw new Error("ไม่พบอคาเดมี");
     const licence = readLicence(formData);
+    // ใบใหม่ต้องระบุระดับ — ไม่งั้นติ๊ก "แทนที่ใบเดิม" แล้วอคาเดมีจะเหลือแต่ใบที่ไม่มีระดับ
+    if (!licence.level) throw new Error("กรุณาเลือกระดับของใบอนุญาตใหม่");
     const supersede = formData.get("supersede") === "on";
     await prisma.$transaction(async (tx) => {
       if (supersede) await tx.academyLicence.updateMany({ where: { academyId, status: "ACTIVE" }, data: { status: "SUPERSEDED" } });
@@ -192,10 +194,34 @@ export async function deleteLicence(formData: FormData) {
     const id = idOf(formData);
     const licence = await prisma.academyLicence.findUnique({ where: { id }, include: { academy: { select: { nameEn: true } } } });
     if (!licence) throw new Error("ไม่พบใบอนุญาต");
-    await prisma.academyLicence.delete({ where: { id } });
+    // ลบใบที่มีผลใบสุดท้าย (เช่น ออกใบใหม่ผิดแล้วลบทิ้ง) → คืนใบล่าสุดที่ถูกแทนที่ให้กลับมามีผล ไม่ให้อคาเดมีหลุดจากทะเบียน
+    const restored = await prisma.$transaction(async (tx) => {
+      await tx.academyLicence.delete({ where: { id } });
+      if (licence.status !== "ACTIVE" || (await tx.academyLicence.count({ where: { academyId: licence.academyId, status: "ACTIVE" } }))) return null;
+      const prev = await tx.academyLicence.findFirst({
+        where: { academyId: licence.academyId, status: "SUPERSEDED" },
+        orderBy: [{ approvedAt: { sort: "desc", nulls: "last" } }, { id: "desc" }],
+      });
+      return prev ? tx.academyLicence.update({ where: { id: prev.id }, data: { status: "ACTIVE" } }) : null;
+    });
     await audit(user.email, "ACADEMY_LICENCE_DELETE", {
-      summary: `ลบใบอนุญาต ${levelText(licence.level)} ของ ${licence.academy.nameEn}`,
-      details: licence,
+      summary: `ลบใบอนุญาต ${levelText(licence.level)} ของ ${licence.academy.nameEn}${restored ? ` · คืนใบ ${levelText(restored.level)} เดิมให้กลับมามีผล` : ""}`,
+      details: { ...licence, restoredLicenceId: restored?.id ?? null },
+    });
+  });
+}
+
+// คืนสถานะใบอนุญาตที่ถูกแทนที่ / ระงับ ให้กลับมามีผล (แก้กรณีอคาเดมีไม่เหลือใบที่มีผล)
+export async function reactivateLicence(formData: FormData) {
+  return attempt(async (user) => {
+    const id = idOf(formData);
+    const licence = await prisma.academyLicence.findUnique({ where: { id }, include: { academy: { select: { nameEn: true } } } });
+    if (!licence) throw new Error("ไม่พบใบอนุญาต");
+    if (licence.status === "ACTIVE") throw new Error("ใบนี้มีผลอยู่แล้ว");
+    await prisma.academyLicence.update({ where: { id }, data: { status: "ACTIVE" } });
+    await audit(user.email, "ACADEMY_LICENCE_UPDATE", {
+      summary: `คืนสถานะใบอนุญาต ${levelText(licence.level)} ของ ${licence.academy.nameEn} เป็นมีผล`,
+      details: { academyId: licence.academyId, licenceId: id, changes: { status: [licence.status, "ACTIVE"] } },
     });
   });
 }

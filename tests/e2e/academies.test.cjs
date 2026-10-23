@@ -196,6 +196,26 @@ module.exports = {
     await ad.goto(`${BASE}/academies/manage/${deltaId}`, { waitUntil: "networkidle" });
     await ad.getByRole("button", { name: "ลบใบอนุญาต" }).last().click();
     check("ลบใบอนุญาต", await until(async () => (await licences("Delta Academy")).length === 1));
+    check("ฟอร์มออกใบใหม่บังคับเลือกระดับ", (await ad.locator("form", { has: ad.getByRole("button", { name: "ออกใบอนุญาต", exact: true }) }).locator('select[name="level"]').getAttribute("required")) !== null);
+
+    // ลบใบที่มีผลใบสุดท้าย (เช่น ออกใบใหม่ผิด) → ใบเดิมที่ถูกแทนที่กลับมามีผล ไม่หลุดจากทะเบียน
+    await ad.goto(`${BASE}/academies/manage/${alphaId}`, { waitUntil: "networkidle" });
+    await ad.getByRole("button", { name: "ลบใบอนุญาต" }).first().click();
+    check(
+      "ลบใบ Gold ที่มีผล → คืนใบ Bronze เดิมให้มีผล",
+      await until(async () => (await licences("ALPHA ACADEMY")).map((l) => `${l.level}:${l.status}`).join() === "BRONZE:ACTIVE"),
+      JSON.stringify(await licences("ALPHA ACADEMY")),
+    );
+    check("บันทึกการคืนใบเดิมไว้ในบันทึกการแก้ไข", !!(await sql(`select 1 from audit_logs where action='ACADEMY_LICENCE_DELETE' and summary like '%คืนใบ Bronze%'`))[0]);
+
+    // ข้อมูลค้าง: ใบถูกแทนที่หมดแต่ไม่มีใบใหม่ → แจ้งในรายการควรตรวจสอบ + ปุ่มคืนสถานะในหน้าอคาเดมี
+    await sql(`update academy_licences set status='SUPERSEDED' where academy_id=$1`, [alphaId]);
+    await ad.goto(`${BASE}/academies/manage?issue=no-active`, { waitUntil: "networkidle" });
+    check("รายการควรตรวจสอบ: ไม่มีใบที่มีผล", (await ad.locator("tbody").innerText()).includes("ALPHA ACADEMY"));
+    await ad.goto(`${BASE}/academies/manage/${alphaId}`, { waitUntil: "networkidle" });
+    check("หน้าอคาเดมีแจ้งว่าไม่มีใบที่มีผล", (await ad.getByRole("alert").filter({ hasText: "ไม่มีใบอนุญาตที่มีผล" }).count()) === 1);
+    await ad.getByRole("button", { name: "คืนสถานะใบนี้เป็นมีผล" }).click();
+    check("กดคืนสถานะ → ใบกลับมามีผล", await until(async () => (await licences("ALPHA ACADEMY"))[0]?.status === "ACTIVE"));
 
     // ส่งออก Excel (เฉพาะแอดมิน)
     const xres = await fetch(`${BASE}/academies/manage/export`, { headers: { cookie: `session_token=${adminToken}` } });

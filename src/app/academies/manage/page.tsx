@@ -15,7 +15,8 @@ const PAGE = 50;
 
 // เรื่องที่ควรตรวจสอบ (ข้อมูลจากทะเบียน Excel เดิมไม่ครบ/ไม่สอดคล้อง)
 const ISSUES = {
-  "no-level": { label: "ยังไม่ระบุระดับ", test: (a: AcademyRow) => a.state === "pending" },
+  "no-active": { label: "ไม่มีใบที่มีผล (ใบเดิมถูกแทนที่)", test: (a: AcademyRow) => !a.current && a.licences.some((l) => l.status === "SUPERSEDED") },
+  "no-level":{ label: "ยังไม่ระบุระดับ", test: (a: AcademyRow) => a.state === "pending" },
   "no-province": { label: "ไม่มีจังหวัด", test: (a: AcademyRow) => !a.province },
   "no-contact": { label: "ไม่มีเบอร์ / อีเมล", test: (a: AcademyRow) => !a.phone && !a.email },
   "no-date": { label: "ใบอนุญาตไม่มีวันที่อนุมัติ", test: (a: AcademyRow) => !!a.current && !a.current.approvedAt },
