@@ -3,11 +3,12 @@ import Image from "next/image";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { COACH_CENTRE_IMAGE_URL } from "@/lib/brand";
+import { coachCentreBg } from "@/lib/section-images";
 import { LIVE_APPLICATION_STATUSES } from "@/lib/course-workflow";
 import { coreProgramSteps } from "@/lib/coach-program";
 import { Reveal } from "@/components/g15/Reveal";
 import { ModuleHeader } from "@/components/ModuleHeader";
+import { CoachCentreLogo } from "@/components/SectionLogos";
 import { BrandLogo } from "@/components/BrandLogo";
 import { CountUp } from "@/components/play-and-learn/CountUp";
 import { display, levelTone, SectionHead, PathwayStairs } from "@/components/coach/CoachUi";
@@ -56,6 +57,7 @@ export default async function CoachCenterPage() {
   return (
     <div className="min-h-screen overflow-x-clip bg-[#f5f4f0] text-slate-900">
       <ModuleHeader
+        logo={<CoachCentreLogo className="h-6" />}
         title="ศูนย์อบรมผู้ฝึกสอนฟุตบอล"
         subtitle="Coach Education · FA Thailand"
         links={[
@@ -123,7 +125,7 @@ export default async function CoachCenterPage() {
           {/* ภาพ + เส้นทางใบอนุญาต */}
           <figure className="relative">
             <div className="relative aspect-4/5 overflow-hidden rounded-xl bg-slate-200">
-              <Image src={COACH_CENTRE_IMAGE_URL} alt="การอบรมผู้ฝึกสอนตามหลักสูตร AFC" fill priority sizes="(min-width: 1024px) 30rem, 100vw" className="object-cover" />
+              <Image src={coachCentreBg} alt="การอบรมผู้ฝึกสอนตามหลักสูตร AFC" fill priority placeholder="blur" sizes="(min-width: 1024px) 30rem, 100vw" className="object-cover object-[55%_50%]" />
               <div className="absolute inset-x-0 bottom-0 h-2/3 bg-linear-to-t from-[#04223a] via-[#04223a]/70 to-transparent" />
             </div>
             <div className="absolute inset-x-4 bottom-4 rounded-lg bg-[#04223a]/95 p-5 text-white sm:inset-x-6 sm:bottom-6">

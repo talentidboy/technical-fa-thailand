@@ -1,5 +1,6 @@
 import { BrandLogo } from "@/components/BrandLogo";
 import Link from "next/link";
+import { AcademyLogo } from "@/components/SectionLogos";
 
 // แถบบนของหน้าในโหมด Academy Licensing (เข้าสู่ระบบ / สมัคร / พอร์ทัล)
 export function AcademyTopBar({ subtitle, children }: { subtitle: string; children?: React.ReactNode }) {
@@ -9,8 +10,8 @@ export function AcademyTopBar({ subtitle, children }: { subtitle: string; childr
         <Link href="/academies" className="flex min-w-0 items-center gap-2.5">
           <BrandLogo tone="white" className="h-9" />
           <div className="min-w-0">
-            <p className="text-sm font-bold text-white">Academy Licensing</p>
-            <p className="truncate text-[11px] text-indigo-300">{subtitle}</p>
+            <AcademyLogo className="h-7" />
+            <p className="mt-0.5 truncate text-[11px] text-indigo-300">{subtitle}</p>
           </div>
         </Link>
         <div className="flex flex-none items-center gap-2">{children}</div>

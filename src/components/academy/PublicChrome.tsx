@@ -1,5 +1,6 @@
 import { BrandLogo } from "@/components/BrandLogo";
 import Link from "next/link";
+import { AcademyLogo } from "@/components/SectionLogos";
 import { display } from "@/components/fonts";
 import { ArrowUpRight } from "lucide-react";
 
@@ -29,11 +30,7 @@ export function PublicHeader({ viewer, manageHref = "/academies/manage" }: { vie
           <Link href="/academies" className="flex flex-none items-center gap-3">
             <BrandLogo tone="navy" className="h-9" />
             <span className="h-7 w-px bg-(--line)" />
-            <span className={`${display.className} text-lg font-semibold leading-none tracking-tight text-(--ink)`}>
-              Academy
-              <br />
-              Licensing
-            </span>
+            <AcademyLogo className="h-10" />
           </Link>
           <nav aria-label="เมนูหลัก" className="hidden flex-1 items-center gap-6 text-sm font-medium text-(--ink-soft) md:flex">
             {NAV.map((n) => (

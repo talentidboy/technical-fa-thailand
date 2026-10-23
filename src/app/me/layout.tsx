@@ -1,4 +1,5 @@
 import { BrandLogo } from "@/components/BrandLogo";
+import { CoachCentreLogo } from "@/components/SectionLogos";
 import Link from "next/link";
 import { requireCoach } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -20,6 +21,8 @@ export default async function MeLayout({
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
           <Link href="/me" className="flex min-w-0 items-center gap-2.5">
             <BrandLogo tone="white" className="h-9" />
+            <span className="hidden h-7 w-px flex-none bg-white/20 sm:block" />
+            <CoachCentreLogo tone="white" className="hidden h-6 sm:block" />
             <div className="min-w-0">
               <p className="truncate text-sm font-bold text-white">ศูนย์อบรมผู้ฝึกสอน</p>
               <p className="truncate text-[11px] text-indigo-300">FA Thailand Technical</p>

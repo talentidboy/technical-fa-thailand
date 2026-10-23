@@ -1,9 +1,11 @@
 import { BrandLogo } from "@/components/BrandLogo";
+import Image from "next/image";
 import Link from "next/link";
 import type { LucideIcon } from "lucide-react";
-import { ThailandSilhouette } from "./ThailandSilhouette";
+import { AcademyLogo } from "@/components/SectionLogos";
+import { academyBg } from "@/lib/section-images";
 
-// โครงหน้าเข้าสู่ระบบ / สมัครของ Academy Licensing: ซ้ายแผงสีเข้มพร้อมแผนที่ · ขวาฟอร์ม (มือถือ: แผงสีเข้มย่อเป็นแถบบน)
+// โครงหน้าเข้าสู่ระบบ / สมัครของ Academy Licensing: ซ้ายแผงภาพกิจกรรม Academy Visit ทับสีกรมท่า · ขวาฟอร์ม (มือถือ: แผงซ้ายย่อเป็นแถบบน)
 export function AuthShell({
   eyebrow,
   title,
@@ -22,21 +24,14 @@ export function AuthShell({
   return (
     <div className={`min-h-screen bg-white lg:grid ${wide ? "lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)]" : "lg:grid-cols-2"}`}>
       <aside className="relative isolate overflow-hidden bg-indigo-950 px-6 pb-8 pt-6 text-white sm:px-10 lg:sticky lg:top-0 lg:flex lg:h-screen lg:flex-col lg:justify-between lg:py-10">
-        <div className="absolute -left-32 -top-32 -z-10 h-96 w-96 rounded-full bg-indigo-500/30 blur-3xl" />
-        <div className="absolute -bottom-40 right-0 -z-10 h-112 w-md rounded-full bg-amber-400/15 blur-3xl" />
-        <div
-          className="absolute inset-0 -z-10 opacity-[0.05]"
-          style={{ backgroundImage: "linear-gradient(white 1px, transparent 1px), linear-gradient(90deg, white 1px, transparent 1px)", backgroundSize: "36px 36px" }}
-        />
-        <div className="absolute inset-x-0 top-0 h-1 bg-linear-to-r from-amber-600 via-amber-300 to-amber-600" />
-        <ThailandSilhouette className="pointer-events-none absolute left-[42%] top-1/2 -z-10 hidden h-[108%] -translate-y-1/2 opacity-70 lg:block" />
+        <Image src={academyBg} alt="" fill priority placeholder="blur" sizes="(min-width: 1024px) 50vw, 100vw" className="-z-10 object-cover" />
+        <div className="absolute inset-0 -z-10 bg-indigo-950/85" />
+        <div className="absolute inset-x-0 top-0 h-1 bg-amber-400" />
 
-        <Link href="/academies" className="flex w-fit items-center gap-2.5">
+        <Link href="/academies" className="flex w-fit items-center gap-3">
           <BrandLogo tone="white" className="h-10" />
-          <span>
-            <span className="block text-sm font-bold">Academy Licensing</span>
-            <span className="block text-[11px] text-indigo-300">สมาคมกีฬาฟุตบอลแห่งประเทศไทยฯ</span>
-          </span>
+          <span className="h-8 w-px bg-white/25" />
+          <AcademyLogo className="h-10" />
         </Link>
 
         <div className="mt-8 max-w-md lg:mt-0">

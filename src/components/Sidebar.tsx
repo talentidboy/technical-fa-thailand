@@ -23,6 +23,7 @@ import {
 import type { LucideIcon } from "lucide-react";
 import { logout } from "@/app/login/actions";
 import { display } from "@/components/fonts";
+import { CoachCentreLogo } from "@/components/SectionLogos";
 
 type NavItem = {
   href: string;
@@ -111,21 +112,35 @@ export function Sidebar({
     );
   };
 
+  // แถบบนมือถือ: โลโก้สมาคมฯ + ชื่อหมวด
   const brand = (
     <Link href="/dashboard" className="flex min-w-0 items-center gap-2.5">
       <BrandLogo tone="white" className="h-9" />
-            <div className="min-w-0">
+      <div className="min-w-0">
         <p className={`${display.className} truncate text-sm font-semibold leading-tight text-white`}>ศูนย์อบรมผู้ฝึกสอนฟุตบอล</p>
         <p className="truncate text-[11px] text-white/50">Coach Education · FA Thailand</p>
       </div>
     </Link>
   );
 
+  // แผงเมนู: โลโก้สมาคมฯ + โลโก้ศูนย์อบรม (AFC) แล้วชื่อหมวดบรรทัดล่าง
+  const panelBrand = (
+    <Link href="/dashboard" className="block min-w-0">
+      <span className="flex items-center gap-3">
+        <BrandLogo tone="white" className="h-9" />
+        <span className="h-7 w-px flex-none bg-white/20" />
+        <CoachCentreLogo tone="white" className="h-6" />
+      </span>
+      <span className={`${display.className} mt-3 block truncate text-sm font-semibold leading-tight text-white`}>ศูนย์อบรมผู้ฝึกสอนฟุตบอล</span>
+      <span className="block truncate text-[11px] text-white/50">Coach Education · FA Thailand</span>
+    </Link>
+  );
+
   const panel = (
     <div className="flex h-full flex-col bg-[#04223a] text-white">
       <div className="h-0.75 flex-none bg-amber-400" />
-      <div className="flex items-center justify-between gap-2 px-5 pb-3 pt-5">
-        {brand}
+      <div className="flex items-start justify-between gap-2 px-5 pb-3 pt-5">
+        {panelBrand}
         <button
           type="button"
           onClick={() => setOpen(false)}

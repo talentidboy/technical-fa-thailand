@@ -463,8 +463,16 @@ function DepartmentTile({ d, href, locked, big, extra }: { d: Department; href: 
     <Link href={href} className={`group relative flex h-full flex-col justify-end overflow-hidden rounded-xl p-6 text-white ${d.tone}`}>
       {d.image && (
         <>
-          <Image src={d.image} alt="" fill sizes="(min-width: 1024px) 50vw, 100vw" className="object-cover transition-transform duration-700 group-hover:scale-105" />
-          <div className="absolute inset-0 bg-linear-to-t from-black/85 via-black/35 to-black/5" />
+          <Image
+            src={d.image}
+            alt=""
+            fill
+            sizes={big ? "(min-width: 1024px) 50vw, 100vw" : "(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"}
+            placeholder={typeof d.image === "string" ? "empty" : "blur"}
+            style={d.imagePosition ? { objectPosition: d.imagePosition } : undefined}
+            className="object-cover transition-transform duration-700 group-hover:scale-105"
+          />
+          <div className="absolute inset-0 bg-linear-to-t from-black/90 via-black/50 to-black/10" />
         </>
       )}
       {d.art && (
@@ -472,14 +480,13 @@ function DepartmentTile({ d, href, locked, big, extra }: { d: Department; href: 
           <Image src={d.art} alt="" fill sizes="(min-width: 1024px) 12vw, 45vw" className="object-contain object-bottom-right drop-shadow-xl" />
         </span>
       )}
-      {d.mark && (
-        <span className={`${h} pointer-events-none absolute -right-3 top-1/2 -translate-y-1/2 select-none text-[9rem] font-semibold leading-none text-white/10 transition-transform duration-700 group-hover:-translate-x-2`}>
-          {d.mark}
-        </span>
-      )}
-      {!d.image && !d.art && !d.mark && <Icon className="absolute -right-6 -top-6 h-36 w-36 text-white/10 transition-transform duration-700 group-hover:-rotate-6 group-hover:scale-110" />}
+      {!d.image && !d.art && <Icon className="absolute -right-6 -top-6 h-36 w-36 text-white/10 transition-transform duration-700 group-hover:-rotate-6 group-hover:scale-110" />}
       <div className="absolute left-6 top-6 flex items-center gap-2">
-        {d.badge ? (
+        {d.logo ? (
+          <span className={`flex h-12 items-center ${d.logoBoxed ? "rounded-lg bg-white px-3 shadow" : ""}`}>
+            <Image src={d.logo} alt="" className={`w-auto ${d.logoBoxed ? "h-7" : "h-12"}`} />
+          </span>
+        ) : d.badge ? (
           <span className="relative h-12 w-12 overflow-hidden rounded-lg bg-white shadow">
             <Image src={d.badge} alt="" fill sizes="48px" className="object-contain p-1.5" />
           </span>

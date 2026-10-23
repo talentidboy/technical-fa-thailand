@@ -4,8 +4,9 @@ import Image from "next/image";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { coachLogin } from "./actions";
-import { COACH_CENTRE_IMAGE_URL } from "@/lib/brand";
+import { coachCentreBg } from "@/lib/section-images";
 import { display } from "@/components/fonts";
+import { CoachCentreLogo } from "@/components/SectionLogos";
 import { authInputClass } from "@/components/academy/AcademyShell";
 import { LoginSubmit, PasswordInput } from "@/components/academy/AuthFields";
 import { AlertCircle, ArrowLeft, User, UserPlus } from "lucide-react";
@@ -31,12 +32,13 @@ export default async function CoachLoginPage({
   return (
     <div className="min-h-screen bg-white lg:grid lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
       <aside className="relative isolate overflow-hidden bg-[#04223a] text-white lg:sticky lg:top-0 lg:h-screen">
-        <Image src={COACH_CENTRE_IMAGE_URL} alt="" fill priority sizes="(min-width: 1024px) 55vw, 100vw" className="-z-10 object-cover opacity-35" />
+        <Image src={coachCentreBg} alt="" fill priority placeholder="blur" sizes="(min-width: 1024px) 55vw, 100vw" className="-z-10 object-cover opacity-35" />
         <div className="absolute inset-x-0 top-0 h-1 bg-amber-400" />
         <div className="flex h-full flex-col justify-between gap-10 px-6 py-6 sm:px-10 lg:py-10">
           <Link href="/coach-center" className="flex w-fit items-center gap-3">
             <BrandLogo tone="white" className="h-10" />
             <span className="h-7 w-px bg-white/25" />
+            <CoachCentreLogo tone="white" className="h-7" />
             <span className="leading-tight">
               <span className={`${display.className} block font-semibold`}>ศูนย์อบรมผู้ฝึกสอนฟุตบอล</span>
               <span className="block text-[11px] text-white/60">Coach Education · FA Thailand</span>

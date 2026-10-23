@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image, { type StaticImageData } from "next/image";
 import { display } from "@/components/fonts";
 
 // ชิ้นส่วนดีไซน์ร่วมของ Talent ID (ธีมเข้ม): หัวหน้า · แถบตัวเลข · กล่องเนื้อหา · กราฟแท่ง — เรียบ ไม่มีไล่สี/วงเบลอ/กล่องไอคอนสี
@@ -33,18 +34,39 @@ export function splitLabel(value: string) {
   return { th: th || value, en: en ?? null };
 }
 
-export function TalentPageHead({ eyebrow, title, sub, aside }: { eyebrow: string; title: string; sub?: React.ReactNode; aside?: React.ReactNode }) {
+// image = ภาพพื้นหลังของหัวหน้า (หน้าภาพรวม) — ทับด้วยสีกรมท่าให้อ่านตัวอักษรได้
+export function TalentPageHead({
+  eyebrow,
+  title,
+  sub,
+  aside,
+  image,
+}: {
+  eyebrow: string;
+  title: string;
+  sub?: React.ReactNode;
+  aside?: React.ReactNode;
+  image?: StaticImageData;
+}) {
   return (
-    <div className="mb-8 flex flex-wrap items-end justify-between gap-4 border-b border-white/10 pb-6">
-      <div className="min-w-0">
+    <div
+      className={`relative mb-8 flex flex-wrap items-end justify-between gap-4 ${image ? "overflow-hidden rounded-xl border border-white/10 px-6 pb-8 pt-20 sm:px-8 sm:pt-28" : "border-b border-white/10 pb-6"}`}
+    >
+      {image && (
+        <>
+          <Image src={image} alt="" fill priority placeholder="blur" sizes="(min-width: 1024px) 70rem, 100vw" className="object-cover object-[50%_55%]" />
+          <div className="absolute inset-0 bg-indigo-950/70" />
+        </>
+      )}
+      <div className="relative min-w-0">
         <p className="flex items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.28em] text-amber-300">
           <span className="h-px w-8 bg-amber-300/70" />
           {eyebrow}
         </p>
-        <h1 className={`${display.className} mt-3 text-3xl font-semibold leading-tight text-white sm:text-4xl`}>{title}</h1>
-        {sub && <p className="mt-2 max-w-2xl text-sm leading-relaxed text-indigo-300">{sub}</p>}
+        <h1 className={`${display.className} mt-3 font-semibold leading-tight text-white ${image ? "text-4xl sm:text-5xl" : "text-3xl sm:text-4xl"}`}>{title}</h1>
+        {sub && <p className={`mt-2 max-w-2xl text-sm leading-relaxed ${image ? "text-white/80" : "text-indigo-300"}`}>{sub}</p>}
       </div>
-      {aside}
+      {aside && <div className="relative">{aside}</div>}
     </div>
   );
 }

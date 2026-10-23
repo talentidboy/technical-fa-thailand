@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { CoursesSection } from "@/components/CoursesSection";
 import { ModuleHeader } from "@/components/ModuleHeader";
+import { CoachCentreLogo } from "@/components/SectionLogos";
 import { coreProgramSteps } from "@/lib/coach-program";
 import { display, PathwayStairs } from "@/components/coach/CoachUi";
 import { ArrowRight, GraduationCap } from "lucide-react";
@@ -10,6 +11,7 @@ export default function CoursesPage() {
   return (
     <div className="min-h-screen overflow-x-clip bg-white">
       <ModuleHeader
+        logo={<CoachCentreLogo className="h-6" />}
         title="หลักสูตรอบรมผู้ฝึกสอน"
         subtitle="ศูนย์อบรมผู้ฝึกสอนฟุตบอล"
         links={[

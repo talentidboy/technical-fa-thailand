@@ -1,4 +1,5 @@
 import { BrandLogo } from "@/components/BrandLogo";
+import { CoachCentreLogo } from "@/components/SectionLogos";
 import Link from "next/link";
 import Image from "next/image";
 import { redirect } from "next/navigation";
@@ -56,11 +57,15 @@ export default async function RegisterPage({
           </Link>
 
           <div className="mt-4 flex flex-col items-center gap-2 text-center">
-            <BrandLogo tone="navy" className="h-12" />
+            <span className="flex items-center gap-3">
+              <BrandLogo tone="navy" className="h-12" />
+              <span className="h-8 w-px bg-slate-200" />
+              <CoachCentreLogo className="h-8" />
+            </span>
             <h2 className="mt-2 text-lg font-bold text-slate-900">
               FA Thailand Technical
             </h2>
-            <p className="text-xs font-medium uppercase tracking-wide text-amber-600">
+            <p className="text-xs font-medium text-amber-600">
               สมัครสมาชิกผู้ฝึกสอน
             </p>
             <p className="max-w-lg text-sm text-slate-500">

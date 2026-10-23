@@ -1,9 +1,11 @@
+import Image from "next/image";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { GRASSROOTS_YEAR, grassrootsCoaches as coaches, grassrootsPlayers as players } from "@/lib/grassroots-data";
 import { display } from "@/components/fonts";
 import { ModuleHeader } from "@/components/ModuleHeader";
 import { ProvinceMap, provinceCodeByName } from "@/components/ProvinceMap";
+import { grassrootsBg } from "@/lib/section-images";
 
 const h = display.className;
 const ACCENT = "#047857";
@@ -119,8 +121,8 @@ export default async function GrassrootsFootballPage() {
       />
 
       {/* ===== ฮีโร่ ===== */}
-      <section className="px-4 pb-16 pt-10 sm:px-6 lg:pt-16">
-        <div className="mx-auto grid max-w-6xl items-end gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,26rem)] lg:gap-16">
+      <section className="px-4 pb-16 pt-10 sm:px-6 lg:pt-14">
+        <div className="mx-auto grid max-w-6xl grid-cols-1 items-center gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,30rem)] lg:gap-14">
           <div>
             <Eyebrow>Grassroots Football · FA Thailand</Eyebrow>
             <h1 className={`${h} mt-6 text-6xl font-semibold leading-none text-[#064e3b] sm:text-8xl`}>
@@ -135,21 +137,35 @@ export default async function GrassrootsFootballPage() {
             </p>
           </div>
 
-          <div className="rounded-xl bg-[#053b2c] p-6 text-white sm:p-7">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-emerald-300">Season {GRASSROOTS_YEAR}</p>
-            <dl className="mt-5 divide-y divide-white/10">
-              {[
-                { value: players.total.toLocaleString(), label: "นักฟุตบอลที่เข้าร่วม" },
-                { value: coaches.total.toLocaleString(), label: "ผู้ฝึกสอนที่เข้าร่วม" },
-                { value: String(players.provinces), label: "จังหวัดที่มีกิจกรรม" },
-              ].map((s) => (
-                <div key={s.label} className="flex items-baseline justify-between gap-4 py-3.5 first:pt-0 last:pb-0">
-                  <dt className="text-sm text-white/65">{s.label}</dt>
-                  <dd className={`${h} text-4xl font-semibold tabular-nums sm:text-5xl`}>{s.value}</dd>
-                </div>
-              ))}
-            </dl>
-          </div>
+          {/* ภาพกิจกรรม + ตัวเลขสรุปของฤดูกาล วางทับขอบล่างของภาพ */}
+          <figure className="relative">
+            <div className="relative aspect-4/3 overflow-hidden rounded-xl bg-[#053b2c] lg:aspect-4/5">
+              <Image
+                src={grassrootsBg}
+                alt="กิจกรรมฟุตบอลรากหญ้า"
+                fill
+                priority
+                placeholder="blur"
+                sizes="(min-width: 1024px) 30rem, 100vw"
+                className="object-cover object-[45%_40%]"
+              />
+            </div>
+            <div className="relative mx-4 -mt-16 rounded-xl bg-[#053b2c] p-5 text-white sm:mx-6 sm:p-6 lg:absolute lg:inset-x-6 lg:bottom-6 lg:mx-0 lg:mt-0">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-emerald-300">Season {GRASSROOTS_YEAR}</p>
+              <dl className="mt-4 grid grid-cols-3 divide-x divide-white/15">
+                {[
+                  { value: players.total.toLocaleString(), label: "นักฟุตบอลที่เข้าร่วม" },
+                  { value: coaches.total.toLocaleString(), label: "ผู้ฝึกสอนที่เข้าร่วม" },
+                  { value: String(players.provinces), label: "จังหวัดที่มีกิจกรรม" },
+                ].map((st) => (
+                  <div key={st.label} className="flex flex-col-reverse px-3 first:pl-0 last:pr-0">
+                    <dt className="mt-1 text-xs leading-snug text-white/65">{st.label}</dt>
+                    <dd className={`${h} text-3xl font-semibold tabular-nums sm:text-4xl`}>{st.value}</dd>
+                  </div>
+                ))}
+              </dl>
+            </div>
+          </figure>
         </div>
       </section>
 

@@ -15,6 +15,7 @@ import {
   TalentPageHead,
   type BarRow,
 } from "@/components/talent-id/TalentUi";
+import { talentIdBg } from "@/lib/section-images";
 import { ArrowRight, Users } from "lucide-react";
 
 export const fetchCache = "default-cache";
@@ -121,6 +122,7 @@ export default async function TalentIdHomePage() {
       <TalentPageHead
         eyebrow="Talent Identification"
         title="Talent ID"
+        image={talentIdBg}
         sub="ศูนย์สืบค้นและคัดกรองนักฟุตบอลผู้มีความสามารถโดดเด่น — ข้อมูลซิงก์จาก Airtable"
         aside={
           <Link href="/talent-id/players" className="inline-flex items-center gap-1.5 rounded-lg bg-amber-400 px-4 py-2.5 text-sm font-semibold text-indigo-950 hover:bg-amber-300">

@@ -2,6 +2,7 @@
 
 import { BrandLogo } from "@/components/BrandLogo";
 import Link from "next/link";
+import { AcademyLogo } from "@/components/SectionLogos";
 import { usePathname } from "next/navigation";
 import { ArrowUpRight, BadgeCheck, Building2, FileCheck2, History, LayoutDashboard, UserCheck } from "lucide-react";
 
@@ -28,8 +29,8 @@ export function ManageNav({ counts, email }: { counts: Counts; email: string }) 
       <Link href="/academies/manage" className="flex items-center gap-2.5 px-4 py-3 lg:px-5 lg:py-5">
         <BrandLogo tone="white" className="h-8" />
         <span className="leading-tight">
-          <span className="block text-sm font-semibold">Academy Licensing</span>
-          <span className="block text-[11px] text-white/60">ระบบจัดการ (สมาคมฯ)</span>
+          <AcademyLogo className="h-7" />
+          <span className="mt-1 block text-[11px] text-white/60">ระบบจัดการ (สมาคมฯ)</span>
         </span>
       </Link>
       <nav aria-label="เมนูจัดการ" className="flex gap-1 overflow-x-auto px-2 pb-2 lg:flex-1 lg:flex-col lg:px-3 lg:pb-0">

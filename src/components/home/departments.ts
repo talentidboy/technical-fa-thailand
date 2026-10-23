@@ -1,13 +1,16 @@
+import type { StaticImageData } from "next/image";
 import type { LucideIcon } from "lucide-react";
 import { Database, GraduationCap, ShieldCheck, Sparkles, Sprout, Target, Trophy } from "lucide-react";
 import {
-  COACH_CENTRE_IMAGE_URL,
   G15_IMAGE_URL,
   GRASSROOTS_LOGO_URL,
   PLAY_AND_LEARN_LOGO_URL,
   PLAY_AND_LEARN_MASCOT,
   TALENT_ID_LOGO_URL,
 } from "@/lib/brand";
+import { academyBg, coachCentreBg, g15Bg, grassrootsBg, talentIdBg } from "@/lib/section-images";
+import academyLogo from "@/assets/sections/academy-logo.png";
+import coachCentreLogo from "@/assets/sections/coach-centre-logo.png";
 
 // หมวดงานของฝ่ายเทคนิค — ใช้ทั้งหน้าแรก (การ์ด) และเมนูบน (เมนูหมวดงาน)
 export type Department = {
@@ -20,11 +23,15 @@ export type Department = {
   // เปิดให้บุคคลทั่วไปเข้าได้ (ดู src/proxy.ts)
   public: boolean;
   icon: LucideIcon;
-  badge?: string;
-  image?: string;
-  // ภาพตกแต่งมุมขวาล่าง (พื้นโปร่งใส เช่น มาสคอต) · ตัวอักษรใหญ่จางๆ เป็นลายพื้น
+  // โลโก้สี่เหลี่ยมเล็ก (การ์ด + เมนู) · โลโก้แนวนอน (การ์ดเท่านั้น, logoBoxed = วางบนกล่องขาว สำหรับโลโก้ที่ไม่มีพื้นของตัวเอง)
+  badge?: string | StaticImageData;
+  logo?: StaticImageData;
+  logoBoxed?: boolean;
+  // ภาพพื้นหลังการ์ด + ตำแหน่งจุดสนใจของภาพ (object-position)
+  image?: string | StaticImageData;
+  imagePosition?: string;
+  // ภาพตกแต่งมุมขวาล่าง (พื้นโปร่งใส เช่น มาสคอต)
   art?: string;
-  mark?: string;
   // สีพื้นการ์ด (ใช้เมื่อไม่มีภาพ หรือเป็นสีทับภาพ)
   tone: string;
 };
@@ -38,7 +45,11 @@ export const DEPARTMENTS: Department[] = [
     guestHref: "/coach-center",
     public: false,
     icon: GraduationCap,
-    image: COACH_CENTRE_IMAGE_URL,
+    badge: coachCentreLogo,
+    logo: coachCentreLogo,
+    logoBoxed: true,
+    image: coachCentreBg,
+    imagePosition: "50% 35%",
     tone: "bg-[#073c5e]",
   },
   {
@@ -49,7 +60,8 @@ export const DEPARTMENTS: Department[] = [
     public: true,
     icon: Trophy,
     badge: G15_IMAGE_URL,
-    mark: "G15",
+    image: g15Bg,
+    imagePosition: "50% 62%",
     tone: "bg-g15-900",
   },
   {
@@ -59,6 +71,8 @@ export const DEPARTMENTS: Department[] = [
     href: "/academies",
     public: true,
     icon: ShieldCheck,
+    logo: academyLogo,
+    image: academyBg,
     tone: "bg-[#0b1f44]",
   },
   {
@@ -80,6 +94,8 @@ export const DEPARTMENTS: Department[] = [
     public: false,
     icon: Sprout,
     badge: GRASSROOTS_LOGO_URL,
+    image: grassrootsBg,
+    imagePosition: "50% 35%",
     tone: "bg-emerald-700",
   },
   {
@@ -90,6 +106,8 @@ export const DEPARTMENTS: Department[] = [
     public: false,
     icon: Target,
     badge: TALENT_ID_LOGO_URL,
+    image: talentIdBg,
+    imagePosition: "50% 60%",
     tone: "bg-amber-600",
   },
   {
