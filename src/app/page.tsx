@@ -173,55 +173,80 @@ export default async function HomePage() {
     <div className="min-h-screen bg-[#f5f4f0] text-slate-900">
       <HomeHeader user={headerUser} events={headerEvents} />
 
-      {/* ===== ฮีโร่: ภาพอาคารสมาคม + พันธกิจ + ทางลัด ===== */}
-      <section className="relative isolate overflow-hidden bg-[#04223a] pb-36 pt-32 text-white lg:flex lg:min-h-[94svh] lg:items-center lg:pb-44">
-        <Image src={COVER_URL} alt="สำนักงานสมาคมกีฬาฟุตบอลแห่งประเทศไทย" fill priority sizes="100vw" className={`-z-20 object-cover ${styles.kenburns}`} />
-        <div className="absolute inset-0 -z-10 bg-linear-to-r from-[#04223a] via-[#04223a]/85 to-[#04223a]/35" />
-        <div className="absolute inset-0 -z-10 bg-linear-to-t from-[#04223a] via-transparent to-[#04223a]/50" />
+      {/* ===== ฮีโร่: หัวข้อ + ทางลัด (ซ้าย) · ภาพหมวดงานเลื่อนสวนทางสองแถว (ขวา) ===== */}
+      <section className="relative isolate overflow-hidden bg-[#04223a] pb-36 pt-28 text-white lg:flex lg:min-h-[100svh] lg:items-center lg:pb-40 lg:pt-24">
+        <Image src={COVER_URL} alt="สำนักงานสมาคมกีฬาฟุตบอลแห่งประเทศไทย" fill priority sizes="100vw" className={`-z-20 object-cover opacity-40 ${styles.kenburns}`} />
+        <div className="absolute inset-0 -z-10 bg-linear-to-r from-[#04223a] via-[#04223a]/90 to-[#04223a]/60" />
+        <div className="absolute inset-0 -z-10 bg-linear-to-t from-[#04223a] via-transparent to-[#04223a]/70" />
 
-        <div className="mx-auto grid w-full max-w-7xl gap-12 px-4 sm:px-6 lg:grid-cols-[minmax(0,1fr)_25rem] lg:items-end">
+        <div className="mx-auto grid w-full max-w-7xl gap-14 px-4 sm:px-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,30rem)] lg:items-center lg:gap-16">
           <div>
             <p className={`${styles.rise} flex items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.28em] text-amber-300`}>
               <span className="h-px w-10 bg-amber-300" />
               FA Thailand · Technical Department
             </p>
-            <h1 className={`${h} ${styles.rise} mt-6 text-[3.2rem] font-semibold leading-none tracking-tight sm:text-8xl`} style={{ animationDelay: "120ms" }}>
-              FA Thailand
-              <br />
-              <span className="text-amber-300">Technical</span>
+            <h1 className={`${h} mt-6 text-[3.4rem] font-semibold leading-[0.95] sm:text-8xl xl:text-[7.5rem]`}>
+              <span className={`${styles.rise} block`} style={{ animationDelay: "120ms" }}>
+                FA Thailand
+              </span>
+              <span className={`${styles.rise} relative inline-block pb-4 text-amber-300`} style={{ animationDelay: "240ms" }}>
+                Technical
+                {/* เส้นพู่กันทองลากใต้คำ */}
+                <svg aria-hidden viewBox="0 0 400 24" preserveAspectRatio="none" className="absolute -bottom-1 left-0 h-4 w-full sm:h-6">
+                  <path d="M4 16 C 90 4, 210 4, 396 12" pathLength={1} className={styles.brush} fill="none" stroke="currentColor" strokeWidth="6" strokeLinecap="round" />
+                </svg>
+              </span>
             </h1>
-            <p className={`${styles.rise} mt-6 max-w-xl text-base leading-relaxed text-white/75 sm:text-lg`} style={{ animationDelay: "260ms" }}>
-              ฝ่ายเทคนิค สมาคมกีฬาฟุตบอลแห่งประเทศไทย ในพระบรมราชูปถัมภ์ — ระบบงานผู้ฝึกสอน หลักสูตรอบรม อคาเดมี การพัฒนาเยาวชน และการแข่งขัน
+            <p className={`${styles.rise} mt-7 max-w-xl text-base leading-relaxed text-white/75 sm:text-lg`} style={{ animationDelay: "380ms" }}>
+              ฝ่ายเทคนิค สมาคมกีฬาฟุตบอลแห่งประเทศไทย ในพระบรมราชูปถัมภ์ — ผู้ฝึกสอน หลักสูตรอบรม อคาเดมี การพัฒนาเยาวชน และการแข่งขัน ครบในที่เดียว
             </p>
-            <div className={`${styles.rise} mt-9 flex flex-wrap gap-3`} style={{ animationDelay: "380ms" }}>
-              <a href="#departments" className="inline-flex items-center gap-2 rounded-full bg-amber-400 px-6 py-3.5 text-sm font-semibold text-[#073c5e] transition-colors hover:bg-amber-300">
+            <div className={`${styles.rise} mt-9 flex flex-wrap gap-3`} style={{ animationDelay: "480ms" }}>
+              <a href="#departments" className="inline-flex items-center gap-2 rounded-xl bg-amber-400 px-7 py-4 text-sm font-semibold text-[#073c5e] shadow-[0_14px_36px_-12px_rgb(251_191_36/0.7)] transition-transform hover:-translate-y-0.5">
                 สำรวจหมวดงาน
                 <ArrowRight className="h-4 w-4" />
               </a>
-              <Link href="/courses" className="inline-flex items-center gap-2 rounded-full border border-white/35 px-6 py-3.5 text-sm font-semibold text-white transition-colors hover:bg-white/10">
+              <Link href="/courses" className="inline-flex items-center gap-2 rounded-xl border border-white/30 px-7 py-4 text-sm font-semibold text-white transition-colors hover:bg-white/10">
                 หลักสูตรอบรมผู้ฝึกสอน
               </Link>
             </div>
+
+            {/* ทางลัด: วันนี้คุณมาหาอะไร */}
+            <div className={`${styles.rise} mt-12`} style={{ animationDelay: "600ms" }}>
+              <p className="text-xs font-semibold text-white/50">วันนี้คุณมาหาอะไร?</p>
+              <ul className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+                {TASKS.map(({ href, icon: Icon, title }) => (
+                  <li key={href}>
+                    <Link href={href} className="group flex h-full items-center gap-3 rounded-xl bg-white/[0.06] px-3.5 py-3 ring-1 ring-white/10 transition-colors hover:bg-white hover:text-[#073c5e]">
+                      <Icon className="h-4 w-4 flex-none text-amber-300 group-hover:text-[#073c5e]" />
+                      <span className="min-w-0 flex-1 text-[13px] font-semibold leading-snug">{title}</span>
+                      <ArrowRight className="h-3.5 w-3.5 flex-none opacity-0 transition-opacity group-hover:opacity-100" />
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
 
-          <div className={`${styles.rise} overflow-hidden rounded-xl bg-white text-slate-900 shadow-2xl`} style={{ animationDelay: "450ms" }}>
-            <p className="border-b border-slate-100 px-5 py-3.5 text-sm font-semibold text-slate-500">วันนี้คุณมาหาอะไร?</p>
-            <ul className="divide-y divide-slate-100">
-              {TASKS.map(({ href, icon: Icon, title, desc }) => (
-                <li key={href}>
-                  <Link href={href} className="group flex items-center gap-3.5 px-5 py-3.5 transition-colors hover:bg-[#f5f4f0]">
-                    <span className="flex h-10 w-10 flex-none items-center justify-center rounded-lg bg-[#073c5e]/8 text-[#073c5e] transition-colors group-hover:bg-[#073c5e] group-hover:text-white">
-                      <Icon className="h-5 w-5" />
-                    </span>
-                    <span className="min-w-0 flex-1">
-                      <span className="block text-sm font-semibold text-slate-900">{title}</span>
-                      <span className="block truncate text-xs text-slate-500">{desc}</span>
-                    </span>
-                    <ArrowRight className="h-4 w-4 flex-none text-slate-300 transition-transform group-hover:translate-x-0.5 group-hover:text-[#073c5e]" />
-                  </Link>
-                </li>
+          {/* ภาพหมวดงาน: สองแถวเลื่อนสวนทางกัน (จอใหญ่) · แถวเดียวเลื่อนแนวนอน (มือถือ) */}
+          <div className={`${styles.rise} hidden lg:block`} style={{ animationDelay: "300ms" }}>
+            <div className={`${styles.reel} grid h-[min(44rem,calc(100svh-9rem))] grid-cols-2 gap-4`}>
+              {[DEPARTMENTS, [...DEPARTMENTS.slice(3), ...DEPARTMENTS.slice(0, 3)]].map((col, c) => (
+                <div key={c} className={`${c ? styles.down : styles.up} flex flex-col gap-4`}>
+                  {[...col, ...col].map((d, k) => (
+                    <ReelTile key={`${d.key}-${k}`} d={d} href={dept[d.key].href} hidden={k >= col.length} />
+                  ))}
+                </div>
               ))}
-            </ul>
+            </div>
+          </div>
+          <div className={`${styles.rise} ${styles.reelX} -mx-4 lg:hidden`} style={{ animationDelay: "300ms" }}>
+            <div className={`${styles.across} flex w-max gap-3`}>
+              {[...DEPARTMENTS, ...DEPARTMENTS].map((d, k) => (
+                <div key={`${d.key}-${k}`} className="w-40 flex-none sm:w-48">
+                  <ReelTile d={d} href={dept[d.key].href} hidden={k >= DEPARTMENTS.length} />
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </section>
@@ -442,6 +467,36 @@ function DepartmentTile({ d, n, href, locked, big, extra }: { d: Department; n: 
           </div>
         </div>
       </div>
+    </Link>
+  );
+}
+
+// ภาพหมวดงานในฮีโร่: รูปเต็มกรอบ + ชื่อหมวดบนแถบสีประจำหมวด · ชุดที่ซ้ำไว้ให้เลื่อนวนต่อเนื่อง ซ่อนจากโปรแกรมอ่านหน้าจอ/คีย์บอร์ด
+function ReelTile({ d, href, hidden }: { d: Department; href: string; hidden?: boolean }) {
+  return (
+    <Link
+      href={href}
+      aria-hidden={hidden}
+      tabIndex={hidden ? -1 : undefined}
+      style={{ "--tile": d.hex } as React.CSSProperties}
+      className="group relative block aspect-4/5 flex-none overflow-hidden rounded-2xl bg-(--tile) ring-1 ring-white/10"
+    >
+      {d.image && (
+        <Image
+          src={d.image}
+          alt=""
+          fill
+          sizes="(min-width: 1024px) 15rem, 12rem"
+          placeholder={typeof d.image === "string" ? "empty" : "blur"}
+          style={d.imagePosition ? { objectPosition: d.imagePosition } : undefined}
+          className="object-cover transition-transform duration-700 group-hover:scale-110"
+        />
+      )}
+      <span className="absolute inset-0 bg-linear-to-t from-(--tile) via-(--tile)/20 to-transparent" />
+      <span className="absolute inset-x-0 bottom-0 p-4">
+        <span className="block h-1 w-8 rounded-full bg-amber-300 transition-[width] duration-300 group-hover:w-14" />
+        <span className={`${h} mt-2 block text-base font-semibold leading-tight text-white`}>{d.title}</span>
+      </span>
     </Link>
   );
 }

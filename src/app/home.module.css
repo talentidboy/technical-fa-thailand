@@ -23,9 +23,64 @@
   }
 }
 
+/* เส้นพู่กันทองใต้ "Technical": ลากจากซ้ายไปขวาหลังหัวข้อขึ้นครบ */
+.brush {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: brush 900ms cubic-bezier(0.6, 0, 0.2, 1) 800ms forwards;
+}
+@keyframes brush {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* ภาพหมวดงานสองแถว: ซ้ายเลื่อนขึ้น ขวาเลื่อนลง วนไม่สิ้นสุด · ขอบบน/ล่างจางหาย · ชี้แล้วหยุด */
+.reel {
+  overflow: hidden;
+  mask-image: linear-gradient(180deg, transparent, #000 12%, #000 88%, transparent);
+}
+.up,
+.down {
+  animation: reel-up 48s linear infinite;
+}
+.down {
+  animation-direction: reverse;
+}
+.reel:hover .up,
+.reel:hover .down {
+  animation-play-state: paused;
+}
+@keyframes reel-up {
+  to {
+    transform: translateY(calc(-50% - 0.5rem));
+  }
+}
+
+/* มือถือ: แถวเดียวเลื่อนแนวนอน */
+.reelX {
+  overflow: hidden;
+  mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+}
+.across {
+  animation: across 40s linear infinite;
+}
+@keyframes across {
+  to {
+    transform: translateX(calc(-50% - 0.375rem));
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .kenburns,
-  .rise {
+  .rise,
+  .up,
+  .down,
+  .across {
     animation: none;
+  }
+  .brush {
+    animation: none;
+    stroke-dashoffset: 0;
   }
 }
