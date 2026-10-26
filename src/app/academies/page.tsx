@@ -82,35 +82,49 @@ export default async function AcademiesPage({
     <div className={`${theme.theme} ${academyFont.className} min-h-screen overflow-x-clip`}>
       <PublicHeader viewer={viewer} />
 
-      {/* ===== ฮีโร่ + แผนที่ ===== */}
+      {/* ===== ฮีโร่ + แผนที่ + แถบตัวเลข ===== */}
       <section id="map" className="relative isolate scroll-mt-16 overflow-hidden bg-(--night) text-white">
-        <Image src={academyBg} alt="" fill priority placeholder="blur" sizes="100vw" className={`${theme.kenburns} -z-20 object-cover opacity-35`} />
-        <div className="absolute inset-0 -z-10 bg-linear-to-r from-(--night) via-(--night)/90 to-(--night)/55" />
-        <div className="absolute inset-0 -z-10 bg-linear-to-t from-(--night) via-transparent to-(--night)/40" />
+        <Image src={academyBg} alt="" fill priority placeholder="blur" sizes="100vw" className={`${theme.kenburns} -z-20 object-cover opacity-60`} />
+        <div className="absolute inset-0 -z-10 bg-linear-to-r from-(--night) via-(--night)/85 to-(--night)/25" />
+        <div className="absolute inset-0 -z-10 bg-linear-to-t from-(--night) via-(--night)/20 to-(--night)/50" />
+        {/* เส้นทองแนวตั้งบางๆ แบ่งจังหวะภาพ */}
+        <span aria-hidden className="absolute inset-y-0 left-[58%] -z-10 hidden w-px bg-linear-to-b from-transparent via-(--gold)/40 to-transparent lg:block" />
 
-        <div className="mx-auto grid max-w-7xl grid-cols-1 items-center gap-12 px-4 py-14 sm:px-6 lg:min-h-[calc(100svh-4rem)] lg:grid-cols-[minmax(0,1fr)_minmax(0,28rem)] lg:gap-16 lg:py-16">
+        <div className="mx-auto grid max-w-7xl grid-cols-1 items-center gap-12 px-4 pb-12 pt-14 sm:px-6 lg:min-h-[calc(100svh-12rem)] lg:grid-cols-[minmax(0,1fr)_minmax(0,27rem)] lg:gap-20 lg:pt-16">
           <div>
-            <p className={`${theme.rise} ${eyebrow} flex items-center gap-3 text-(--gold)`} style={i(0)}>
-              <span className="h-px w-10 bg-(--gold)" />
-              FAT Academy Licensing · FIFA Grow Together
-            </p>
-            <h1 className="mt-6 text-[2.7rem] font-bold leading-[1.08] sm:text-6xl xl:text-7xl">
+            <div className={`${theme.rise} flex items-center gap-4`} style={i(0)}>
+              <span className="flex -space-x-3">
+                {LEVELS_DESC.map((l) => (
+                  <Medal key={l} level={l} size="sm" />
+                ))}
+              </span>
+              <p className={`${eyebrow} leading-relaxed text-(--gold)`}>
+                FAT Academy Licensing
+                <br />
+                <span className="text-white/55">FIFA Grow Together</span>
+              </p>
+            </div>
+            <h1 className="mt-8 text-[2.8rem] font-bold leading-[1.04] sm:text-7xl xl:text-[5.4rem]">
               <span className={`${theme.rise} block`} style={i(1)}>
                 อคาเดมีฟุตบอล
               </span>
               <span className={`${theme.rise} block`} style={i(2)}>
                 เยาวชน
               </span>
-              <span className={`${theme.rise} block text-(--gold)`} style={i(3)}>
+              <span className={`${theme.rise} relative inline-block pb-3 text-(--gold)`} style={i(3)}>
                 ที่ผ่านการรับรอง
+                {/* เส้นพู่กันทองลากใต้คำ */}
+                <svg aria-hidden viewBox="0 0 400 24" preserveAspectRatio="none" className="absolute -bottom-1 left-0 h-4 w-full sm:h-5">
+                  <path d="M4 16 C 90 4, 210 4, 396 12" pathLength={1} className={theme.brush} fill="none" stroke="currentColor" strokeWidth="6" strokeLinecap="round" />
+                </svg>
               </span>
             </h1>
-            <p className={`${theme.rise} mt-6 max-w-lg text-base leading-relaxed text-white/70 sm:text-lg`} style={i(4)}>
+            <p className={`${theme.rise} mt-7 max-w-lg text-base leading-relaxed text-white/75 sm:text-lg`} style={i(4)}>
               ทำเนียบศูนย์ฝึกเยาวชนที่ได้รับใบอนุญาตจากสมาคมฯ ตามเกณฑ์ FIFA และ AFC — ค้นหาตามจังหวัด หรือดูตามระดับ Gold · Silver · Bronze
             </p>
-            <div className={`${theme.rise} mt-8 flex flex-wrap items-center gap-x-7 gap-y-4`} style={i(5)}>
-              <a href="#directory" className="group inline-flex h-13 items-center justify-center gap-2.5 rounded-xl bg-(--gold) px-7 text-sm font-bold text-(--night) shadow-[0_10px_30px_-10px_rgb(242_193_78/0.7)] transition-transform hover:-translate-y-0.5">
-                <Search className="h-4 w-4" />
+            <div className={`${theme.rise} mt-9 flex flex-wrap items-center gap-x-7 gap-y-4`} style={i(5)}>
+              <a href="#directory" className="group inline-flex h-14 items-center justify-center gap-2.5 rounded-xl bg-(--gold) px-8 text-base font-bold text-(--night) shadow-[0_14px_36px_-12px_rgb(242_193_78/0.75)] transition-transform hover:-translate-y-0.5">
+                <Search className="h-5 w-5" />
                 ค้นหาอคาเดมี
               </a>
               <Link href={applyHref} className={`${darkLink} inline-flex items-center gap-1.5 text-sm`}>
@@ -118,40 +132,7 @@ export default async function AcademiesPage({
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </div>
-
-            {/* จำนวนรวม + สัดส่วนตามระดับ */}
-            <div className={`${theme.rise} mt-12 max-w-lg`} style={i(6)}>
-              <p className="flex items-baseline gap-3">
-                <span className="text-5xl font-bold tabular-nums sm:text-6xl">
-                  <CountUp value={all.length.toLocaleString("en-US")} />
-                </span>
-                <span className="text-sm text-white/65">
-                  อคาเดมีที่ได้รับการรับรอง
-                  <br />
-                  ใน {provinces.length} จังหวัด
-                </span>
-              </p>
-              <div className="mt-5 flex h-2.5 gap-1 overflow-hidden rounded-full" role="img" aria-label="สัดส่วนอคาเดมีตามระดับ">
-                {LEVELS_DESC.map((l) => (
-                  <span key={l} className="h-full rounded-full" style={{ width: `${Math.max(3, (count(l) / Math.max(1, all.length)) * 100)}%`, background: metal(l) }} />
-                ))}
-              </div>
-              <dl className="mt-4 grid grid-cols-3 gap-3">
-                {LEVELS_DESC.map((l) => (
-                  <div key={l} className="flex items-center gap-2.5">
-                    <Medal level={l} size="sm" />
-                    <div className="flex flex-col-reverse">
-                      <dt className="text-[11px] text-white/55">{LEVEL_META[l].label}</dt>
-                      <dd className="text-xl font-bold tabular-nums">
-                        <CountUp value={count(l).toLocaleString("en-US")} />
-                      </dd>
-                    </div>
-                  </div>
-                ))}
-              </dl>
-            </div>
-
-            <div className={`${theme.rise} mt-8 flex flex-wrap gap-x-6 gap-y-2 text-sm`} style={i(7)}>
+            <div className={`${theme.rise} mt-7 flex flex-wrap gap-x-6 gap-y-2 text-sm`} style={i(6)}>
               <InfoDialog title="Academy Licensing คืออะไร" className={darkLink} label="เกี่ยวกับโครงการ">
                 <p className="text-sm leading-relaxed">
                   ระบบการออกใบอนุญาตรับรองมาตรฐานศูนย์ฝึกเยาวชนหรืออคาเดมีฟุตบอล (Youth Football Academy) ที่จัดทำโดยสมาคมกีฬาฟุตบอลแห่งประเทศไทย ในพระบรมราชูปถัมภ์ (FAT)
@@ -180,8 +161,42 @@ export default async function AcademiesPage({
             </div>
           </div>
           <div className={theme.rise} style={i(3)}>
+            <p className="mb-3 flex items-center justify-between text-xs text-white/55">
+              <span className={`${eyebrow} text-white/70`}>Academy map</span>
+              <span>แตะจังหวัดเพื่อดูรายชื่อ</span>
+            </p>
             <ThailandMap academies={all.map((a) => ({ id: a.id, nameEn: a.nameEn, nameTh: a.nameTh, province: a.province, level: a.level }))} />
           </div>
+        </div>
+
+        {/* แถบตัวเลขเต็มความกว้าง */}
+        <div className="border-t border-white/10 bg-(--night)/70">
+          <dl className="mx-auto grid max-w-7xl grid-cols-2 px-4 sm:px-6 lg:grid-cols-4">
+            <div className={`${theme.rise} flex flex-col-reverse gap-1 py-6 pr-4 lg:py-8`} style={i(7)}>
+              <dt className="text-sm text-white/60">
+                อคาเดมีที่ได้รับการรับรอง · {provinces.length} จังหวัด
+              </dt>
+              <dd className="text-5xl font-bold tabular-nums text-(--gold) sm:text-6xl">
+                <CountUp value={all.length.toLocaleString("en-US")} />
+              </dd>
+            </div>
+            {LEVELS_DESC.map((l, n) => (
+              <div key={l} className={`${theme.rise} flex items-center gap-4 border-white/10 py-6 lg:border-l lg:py-8 lg:pl-8 ${n === 0 ? "border-l pl-4" : ""} ${n > 0 ? "border-t lg:border-t-0" : ""} ${n === 2 ? "border-l pl-4" : ""}`} style={i(8 + n)}>
+                <Medal level={l} size="md" />
+                <div className="flex min-w-0 flex-1 flex-col-reverse">
+                  <dt className="text-xs text-white/55">
+                    FAT {LEVEL_META[l].label} · {LEVEL_META[l].th}
+                    <span className="mt-2 block h-1 overflow-hidden rounded-full bg-white/10">
+                      <span className="block h-full rounded-full" style={{ width: `${Math.max(4, (count(l) / Math.max(1, all.length)) * 100)}%`, background: metal(l) }} />
+                    </span>
+                  </dt>
+                  <dd className="text-3xl font-bold tabular-nums sm:text-4xl">
+                    <CountUp value={count(l).toLocaleString("en-US")} />
+                  </dd>
+                </div>
+              </div>
+            ))}
+          </dl>
         </div>
       </section>
 

@@ -18,14 +18,14 @@ const H = map.height;
 const PAD = 18;
 const TOP = 58;
 const BOTTOM = 52;
-// สีตามจำนวนอคาเดมีในจังหวัด: น้ำเงินสีเดียว อ่อน → เข้ม
-const ZERO = "#e6e8ee";
+// สีตามจำนวนอคาเดมีในจังหวัด (แผนที่พื้นกรมท่าเข้ม): ทองสีเดียว มืด → สว่าง
+const ZERO = "#1a2748";
 const BINS = [
-  { min: 1, label: "1", color: "#c3cee4" },
-  { min: 2, label: "2", color: "#8fa3cf" },
-  { min: 4, label: "4", color: "#5a76b5" },
-  { min: 7, label: "7", color: "#2c4a8f" },
-  { min: 15, label: "15+", color: "#0b1f44" },
+  { min: 1, label: "1", color: "#4d4630" },
+  { min: 2, label: "2", color: "#7d6a32" },
+  { min: 4, label: "4", color: "#ad8c35" },
+  { min: 7, label: "7", color: "#d9b043" },
+  { min: 15, label: "15+", color: "#ffdc6e" },
 ];
 function fillFor(n: number) {
   let color = ZERO;
@@ -101,7 +101,7 @@ export function ThailandMap({ academies }: { academies: MapAcademy[] }) {
   return (
     <div
       ref={wrapRef}
-      className={`relative mx-auto w-full max-w-md overflow-hidden rounded-lg border border-(--line) bg-white lg:max-w-[min(28rem,calc((100svh-10rem)*0.52))]`}
+      className={`relative mx-auto w-full max-w-md overflow-hidden rounded-2xl border border-white/10 bg-(--night-2) shadow-[0_40px_80px_-40px_rgb(0_0_0/0.9)] lg:max-w-[min(28rem,calc((100svh-10rem)*0.52))]`}
       onKeyDown={(e) => {
         if (e.key !== "Escape") return;
         if (showRank) setShowRank(false);
@@ -110,14 +110,14 @@ export function ThailandMap({ academies }: { academies: MapAcademy[] }) {
     >
       {/* แถบเครื่องมือ: กรองระดับ + ปุ่มอันดับจังหวัด */}
       <div className="absolute inset-x-3 top-3 z-20 flex items-center justify-between gap-2">
-        <div role="group" aria-label="กรองตามระดับ" className="flex overflow-hidden rounded-md border border-(--line) bg-white text-xs font-semibold">
+        <div role="group" aria-label="กรองตามระดับ" className="flex overflow-hidden rounded-lg border border-white/15 bg-white/[0.04] text-xs font-semibold">
           {(["ALL", ...LEVELS_DESC] as Filter[]).map((f) => (
             <button
               key={f}
               type="button"
               aria-pressed={filter === f}
               onClick={() => setFilter(f)}
-              className={`border-l border-(--line) px-3 py-1.5 transition-colors first:border-l-0 ${filter === f ? "bg-(--ink) text-white" : "text-(--ink-soft) hover:bg-(--paper)"}`}
+              className={`border-l border-white/10 px-3 py-1.5 transition-colors first:border-l-0 ${filter === f ? "bg-(--gold) text-(--night)" : "text-white/65 hover:bg-white/10 hover:text-white"}`}
             >
               {f === "ALL" ? "ทั้งหมด" : LEVEL_META[f].label}
             </button>
@@ -130,7 +130,7 @@ export function ThailandMap({ academies }: { academies: MapAcademy[] }) {
           title="อันดับจังหวัด"
           onClick={() => setShowRank((v) => !v)}
           className={`flex h-8 w-8 flex-none items-center justify-center rounded-md border transition-colors ${
-            showRank ? "border-(--ink) bg-(--ink) text-white" : "border-(--line) bg-white text-(--ink-soft) hover:bg-(--paper)"
+            showRank ? "border-(--gold) bg-(--gold) text-(--night)" : "border-white/15 bg-white/[0.04] text-white/65 hover:bg-white/10 hover:text-white"
           }`}
         >
           <ListOrdered className="h-4 w-4" />
@@ -158,8 +158,8 @@ export function ThailandMap({ academies }: { academies: MapAcademy[] }) {
                 data-code={p.code}
                 d={p.d}
                 fill={fillFor(n)}
-                stroke="#ffffff"
-                strokeWidth={0.7}
+                stroke="#0d1a38"
+                strokeWidth={0.8}
                 vectorEffect="non-scaling-stroke"
                 className={`${styles.province} ${n ? "" : styles.empty}`}
                 style={{ animationDelay: `${Math.round((p.cy / H) * 700 + (i % 7) * 20)}ms`, opacity: selected && selected !== p.code ? 0.35 : 1 }}
@@ -176,7 +176,7 @@ export function ThailandMap({ academies }: { academies: MapAcademy[] }) {
               />
             );
           })}
-          {hovered && hovered.code !== selected && <path d={hovered.d} fill="none" stroke="#0b1f44" strokeWidth={1.5} vectorEffect="non-scaling-stroke" pointerEvents="none" />}
+          {hovered && hovered.code !== selected && <path d={hovered.d} fill="none" stroke="#ffffff" strokeWidth={1.5} vectorEffect="non-scaling-stroke" pointerEvents="none" />}
           {sel && (
             <>
               <path d={sel.d} fill="none" stroke="#c8202f" strokeWidth={2} vectorEffect="non-scaling-stroke" pointerEvents="none" />
@@ -214,8 +214,8 @@ export function ThailandMap({ academies }: { academies: MapAcademy[] }) {
 
       {/* คำอธิบายสีใต้แผนที่ */}
       {!sel && (
-        <div aria-label="คำอธิบายสี: จำนวนอคาเดมีในจังหวัด" className="pointer-events-none absolute inset-x-4 bottom-3 z-10 flex items-end justify-between gap-3 text-[11px] text-(--ink-soft)">
-          <p className="pb-0.5 font-semibold text-(--ink)">อคาเดมีต่อจังหวัด</p>
+        <div aria-label="คำอธิบายสี: จำนวนอคาเดมีในจังหวัด" className="pointer-events-none absolute inset-x-4 bottom-3 z-10 flex items-end justify-between gap-3 text-[11px] text-white/55">
+          <p className="pb-0.5 font-semibold text-white/85">อคาเดมีต่อจังหวัด</p>
           <div className="flex">
             {[{ label: "0", color: ZERO }, ...BINS].map((b) => (
               <span key={b.label} className="flex w-7 flex-col items-center gap-0.5">

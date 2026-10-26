@@ -81,6 +81,18 @@
   }
 }
 
+/* เส้นพู่กันทองใต้หัวข้อ: ลากจากซ้ายไปขวาหลังหัวข้อขึ้นครบ */
+.brush {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: brush 900ms cubic-bezier(0.6, 0, 0.2, 1) 900ms forwards;
+}
+@keyframes brush {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
 /* ตราประทับรับรอง (สไลด์หน้าแรก): วงตัวอักษรหมุนช้าๆ */
 .seal {
   animation: seal-spin 36s linear infinite;
@@ -192,6 +204,10 @@
     transition: none;
     opacity: 1;
     transform: none;
+  }
+  .brush {
+    animation: none;
+    stroke-dashoffset: 0;
   }
   .rise,
   .seal,
