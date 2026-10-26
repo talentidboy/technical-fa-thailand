@@ -9,19 +9,12 @@ import { TrainingHeader } from "@/components/training/TrainingHeader";
 import { TacticsBoard } from "@/components/training/TacticsBoard";
 import { DataCentreLogo } from "@/components/SectionLogos";
 import styles from "@/components/training/training.module.css";
+import { AREA_INFO, areaColor } from "@/components/training/areas";
 import { ArrowRight, Plus, Settings } from "lucide-react";
 
 const t = trainingFont.className;
 const m = markerFont.className;
 const INK = "#111827";
-
-// หมวดของบทความ = แฟ้มเอกสารคนละสีปากกา (น้ำเงิน / แดง / เขียว) พร้อมคำอธิบายสั้น
-const AREA_INFO: Record<string, { th: string; text: string; color: string }> = {
-  THE_GAME: { th: "เกมการแข่งขัน", text: "หลักการเล่น การวิเคราะห์เกม และรูปแบบการเล่นในแต่ละช่วงของเกม", color: "#1d4ed8" },
-  PRACTICE: { th: "การฝึกซ้อม", text: "การออกแบบแบบฝึก การจัดการฝึกซ้อม และกิจกรรมที่เหมาะกับแต่ละช่วงวัย", color: "#dc2626" },
-  ENVIRONMENT: { th: "สภาพแวดล้อม", text: "บทบาทผู้ฝึกสอน บรรยากาศการเรียนรู้ และการดูแลผู้เล่นทั้งในและนอกสนาม", color: "#15803d" },
-};
-const areaColor = (area: string) => AREA_INFO[area]?.color ?? INK;
 
 function formatDate(date: Date) {
   return date.toLocaleDateString("th-TH", { year: "numeric", month: "short", day: "numeric", timeZone: "Asia/Bangkok" });

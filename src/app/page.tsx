@@ -3,22 +3,23 @@ import Image from "next/image";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
-import { showPublicly } from "@/lib/academy";
+import { ACADEMY_LEVELS, showPublicly, type AcademyLevel } from "@/lib/academy";
 import { loadAcademies } from "@/lib/academy-data";
-import { COVER_URL, PLAY_AND_LEARN_PASSPORT_URLS } from "@/lib/brand";
+import { COVER_URL } from "@/lib/brand";
 import { coreProgramSteps } from "@/lib/coach-program";
-import { GRASSROOTS_YEAR, grassrootsPlayers } from "@/lib/grassroots-data";
+import { ROUND_FINAL, matchWinnerId } from "@/lib/g15-stage";
 import { BrandLogo } from "@/components/BrandLogo";
 import { NewsSection } from "@/components/NewsSection";
 import { ProvinceMap, provinceName } from "@/components/ProvinceMap";
-import { levelTone } from "@/components/coach/CoachUi";
 import { HomeHeader } from "@/components/home/HomeHeader";
-import { DEPARTMENTS, departmentHref, type Department } from "@/components/home/departments";
+import { DEPARTMENTS, departmentHref } from "@/components/home/departments";
+import { AcademyShowcase, CoachShowcase, DataShowcase, G15Showcase, GrassrootsShowcase, PlayShowcase, TalentShowcase, type G15Board } from "@/components/home/DepartmentShowcases";
+import showcase from "@/components/home/showcase.module.css";
 import { CountUp } from "@/components/play-and-learn/CountUp";
 import { Reveal } from "@/components/g15/Reveal";
 import { display } from "@/components/fonts";
 import styles from "./home.module.css";
-import { ArrowRight, ArrowUpRight, CalendarClock, GraduationCap, IdCard, Lock, Mail, MapPin, ShieldCheck, Sparkles, Trophy } from "lucide-react";
+import { ArrowRight, ArrowUpRight, GraduationCap, IdCard, Lock, Mail, MapPin, ShieldCheck, Sparkles, Trophy } from "lucide-react";
 
 const h = display.className;
 const TZ = { timeZone: "Asia/Bangkok" } as const;
@@ -39,12 +40,20 @@ const CORE_LEVELS = ["G", "C", "B", "A", "PRO"];
 const COACH_BINS = [1, 10, 30, 75, 200];
 const COACH_COLORS = ["#c3cee4", "#8fa3cf", "#5a76b5", "#2c4a8f", "#0b1f44"];
 
-// การ์ดหมวดงานแบบ bento: ขนาดตามความสำคัญ
-const SPAN: Record<string, string> = {
-  coach: "lg:col-span-2 lg:row-span-2",
-  g15: "lg:col-span-2",
-  data: "lg:col-span-2",
+// สีเน้นของแต่ละหมวดในสารบัญ (สีเดียวกับจุดเน้นในแผงของหมวดนั้น)
+const ACCENT: Record<string, string> = {
+  coach: "#c99b3b",
+  g15: "#6a45c4",
+  academy: "#b0662b",
+  play: "#db2777",
+  grassroots: "#16a34a",
+  talent: "#eab308",
+  data: "#1d4ed8",
 };
+
+// นัด G15 ที่นาฬิกาเกมกำลังเดิน
+const LIVE_PHASES = ["FIRST_HALF", "HALF_TIME", "SECOND_HALF", "PENALTIES"];
+const TEAMS = { homeTeam: { select: { name: true, logoUrl: true, groupName: true } }, awayTeam: { select: { name: true, logoUrl: true, groupName: true } } };
 
 export default async function HomePage() {
   const user = await getCurrentUser();
@@ -52,7 +61,7 @@ export default async function HomePage() {
   const isStaff = user?.role === "ADMIN" || user?.role === "STAFF";
   const now = new Date();
 
-  const [announcements, events, coachTotal, licensedCoaches, academies, g15Teams, levelCounts, byProvince, sessions] = await Promise.all([
+  const [announcements, events, coachTotal, licensedCoaches, academies, g15Teams, levelCounts, byProvince, sessions, g15Live, g15Last, g15Next, g15Played, articles, articleAreas] = await Promise.all([
     prisma.announcement.findMany({ orderBy: { createdAt: "desc" }, take: 6 }),
     isStaff ? prisma.event.findMany({ where: { endDate: { gte: now } }, orderBy: { startDate: "asc" }, take: 6 }) : Promise.resolve([]),
     prisma.coach.count(),
@@ -72,11 +81,41 @@ export default async function HomePage() {
       orderBy: [{ startDate: { sort: "asc", nulls: "last" } }, { id: "asc" }],
       take: 4,
     }),
+    prisma.g15Match.findFirst({ where: { clockPhase: { in: LIVE_PHASES } }, include: TEAMS, orderBy: { matchDate: "desc" } }),
+    prisma.g15Match.findFirst({ where: { status: "FINISHED" }, include: TEAMS, orderBy: [{ matchDate: { sort: "desc", nulls: "last" } }, { id: "desc" }] }),
+    prisma.g15Match.findFirst({ where: { status: "SCHEDULED", matchDate: { gte: now } }, include: TEAMS, orderBy: { matchDate: "asc" } }),
+    prisma.g15Match.count({ where: { status: "FINISHED" } }),
+    prisma.trainingArticle.findMany({ select: { id: true, title: true, area: true, createdAt: true }, orderBy: { createdAt: "desc" }, take: 3 }),
+    prisma.trainingArticle.groupBy({ by: ["area"], _count: { _all: true } }),
   ]);
-  const academyCount = academies.filter((a) => showPublicly(a.active, a.state)).length;
+  const publicAcademies = academies.filter((a) => showPublicly(a.active, a.state));
+  const academyCount = publicAcademies.length;
+  const academyByLevel = Object.fromEntries(ACADEMY_LEVELS.map((lv) => [lv, publicAcademies.filter((a) => a.level === lv).length])) as Record<AcademyLevel, number>;
   const loggedIn = !!user;
-  const levels = CORE_LEVELS.map((level, i) => ({ level, n: levelCounts[i], step: coreProgramSteps.find((s) => s.level === level) }));
+  const levels = CORE_LEVELS.map((level, i) => ({ level, n: levelCounts[i], title: coreProgramSteps.find((s) => s.level === level)?.title }));
   const levelTotal = levelCounts.reduce((a, b) => a + b, 0);
+  const dept = Object.fromEntries(DEPARTMENTS.map((d) => [d.key, { href: departmentHref(d, loggedIn), locked: !d.public && !loggedIn }]));
+
+  // กระดานสกอร์ G15: กำลังแข่ง → แชมป์ (จบนัดชิงแล้ว) → นัดถัดไป → ผลล่าสุด
+  const featured = g15Live ?? (g15Last?.round === ROUND_FINAL ? g15Last : (g15Next ?? g15Last));
+  const g15Board: G15Board = featured
+    ? {
+        mode: featured === g15Live ? "live" : featured.status === "FINISHED" ? (featured.round === ROUND_FINAL ? "champion" : "result") : "next",
+        id: featured.id,
+        round: featured.round,
+        date: featured.matchDate,
+        home: featured.homeTeam,
+        away: featured.awayTeam,
+        homeScore: featured.homeScore,
+        awayScore: featured.awayScore,
+        homePenalty: featured.homePenalty,
+        awayPenalty: featured.awayPenalty,
+        champion: (() => {
+          const w = matchWinnerId(featured);
+          return w === featured.homeTeamId ? featured.homeTeam : w === featured.awayTeamId ? featured.awayTeam : null;
+        })(),
+      }
+    : { mode: "none" };
   const provinceValues = Object.fromEntries(byProvince.map((r) => [Number(r.provinceCode), r._count._all]));
   const mappedCoaches = byProvince.reduce((n, r) => n + r._count._all, 0);
   const topProvinces = byProvince
@@ -183,8 +222,8 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* ===== หมวดงาน ===== */}
-      <section id="departments" className="scroll-mt-20 px-4 pb-20 pt-24 sm:px-6">
+      {/* ===== หมวดงาน: สารบัญ 7 หมวด แล้วตามด้วยแผงแนะนำของแต่ละหมวดในสไตล์ของหมวดนั้นเอง ===== */}
+      <section id="departments" className="scroll-mt-20 px-4 pb-16 pt-24 sm:px-6">
         <span id="categories" className="sr-only" />
         <div className="mx-auto max-w-7xl">
           <Reveal className="flex flex-wrap items-end justify-between gap-4">
@@ -192,167 +231,69 @@ export default async function HomePage() {
               <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-amber-700">Departments</p>
               <h2 className={`${h} mt-2 text-4xl font-semibold text-[#073c5e] sm:text-5xl`}>ทุกงานเทคนิค ในที่เดียว</h2>
             </div>
-            <p className="max-w-md text-sm leading-relaxed text-slate-500">
-              {DEPARTMENTS.length} หมวดงานของฝ่ายเทคนิค — หมวดที่มีรูปกุญแจสำหรับเจ้าหน้าที่ ต้องเข้าสู่ระบบก่อนใช้งาน
-            </p>
+            <p className="max-w-md text-sm leading-relaxed text-slate-500">{DEPARTMENTS.length} หมวดงานของฝ่ายเทคนิค แต่ละหมวดมีโลกของตัวเอง — เลือกหมวดเพื่อเลื่อนไปดู หรือเลื่อนลงไปทีละหมวด</p>
           </Reveal>
-          <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:auto-rows-[17rem] lg:grid-cols-4">
-            {DEPARTMENTS.map((d, i) => (
-              <Reveal key={d.key} delay={i * 70} className={`h-full lg:min-h-0 ${d.key === "coach" ? "min-h-[24rem]" : "min-h-[17rem]"} ${SPAN[d.key] ?? ""}`}>
-                <DepartmentTile d={d} href={departmentHref(d, loggedIn)} locked={!d.public && !loggedIn} big={d.key === "coach"} extra={d.key === "academy" ? `${academyCount} อคาเดมีบนแผนที่` : undefined} />
-              </Reveal>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ===== เส้นทางพัฒนานักฟุตบอล ===== */}
-      <section className="bg-[#073c5e] px-4 py-20 text-white sm:px-6">
-        <div className="mx-auto max-w-7xl">
-          <Reveal className="flex flex-wrap items-end justify-between gap-4">
-            <div>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-amber-300">Player Pathway</p>
-              <h2 className={`${h} mt-2 text-4xl font-semibold sm:text-5xl`}>เส้นทางพัฒนานักฟุตบอล</h2>
-            </div>
-            <p className="max-w-md text-sm leading-relaxed text-white/70">
-              งานของฝ่ายเทคนิคครอบคลุมตั้งแต่เด็กที่เริ่มเตะฟุตบอลครั้งแรก การคัดกรองดาวรุ่น อคาเดมี จนถึงเวทีการแข่งขันเยาวชนระดับชาติ
-            </p>
-          </Reveal>
-          <ol className="mt-12 grid gap-px overflow-hidden rounded-xl bg-white/15 sm:grid-cols-2 lg:grid-cols-5">
-            {[
-              { href: "/play-and-learn", title: "Play and Learn", age: "5–8 ปี", desc: "ฟุตบอลสำหรับเด็กหญิง เรียนรู้ผ่านการเล่นกับ “กุ๋งกิ๋ง”", stat: String(PLAY_AND_LEARN_PASSPORT_URLS.length), statLabel: "บทในพาสปอร์ตแห่งการผจญภัย" },
-              { href: "/grassroots-football", title: "Grassroots", age: "6–15 ปี", desc: "ฟุตบอลรากหญ้า ปูพื้นฐานเยาวชนทั่วประเทศ", stat: grassrootsPlayers.total.toLocaleString("en-US"), statLabel: `นักฟุตบอลในโครงการปี ${GRASSROOTS_YEAR}` },
-              { href: "/talent-id", title: "Talent ID", age: "13–17 ปี", desc: "สืบค้นและคัดกรองนักฟุตบอลดาวรุ่นจากทุกภูมิภาค", stat: null, statLabel: "ข้อมูลสำหรับเจ้าหน้าที่" },
-              { href: "/academies", title: "Academy", age: "เยาวชน", desc: "อคาเดมีที่ผ่านมาตรฐาน FAT Bronze · Silver · Gold", stat: academyCount.toLocaleString("en-US"), statLabel: "อคาเดมีที่ได้รับการรับรอง" },
-              { href: "/g15-womens-series", title: "Competition", age: "U15", desc: "เวทีการแข่งขันฟุตบอลหญิงเยาวชน G15 Women's Series", stat: g15Teams.toLocaleString("en-US"), statLabel: "ทีมที่ร่วมการแข่งขัน" },
-            ].map((s, i) => (
-              <li key={s.title} className="bg-[#073c5e]">
-                <Reveal delay={i * 80} className="h-full">
-                  <Link href={s.href} className="group flex h-full flex-col p-6 transition-colors hover:bg-white/5">
-                    <span className="flex items-center justify-between text-xs text-white/50">
-                      <span className={`${h} tabular-nums`}>{String(i + 1).padStart(2, "0")}</span>
-                      <span>{s.age}</span>
-                    </span>
-                    <span className={`${h} mt-8 text-2xl font-semibold`}>{s.title}</span>
-                    <span className="mt-2 text-sm leading-relaxed text-white/65">{s.desc}</span>
-                    <span className="mt-auto pt-8">
-                      {s.stat && <span className={`${h} block text-4xl font-semibold text-amber-300`}>{s.stat}</span>}
-                      <span className="mt-1 flex items-center justify-between gap-2 text-xs text-white/55">
-                        {s.statLabel}
-                        <ArrowRight className="h-4 w-4 flex-none transition-transform group-hover:translate-x-1 group-hover:text-white" />
+          <ol className="mt-10 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
+            {DEPARTMENTS.map((d, i) => {
+              const mark = d.badge ?? d.logo;
+              return (
+                <li key={d.key}>
+                  <a href={`#dept-${d.key}`} className={`${showcase.indexItem} group flex h-full flex-col rounded-xl bg-white p-4 ring-1 ring-black/5 transition-shadow hover:shadow-lg`}>
+                    <span className="flex items-center justify-between">
+                      <span className="relative h-10 w-10 overflow-hidden rounded-lg ring-1 ring-black/5">
+                        {mark && <Image src={mark} alt="" fill sizes="40px" className="object-contain p-1" />}
+                      </span>
+                      <span className="flex items-center gap-1.5 text-xs text-slate-400">
+                        {dept[d.key].locked && <Lock className="h-3.5 w-3.5" aria-label="สำหรับเจ้าหน้าที่" />}
+                        <span className={`${h} tabular-nums`}>{String(i + 1).padStart(2, "0")}</span>
                       </span>
                     </span>
-                  </Link>
-                </Reveal>
-              </li>
-            ))}
-          </ol>
-          <p className="mt-6 flex items-center gap-3 text-sm text-white/60">
-            <span className="h-px w-10 bg-amber-300" />
-            ต่อยอดสู่ทีมชาติไทยชุดเยาวชนและชุดใหญ่
-          </p>
-        </div>
-      </section>
-
-      {/* ===== เส้นทางใบอนุญาตผู้ฝึกสอน + รุ่นที่เปิดรับสมัคร ===== */}
-      <section id="coach-education" className="scroll-mt-20 px-4 py-20 sm:px-6">
-        <div className="mx-auto max-w-7xl">
-          <Reveal>
-            <SectionHead eyebrow="Coach Education" title="เส้นทางใบอนุญาตผู้ฝึกสอน AFC" href="/courses" linkLabel="หลักสูตรทั้งหมด" />
-            <p className="mt-3 max-w-2xl text-sm text-slate-500">
-              ผู้ฝึกสอน {levelTotal.toLocaleString("en-US")} คนในฐานข้อมูล จำแนกตามใบอนุญาตระดับสูงสุดที่ได้รับ — เริ่มจากระดับพื้นฐาน G จนถึง PRO
-            </p>
-            {/* สัดส่วนผู้ฝึกสอนตามระดับ */}
-            <div className="mt-8 flex h-3 gap-0.5 overflow-hidden rounded-full" role="img" aria-label="สัดส่วนผู้ฝึกสอนตามระดับใบอนุญาตสูงสุด">
-              {levels.map((l) => (
-                <span key={l.level} className="h-full" style={{ width: `${Math.max(0.6, (l.n / Math.max(1, levelTotal)) * 100)}%`, background: levelTone(l.level).hex }} />
-              ))}
-            </div>
-          </Reveal>
-          <ol className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-            {levels.map((l, i) => (
-              <li key={l.level}>
-                <Reveal delay={i * 70} className="h-full">
-                  <div className="relative flex h-full flex-col overflow-hidden rounded-xl border border-slate-200 bg-white p-5">
-                    <span className="absolute inset-x-0 top-0 h-1" style={{ background: levelTone(l.level).hex }} />
-                    <div className="flex items-baseline justify-between gap-2">
-                      <span className={`${h} text-4xl font-semibold leading-none`} style={{ color: levelTone(l.level).hex }}>
-                        {l.level}
+                    <span className="mt-4 text-sm font-semibold leading-snug text-slate-800 group-hover:text-slate-950">{d.title}</span>
+                    <span className="mt-auto pt-4">
+                      <span className="block h-1 rounded-full bg-slate-100">
+                        <span className={`${showcase.indexLine} block h-full rounded-full`} style={{ background: ACCENT[d.key] }} />
                       </span>
-                      <span className="text-[11px] text-slate-400">ขั้นที่ {i + 1}</span>
-                    </div>
-                    <p className="mt-3 font-semibold leading-snug text-slate-900">{l.step?.title}</p>
-                    <p className="mt-1 text-xs text-slate-500">{l.step?.ageGroup}</p>
-                    {l.step && (
-                      <p className="mt-2 text-xs text-slate-500">
-                        {l.step.totalHours} ชม. · {l.step.days} วัน
-                      </p>
-                    )}
-                    <p className="mt-auto border-t border-slate-100 pt-4">
-                      <span className={`${h} block text-3xl font-semibold text-[#073c5e]`}>{l.n.toLocaleString("en-US")}</span>
-                      <span className="text-xs text-slate-500">ผู้ฝึกสอนที่ถือระดับนี้</span>
-                    </p>
-                  </div>
-                </Reveal>
-              </li>
-            ))}
+                    </span>
+                  </a>
+                </li>
+              );
+            })}
           </ol>
-
-          <Reveal className="mt-12 grid grid-cols-1 gap-8 rounded-xl border border-slate-200 bg-white p-6 sm:p-8 lg:grid-cols-[16rem_minmax(0,1fr)]">
-            <div>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-amber-700">Open Courses</p>
-              <h3 className={`${h} mt-2 text-2xl font-semibold text-[#073c5e]`}>เปิดรับสมัครอบรม</h3>
-              <p className="mt-2 text-sm text-slate-500">ยังไม่มีบัญชีก็สมัครได้ ระบบสร้างบัญชีผู้ฝึกสอนให้พร้อมใบสมัคร</p>
-            </div>
-            {sessions.length === 0 ? (
-              <div className="flex flex-col items-start justify-center gap-3 rounded-lg bg-[#f5f4f0] p-6 sm:flex-row sm:items-center sm:justify-between">
-                <span className="flex items-center gap-3">
-                  <CalendarClock className="h-8 w-8 flex-none text-slate-400" />
-                  <span>
-                    <span className="block text-sm font-medium text-slate-800">ยังไม่มีรุ่นที่เปิดรับสมัครในตอนนี้</span>
-                    <span className="block text-xs text-slate-500">ติดตามประกาศรุ่นใหม่ได้ที่หน้าหลักสูตรอบรมและข่าวประกาศ</span>
-                  </span>
-                </span>
-                <Link href="/coach-center" className="inline-flex flex-none items-center gap-1 text-sm font-semibold text-[#073c5e] underline decoration-slate-300 underline-offset-4 hover:decoration-[#073c5e]">
-                  ศูนย์อบรมผู้ฝึกสอน
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
-              </div>
-            ) : (
-              <ul className="divide-y divide-slate-100 border-y border-slate-100">
-                {sessions.map((s) => {
-                  const left = s.applicationDeadline ? Math.ceil((s.applicationDeadline.getTime() - now.getTime()) / 86_400_000) : null;
-                  return (
-                    <li key={s.id}>
-                      <Link href={`/apply/${s.id}`} className="group flex items-center gap-4 py-4 transition-colors hover:bg-[#f5f4f0] sm:px-3">
-                        <span className="flex h-14 w-14 flex-none flex-col items-center justify-center rounded-lg bg-[#073c5e] text-white">
-                          {s.startDate ? (
-                            <>
-                              <span className={`${h} text-xl font-semibold leading-none`}>{s.startDate.toLocaleDateString("th-TH", { ...TZ, day: "numeric" })}</span>
-                              <span className="text-[10px] uppercase">{s.startDate.toLocaleDateString("th-TH", { ...TZ, month: "short" })}</span>
-                            </>
-                          ) : (
-                            <GraduationCap className="h-6 w-6" />
-                          )}
-                        </span>
-                        <span className="min-w-0 flex-1">
-                          <span className="block truncate font-semibold text-slate-900">{s.course.title}</span>
-                          <span className="block truncate text-xs text-slate-500">
-                            {s.name}
-                            {s.venue && ` · ${s.venue}`}
-                          </span>
-                        </span>
-                        {left !== null && <span className={`flex-none rounded-full px-2.5 py-1 text-[11px] font-semibold ${left <= 7 ? "bg-red-50 text-red-700" : "bg-amber-50 text-amber-800"}`}>ปิดรับใน {left} วัน</span>}
-                        <ArrowRight className="h-4 w-4 flex-none text-slate-300 transition-transform group-hover:translate-x-0.5 group-hover:text-[#073c5e]" />
-                      </Link>
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
-          </Reveal>
         </div>
       </section>
+
+      <CoachShowcase
+        href={dept.coach.href}
+        locked={dept.coach.locked}
+        levels={levels}
+        total={levelTotal}
+        sessions={sessions.map((s) => ({
+          id: s.id,
+          course: s.course.title,
+          name: s.name,
+          venue: s.venue,
+          start: s.startDate,
+          daysLeft: s.applicationDeadline ? Math.ceil((s.applicationDeadline.getTime() - now.getTime()) / 86_400_000) : null,
+        }))}
+      />
+      <G15Showcase teams={g15Teams} played={g15Played} board={g15Board} />
+      <div className="mx-auto grid max-w-7xl gap-6 px-4 py-20 sm:px-6 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:py-24">
+        <Reveal className="h-full">
+          <AcademyShowcase total={academyCount} byLevel={academyByLevel} />
+        </Reveal>
+        <Reveal delay={120} className="h-full">
+          <PlayShowcase />
+        </Reveal>
+      </div>
+      <GrassrootsShowcase />
+      <div className="mx-auto grid max-w-7xl gap-6 px-4 py-20 sm:px-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:py-24">
+        <Reveal className="h-full">
+          <TalentShowcase href={dept.talent.href} locked={dept.talent.locked} />
+        </Reveal>
+        <Reveal delay={120} className="h-full">
+          <DataShowcase articles={articles} total={articleAreas.reduce((n, a) => n + a._count._all, 0)} byArea={Object.fromEntries(articleAreas.map((a) => [a.area, a._count._all]))} />
+        </Reveal>
+      </div>
 
       {/* ===== ผู้ฝึกสอนทั่วประเทศ ===== */}
       <section className="border-y border-slate-200 bg-white px-4 py-20 sm:px-6">
@@ -397,24 +338,6 @@ export default async function HomePage() {
 
       <NewsSection items={newsItems} />
 
-      {/* ===== ชวนผู้ฝึกสอน ===== */}
-      <section className="px-4 pb-20 sm:px-6">
-        <Reveal className="mx-auto flex max-w-7xl flex-col items-start justify-between gap-6 rounded-xl bg-amber-400 p-8 sm:p-12 lg:flex-row lg:items-center">
-          <div>
-            <h2 className={`${h} text-3xl font-semibold leading-tight text-[#073c5e] sm:text-4xl`}>เป็นผู้ฝึกสอนฟุตบอลมาตรฐาน AFC</h2>
-            <p className="mt-2 max-w-xl text-[#073c5e]/80">สมัครสมาชิกศูนย์อบรมผู้ฝึกสอน ยื่นสมัครหลักสูตร ติดตามใบอนุญาตและการต่ออายุได้ด้วยตัวเอง</p>
-          </div>
-          <div className="flex flex-wrap gap-3">
-            <Link href="/coach-center" className="rounded-full bg-[#073c5e] px-6 py-3.5 text-sm font-semibold text-white hover:bg-[#0a4a73]">
-              เข้าสู่ศูนย์อบรมผู้ฝึกสอน
-            </Link>
-            <Link href="/courses" className="rounded-full border border-[#073c5e]/30 px-6 py-3.5 text-sm font-semibold text-[#073c5e] hover:bg-[#073c5e]/5">
-              ดูหลักสูตร
-            </Link>
-          </div>
-        </Reveal>
-      </section>
-
       {/* ===== ท้ายเว็บ ===== */}
       <footer id="contact" className="bg-[#04223a] text-white/70">
         <div className="mx-auto grid max-w-7xl gap-10 px-4 py-16 sm:px-6 md:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1fr]">
@@ -453,78 +376,6 @@ export default async function HomePage() {
           <p className="mx-auto max-w-7xl px-4 py-6 text-xs text-white/45 sm:px-6">© {now.getFullYear()} FA Thailand Technical · สมาคมกีฬาฟุตบอลแห่งประเทศไทย ในพระบรมราชูปถัมภ์</p>
         </div>
       </footer>
-    </div>
-  );
-}
-
-// การ์ดหมวดงาน: ภาพอยู่ช่วงบน (ยืดเต็มพื้นที่ที่เหลือ) ไล่กลืนลงพื้นสีประจำหมวด · ตัวอักษรอยู่บนพื้นสีทึบเสมอ → อ่านง่ายทุกการ์ด และยังเห็นภาพชัด
-function DepartmentTile({ d, href, locked, big, extra }: { d: Department; href: string; locked: boolean; big?: boolean; extra?: string }) {
-  const Icon = d.icon;
-  return (
-    <Link href={href} style={{ "--tile": d.hex } as React.CSSProperties} className="group flex h-full flex-col overflow-hidden rounded-xl bg-(--tile) text-white">
-      <div className="relative min-h-24 flex-1 overflow-hidden">
-        {d.image ? (
-          <>
-            <Image
-              src={d.image}
-              alt=""
-              fill
-              sizes={big ? "(min-width: 1024px) 50vw, 100vw" : "(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"}
-              placeholder={typeof d.image === "string" ? "empty" : "blur"}
-              style={d.imagePosition ? { objectPosition: d.imagePosition } : undefined}
-              className="object-cover transition-transform duration-700 group-hover:scale-105"
-            />
-            <div className="absolute inset-x-0 bottom-0 h-16 bg-linear-to-t from-(--tile) to-transparent" />
-          </>
-        ) : (
-          <Icon className="absolute -right-6 -top-6 h-36 w-36 text-white/10 transition-transform duration-700 group-hover:-rotate-6 group-hover:scale-110" />
-        )}
-        <div className="absolute left-5 top-5 flex items-center gap-2">
-          {d.logo ? (
-            <span className={`flex h-11 items-center ${d.logoBoxed ? "rounded-lg bg-white px-3 shadow" : ""}`}>
-              <Image src={d.logo} alt="" className={`w-auto ${d.logoBoxed ? "h-6" : "h-11"}`} />
-            </span>
-          ) : d.badge ? (
-            <span className="relative h-11 w-11 overflow-hidden rounded-lg bg-white shadow">
-              <Image src={d.badge} alt="" fill sizes="44px" className="object-contain p-1.5" />
-            </span>
-          ) : (
-            <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-white shadow" style={{ color: d.hex }}>
-              <Icon className="h-5 w-5" />
-            </span>
-          )}
-        </div>
-        {locked && (
-          <span className="absolute right-4 top-4 inline-flex items-center gap-1 rounded-full bg-black/55 px-2.5 py-1 text-[11px] font-medium">
-            <Lock className="h-3 w-3" />
-            เจ้าหน้าที่
-          </span>
-        )}
-      </div>
-      <div className={`relative ${big ? "px-6 pb-6 pt-1 sm:px-7 sm:pb-7" : "px-5 pb-5 pt-1"}`}>
-        {extra && <p className="mb-1 text-xs font-semibold text-amber-300">{extra}</p>}
-        <h3 className={`${h} font-semibold leading-tight ${big ? "text-3xl sm:text-4xl" : "text-xl"}`}>{d.title}</h3>
-        <p className={`mt-1 text-white/80 ${big ? "max-w-md text-sm sm:text-base" : "line-clamp-2 text-[13px] leading-snug"}`}>{d.subtitle}</p>
-        <span className="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold text-white">
-          {locked ? (d.guestHref ? "เข้าสู่ระบบ / สมัครสมาชิก" : "เข้าสู่ระบบเพื่อใช้งาน") : "เข้าใช้งาน"}
-          <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-        </span>
-      </div>
-    </Link>
-  );
-}
-
-function SectionHead({ eyebrow, title, href, linkLabel }: { eyebrow: string; title: string; href: string; linkLabel: string }) {
-  return (
-    <div className="flex items-end justify-between gap-4">
-      <div>
-        <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-amber-700">{eyebrow}</p>
-        <h2 className={`${h} mt-2 text-3xl font-semibold text-[#073c5e]`}>{title}</h2>
-      </div>
-      <Link href={href} className="inline-flex flex-none items-center gap-1 text-sm font-semibold text-[#073c5e] hover:underline">
-        {linkLabel}
-        <ArrowRight className="h-4 w-4" />
-      </Link>
     </div>
   );
 }
