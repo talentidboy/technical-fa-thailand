@@ -12,9 +12,11 @@ import { BrandLogo } from "@/components/BrandLogo";
 import { NewsSection } from "@/components/NewsSection";
 import { ProvinceMap, provinceName } from "@/components/ProvinceMap";
 import { HomeHeader } from "@/components/home/HomeHeader";
-import { DEPARTMENTS, departmentHref } from "@/components/home/departments";
+import { DEPARTMENTS, departmentHref, type Department } from "@/components/home/departments";
 import { AcademyShowcase, CoachShowcase, DataShowcase, G15Showcase, GrassrootsShowcase, PlayShowcase, TalentShowcase, type G15Board } from "@/components/home/DepartmentShowcases";
-import showcase from "@/components/home/showcase.module.css";
+import { ShowcaseCarousel } from "@/components/home/ShowcaseCarousel";
+import tile from "@/components/home/showcase.module.css";
+import { GRASSROOTS_YEAR, grassrootsPlayers } from "@/lib/grassroots-data";
 import { CountUp } from "@/components/play-and-learn/CountUp";
 import { Reveal } from "@/components/g15/Reveal";
 import { display } from "@/components/fonts";
@@ -49,6 +51,13 @@ const ACCENT: Record<string, string> = {
   grassroots: "#16a34a",
   talent: "#eab308",
   data: "#1d4ed8",
+};
+
+// การ์ดหมวดงานแบบ bento: ขนาดตามความสำคัญ (4 คอลัมน์ × 3 แถว)
+const SPAN: Record<string, string> = {
+  coach: "lg:col-span-2 lg:row-span-2",
+  g15: "lg:col-span-2",
+  data: "lg:col-span-2",
 };
 
 // นัด G15 ที่นาฬิกาเกมกำลังเดิน
@@ -95,6 +104,18 @@ export default async function HomePage() {
   const levels = CORE_LEVELS.map((level, i) => ({ level, n: levelCounts[i], title: coreProgramSteps.find((s) => s.level === level)?.title }));
   const levelTotal = levelCounts.reduce((a, b) => a + b, 0);
   const dept = Object.fromEntries(DEPARTMENTS.map((d) => [d.key, { href: departmentHref(d, loggedIn), locked: !d.public && !loggedIn }]));
+
+  const articleTotal = articleAreas.reduce((n, a) => n + a._count._all, 0);
+  // ตัวเลขเด่นบนการ์ดหมวดงาน
+  const tileExtra: Record<string, string> = {
+    coach: `${coachTotal.toLocaleString("en-US")} ผู้ฝึกสอนในระบบ`,
+    g15: `${g15Teams} ทีม · ${g15Played} นัด`,
+    academy: `${academyCount} อคาเดมีที่ได้รับการรับรอง`,
+    play: "เด็กหญิงวัย 5–8 ปี",
+    grassroots: `${grassrootsPlayers.total.toLocaleString("en-US")} นักฟุตบอล ปี ${GRASSROOTS_YEAR}`,
+    talent: "สำหรับเจ้าหน้าที่",
+    data: articleTotal ? `${articleTotal} บทความ` : "The Game · Practice · Environment",
+  };
 
   // กระดานสกอร์ G15: กำลังแข่ง → แชมป์ (จบนัดชิงแล้ว) → นัดถัดไป → ผลล่าสุด
   const featured = g15Live ?? (g15Last?.round === ROUND_FINAL ? g15Last : (g15Next ?? g15Last));
@@ -222,8 +243,43 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* ===== หมวดงาน: สารบัญ 7 หมวด แล้วตามด้วยแผงแนะนำของแต่ละหมวดในสไตล์ของหมวดนั้นเอง ===== */}
-      <section id="departments" className="scroll-mt-20 px-4 pb-16 pt-24 sm:px-6">
+      {/* ===== สไลด์แนะนำหมวดงาน: เลื่อนเองทีละหมวด ===== */}
+      <div className="mt-16 sm:mt-20">
+        <ShowcaseCarousel
+          slides={[
+            {
+              key: "coach",
+              label: "ศูนย์อบรมผู้ฝึกสอน",
+              accent: ACCENT.coach,
+              node: (
+                <CoachShowcase
+                  href={dept.coach.href}
+                  locked={dept.coach.locked}
+                  levels={levels}
+                  total={levelTotal}
+                  sessions={sessions.map((s) => ({
+                    id: s.id,
+                    course: s.course.title,
+                    name: s.name,
+                    venue: s.venue,
+                    start: s.startDate,
+                    daysLeft: s.applicationDeadline ? Math.ceil((s.applicationDeadline.getTime() - now.getTime()) / 86_400_000) : null,
+                  }))}
+                />
+              ),
+            },
+            { key: "g15", label: "G15 Women's Series", accent: ACCENT.g15, node: <G15Showcase teams={g15Teams} played={g15Played} board={g15Board} /> },
+            { key: "academy", label: "Academy Licensing", accent: ACCENT.academy, node: <AcademyShowcase total={academyCount} byLevel={academyByLevel} /> },
+            { key: "play", label: "Play and Learn", accent: ACCENT.play, node: <PlayShowcase /> },
+            { key: "grassroots", label: "Grassroots Football", accent: ACCENT.grassroots, node: <GrassrootsShowcase /> },
+            { key: "talent", label: "Talent ID", accent: ACCENT.talent, node: <TalentShowcase href={dept.talent.href} locked={dept.talent.locked} /> },
+            { key: "data", label: "Data & Articles", accent: ACCENT.data, node: <DataShowcase articles={articles} total={articleTotal} byArea={Object.fromEntries(articleAreas.map((a) => [a.area, a._count._all]))} /> },
+          ]}
+        />
+      </div>
+
+      {/* ===== หมวดงาน: การ์ดภาพแบบ bento (ศูนย์อบรมใหญ่สุด) ===== */}
+      <section id="departments" className="scroll-mt-20 px-4 pb-20 pt-24 sm:px-6">
         <span id="categories" className="sr-only" />
         <div className="mx-auto max-w-7xl">
           <Reveal className="flex flex-wrap items-end justify-between gap-4">
@@ -231,69 +287,17 @@ export default async function HomePage() {
               <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-amber-700">Departments</p>
               <h2 className={`${h} mt-2 text-4xl font-semibold text-[#073c5e] sm:text-5xl`}>ทุกงานเทคนิค ในที่เดียว</h2>
             </div>
-            <p className="max-w-md text-sm leading-relaxed text-slate-500">{DEPARTMENTS.length} หมวดงานของฝ่ายเทคนิค แต่ละหมวดมีโลกของตัวเอง — เลือกหมวดเพื่อเลื่อนไปดู หรือเลื่อนลงไปทีละหมวด</p>
+            <p className="max-w-md text-sm leading-relaxed text-slate-500">{DEPARTMENTS.length} หมวดงานของฝ่ายเทคนิค — หมวดที่มีรูปกุญแจสำหรับเจ้าหน้าที่ ต้องเข้าสู่ระบบก่อนใช้งาน</p>
           </Reveal>
-          <ol className="mt-10 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
-            {DEPARTMENTS.map((d, i) => {
-              const mark = d.badge ?? d.logo;
-              return (
-                <li key={d.key}>
-                  <a href={`#dept-${d.key}`} className={`${showcase.indexItem} group flex h-full flex-col rounded-xl bg-white p-4 ring-1 ring-black/5 transition-shadow hover:shadow-lg`}>
-                    <span className="flex items-center justify-between">
-                      <span className="relative h-10 w-10 overflow-hidden rounded-lg ring-1 ring-black/5">
-                        {mark && <Image src={mark} alt="" fill sizes="40px" className="object-contain p-1" />}
-                      </span>
-                      <span className="flex items-center gap-1.5 text-xs text-slate-400">
-                        {dept[d.key].locked && <Lock className="h-3.5 w-3.5" aria-label="สำหรับเจ้าหน้าที่" />}
-                        <span className={`${h} tabular-nums`}>{String(i + 1).padStart(2, "0")}</span>
-                      </span>
-                    </span>
-                    <span className="mt-4 text-sm font-semibold leading-snug text-slate-800 group-hover:text-slate-950">{d.title}</span>
-                    <span className="mt-auto pt-4">
-                      <span className="block h-1 rounded-full bg-slate-100">
-                        <span className={`${showcase.indexLine} block h-full rounded-full`} style={{ background: ACCENT[d.key] }} />
-                      </span>
-                    </span>
-                  </a>
-                </li>
-              );
-            })}
-          </ol>
+          <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:auto-rows-[18.5rem] lg:grid-cols-4">
+            {DEPARTMENTS.map((d, i) => (
+              <Reveal key={d.key} delay={i * 70} className={`h-full lg:min-h-0 ${d.key === "coach" ? "min-h-[26rem]" : "min-h-[19rem]"} ${SPAN[d.key] ?? ""}`}>
+                <DepartmentTile d={d} n={i + 1} href={dept[d.key].href} locked={dept[d.key].locked} big={d.key === "coach"} extra={tileExtra[d.key]} />
+              </Reveal>
+            ))}
+          </div>
         </div>
       </section>
-
-      <CoachShowcase
-        href={dept.coach.href}
-        locked={dept.coach.locked}
-        levels={levels}
-        total={levelTotal}
-        sessions={sessions.map((s) => ({
-          id: s.id,
-          course: s.course.title,
-          name: s.name,
-          venue: s.venue,
-          start: s.startDate,
-          daysLeft: s.applicationDeadline ? Math.ceil((s.applicationDeadline.getTime() - now.getTime()) / 86_400_000) : null,
-        }))}
-      />
-      <G15Showcase teams={g15Teams} played={g15Played} board={g15Board} />
-      <div className="mx-auto grid max-w-7xl gap-6 px-4 py-20 sm:px-6 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:py-24">
-        <Reveal className="h-full">
-          <AcademyShowcase total={academyCount} byLevel={academyByLevel} />
-        </Reveal>
-        <Reveal delay={120} className="h-full">
-          <PlayShowcase />
-        </Reveal>
-      </div>
-      <GrassrootsShowcase />
-      <div className="mx-auto grid max-w-7xl gap-6 px-4 py-20 sm:px-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:py-24">
-        <Reveal className="h-full">
-          <TalentShowcase href={dept.talent.href} locked={dept.talent.locked} />
-        </Reveal>
-        <Reveal delay={120} className="h-full">
-          <DataShowcase articles={articles} total={articleAreas.reduce((n, a) => n + a._count._all, 0)} byArea={Object.fromEntries(articleAreas.map((a) => [a.area, a._count._all]))} />
-        </Reveal>
-      </div>
 
       {/* ===== ผู้ฝึกสอนทั่วประเทศ ===== */}
       <section className="border-y border-slate-200 bg-white px-4 py-20 sm:px-6">
@@ -377,6 +381,68 @@ export default async function HomePage() {
         </div>
       </footer>
     </div>
+  );
+}
+
+// การ์ดหมวดงาน: ภาพเต็มช่วงบนไล่กลืนลงพื้นสีประจำหมวด · โลโก้วางคร่อมรอยต่อ · ตัวอักษรอยู่บนพื้นสีทึบเสมอ (อ่านง่ายทุกการ์ด)
+// ชี้แล้ว: ภาพซูมช้าๆ · เส้นสีประจำหมวดยืดออก · ปุ่มลูกศรเติมสีและหมุนชี้ขึ้น
+function DepartmentTile({ d, n, href, locked, big, extra }: { d: Department; n: number; href: string; locked: boolean; big?: boolean; extra?: string }) {
+  const Icon = d.icon;
+  return (
+    <Link
+      href={href}
+      style={{ "--tile": d.hex, "--accent": ACCENT[d.key] } as React.CSSProperties}
+      className={`${tile.tile} group relative flex h-full flex-col overflow-hidden rounded-2xl bg-(--tile) text-white shadow-[0_24px_48px_-30px_rgb(0_0_0/0.7)] ring-1 ring-black/10 transition-transform duration-500 hover:-translate-y-1`}
+    >
+      <div className="relative min-h-28 flex-1 overflow-hidden">
+        {d.image ? (
+          <Image
+            src={d.image}
+            alt=""
+            fill
+            sizes={big ? "(min-width: 1024px) 50vw, 100vw" : "(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"}
+            placeholder={typeof d.image === "string" ? "empty" : "blur"}
+            style={d.imagePosition ? { objectPosition: d.imagePosition } : undefined}
+            className="object-cover transition-transform duration-[1200ms] ease-out group-hover:scale-110"
+          />
+        ) : (
+          <Icon className="absolute -right-6 -top-6 h-36 w-36 text-white/10" />
+        )}
+        <div className="absolute inset-0 bg-linear-to-t from-(--tile) via-transparent to-black/30" />
+        <span className={`${h} absolute left-4 top-4 rounded-md bg-black/55 px-2 py-0.5 text-xs font-semibold tabular-nums`}>{String(n).padStart(2, "0")}</span>
+        {locked && (
+          <span className="absolute right-4 top-4 inline-flex items-center gap-1 rounded-md bg-black/55 px-2 py-1 text-[11px] font-medium">
+            <Lock className="h-3 w-3" />
+            เจ้าหน้าที่
+          </span>
+        )}
+      </div>
+      <div className={`relative ${big ? "px-6 pb-6 sm:px-7 sm:pb-7" : "px-5 pb-5"}`}>
+        {/* โลโก้คร่อมรอยต่อภาพกับพื้นสี */}
+        <span className={`absolute -top-7 flex h-14 items-center justify-center rounded-xl bg-white px-2.5 shadow-lg ring-4 ring-(--tile) ${big ? "left-6 sm:left-7" : "left-5"}`}>
+          {d.logo ? (
+            <Image src={d.logo} alt="" className="h-8 w-auto" />
+          ) : d.badge ? (
+            <span className="relative h-10 w-10">
+              <Image src={d.badge} alt="" fill sizes="40px" className="object-contain" />
+            </span>
+          ) : (
+            <Icon className="h-6 w-6" style={{ color: d.hex }} />
+          )}
+        </span>
+        <div className="pt-10">
+          <span className={`${tile.tileBar} block h-1 rounded-full bg-(--accent)`} />
+          <h3 className={`${h} mt-3 font-semibold leading-tight ${big ? "text-3xl sm:text-4xl" : "text-xl"}`}>{d.title}</h3>
+          <p className={`mt-1 text-white/75 ${big ? "max-w-md text-sm sm:text-base" : "line-clamp-2 text-[13px] leading-snug"}`}>{d.subtitle}</p>
+          <div className="mt-4 flex items-center justify-between gap-3">
+            <span className="min-w-0 truncate text-xs font-semibold text-white/65">{locked ? (d.guestHref ? "เข้าสู่ระบบ / สมัครสมาชิก" : "เข้าสู่ระบบเพื่อใช้งาน") : extra}</span>
+            <span className={`${tile.tileGo} flex h-9 w-9 flex-none items-center justify-center rounded-full bg-white/10 ring-1 ring-white/25`}>
+              <ArrowRight className="h-4 w-4" />
+            </span>
+          </div>
+        </div>
+      </div>
+    </Link>
   );
 }
 

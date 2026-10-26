@@ -1,7 +1,7 @@
 /* แผงแนะนำหมวดงานบนหน้าแรก — แต่ละหมวดมีลูกเล่นของตัวเอง */
 
-/* ยังไม่เลื่อนมาถึง: หยุดอนิเมชันข้างในไว้ที่เฟรมแรก */
-.hold :global(*) {
+/* สไลด์ที่ยังไม่แสดง: หยุดอนิเมชันข้างในไว้ (ภาพวาดแทคติกจะเริ่มวาดตอนสไลด์นั้นขึ้นมา) */
+.slide:not(.slideOn) :global(*) {
   animation-play-state: paused !important;
 }
 
@@ -84,14 +84,55 @@
   transform: rotate(0deg) translateY(-3px);
 }
 
-/* ดัชนีหมวดงาน: เส้นสีประจำหมวดวิ่งเต็มเมื่อชี้ */
-.indexLine {
-  transform: scaleX(0.18);
-  transform-origin: left;
-  transition: transform 380ms cubic-bezier(0.2, 0.8, 0.2, 1);
+/* สไลด์หมวดงาน: ตัวจับเวลา 7 วินาที (แถบวิ่งเต็ม = เปลี่ยนสไลด์) */
+.progress {
+  width: 0;
+  animation: progress 7s linear forwards;
 }
-.indexItem:hover .indexLine {
-  transform: scaleX(1);
+@keyframes progress {
+  to {
+    width: 100%;
+  }
+}
+
+/* สไลด์ที่ไม่ได้แสดง: จางหายและซ่อนจากการคลิก · สไลด์ที่แสดง: จางเข้า + เลื่อนเข้ามาเล็กน้อย */
+.slide {
+  opacity: 0;
+  visibility: hidden;
+  transform: translateX(2rem);
+  transition:
+    opacity 500ms ease,
+    transform 700ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    visibility 0s 700ms;
+}
+.slideOn {
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+  transition:
+    opacity 700ms ease,
+    transform 700ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    visibility 0s;
+}
+
+/* การ์ดหมวดงาน: เส้นสีประจำหมวดยืดออก + ปุ่มลูกศรเติมสีเมื่อชี้ */
+.tileBar {
+  width: 2.5rem;
+  transition: width 380ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.tile:hover .tileBar {
+  width: 5rem;
+}
+.tileGo {
+  transition:
+    background-color 250ms ease,
+    color 250ms ease,
+    transform 250ms ease;
+}
+.tile:hover .tileGo {
+  background: var(--accent);
+  color: #fff;
+  transform: rotate(-45deg);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -104,6 +145,18 @@
   }
   .scan {
     display: none;
+  }
+  /* ไม่เลื่อนสไลด์เอง: แถบเต็มนิ่งๆ บอกสไลด์ปัจจุบัน */
+  .progress {
+    animation: none;
+    width: 100%;
+  }
+  .slide,
+  .slideOn,
+  .tileBar,
+  .tileGo {
+    transition: none;
+    transform: none;
   }
   .stamp,
   .stamp:hover,
