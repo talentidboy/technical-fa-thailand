@@ -7,9 +7,13 @@
 .province {
   cursor: pointer;
   outline: none;
+  transform-box: fill-box;
+  transform-origin: center;
   transition:
     opacity 300ms ease,
-    fill 400ms ease;
+    fill 400ms ease,
+    transform 250ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    filter 250ms ease;
   animation: reveal 700ms cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
 }
 .province:focus-visible {
@@ -18,6 +22,21 @@
 }
 .empty {
   cursor: default;
+}
+/* ชี้จังหวัดที่มีอคาเดมี: ยกขึ้นและสว่างขึ้น */
+.province:not(.empty):hover {
+  transform: translateY(-4px);
+  filter: brightness(1.35) drop-shadow(0 4px 3px rgb(0 0 0 / 0.6));
+}
+
+/* แผ่นแผนที่เอียงแบบสามมิติ · เลือกจังหวัดแล้ววางราบให้อ่านและกดง่าย */
+.tilt {
+  transform: perspective(1400px) rotateX(24deg) rotateZ(-2deg);
+  transform-origin: 50% 75%;
+  transition: transform 700ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.flat {
+  transform: none;
 }
 
 @keyframes reveal {
@@ -65,6 +84,9 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .tilt {
+    transform: none;
+  }
   .zoom,
   .province {
     transition: none;

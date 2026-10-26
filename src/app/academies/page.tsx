@@ -90,7 +90,7 @@ export default async function AcademiesPage({
         {/* เส้นทองแนวตั้งบางๆ แบ่งจังหวะภาพ */}
         <span aria-hidden className="absolute inset-y-0 left-[58%] -z-10 hidden w-px bg-linear-to-b from-transparent via-(--gold)/40 to-transparent lg:block" />
 
-        <div className="mx-auto grid max-w-7xl grid-cols-1 items-center gap-12 px-4 pb-12 pt-14 sm:px-6 lg:min-h-[calc(100svh-12rem)] lg:grid-cols-[minmax(0,1fr)_minmax(0,27rem)] lg:gap-20 lg:pt-16">
+        <div className="mx-auto grid max-w-7xl grid-cols-1 items-center gap-12 px-4 pb-12 pt-14 sm:px-6 lg:min-h-[calc(100svh-12rem)] lg:grid-cols-[minmax(0,1fr)_minmax(0,31rem)] lg:gap-16 lg:pt-16">
           <div>
             <div className={`${theme.rise} flex items-center gap-4`} style={i(0)}>
               <span className="flex -space-x-3">

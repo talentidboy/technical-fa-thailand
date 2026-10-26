@@ -3,7 +3,9 @@ import Image from "next/image";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
-import { showPublicly } from "@/lib/academy";
+import { ACADEMY_LEVELS, showPublicly, type AcademyLevel } from "@/lib/academy";
+import { coreProgramSteps } from "@/lib/coach-program";
+import { ROUND_FINAL, matchWinnerId } from "@/lib/g15-stage";
 import { loadAcademies } from "@/lib/academy-data";
 import { COVER_URL } from "@/lib/brand";
 import { GRASSROOTS_YEAR, grassrootsPlayers } from "@/lib/grassroots-data";
@@ -12,6 +14,8 @@ import { NewsSection } from "@/components/NewsSection";
 import { ProvinceMap, provinceName } from "@/components/ProvinceMap";
 import { HomeHeader } from "@/components/home/HomeHeader";
 import { DEPARTMENTS, departmentHref, type Department } from "@/components/home/departments";
+import { AcademyShowcase, CoachShowcase, DataShowcase, G15Showcase, GrassrootsShowcase, PlayShowcase, TalentShowcase, type G15Board } from "@/components/home/DepartmentShowcases";
+import { ShowcaseCarousel } from "@/components/home/ShowcaseCarousel";
 import tile from "@/components/home/showcase.module.css";
 import { CountUp } from "@/components/play-and-learn/CountUp";
 import { Reveal } from "@/components/g15/Reveal";
@@ -45,6 +49,13 @@ const SPAN: Record<string, string> = {
   data: "lg:col-span-2",
 };
 
+// ระดับใบอนุญาตหลักของ AFC (ต่ำ → สูง)
+const CORE_LEVELS = ["G", "C", "B", "A", "PRO"];
+// นัด G15 ที่นาฬิกาเกมกำลังเดิน
+const LIVE_PHASES = ["FIRST_HALF", "HALF_TIME", "SECOND_HALF", "PENALTIES"];
+const TEAM = { select: { name: true, logoUrl: true, groupName: true } };
+const TEAMS = { homeTeam: TEAM, awayTeam: TEAM };
+
 // ภาพฮีโร่: อาคารสมาคมเป็นฉากหลัก แล้วภาพแต่ละหมวดค่อยๆ จางเข้าทีละภาพ (วนรอบละ 8 ภาพ × 6 วินาที)
 const HERO_SLIDES = DEPARTMENTS.filter((d) => d.image);
 
@@ -54,7 +65,7 @@ export default async function HomePage() {
   const isStaff = user?.role === "ADMIN" || user?.role === "STAFF";
   const now = new Date();
 
-  const [announcements, events, coachTotal, licensedCoaches, academies, g15Teams, g15Played, byProvince, articleTotal] = await Promise.all([
+  const [announcements, events, coachTotal, licensedCoaches, academies, g15Teams, g15Played, byProvince, articleAreas, levelCounts, sessions, g15Live, g15Last, g15Next, articles] = await Promise.all([
     prisma.announcement.findMany({ orderBy: { createdAt: "desc" }, take: 6 }),
     isStaff ? prisma.event.findMany({ where: { endDate: { gte: now } }, orderBy: { startDate: "asc" }, take: 6 }) : Promise.resolve([]),
     prisma.coach.count(),
@@ -63,10 +74,47 @@ export default async function HomePage() {
     prisma.g15Team.count(),
     prisma.g15Match.count({ where: { status: "FINISHED" } }),
     prisma.coach.groupBy({ by: ["provinceCode"], where: { provinceCode: { not: null } }, _count: { _all: true } }),
-    prisma.trainingArticle.count(),
+    prisma.trainingArticle.groupBy({ by: ["area"], _count: { _all: true } }),
+    // ผู้ฝึกสอนตามระดับใบอนุญาตสูงสุด (มีระดับนี้ และไม่มีระดับที่สูงกว่า)
+    Promise.all(CORE_LEVELS.map((level, i) => prisma.coach.count({ where: { licenseRecords: { some: { licenseType: level }, none: { licenseType: { in: CORE_LEVELS.slice(i + 1) } } } } }))),
+    prisma.courseSession.findMany({
+      where: { status: "OPEN", OR: [{ applicationDeadline: null }, { applicationDeadline: { gte: now } }] },
+      include: { course: { select: { title: true } } },
+      orderBy: [{ startDate: { sort: "asc", nulls: "last" } }, { id: "asc" }],
+      take: 4,
+    }),
+    prisma.g15Match.findFirst({ where: { clockPhase: { in: LIVE_PHASES } }, include: TEAMS, orderBy: { matchDate: "desc" } }),
+    prisma.g15Match.findFirst({ where: { status: "FINISHED" }, include: TEAMS, orderBy: [{ matchDate: { sort: "desc", nulls: "last" } }, { id: "desc" }] }),
+    prisma.g15Match.findFirst({ where: { status: "SCHEDULED", matchDate: { gte: now } }, include: TEAMS, orderBy: { matchDate: "asc" } }),
+    prisma.trainingArticle.findMany({ select: { id: true, title: true, area: true, createdAt: true }, orderBy: { createdAt: "desc" }, take: 3 }),
   ]);
-  const academyCount = academies.filter((a) => showPublicly(a.active, a.state)).length;
+  const publicAcademies = academies.filter((a) => showPublicly(a.active, a.state));
+  const academyCount = publicAcademies.length;
+  const academyByLevel = Object.fromEntries(ACADEMY_LEVELS.map((lv) => [lv, publicAcademies.filter((a) => a.level === lv).length])) as Record<AcademyLevel, number>;
   const loggedIn = !!user;
+  const dept = Object.fromEntries(DEPARTMENTS.map((d) => [d.key, { href: departmentHref(d, loggedIn), locked: !d.public && !loggedIn }]));
+  const articleTotal = articleAreas.reduce((n, a) => n + a._count._all, 0);
+  const levels = CORE_LEVELS.map((level, i) => ({ level, n: levelCounts[i], title: coreProgramSteps.find((x) => x.level === level)?.title }));
+  const levelTotal = levelCounts.reduce((a, b) => a + b, 0);
+
+  // กระดานสกอร์ G15: กำลังแข่ง → แชมป์ (จบนัดชิงแล้ว) → นัดถัดไป → ผลล่าสุด
+  const featured = g15Live ?? (g15Last?.round === ROUND_FINAL ? g15Last : (g15Next ?? g15Last));
+  const winner = featured ? matchWinnerId(featured) : null;
+  const g15Board: G15Board = featured
+    ? {
+        mode: featured === g15Live ? "live" : featured.status === "FINISHED" ? (featured.round === ROUND_FINAL ? "champion" : "result") : "next",
+        id: featured.id,
+        round: featured.round,
+        date: featured.matchDate,
+        home: featured.homeTeam,
+        away: featured.awayTeam,
+        homeScore: featured.homeScore,
+        awayScore: featured.awayScore,
+        homePenalty: featured.homePenalty,
+        awayPenalty: featured.awayPenalty,
+        champion: winner === featured.homeTeamId ? featured.homeTeam : winner === featured.awayTeamId ? featured.awayTeam : null,
+      }
+    : { mode: "none" };
 
   // ตัวเลขเด่นบนการ์ดหมวดงาน
   const tileExtra: Record<string, string> = {
@@ -159,7 +207,7 @@ export default async function HomePage() {
         {/* ชื่อหมวดของภาพที่กำลังแสดง (จางเข้า-ออกพร้อมภาพ) */}
         <div aria-hidden className="absolute bottom-28 right-6 hidden text-right text-xs text-white/60 sm:block lg:right-10">
           {HERO_SLIDES.map((d, k) => (
-            <span key={d.key} className={`${styles.slide} absolute bottom-0 right-0 flex items-center gap-2 whitespace-nowrap`} style={{ animationDelay: `${(k + 1) * 6}s` }}>
+            <span key={d.key} className={`${styles.caption} absolute bottom-0 right-0 flex items-center gap-2 whitespace-nowrap`} style={{ animationDelay: `${(k + 1) * 6}s` }}>
               <span className="h-px w-6 bg-amber-300" />
               {d.title}
             </span>
@@ -185,6 +233,41 @@ export default async function HomePage() {
         </div>
       </section>
 
+      {/* ===== สไลด์แนะนำหมวดงาน: เลื่อนเองทีละหมวด ===== */}
+      <div className="mt-20 sm:mt-24">
+        <ShowcaseCarousel
+          slides={[
+            {
+              key: "coach",
+              label: "ศูนย์อบรมผู้ฝึกสอน",
+              accent: ACCENT.coach,
+              node: (
+                <CoachShowcase
+                  href={dept.coach.href}
+                  locked={dept.coach.locked}
+                  levels={levels}
+                  total={levelTotal}
+                  sessions={sessions.map((x) => ({
+                    id: x.id,
+                    course: x.course.title,
+                    name: x.name,
+                    venue: x.venue,
+                    start: x.startDate,
+                    daysLeft: x.applicationDeadline ? Math.ceil((x.applicationDeadline.getTime() - now.getTime()) / 86_400_000) : null,
+                  }))}
+                />
+              ),
+            },
+            { key: "g15", label: "G15 Women's Series", accent: ACCENT.g15, node: <G15Showcase teams={g15Teams} played={g15Played} board={g15Board} /> },
+            { key: "academy", label: "Academy Licensing", accent: ACCENT.academy, node: <AcademyShowcase total={academyCount} byLevel={academyByLevel} /> },
+            { key: "play", label: "Play and Learn", accent: ACCENT.play, node: <PlayShowcase /> },
+            { key: "grassroots", label: "Grassroots Football", accent: ACCENT.grassroots, node: <GrassrootsShowcase /> },
+            { key: "talent", label: "Talent ID", accent: ACCENT.talent, node: <TalentShowcase href={dept.talent.href} locked={dept.talent.locked} /> },
+            { key: "data", label: "Data & Articles", accent: ACCENT.data, node: <DataShowcase articles={articles} total={articleTotal} byArea={Object.fromEntries(articleAreas.map((a) => [a.area, a._count._all]))} /> },
+          ]}
+        />
+      </div>
+
       {/* ===== หมวดงาน: การ์ดภาพแบบ bento — ทางเข้าหมวดงานจุดเดียวบนหน้าแรก ===== */}
       <section id="departments" className="scroll-mt-20 px-4 pb-24 pt-24 sm:px-6 lg:pt-28">
         <span id="categories" className="sr-only" />
@@ -205,7 +288,7 @@ export default async function HomePage() {
           <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:auto-rows-[19rem] lg:grid-cols-4">
             {DEPARTMENTS.map((d, i) => (
               <Reveal key={d.key} delay={i * 70} className={`h-full lg:min-h-0 ${d.key === "coach" ? "min-h-[26rem]" : "min-h-[19rem]"} ${SPAN[d.key] ?? ""}`}>
-                <DepartmentTile d={d} n={i + 1} href={departmentHref(d, loggedIn)} locked={!d.public && !loggedIn} big={d.key === "coach"} extra={tileExtra[d.key]} />
+                <DepartmentTile d={d} n={i + 1} href={dept[d.key].href} locked={dept[d.key].locked} big={d.key === "coach"} extra={tileExtra[d.key]} />
               </Reveal>
             ))}
           </div>

@@ -37,6 +37,28 @@
   }
 }
 
+/* ชื่อหมวดของภาพ: จางเข้าหลังภาพเริ่ม และหายก่อนภาพถัดไปมา — ไม่ซ้อนกัน */
+.caption {
+  opacity: 0;
+  animation: caption 48s linear infinite backwards;
+}
+@keyframes caption {
+  0%,
+  2% {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  4%,
+  10.5% {
+    opacity: 1;
+    transform: none;
+  }
+  12%,
+  100% {
+    opacity: 0;
+  }
+}
+
 /* ข้อความในฮีโร่เลื่อนขึ้นทีละบรรทัดตอนเปิดหน้า */
 .rise {
   animation: rise 900ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
@@ -65,7 +87,8 @@
   .rise {
     animation: none;
   }
-  .slide {
+  .slide,
+  .caption {
     display: none;
   }
   .brush {

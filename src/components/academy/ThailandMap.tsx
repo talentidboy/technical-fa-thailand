@@ -32,6 +32,8 @@ function fillFor(n: number) {
   for (const b of BINS) if (n >= b.min) color = b.color;
   return color;
 }
+// โครงประเทศทั้งผืน (ใช้วาดความหนาใต้แผนที่ให้ดูเป็นสามมิติ)
+const OUTLINE = map.provinces.map((p) => p.d).join(" ");
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
 const LEVELS_DESC = [...ACADEMY_LEVELS].reverse();
 
@@ -101,7 +103,7 @@ export function ThailandMap({ academies }: { academies: MapAcademy[] }) {
   return (
     <div
       ref={wrapRef}
-      className={`relative mx-auto w-full max-w-md overflow-hidden rounded-2xl border border-white/10 bg-(--night-2) shadow-[0_40px_80px_-40px_rgb(0_0_0/0.9)] lg:max-w-[min(28rem,calc((100svh-10rem)*0.52))]`}
+      className="relative mx-auto w-full max-w-md lg:max-w-[min(30rem,calc((100svh-9rem)*0.56))]"
       onKeyDown={(e) => {
         if (e.key !== "Escape") return;
         if (showRank) setShowRank(false);
@@ -137,6 +139,9 @@ export function ThailandMap({ academies }: { academies: MapAcademy[] }) {
         </button>
       </div>
 
+      {/* เงาพื้นใต้แผนที่ */}
+      <span aria-hidden className="pointer-events-none absolute inset-x-[8%] bottom-[4%] h-[14%] rounded-[50%] bg-[radial-gradient(closest-side,rgb(0_0_0/0.6),transparent)]" />
+      <div className={`${styles.tilt} ${sel ? styles.flat : ""}`}>
       <svg
         ref={svgRef}
         viewBox={`${-PAD} ${-TOP} ${W + PAD * 2} ${H + TOP + BOTTOM}`}
@@ -150,6 +155,9 @@ export function ThailandMap({ academies }: { academies: MapAcademy[] }) {
         }}
       >
         <g className={styles.zoom} style={{ transform: `translate(${view.tx}px, ${view.ty}px) scale(${view.s})` }}>
+          {/* ความหนาของแผ่นแผนที่: เงาเข้มสองชั้นเลื่อนลงด้านล่าง */}
+          <path d={OUTLINE} fill="#000308" transform="translate(0 9)" pointerEvents="none" />
+          <path d={OUTLINE} fill="#0b1733" stroke="#0b1733" strokeWidth={1.5} transform="translate(0 4.5)" pointerEvents="none" />
           {map.provinces.map((p, i) => {
             const n = countOf(p.th);
             return (
@@ -186,6 +194,7 @@ export function ThailandMap({ academies }: { academies: MapAcademy[] }) {
           )}
         </g>
       </svg>
+      </div>
 
       {/* ป้ายตอนชี้จังหวัด */}
       {hovered && hover && (
