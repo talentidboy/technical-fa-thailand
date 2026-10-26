@@ -1,121 +1,4 @@
-/* แผงแนะนำหมวดงานบนหน้าแรก — แต่ละหมวดมีลูกเล่นของตัวเอง */
-
-/* สไลด์ที่ยังไม่แสดง: หยุดอนิเมชันข้างในไว้ (ภาพวาดแทคติกจะเริ่มวาดตอนสไลด์นั้นขึ้นมา) */
-.slide:not(.slideOn) :global(*) {
-  animation-play-state: paused !important;
-}
-
-/* Talent ID: เส้นสแกนของกล้องแมวมองเลื่อนลงซ้ำๆ */
-.scan {
-  animation: scan 4.5s cubic-bezier(0.45, 0, 0.55, 1) infinite;
-}
-@keyframes scan {
-  0% {
-    top: 6%;
-    opacity: 0;
-  }
-  10%,
-  90% {
-    opacity: 1;
-  }
-  100% {
-    top: 94%;
-    opacity: 0;
-  }
-}
-
-/* Talent ID: ไฟ REC กะพริบ */
-.blink {
-  animation: blink 1.4s steps(2, start) infinite;
-}
-@keyframes blink {
-  to {
-    visibility: hidden;
-  }
-}
-
-/* G15: จุด LIVE เต้น */
-.pulse {
-  animation: pulse 1.6s ease-out infinite;
-}
-@keyframes pulse {
-  0% {
-    box-shadow: 0 0 0 0 rgb(248 113 113 / 0.7);
-  }
-  100% {
-    box-shadow: 0 0 0 10px rgb(248 113 113 / 0);
-  }
-}
-
-/* G15: ถ้วยแชมป์ลอยขึ้นลงช้าๆ */
-.float {
-  animation: float 5s ease-in-out infinite;
-}
-@keyframes float {
-  50% {
-    transform: translateY(-8px);
-  }
-}
-
-/* Play and Learn: ตราประทับพาสปอร์ตเด้งเมื่อชี้ */
-.stamp {
-  transition: transform 260ms cubic-bezier(0.2, 0.8, 0.2, 1.4);
-}
-.stamp:hover {
-  transform: rotate(0deg) scale(1.12);
-}
-
-/* Play and Learn: กุ๋งกิ๋งเตะบอล โยกเบาๆ */
-.sway {
-  transform-origin: 50% 100%;
-  animation: sway 4s ease-in-out infinite;
-}
-@keyframes sway {
-  50% {
-    transform: rotate(-3deg);
-  }
-}
-
-/* ศูนย์ข้อมูล: กระดาษโน้ตเอียงตรงเมื่อชี้ */
-.note {
-  transition: transform 260ms cubic-bezier(0.2, 0.8, 0.2, 1);
-}
-.note:hover {
-  transform: rotate(0deg) translateY(-3px);
-}
-
-/* สไลด์หมวดงาน: ตัวจับเวลา 7 วินาที (แถบวิ่งเต็ม = เปลี่ยนสไลด์) */
-.progress {
-  width: 0;
-  animation: progress 7s linear forwards;
-}
-@keyframes progress {
-  to {
-    width: 100%;
-  }
-}
-
-/* สไลด์ที่ไม่ได้แสดง: จางหายและซ่อนจากการคลิก · สไลด์ที่แสดง: จางเข้า + เลื่อนเข้ามาเล็กน้อย */
-.slide {
-  opacity: 0;
-  visibility: hidden;
-  transform: translateX(2rem);
-  transition:
-    opacity 500ms ease,
-    transform 700ms cubic-bezier(0.2, 0.8, 0.2, 1),
-    visibility 0s 700ms;
-}
-.slideOn {
-  opacity: 1;
-  visibility: visible;
-  transform: none;
-  transition:
-    opacity 700ms ease,
-    transform 700ms cubic-bezier(0.2, 0.8, 0.2, 1),
-    visibility 0s;
-}
-
-/* การ์ดหมวดงาน: เส้นสีประจำหมวดยืดออก + ปุ่มลูกศรเติมสีเมื่อชี้ */
+/* การ์ดหมวดงานบนหน้าแรก: เส้นสีประจำหมวดยืดออก + ปุ่มลูกศรเติมสีและหมุนชี้ขึ้นเมื่อชี้ */
 .tileBar {
   width: 2.5rem;
   transition: width 380ms cubic-bezier(0.2, 0.8, 0.2, 1);
@@ -131,37 +14,16 @@
 }
 .tile:hover .tileGo {
   background: var(--accent);
-  color: #fff;
+  color: #04223a;
   transform: rotate(-45deg);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .scan,
-  .blink,
-  .pulse,
-  .float,
-  .sway {
-    animation: none;
-  }
-  .scan {
-    display: none;
-  }
-  /* ไม่เลื่อนสไลด์เอง: แถบเต็มนิ่งๆ บอกสไลด์ปัจจุบัน */
-  .progress {
-    animation: none;
-    width: 100%;
-  }
-  .slide,
-  .slideOn,
   .tileBar,
   .tileGo {
     transition: none;
-    transform: none;
   }
-  .stamp,
-  .stamp:hover,
-  .note,
-  .note:hover {
-    transition: none;
+  .tile:hover .tileGo {
+    transform: none;
   }
 }

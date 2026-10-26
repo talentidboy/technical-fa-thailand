@@ -12,7 +12,32 @@
   }
 }
 
-/* ข้อความฮีโร่เลื่อนขึ้นทีละบรรทัดตอนเปิดหน้า */
+/* ภาพหมวดงานในฮีโร่: จางเข้าทีละภาพแล้วซูมช้าๆ — รอบละ 48 วินาที (8 ช่วง × 6 วินาที; ช่วงแรกเป็นภาพอาคารสมาคม) */
+.slide {
+  opacity: 0;
+  animation: slide 48s linear infinite backwards;
+}
+@keyframes slide {
+  0% {
+    opacity: 0;
+    transform: scale(1.08);
+  }
+  3% {
+    opacity: 1;
+  }
+  13% {
+    opacity: 1;
+  }
+  16% {
+    opacity: 0;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* ข้อความในฮีโร่เลื่อนขึ้นทีละบรรทัดตอนเปิดหน้า */
 .rise {
   animation: rise 900ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
@@ -35,49 +60,13 @@
   }
 }
 
-/* ภาพหมวดงานสองแถว: ซ้ายเลื่อนขึ้น ขวาเลื่อนลง วนไม่สิ้นสุด · ขอบบน/ล่างจางหาย · ชี้แล้วหยุด */
-.reel {
-  overflow: hidden;
-  mask-image: linear-gradient(180deg, transparent, #000 12%, #000 88%, transparent);
-}
-.up,
-.down {
-  animation: reel-up 48s linear infinite;
-}
-.down {
-  animation-direction: reverse;
-}
-.reel:hover .up,
-.reel:hover .down {
-  animation-play-state: paused;
-}
-@keyframes reel-up {
-  to {
-    transform: translateY(calc(-50% - 0.5rem));
-  }
-}
-
-/* มือถือ: แถวเดียวเลื่อนแนวนอน */
-.reelX {
-  overflow: hidden;
-  mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
-}
-.across {
-  animation: across 40s linear infinite;
-}
-@keyframes across {
-  to {
-    transform: translateX(calc(-50% - 0.375rem));
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
   .kenburns,
-  .rise,
-  .up,
-  .down,
-  .across {
+  .rise {
     animation: none;
+  }
+  .slide {
+    display: none;
   }
   .brush {
     animation: none;

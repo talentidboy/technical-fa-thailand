@@ -93,16 +93,6 @@
   }
 }
 
-/* ตราประทับรับรอง (สไลด์หน้าแรก): วงตัวอักษรหมุนช้าๆ */
-.seal {
-  animation: seal-spin 36s linear infinite;
-}
-@keyframes seal-spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
 /* ภาพพื้นหลังฮีโร่ค่อยๆ ซูมออก */
 .kenburns {
   animation: kenburns 24s ease-out both;
@@ -210,7 +200,6 @@
     stroke-dashoffset: 0;
   }
   .rise,
-  .seal,
   .kenburns,
   .track,
   .shine::after {
