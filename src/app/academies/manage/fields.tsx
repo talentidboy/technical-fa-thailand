@@ -1,6 +1,7 @@
 import type { Academy, AcademyLicence } from "@/generated/prisma/client";
 import { ACADEMY_LEVELS, LEVEL_META, bangkokDay } from "@/lib/academy";
 import { input } from "@/components/academy/ManageUi";
+import { AcademyCrest } from "@/components/academy/AcademyCrest";
 
 // ช่องกรอกที่ใช้ร่วมกันระหว่างฟอร์มเพิ่ม/แก้ไขอคาเดมีและใบอนุญาต
 
@@ -54,6 +55,20 @@ export function AcademyFields({ academy, provinces }: { academy?: Academy; provi
       <Text label="เบอร์โทรศัพท์" name="phone" type="tel" defaultValue={academy?.phone} />
       <Text label="อีเมล" name="email" type="email" defaultValue={academy?.email} />
       <Text label="เว็บไซต์ / เพจ" name="website" type="url" defaultValue={academy?.website} placeholder="https://..." />
+      {/* โลโก้: แสดงบนทำเนียบ แถบโลโก้ และหน้าโปรไฟล์สาธารณะ */}
+      <div className="flex flex-wrap items-center gap-4 rounded-xl bg-slate-50 p-4 sm:col-span-2">
+        <AcademyCrest name={academy?.nameEn ?? "?"} logoUrl={academy?.logoUrl ?? null} level={null} />
+        <label className="flex min-w-0 flex-1 flex-col gap-1.5">
+          <span className="text-sm font-medium text-slate-700">โลโก้อคาเดมี (JPG / PNG / WEBP ไม่เกิน 4MB · พื้นโปร่งใสหรือพื้นขาวดูดีที่สุด)</span>
+          <input name="logo" type="file" accept="image/jpeg,image/png,image/webp" className={`${inputClass} file:mr-3 file:rounded-md file:border-0 file:bg-indigo-600 file:px-3 file:py-1 file:text-xs file:font-semibold file:text-white`} />
+        </label>
+        {academy?.logoUrl && (
+          <label className="flex items-center gap-2 text-sm text-slate-600">
+            <input type="checkbox" name="removeLogo" className="h-4 w-4 rounded border-slate-300" />
+            ลบโลโก้
+          </label>
+        )}
+      </div>
       <label className="flex flex-col gap-1.5 sm:col-span-2">
         <span className="text-sm font-medium text-slate-700">หมายเหตุ (ภายใน)</span>
         <textarea name="note" rows={2} defaultValue={academy?.note ?? ""} className={inputClass} />

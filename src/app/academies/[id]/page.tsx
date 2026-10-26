@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
@@ -6,12 +7,14 @@ import { getAcademyUser, getCurrentUser } from "@/lib/auth";
 import { parseId } from "@/lib/route-id";
 import { LEVEL_META, LICENCE_STATUS, currentLicence, isLevel, licenceState, showPublicly, thaiDate, tierLabel, levelRank } from "@/lib/academy";
 import { LEVEL_SUMMARY } from "@/lib/academy-criteria";
+import { academyBg } from "@/lib/section-images";
 import { StateChip } from "@/components/academy/AcademyUi";
 import { PublicFooter, PublicHeader } from "@/components/academy/PublicChrome";
-import { Medal } from "@/components/academy/Medal";
-import { BrandLogo } from "@/components/BrandLogo";
+import { MEDAL, Medal } from "@/components/academy/Medal";
+import { AcademyCrest } from "@/components/academy/AcademyCrest";
+import { InView } from "@/components/academy/InView";
 import { AcademyLogo } from "@/components/SectionLogos";
-import { academySerif } from "@/components/typefaces/academy";
+import { academyFont } from "@/components/typefaces/academy";
 import theme from "@/components/academy/public.module.css";
 import { ArrowLeft, ArrowRight, Building2, Globe, MapPin } from "lucide-react";
 
@@ -26,7 +29,9 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   return { title: academy ? `${academy.nameEn} — Academy Licensing | FA Thailand` : "ไม่พบอคาเดมี" };
 }
 
-// หน้าโปรไฟล์อคาเดมี (สาธารณะ) ในรูปแบบใบรับรอง — ใช้ตรวจสอบว่าได้รับการรับรองระดับใด มีผลถึงเมื่อไร · ไม่แสดงข้อมูลติดต่อส่วนบุคคล
+const i = (n: number) => ({ "--i": n }) as React.CSSProperties;
+
+// หน้าโปรไฟล์อคาเดมี (สาธารณะ): ตรา/โลโก้ + บัตรใบอนุญาตดิจิทัล + ประวัติการรับรอง · ไม่แสดงข้อมูลติดต่อส่วนบุคคล
 export default async function AcademyProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const [academy, user, academyUser] = await Promise.all([load((await params).id), getCurrentUser(), getAcademyUser()]);
   const now = new Date();
@@ -39,60 +44,39 @@ export default async function AcademyProfilePage({ params }: { params: Promise<{
   const history = [...academy.licences]
     .filter((l) => l.status !== "REVOKED")
     .sort((a, b) => (b.approvedAt?.getTime() ?? 0) - (a.approvedAt?.getTime() ?? 0) || levelRank(b.level) - levelRank(a.level) || b.id - a.id);
-  const s = academySerif.className;
-  const metal = level ? LEVEL_META[level].hex : "#cbd5e1";
+  const metal = level ? `linear-gradient(125deg, ${MEDAL[level].ribbon}, ${MEDAL[level].face} 40%, ${MEDAL[level].ring} 65%, ${MEDAL[level].face})` : "linear-gradient(125deg, #334155, #64748b)";
+  const ink = level === "SILVER" ? "#0a1630" : "#fff";
 
   return (
-    <div className={`${theme.theme} min-h-screen overflow-x-clip`}>
+    <div className={`${theme.theme} ${academyFont.className} min-h-screen overflow-x-clip`}>
       <PublicHeader viewer={viewer} manageHref={`/academies/manage/${academy.id}`} />
 
-      <main className="mx-auto max-w-4xl px-4 py-10 sm:px-6">
-        <Link href="/academies#directory" className="inline-flex items-center gap-1 text-sm text-(--ink-soft) hover:text-(--ink)">
-          <ArrowLeft className="h-4 w-4" />
-          ทำเนียบอคาเดมี
-        </Link>
-
-        {/* ===== ใบรับรอง ===== */}
-        <section className="mt-5 bg-white p-2 shadow-[0_30px_60px_-35px_rgb(11_31_68/0.45)] sm:p-3">
-          <div className="border-2 p-1" style={{ borderColor: metal }}>
-            <div className="relative border px-6 py-10 text-center sm:px-12 sm:py-12" style={{ borderColor: metal }}>
-              <div className="flex items-center justify-center gap-3">
-                <BrandLogo tone="navy" className="h-10" />
-                <span className="h-8 w-px bg-(--line)" />
-                <AcademyLogo className="h-10" />
+      <main>
+        {/* ===== ฮีโร่: ตรา + ชื่อ + บัตรใบอนุญาต ===== */}
+        <section className="relative isolate overflow-hidden bg-(--night) text-white">
+          <Image src={academyBg} alt="" fill priority placeholder="blur" sizes="100vw" className={`${theme.kenburns} -z-20 object-cover opacity-20`} />
+          <div className="absolute inset-0 -z-10 bg-linear-to-b from-(--night)/70 to-(--night)" />
+          <div className="mx-auto grid max-w-6xl gap-12 px-4 pb-16 pt-8 sm:px-6 lg:grid-cols-[minmax(0,1fr)_25rem] lg:items-center lg:pb-20">
+            <div className="lg:col-span-2">
+              <Link href="/academies#directory" className="inline-flex items-center gap-1.5 text-sm text-white/60 transition-colors hover:text-white">
+                <ArrowLeft className="h-4 w-4" />
+                ทำเนียบอคาเดมี
+              </Link>
+            </div>
+            <div>
+              <div className={theme.rise} style={i(0)}>
+                <AcademyCrest name={academy.nameEn} logoUrl={academy.logoUrl} level={level} size="lg" className="shadow-[0_20px_50px_-20px_rgb(0_0_0/0.8)]" />
               </div>
-              <p className="mt-8 text-[11px] font-semibold uppercase tracking-[0.3em] text-(--ink-soft)">Certificate of Academy Licensing</p>
-              <p className="mt-2 text-sm text-(--ink-soft)">สมาคมกีฬาฟุตบอลแห่งประเทศไทย ในพระบรมราชูปถัมภ์ รับรองว่า</p>
-
-              <h1 className={`${s} mt-6 text-3xl font-bold leading-tight text-(--ink) sm:text-5xl`}>{academy.nameEn}</h1>
-              {academy.nameTh && <p className={`${s} mt-2 text-lg text-(--ink-soft)`}>{academy.nameTh}</p>}
-
-              <div className="mt-8 flex flex-col items-center">
-                <Medal level={level} size="lg" />
-                <p className={`${s} mt-12 text-2xl font-bold`} style={{ color: level ? metal : "#64748b" }}>
-                  {level ? `FAT ${LEVEL_META[level].label} Level Academy` : "รอประกาศระดับ"}
+              <h1 className={`${theme.rise} mt-7 text-4xl font-bold leading-[1.08] sm:text-6xl`} style={i(1)}>
+                {academy.nameEn}
+              </h1>
+              {academy.nameTh && (
+                <p className={`${theme.rise} mt-2 text-lg text-white/70 sm:text-xl`} style={i(2)}>
+                  {academy.nameTh}
                 </p>
-                {level && <p className="mt-1 text-sm text-(--ink-soft)">{LEVEL_SUMMARY[level].th}</p>}
-                {current?.tier && <p className="mt-1 text-sm font-semibold text-(--ink)">{tierLabel(current.tier)}</p>}
-                <div className="mt-3">
-                  <StateChip state={state} />
-                </div>
-              </div>
-
-              <dl className="mx-auto mt-10 grid max-w-2xl grid-cols-1 border-y border-(--line) sm:grid-cols-3">
-                {[
-                  { label: "วันที่อนุมัติ", value: thaiDate(current?.approvedAt, "long") },
-                  { label: "มีผลถึง", value: current?.expiresAt ? thaiDate(current.expiresAt, "long") : "ไม่ระบุ" },
-                  { label: "เลขที่ใบอนุญาต", value: current?.licenceNo ?? "—" },
-                ].map((d, i) => (
-                  <div key={d.label} className={`flex flex-col-reverse border-(--line) px-4 py-4 ${i ? "border-t sm:border-l sm:border-t-0" : ""}`}>
-                    <dt className="text-xs text-(--ink-soft)">{d.label}</dt>
-                    <dd className={`${s} text-lg font-semibold text-(--ink)`}>{d.value}</dd>
-                  </div>
-                ))}
-              </dl>
-
-              <div className="mt-6 flex flex-wrap items-center justify-center gap-x-5 gap-y-1.5 text-sm text-(--ink-soft)">
+              )}
+              <div className={`${theme.rise} mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-white/70`} style={i(3)}>
+                <StateChip state={state} />
                 {academy.province && (
                   <span className="inline-flex items-center gap-1.5">
                     <MapPin className="h-4 w-4" />
@@ -106,47 +90,92 @@ export default async function AcademyProfilePage({ params }: { params: Promise<{
                   </span>
                 )}
                 {academy.website && (
-                  <a href={academy.website} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 font-semibold text-(--ink) underline decoration-(--line) underline-offset-4 hover:decoration-(--accent)">
+                  <a href={academy.website} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 font-semibold text-white underline decoration-white/30 underline-offset-4 hover:decoration-(--gold)">
                     <Globe className="h-4 w-4" />
                     เว็บไซต์
                   </a>
                 )}
               </div>
             </div>
+
+            {/* บัตรใบอนุญาตดิจิทัล */}
+            <div className={theme.rise} style={i(2)}>
+              <div className={`${theme.shine} rounded-3xl p-6 shadow-[0_40px_80px_-30px_rgb(0_0_0/0.9)] sm:p-7`} style={{ background: metal, color: ink }}>
+                <div className="flex items-start justify-between gap-4">
+                  <span className="text-[10px] font-bold uppercase leading-tight tracking-[0.22em] opacity-80">
+                    FAT Academy
+                    <br />
+                    Licence
+                  </span>
+                  <AcademyLogo className="h-8" />
+                </div>
+                <div className="mt-8 flex items-center gap-4">
+                  <Medal level={level} size="md" />
+                  <div className="min-w-0">
+                    <p className="text-xl font-bold leading-tight">{level ? `FAT ${LEVEL_META[level].label} Level Academy` : "รอประกาศระดับ"}</p>
+                    {level && <p className="text-sm opacity-80">{LEVEL_SUMMARY[level].th}</p>}
+                  </div>
+                </div>
+                {current?.tier && <p className="mt-4 inline-flex rounded-md bg-black/15 px-2.5 py-1 text-xs font-semibold">{tierLabel(current.tier)}</p>}
+                <dl className="mt-6 grid grid-cols-2 gap-4 border-t border-current/20 pt-4 text-sm">
+                  <div className="col-span-2 flex flex-col-reverse">
+                    <dt className="text-[11px] opacity-70">เลขที่ใบอนุญาต</dt>
+                    <dd className="font-mono text-base font-semibold tracking-wider">{current?.licenceNo ?? "—"}</dd>
+                  </div>
+                  <div className="flex flex-col-reverse">
+                    <dt className="text-[11px] opacity-70">วันที่อนุมัติ</dt>
+                    <dd className="font-semibold">{thaiDate(current?.approvedAt, "long")}</dd>
+                  </div>
+                  <div className="flex flex-col-reverse">
+                    <dt className="text-[11px] opacity-70">มีผลถึง</dt>
+                    <dd className="font-semibold">{current?.expiresAt ? thaiDate(current.expiresAt, "long") : "ไม่ระบุ"}</dd>
+                  </div>
+                </dl>
+              </div>
+            </div>
           </div>
         </section>
 
-        {history.length > 0 && (
-          <section className="mt-8 rounded-2xl bg-white p-6 ring-1 ring-(--line) sm:p-8">
-            <h2 className={`${s} text-2xl font-bold text-(--ink)`}>ประวัติการรับรอง</h2>
-            <ol className="mt-6 divide-y divide-(--line) border-y border-(--line)">
-              {history.map((l) => (
-                <li key={l.id} className="flex items-center gap-4 py-4">
-                  <Medal level={l.level} size="sm" />
-                  <span className="min-w-0">
-                    <span className={`${s} block font-bold text-(--ink)`}>{isLevel(l.level) ? `${LEVEL_META[l.level].label} · ${LEVEL_META[l.level].th}` : "ยังไม่ระบุระดับ"}</span>
-                    <span className="block text-sm text-(--ink-soft)">
-                      อนุมัติ {thaiDate(l.approvedAt)}
-                      {l.expiresAt && ` · มีผลถึง ${thaiDate(l.expiresAt)}`} · {LICENCE_STATUS[l.status] ?? l.status}
+        <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
+          {history.length > 0 && (
+            <InView as="section" className="rounded-3xl bg-white p-6 ring-1 ring-(--line) sm:p-10">
+              <p className={`${theme.up} text-[11px] font-semibold uppercase tracking-[0.26em] text-(--accent)`}>Licence history</p>
+              <h2 className={`${theme.up} mt-2 text-3xl font-bold text-(--ink)`} style={i(1)}>
+                ประวัติการรับรอง
+              </h2>
+              <ol className="relative mt-8 space-y-6 before:absolute before:bottom-3 before:left-5 before:top-3 before:w-0.5 before:bg-(--line)">
+                {history.map((l, n) => (
+                  <li key={l.id} className={`${theme.up} relative flex items-center gap-5`} style={i(n + 2)}>
+                    <span className="relative rounded-full bg-white p-0.5">
+                      <Medal level={l.level} size="sm" />
                     </span>
-                  </span>
-                </li>
-              ))}
-            </ol>
-          </section>
-        )}
+                    <span className="min-w-0 flex-1 rounded-2xl bg-(--paper) px-5 py-3.5">
+                      <span className="block font-bold text-(--ink)">{isLevel(l.level) ? `${LEVEL_META[l.level].label} · ${LEVEL_META[l.level].th}` : "ยังไม่ระบุระดับ"}</span>
+                      <span className="block text-sm text-(--ink-soft)">
+                        อนุมัติ {thaiDate(l.approvedAt)}
+                        {l.expiresAt && ` · มีผลถึง ${thaiDate(l.expiresAt)}`} · {LICENCE_STATUS[l.status] ?? l.status}
+                      </span>
+                    </span>
+                  </li>
+                ))}
+              </ol>
+            </InView>
+          )}
 
-        {level && (
-          <Link href={`/academies?criteria=${level}#criteria`} className="group mt-6 flex items-center justify-between gap-4 rounded-2xl bg-(--night) px-6 py-5 text-sm text-white/75 hover:bg-(--ink)">
-            <span>
-              เกณฑ์มาตรฐานของ <span className="font-semibold text-white">{LEVEL_SUMMARY[level].title}</span> — {LEVEL_SUMMARY[level].audience.th}
-            </span>
-            <ArrowRight className="h-4 w-4 flex-none text-[#d9b45a] transition-transform group-hover:translate-x-0.5" />
-          </Link>
-        )}
+          {level && (
+            <Link href={`/academies?criteria=${level}#criteria`} className="group mt-6 flex items-center justify-between gap-4 rounded-3xl bg-(--night) px-7 py-6 text-sm text-white/75 transition-transform hover:-translate-y-0.5">
+              <span>
+                เกณฑ์มาตรฐานของ <span className="font-semibold text-white">{LEVEL_SUMMARY[level].title}</span> — {LEVEL_SUMMARY[level].audience.th}
+              </span>
+              <span className="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-(--gold) text-(--night) transition-transform group-hover:-rotate-45">
+                <ArrowRight className="h-4 w-4" />
+              </span>
+            </Link>
+          )}
 
-        {academy.aliases && <p className="mt-6 text-xs text-(--ink-soft)">ชื่อเรียกอื่น: {academy.aliases}</p>}
-        <p className="mt-2 text-xs text-(--ink-soft)">ข้อมูล ณ วันที่ {thaiDate(now, "long")} จากทะเบียน Academy Licensing ของสมาคมกีฬาฟุตบอลแห่งประเทศไทย ในพระบรมราชูปถัมภ์</p>
+          {academy.aliases && <p className="mt-6 text-xs text-(--ink-soft)">ชื่อเรียกอื่น: {academy.aliases}</p>}
+          <p className="mt-2 text-xs text-(--ink-soft)">ข้อมูล ณ วันที่ {thaiDate(now, "long")} จากทะเบียน Academy Licensing ของสมาคมกีฬาฟุตบอลแห่งประเทศไทย ในพระบรมราชูปถัมภ์</p>
+        </div>
       </main>
 
       <PublicFooter />

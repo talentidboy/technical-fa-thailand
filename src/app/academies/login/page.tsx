@@ -5,7 +5,7 @@ import { getAcademyUser, getCurrentUser } from "@/lib/auth";
 import { authInputClass } from "@/components/academy/AcademyShell";
 import { AuthShell } from "@/components/academy/AuthShell";
 import { LoginSubmit, PasswordInput } from "@/components/academy/AuthFields";
-import { academySerif } from "@/components/typefaces/academy";
+import { academyFont } from "@/components/typefaces/academy";
 import { academyLogin } from "../account-actions";
 import { AlertCircle, ArrowLeft, Bell, ClipboardCheck, Mail, UserPlus, Users } from "lucide-react";
 
@@ -35,7 +35,7 @@ export default async function AcademyLoginPage({ searchParams }: { searchParams:
         <ArrowLeft className="h-4 w-4" />
         ทำเนียบอคาเดมี
       </Link>
-      <h2 className={`${academySerif.className} mt-6 text-4xl font-bold text-[#0b1f44]`}>เข้าสู่ระบบ</h2>
+      <h2 className={`${academyFont.className} mt-6 text-4xl font-bold text-[#0b1f44]`}>เข้าสู่ระบบ</h2>
       <p className="mt-2 text-sm text-slate-500">สำหรับผู้ดูแลอคาเดมี และเจ้าหน้าที่สมาคมฯ</p>
 
       {error && ERRORS[error] && (

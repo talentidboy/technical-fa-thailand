@@ -1,44 +1,209 @@
-/* โทนของหน้าสาธารณะ Academy Licensing: กรมท่าเข้ม + กระดาษสีนวล + แดงเป็นจุดเน้น (สีทอง/เงิน/ทองแดงใช้กับระดับเท่านั้น) */
+/* โทนของหน้าสาธารณะ Academy Licensing: กรมท่าลึก + ทองสว่าง + พื้นเทาฟ้าอ่อน (สีทองแดง/เงิน/ทองใช้กับระดับ) */
 .theme {
-  --ink: #0b1f44;
-  --ink-soft: #3d4a63;
-  --paper: #f4f2ec;
-  --line: #dedad0;
+  --ink: #0a1630;
+  --ink-soft: #55607a;
+  --paper: #f2f4f8;
+  --line: #e1e5ee;
   --accent: #c8202f;
-  --night: #071530;
-  --gold: #d9b45a;
+  --night: #060d22;
+  --night-2: #0d1a38;
+  --gold: #f2c14e;
   background: var(--paper);
-  color: #1d2638;
+  color: #1c2540;
 }
 
-/* ตราประทับรับรอง: วงตัวอักษรหมุนช้าๆ รอบตัวเลขตรงกลาง */
+/* ===== อนิเมชันตอนเลื่อนมาถึง (ห่อด้วย <InView> ซึ่งใส่ data-inview="true" ให้เมื่อเห็นบนจอ) ===== */
+
+/* เลื่อนขึ้น + จางเข้า · ลำดับการโผล่ตาม --i */
+.up {
+  opacity: 0;
+  transform: translateY(28px);
+  transition:
+    opacity 700ms ease,
+    transform 800ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  transition-delay: calc(var(--i, 0) * 80ms);
+}
+[data-inview="true"] .up {
+  opacity: 1;
+  transform: none;
+}
+
+/* หัวข้อใหญ่: แต่ละบรรทัดโผล่จากใต้เส้น */
+.line {
+  display: block;
+  overflow: hidden;
+  padding-bottom: 0.08em;
+}
+.line > span {
+  display: block;
+  transform: translateY(105%);
+  transition: transform 900ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  transition-delay: calc(var(--i, 0) * 120ms);
+}
+[data-inview="true"] .line > span {
+  transform: none;
+}
+
+/* แถบสัดส่วนระดับ / เส้นเชื่อมขั้นตอน: ยืดจากซ้ายไปขวา */
+.grow {
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 1200ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  transition-delay: calc(var(--i, 0) * 120ms + 200ms);
+}
+[data-inview="true"] .grow {
+  transform: none;
+}
+
+/* วงขั้นตอน: เด้งเข้า */
+.pop {
+  opacity: 0;
+  transform: scale(0.5);
+  transition:
+    opacity 400ms ease,
+    transform 500ms cubic-bezier(0.2, 0.8, 0.2, 1.4);
+  transition-delay: calc(var(--i, 0) * 250ms + 300ms);
+}
+[data-inview="true"] .pop {
+  opacity: 1;
+  transform: none;
+}
+
+/* ฮีโร่ (อยู่บนจอตั้งแต่เปิดหน้า): เล่นทันทีตอนโหลด ไม่ต้องรอ JavaScript */
+.rise {
+  animation: rise 900ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  animation-delay: calc(var(--i, 0) * 110ms);
+}
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(32px);
+  }
+}
+
+/* ตราประทับรับรอง (สไลด์หน้าแรก): วงตัวอักษรหมุนช้าๆ */
 .seal {
   animation: seal-spin 36s linear infinite;
 }
-
 @keyframes seal-spin {
   to {
     transform: rotate(360deg);
   }
 }
 
-/* การ์ดใบรับรองยกขึ้นเมื่อชี้ */
-.cert {
-  transition:
-    transform 260ms cubic-bezier(0.2, 0.8, 0.2, 1),
-    box-shadow 260ms ease;
+/* ภาพพื้นหลังฮีโร่ค่อยๆ ซูมออก */
+.kenburns {
+  animation: kenburns 24s ease-out both;
 }
-.cert:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 18px 36px -22px rgb(11 31 68 / 0.45);
+@keyframes kenburns {
+  from {
+    transform: scale(1.15);
+  }
+}
+
+/* แถบโลโก้อคาเดมีวิ่งยาว (หยุดเมื่อชี้) */
+.marquee {
+  overflow: hidden;
+  mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
+}
+.track {
+  display: flex;
+  width: max-content;
+  animation: marquee 60s linear infinite;
+}
+.marquee:hover .track {
+  animation-play-state: paused;
+}
+@keyframes marquee {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+/* การ์ดอคาเดมี: ยกขึ้น + กรอบสีระดับ + แถบล่างยืด */
+.card {
+  transition:
+    transform 300ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    box-shadow 300ms ease;
+}
+.card:hover {
+  transform: translateY(-6px);
+  box-shadow:
+    0 0 0 2px var(--lv),
+    0 24px 40px -24px rgb(10 22 48 / 0.45);
+}
+.cardBar {
+  transform: scaleX(0.15);
+  transform-origin: left;
+  transition: transform 400ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.card:hover .cardBar {
+  transform: scaleX(1);
+}
+.cardGo {
+  transition:
+    transform 300ms ease,
+    background-color 300ms ease,
+    color 300ms ease;
+}
+.card:hover .cardGo {
+  transform: rotate(-45deg);
+  background: var(--ink);
+  color: #fff;
+}
+
+/* การ์ดระดับ: ยกขึ้นเมื่อชี้ */
+.tier {
+  transition: transform 350ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.tier:hover {
+  transform: translateY(-8px);
+}
+
+/* แสงวาบบนบัตรใบอนุญาต (โปรไฟล์) */
+.shine {
+  position: relative;
+  overflow: hidden;
+}
+.shine::after {
+  content: "";
+  position: absolute;
+  inset: -50% auto -50% -60%;
+  width: 40%;
+  background: linear-gradient(100deg, transparent, rgb(255 255 255 / 0.35), transparent);
+  transform: skewX(-20deg);
+  animation: shine 5s ease-in-out 1.2s infinite;
+}
+@keyframes shine {
+  0% {
+    left: -60%;
+  }
+  40%,
+  100% {
+    left: 130%;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .seal {
+  .up,
+  .line > span,
+  .grow,
+  .pop {
+    transition: none;
+    opacity: 1;
+    transform: none;
+  }
+  .rise,
+  .seal,
+  .kenburns,
+  .track,
+  .shine::after {
     animation: none;
   }
-  .cert,
-  .cert:hover {
+  .card,
+  .card:hover,
+  .tier,
+  .tier:hover {
     transition: none;
     transform: none;
   }

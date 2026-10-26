@@ -7,6 +7,7 @@ import { requireUser, type CurrentUser } from "@/lib/auth";
 import { audit, changedFields } from "@/lib/audit";
 import { ISSUE_KINDS, bangkokDay, currentLicence, isLevel, parseFormDate, LEVEL_META } from "@/lib/academy";
 import { nextLicenceNo } from "@/lib/academy-data";
+import { saveUploadedPhoto } from "@/lib/upload";
 import type { FormResult } from "@/components/ResultForm";
 
 async function requireAdminOrStaff() {
@@ -60,6 +61,12 @@ function readAcademy(fd: FormData) {
   };
 }
 
+// ไฟล์โลโก้ที่แนบมา (ไม่แนบ = null)
+const logoFile = (fd: FormData) => {
+  const f = fd.get("logo");
+  return f instanceof File && f.size > 0 ? f : null;
+};
+
 function readLicence(fd: FormData) {
   const level = text(fd, "level");
   if (level && !isLevel(level)) throw new Error("ระดับไม่ถูกต้อง");
@@ -87,7 +94,7 @@ const levelText = (level: string | null) => (isLevel(level) ? LEVEL_META[level].
 export async function createAcademy(formData: FormData): Promise<FormResult> {
   let newId = 0;
   const res = await attempt(async (user) => {
-    const data = readAcademy(formData);
+    const data = { ...readAcademy(formData), logoUrl: await saveUploadedPhoto(logoFile(formData)) };
     const licence = readLicence(formData);
     if (isLevel(licence.level) && !licence.licenceNo) licence.licenceNo = await nextLicenceNo(licence.level, licence.approvedAt ?? new Date());
     const academy = await prisma.academy.create({
@@ -112,7 +119,8 @@ export async function updateAcademy(formData: FormData) {
     const id = idOf(formData);
     const before = await prisma.academy.findUnique({ where: { id } });
     if (!before) throw new Error("ไม่พบอคาเดมี");
-    const data = readAcademy(formData);
+    const logo = await saveUploadedPhoto(logoFile(formData));
+    const data = { ...readAcademy(formData), logoUrl: logo ?? (formData.get("removeLogo") === "on" ? null : before.logoUrl) };
     await prisma.academy.update({ where: { id }, data });
     const changes = changedFields(before, data);
     if (Object.keys(changes).length) {

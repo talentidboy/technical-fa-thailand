@@ -2,7 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import type { Metadata } from "next";
 import { getAcademyUser, getCurrentUser } from "@/lib/auth";
-import { ACADEMY_LEVELS, LEVEL_META, compareAcademies, isLevel, showPublicly } from "@/lib/academy";
+import { ACADEMY_LEVELS, LEVEL_META, compareAcademies, isLevel, levelRank, showPublicly } from "@/lib/academy";
 import { loadAcademies, matchesQuery } from "@/lib/academy-data";
 import { LEVEL_SUMMARY, criteriaCount } from "@/lib/academy-criteria";
 import { academyBg } from "@/lib/section-images";
@@ -11,9 +11,11 @@ import { CriteriaExplorer } from "@/components/academy/CriteriaExplorer";
 import { ThailandMap } from "@/components/academy/ThailandMap";
 import { InfoDialog } from "@/components/academy/InfoDialog";
 import { PublicFooter, PublicHeader } from "@/components/academy/PublicChrome";
-import { Medal } from "@/components/academy/Medal";
-import { Seal } from "@/components/academy/Seal";
-import { academySerif } from "@/components/typefaces/academy";
+import { MEDAL, Medal } from "@/components/academy/Medal";
+import { AcademyCrest } from "@/components/academy/AcademyCrest";
+import { InView } from "@/components/academy/InView";
+import { CountUp } from "@/components/play-and-learn/CountUp";
+import { academyFont } from "@/components/typefaces/academy";
 import theme from "@/components/academy/public.module.css";
 import { ArrowRight, ChevronLeft, ChevronRight, MapPin, Search } from "lucide-react";
 
@@ -24,11 +26,11 @@ export const metadata: Metadata = {
 
 const PAGE = 12;
 const LEVELS_DESC = [...ACADEMY_LEVELS].reverse();
-const s = academySerif.className;
-const GOLD = "#d9b45a";
-const eyebrowLight = "text-[11px] font-semibold uppercase tracking-[0.26em] text-(--accent)";
-const eyebrowDark = "text-[11px] font-semibold uppercase tracking-[0.26em] text-[#d9b45a]";
-const darkLink = "font-semibold text-white underline decoration-white/30 decoration-2 underline-offset-4 transition-colors hover:decoration-[#d9b45a]";
+const eyebrow = "text-[11px] font-semibold uppercase tracking-[0.26em]";
+const darkLink = "font-semibold text-white underline decoration-white/30 decoration-2 underline-offset-[6px] transition-colors hover:decoration-(--gold)";
+const i = (n: number) => ({ "--i": n }) as React.CSSProperties;
+// พื้นโลหะของแต่ละระดับ (ริบบิ้น → ขอบ → หน้าเหรียญ)
+const metal = (l: keyof typeof MEDAL) => `linear-gradient(120deg, ${MEDAL[l].ribbon}, ${MEDAL[l].face} 45%, ${MEDAL[l].ring} 70%, ${MEDAL[l].face})`;
 
 const STEPS = [
   { title: "สมัครบัญชีอคาเดมี", text: "ลงทะเบียนผู้ดูแลอคาเดมี ใช้งานพอร์ทัลได้ทันที" },
@@ -70,34 +72,44 @@ export default async function AcademiesPage({
     return `/academies${str ? `?${str}` : ""}#directory`;
   };
   const applyHref = academyUser ? "/academies/portal" : "/academies/register";
+  // แถบโลโก้วิ่ง: เฉพาะใบที่มีผล — มีโลโก้ก่อน แล้วเรียงระดับสูง → ต่ำ
+  const ribbon = all
+    .filter((a) => a.state === "active")
+    .sort((a, b) => Number(!!b.logoUrl) - Number(!!a.logoUrl) || levelRank(b.level) - levelRank(a.level) || a.nameEn.localeCompare(b.nameEn))
+    .slice(0, 28);
 
   return (
-    <div className={`${theme.theme} min-h-screen overflow-x-clip`}>
+    <div className={`${theme.theme} ${academyFont.className} min-h-screen overflow-x-clip`}>
       <PublicHeader viewer={viewer} />
 
       {/* ===== ฮีโร่ + แผนที่ ===== */}
       <section id="map" className="relative isolate scroll-mt-16 overflow-hidden bg-(--night) text-white">
-        <Image src={academyBg} alt="" fill priority placeholder="blur" sizes="100vw" className="-z-10 object-cover opacity-[0.13] grayscale" />
-        <div className="mx-auto grid max-w-6xl grid-cols-1 items-center gap-12 px-4 py-14 sm:px-6 lg:min-h-[calc(100svh-6rem)] lg:grid-cols-[minmax(0,1fr)_minmax(0,28rem)] lg:gap-14 lg:py-12">
-          <div className="relative">
-            <div className="flex items-center gap-5">
-              <Seal count={all.length} className="h-24 w-24 flex-none sm:h-28 sm:w-28" />
-              <p className={`${eyebrowDark} leading-relaxed`}>
-                FAT Academy Licensing
-                <br />
-                FIFA Grow Together
-              </p>
-            </div>
-            <h1 className={`${s} mt-7 text-[2.5rem] font-bold leading-[1.15] sm:text-6xl`}>
-              อคาเดมีฟุตบอลเยาวชน
-              <br />
-              <span style={{ color: GOLD }}>ที่ผ่านการรับรอง</span>
-            </h1>
-            <p className="mt-5 max-w-lg text-base leading-relaxed text-white/70">
-              ทำเนียบศูนย์ฝึกเยาวชนที่ได้รับใบอนุญาตจากสมาคมฯ ตามเกณฑ์ FIFA และ AFC ค้นหาตามจังหวัด หรือดูตามระดับ Gold · Silver · Bronze
+        <Image src={academyBg} alt="" fill priority placeholder="blur" sizes="100vw" className={`${theme.kenburns} -z-20 object-cover opacity-35`} />
+        <div className="absolute inset-0 -z-10 bg-linear-to-r from-(--night) via-(--night)/90 to-(--night)/55" />
+        <div className="absolute inset-0 -z-10 bg-linear-to-t from-(--night) via-transparent to-(--night)/40" />
+
+        <div className="mx-auto grid max-w-7xl grid-cols-1 items-center gap-12 px-4 py-14 sm:px-6 lg:min-h-[calc(100svh-4rem)] lg:grid-cols-[minmax(0,1fr)_minmax(0,28rem)] lg:gap-16 lg:py-16">
+          <div>
+            <p className={`${theme.rise} ${eyebrow} flex items-center gap-3 text-(--gold)`} style={i(0)}>
+              <span className="h-px w-10 bg-(--gold)" />
+              FAT Academy Licensing · FIFA Grow Together
             </p>
-            <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3">
-              <a href="#directory" className="inline-flex h-12 items-center justify-center gap-2 rounded-lg bg-[#d9b45a] px-6 text-sm font-semibold text-(--night) transition-colors hover:bg-[#e4c272]">
+            <h1 className="mt-6 text-[2.7rem] font-bold leading-[1.08] sm:text-6xl xl:text-7xl">
+              <span className={`${theme.rise} block`} style={i(1)}>
+                อคาเดมีฟุตบอล
+              </span>
+              <span className={`${theme.rise} block`} style={i(2)}>
+                เยาวชน
+              </span>
+              <span className={`${theme.rise} block text-(--gold)`} style={i(3)}>
+                ที่ผ่านการรับรอง
+              </span>
+            </h1>
+            <p className={`${theme.rise} mt-6 max-w-lg text-base leading-relaxed text-white/70 sm:text-lg`} style={i(4)}>
+              ทำเนียบศูนย์ฝึกเยาวชนที่ได้รับใบอนุญาตจากสมาคมฯ ตามเกณฑ์ FIFA และ AFC — ค้นหาตามจังหวัด หรือดูตามระดับ Gold · Silver · Bronze
+            </p>
+            <div className={`${theme.rise} mt-8 flex flex-wrap items-center gap-x-7 gap-y-4`} style={i(5)}>
+              <a href="#directory" className="group inline-flex h-13 items-center justify-center gap-2.5 rounded-xl bg-(--gold) px-7 text-sm font-bold text-(--night) shadow-[0_10px_30px_-10px_rgb(242_193_78/0.7)] transition-transform hover:-translate-y-0.5">
                 <Search className="h-4 w-4" />
                 ค้นหาอคาเดมี
               </a>
@@ -107,23 +119,39 @@ export default async function AcademiesPage({
               </Link>
             </div>
 
-            {/* จำนวนตามระดับ (เหรียญ) */}
-            <dl className="mt-11 grid max-w-lg grid-cols-3 gap-3">
-              {LEVELS_DESC.map((l) => (
-                <div key={l} className="flex items-center gap-3 rounded-xl bg-[#0e2148] px-3.5 py-3 ring-1 ring-white/10">
-                  <Medal level={l} size="sm" />
-                  <div className="flex flex-col-reverse">
-                    <dt className="text-[11px] text-white/60">{LEVEL_META[l].label}</dt>
-                    <dd className={`${s} text-2xl font-bold tabular-nums`}>{count(l).toLocaleString()}</dd>
+            {/* จำนวนรวม + สัดส่วนตามระดับ */}
+            <div className={`${theme.rise} mt-12 max-w-lg`} style={i(6)}>
+              <p className="flex items-baseline gap-3">
+                <span className="text-5xl font-bold tabular-nums sm:text-6xl">
+                  <CountUp value={all.length.toLocaleString("en-US")} />
+                </span>
+                <span className="text-sm text-white/65">
+                  อคาเดมีที่ได้รับการรับรอง
+                  <br />
+                  ใน {provinces.length} จังหวัด
+                </span>
+              </p>
+              <div className="mt-5 flex h-2.5 gap-1 overflow-hidden rounded-full" role="img" aria-label="สัดส่วนอคาเดมีตามระดับ">
+                {LEVELS_DESC.map((l) => (
+                  <span key={l} className="h-full rounded-full" style={{ width: `${Math.max(3, (count(l) / Math.max(1, all.length)) * 100)}%`, background: metal(l) }} />
+                ))}
+              </div>
+              <dl className="mt-4 grid grid-cols-3 gap-3">
+                {LEVELS_DESC.map((l) => (
+                  <div key={l} className="flex items-center gap-2.5">
+                    <Medal level={l} size="sm" />
+                    <div className="flex flex-col-reverse">
+                      <dt className="text-[11px] text-white/55">{LEVEL_META[l].label}</dt>
+                      <dd className="text-xl font-bold tabular-nums">
+                        <CountUp value={count(l).toLocaleString("en-US")} />
+                      </dd>
+                    </div>
                   </div>
-                </div>
-              ))}
-            </dl>
-            <p className="mt-4 text-sm text-white/60">
-              รวม <b className="font-semibold text-white">{all.length.toLocaleString()}</b> อคาเดมี ใน <b className="font-semibold text-white">{provinces.length}</b> จังหวัด
-            </p>
+                ))}
+              </dl>
+            </div>
 
-            <div className="mt-6 flex flex-wrap gap-x-6 gap-y-2 text-sm">
+            <div className={`${theme.rise} mt-8 flex flex-wrap gap-x-6 gap-y-2 text-sm`} style={i(7)}>
               <InfoDialog title="Academy Licensing คืออะไร" className={darkLink} label="เกี่ยวกับโครงการ">
                 <p className="text-sm leading-relaxed">
                   ระบบการออกใบอนุญาตรับรองมาตรฐานศูนย์ฝึกเยาวชนหรืออคาเดมีฟุตบอล (Youth Football Academy) ที่จัดทำโดยสมาคมกีฬาฟุตบอลแห่งประเทศไทย ในพระบรมราชูปถัมภ์ (FAT)
@@ -134,14 +162,14 @@ export default async function AcademiesPage({
                     <li key={l} className="flex items-center gap-3 py-3">
                       <Medal level={l} size="sm" />
                       <span>
-                        <span className={`${s} block font-semibold text-slate-900`}>{LEVEL_SUMMARY[l].title}</span>
+                        <span className="block font-semibold text-slate-900">{LEVEL_SUMMARY[l].title}</span>
                         <span className="block text-xs text-slate-500">{LEVEL_SUMMARY[l].audience.th}</span>
                       </span>
                     </li>
                   ))}
                 </ul>
                 <p className="mt-4 text-xs leading-relaxed text-slate-500">อคาเดมีระดับ Gold ยื่นขอรับรองระดับเอเชีย AFC Elite Youth Scheme (1–3 ดาว) ผ่านสมาคมฯ ได้</p>
-                <Link href={applyHref} className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[#0b1f44] px-5 py-3 text-sm font-semibold text-white hover:bg-[#13306a]">
+                <Link href={applyHref} className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[#0a1630] px-5 py-3 text-sm font-semibold text-white hover:bg-[#13306a]">
                   {academyUser ? "ไปที่พอร์ทัลอคาเดมี" : "สมัครและยื่นขอใบอนุญาตออนไลน์"}
                   <ArrowRight className="h-4 w-4" />
                 </Link>
@@ -151,21 +179,55 @@ export default async function AcademiesPage({
               </InfoDialog>
             </div>
           </div>
-          <ThailandMap academies={all.map((a) => ({ id: a.id, nameEn: a.nameEn, nameTh: a.nameTh, province: a.province, level: a.level }))} />
+          <div className={theme.rise} style={i(3)}>
+            <ThailandMap academies={all.map((a) => ({ id: a.id, nameEn: a.nameEn, nameTh: a.nameTh, province: a.province, level: a.level }))} />
+          </div>
         </div>
       </section>
 
-      {/* ===== ทำเนียบ: การ์ดใบรับรอง ===== */}
+      {/* ===== แถบตราอคาเดมีวิ่ง ===== */}
+      {ribbon.length > 0 && (
+        <section aria-label="อคาเดมีที่ได้รับการรับรอง" className="border-y border-white/10 bg-(--night-2) py-5">
+          <div className={theme.marquee}>
+            <div className={theme.track}>
+              {[0, 1].map((k) => (
+                <ul key={k} aria-hidden={k === 1} className="flex flex-none items-center gap-3 pr-3">
+                  {ribbon.map((a) => (
+                    <li key={a.id}>
+                      <Link href={`/academies/${a.id}`} tabIndex={k === 1 ? -1 : undefined} className="flex items-center gap-3 rounded-xl bg-white/[0.04] py-2 pl-2 pr-5 ring-1 ring-white/10 transition-colors hover:bg-white/10">
+                        <AcademyCrest name={a.nameEn} logoUrl={a.logoUrl} level={a.level} size="sm" />
+                        <span className="flex flex-col">
+                          <span className="whitespace-nowrap text-sm font-semibold text-white">{a.nameEn}</span>
+                          <span className="text-[10px] font-semibold uppercase tracking-[0.16em]" style={{ color: isLevel(a.level) ? MEDAL[a.level].ring : "#94a3b8" }}>
+                            FAT {isLevel(a.level) ? LEVEL_META[a.level].label : ""}
+                          </span>
+                        </span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* ===== ทำเนียบ ===== */}
       <section id="directory" className="scroll-mt-16">
-        <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6">
-          <div className="flex flex-wrap items-end justify-between gap-4">
+        <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:py-24">
+          <InView className="flex flex-wrap items-end justify-between gap-4">
             <div>
-              <p className={eyebrowLight}>Official registry</p>
-              <h2 className={`${s} mt-2 text-3xl font-bold text-(--ink) sm:text-5xl`}>
-                ทำเนียบอคาเดมี<span className="whitespace-nowrap">ที่ได้รับการรับรอง</span>
+              <p className={`${theme.up} ${eyebrow} text-(--accent)`}>Official registry</p>
+              <h2 className="mt-3 text-4xl font-bold leading-tight text-(--ink) sm:text-5xl">
+                <span className={theme.line}>
+                  <span style={i(0)}>ทำเนียบอคาเดมี</span>
+                </span>
+                <span className={theme.line}>
+                  <span style={i(1)}>ที่ได้รับการรับรอง</span>
+                </span>
               </h2>
             </div>
-            <p className="text-sm text-(--ink-soft)">
+            <p className={`${theme.up} text-sm text-(--ink-soft)`} style={i(2)}>
               {filtered ? (
                 <>
                   พบ <span className="font-semibold text-(--ink)">{list.length.toLocaleString()}</span> จาก {all.length.toLocaleString()} ·{" "}
@@ -177,20 +239,20 @@ export default async function AcademiesPage({
                 `ทั้งหมด ${all.length.toLocaleString()} อคาเดมี`
               )}
             </p>
-          </div>
+          </InView>
 
-          <form action="/academies#directory" className="mt-8 grid gap-2 rounded-2xl bg-white p-2 shadow-sm ring-1 ring-(--line) sm:grid-cols-[minmax(0,1fr)_12rem_10rem_auto]">
+          <form action="/academies#directory" className="mt-10 grid gap-2 rounded-2xl bg-white p-2 shadow-[0_20px_40px_-30px_rgb(10_22_48/0.5)] ring-1 ring-(--line) sm:grid-cols-[minmax(0,1fr)_12rem_10rem_auto]">
             <label className="relative">
               <span className="sr-only">ค้นหาชื่ออคาเดมี</span>
-              <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
               <input
                 name="q"
                 defaultValue={q}
                 placeholder="ค้นหาชื่ออคาเดมี (ไทย / อังกฤษ)"
-                className="h-12 w-full rounded-xl bg-(--paper) pl-10 pr-3 text-sm text-(--ink) placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-(--ink)"
+                className="h-13 w-full rounded-xl bg-(--paper) pl-11 pr-3 text-sm text-(--ink) placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-(--ink)"
               />
             </label>
-            <select name="province" defaultValue={province ?? ""} aria-label="จังหวัด" className="h-12 rounded-xl bg-(--paper) px-3 text-sm text-(--ink) focus:outline-none focus:ring-2 focus:ring-(--ink)">
+            <select name="province" defaultValue={province ?? ""} aria-label="จังหวัด" className="h-13 rounded-xl bg-(--paper) px-3 text-sm text-(--ink) focus:outline-none focus:ring-2 focus:ring-(--ink)">
               <option value="">ทุกจังหวัด</option>
               {provinces.map(([p, n]) => (
                 <option key={p} value={p}>
@@ -198,7 +260,7 @@ export default async function AcademiesPage({
                 </option>
               ))}
             </select>
-            <select name="level" defaultValue={level ?? ""} aria-label="ระดับ" className="h-12 rounded-xl bg-(--paper) px-3 text-sm text-(--ink) focus:outline-none focus:ring-2 focus:ring-(--ink)">
+            <select name="level" defaultValue={level ?? ""} aria-label="ระดับ" className="h-13 rounded-xl bg-(--paper) px-3 text-sm text-(--ink) focus:outline-none focus:ring-2 focus:ring-(--ink)">
               <option value="">ทุกระดับ</option>
               {LEVELS_DESC.map((l) => (
                 <option key={l} value={l}>
@@ -206,7 +268,7 @@ export default async function AcademiesPage({
                 </option>
               ))}
             </select>
-            <button type="submit" className="h-12 rounded-xl bg-(--ink) px-6 text-sm font-semibold text-white transition-colors hover:bg-[#13306a]">
+            <button type="submit" className="h-13 rounded-xl bg-(--ink) px-7 text-sm font-semibold text-white transition-colors hover:bg-[#13306a]">
               ค้นหา
             </button>
           </form>
@@ -219,11 +281,11 @@ export default async function AcademiesPage({
                 <Link
                   key={x.label}
                   href={href({ level: x.key, page: null })}
-                  className={`inline-flex items-center gap-2 rounded-lg px-3.5 py-2 font-semibold transition-colors ${active ? "bg-(--ink) text-white" : "bg-white text-(--ink-soft) ring-1 ring-(--line) hover:text-(--ink)"}`}
+                  className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 font-semibold transition-colors ${active ? "bg-(--ink) text-white" : "bg-white text-(--ink-soft) ring-1 ring-(--line) hover:text-(--ink) hover:ring-(--ink)/30"}`}
                 >
-                  {x.key && <span className="h-2.5 w-2.5 rounded-full" style={{ background: LEVEL_META[x.key].hex }} />}
+                  {x.key && <span className="h-2.5 w-2.5 rounded-full" style={{ background: metal(x.key) }} />}
                   {x.label}
-                  <span className={active ? "text-white/70" : "text-slate-400"}>{x.n.toLocaleString()}</span>
+                  <span className={active ? "text-white/60" : "text-slate-400"}>{x.n.toLocaleString()}</span>
                 </Link>
               );
             })}
@@ -232,39 +294,48 @@ export default async function AcademiesPage({
           {shown.length === 0 ? (
             <p className="mt-8 rounded-2xl border border-dashed border-(--line) py-16 text-center text-sm text-(--ink-soft)">ไม่พบอคาเดมีตามเงื่อนไขที่ค้นหา</p>
           ) : (
-            <ul className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {shown.map((a) => {
+            <InView as="ul" className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {shown.map((a, n) => {
                 const meta = isLevel(a.level) ? LEVEL_META[a.level] : null;
+                const hex = isLevel(a.level) ? MEDAL[a.level].face : "#94a3b8";
                 return (
-                  <li key={a.id}>
-                    <Link href={`/academies/${a.id}`} className={`${theme.cert} group relative flex h-full flex-col overflow-hidden rounded-2xl bg-white p-5 ring-1 ring-(--line)`}>
-                      <span className="absolute inset-x-0 top-0 h-1" style={{ background: meta?.hex ?? "#cbd5e1" }} />
-                      <span className="flex items-start justify-between gap-3">
-                        <Medal level={a.level} size="sm" />
-                        {a.state !== "active" && <StateChip state={a.state} />}
+                  <li key={a.id} className={theme.up} style={i(n)}>
+                    <Link href={`/academies/${a.id}`} style={{ "--lv": hex } as React.CSSProperties} className={`${theme.card} group relative flex h-full flex-col overflow-hidden rounded-2xl bg-white p-5 ring-1 ring-(--line)`}>
+                      <span className="flex items-start gap-4">
+                        <AcademyCrest name={a.nameEn} logoUrl={a.logoUrl} level={a.level} />
+                        <span className="min-w-0 flex-1">
+                          <span className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.14em]" style={{ color: hex }}>
+                            <span className="h-2 w-2 rounded-full" style={{ background: isLevel(a.level) ? metal(a.level) : hex }} />
+                            {meta ? `FAT ${meta.label}` : "รอระดับ"}
+                          </span>
+                          <span className="mt-1 line-clamp-2 block font-bold leading-snug text-(--ink)">{a.nameEn}</span>
+                          {a.nameTh && <span className="block truncate text-sm text-(--ink-soft)">{a.nameTh}</span>}
+                        </span>
                       </span>
-                      <span className={`${s} mt-5 block text-lg font-bold leading-snug text-(--ink) group-hover:text-(--accent)`}>{a.nameEn}</span>
-                      {a.nameTh && <span className="mt-0.5 block text-sm text-(--ink-soft)">{a.nameTh}</span>}
-                      <span className="mt-auto flex items-end justify-between gap-3 pt-5">
+                      <span className="mt-auto flex items-center justify-between gap-3 pt-6">
                         <span className="flex min-w-0 items-center gap-1.5 text-xs text-(--ink-soft)">
                           <MapPin className="h-3.5 w-3.5 flex-none" />
                           <span className="truncate">{a.province ?? "ไม่ระบุจังหวัด"}</span>
                         </span>
-                        <span className="flex-none text-[10px] font-semibold uppercase tracking-[0.16em]" style={{ color: meta?.hex ?? "#94a3b8" }}>
-                          {meta ? `FAT ${meta.label}` : "รอระดับ"}
+                        <span className="flex flex-none items-center gap-2">
+                          {a.state !== "active" && <StateChip state={a.state} />}
+                          <span className={`${theme.cardGo} flex h-8 w-8 items-center justify-center rounded-full bg-(--paper) text-(--ink)`}>
+                            <ArrowRight className="h-4 w-4" />
+                          </span>
                         </span>
                       </span>
+                      <span className={`${theme.cardBar} absolute inset-x-0 bottom-0 h-1`} style={{ background: isLevel(a.level) ? metal(a.level) : hex }} />
                     </Link>
                   </li>
                 );
               })}
-            </ul>
+            </InView>
           )}
 
           {pages > 1 && (
-            <nav aria-label="หน้า" className="mt-8 flex items-center justify-between gap-3 text-sm">
+            <nav aria-label="หน้า" className="mt-10 flex items-center justify-between gap-3 text-sm">
               {page > 1 ? (
-                <Link href={href({ page: String(page - 1) })} className="inline-flex items-center gap-1 rounded-lg bg-white px-3.5 py-2 font-semibold text-(--ink) ring-1 ring-(--line) hover:ring-(--ink)">
+                <Link href={href({ page: String(page - 1) })} className="inline-flex items-center gap-1 rounded-lg bg-white px-4 py-2.5 font-semibold text-(--ink) ring-1 ring-(--line) hover:ring-(--ink)">
                   <ChevronLeft className="h-4 w-4" />
                   ก่อนหน้า
                 </Link>
@@ -275,7 +346,7 @@ export default async function AcademiesPage({
                 หน้า <span className="font-semibold text-(--ink)">{page}</span> จาก {pages}
               </span>
               {page < pages ? (
-                <Link href={href({ page: String(page + 1) })} className="inline-flex items-center gap-1 rounded-lg bg-white px-3.5 py-2 font-semibold text-(--ink) ring-1 ring-(--line) hover:ring-(--ink)">
+                <Link href={href({ page: String(page + 1) })} className="inline-flex items-center gap-1 rounded-lg bg-white px-4 py-2.5 font-semibold text-(--ink) ring-1 ring-(--line) hover:ring-(--ink)">
                   ถัดไป
                   <ChevronRight className="h-4 w-4" />
                 </Link>
@@ -287,91 +358,132 @@ export default async function AcademiesPage({
         </div>
       </section>
 
-      {/* ===== มาตรฐาน 3 ระดับ: เหรียญ ===== */}
+      {/* ===== มาตรฐาน 3 ระดับ ===== */}
       <section id="levels" className="scroll-mt-16 bg-(--night) text-white">
-        <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6">
-          <p className={eyebrowDark}>Standards</p>
-          <h2 className={`${s} mt-2 text-3xl font-bold sm:text-5xl`}>ใบอนุญาต 3 ระดับ</h2>
-          <p className="mt-3 max-w-2xl text-sm text-white/65">พัฒนาทีละขั้นจากระดับทองแดงสู่ระดับทอง แต่ละระดับมีเกณฑ์ 3 หมวด: การจัดการและองค์กร · การฝึกสอน · สุขภาพและสวัสดิการ</p>
-          <ol className="mt-12 grid grid-cols-1 items-end gap-5 md:grid-cols-3">
-            {ACADEMY_LEVELS.map((l, i) => {
+        <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:py-28">
+          <InView className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,28rem)] lg:items-end">
+            <div>
+              <p className={`${theme.up} ${eyebrow} text-(--gold)`}>Standards</p>
+              <h2 className="mt-3 text-4xl font-bold leading-tight sm:text-6xl">
+                <span className={theme.line}>
+                  <span style={i(0)}>ใบอนุญาต 3 ระดับ</span>
+                </span>
+                <span className={theme.line}>
+                  <span style={i(1)} className="text-(--gold)">
+                    จากทองแดงสู่ทอง
+                  </span>
+                </span>
+              </h2>
+            </div>
+            <p className={`${theme.up} text-sm leading-relaxed text-white/65 sm:text-base`} style={i(2)}>
+              แต่ละระดับมีเกณฑ์ 3 หมวด: การจัดการและองค์กร · การฝึกสอน · สุขภาพและสวัสดิการ — พัฒนาทีละขั้นจนพร้อมรับรองระดับเอเชีย
+            </p>
+          </InView>
+          <InView as="ol" className="mt-14 grid grid-cols-1 items-end gap-5 md:grid-cols-3">
+            {ACADEMY_LEVELS.map((l, n) => {
               const sm = LEVEL_SUMMARY[l];
+              const top = l === "GOLD";
               const reqs = [["หัวหน้าอคาเดมี", sm.head], ["ผู้ฝึกสอน", sm.coaches], ...(sm.assistants ? [["ผู้ช่วยผู้ฝึกสอน", sm.assistants]] : []), ["จำนวนทีม", sm.teams]];
               return (
-                <li key={l} className={`relative ${i === 1 ? "md:-translate-y-4" : i === 2 ? "md:-translate-y-8" : ""}`}>
-                  {i > 0 && <ChevronRight aria-hidden className="absolute -left-4 top-24 hidden h-6 w-6 -translate-x-1/2 text-white/30 md:block" />}
-                  <article className="flex flex-col rounded-2xl bg-[#0e2148] p-7 ring-1 ring-white/10">
-                    <div className="flex items-start justify-between gap-4">
-                      <Medal level={l} size="lg" />
-                      <span className="text-right text-xs text-white/55">
-                        <b className={`${s} block text-3xl font-bold text-white`}>{count(l).toLocaleString()}</b>
-                        อคาเดมี
-                      </span>
+                <li key={l} className={theme.up} style={i(n * 2)}>
+                  <article className={`${theme.tier} relative flex flex-col overflow-hidden rounded-3xl ${top ? "bg-white text-(--ink) ring-2 ring-(--gold) md:pb-4" : "bg-(--night-2) ring-1 ring-white/10"}`}>
+                    <div className="relative h-24" style={{ background: metal(l) }}>
+                      {top && <span className="absolute right-4 top-4 rounded-md bg-(--night) px-2.5 py-1 text-[11px] font-bold text-(--gold)">ระดับสูงสุด</span>}
                     </div>
-                    <h3 className={`${s} mt-9 text-3xl font-bold`} style={{ color: LEVEL_META[l].hex === "#8a96a6" ? "#cfd6de" : LEVEL_META[l].hex }}>
-                      {LEVEL_META[l].label}
-                    </h3>
-                    <p className="text-sm font-semibold text-white/80">{sm.th}</p>
-                    <p className="mt-3 text-sm leading-relaxed text-white/60">{sm.audience.th}</p>
-                    <dl className="mt-5 text-sm">
-                      {reqs.map(([k, v]) => (
-                        <div key={k} className="flex justify-between gap-3 border-t border-white/10 py-2">
-                          <dt className="text-white/55">{k}</dt>
-                          <dd className="text-right font-semibold">{v}</dd>
-                        </div>
-                      ))}
-                    </dl>
-                    <InfoDialog
-                      wide
-                      title="เกณฑ์มาตรฐานอคาเดมี"
-                      className="mt-5 inline-flex items-center justify-between gap-2 rounded-lg bg-white/[0.06] px-4 py-3 text-left text-sm font-semibold text-white ring-1 ring-white/15 hover:bg-white/10"
-                      label={
-                        <>
-                          ดูเกณฑ์ทั้งหมด {criteriaCount(l)} ข้อ
-                          <ArrowRight className="h-4 w-4" />
-                        </>
-                      }
-                    >
-                      <CriteriaExplorer initialLevel={l} />
-                    </InfoDialog>
+                    <div className="-mt-11 flex flex-1 flex-col px-7 pb-7">
+                      <div className="flex items-end justify-between gap-4">
+                        <span className="rounded-full p-1.5" style={{ background: top ? "#fff" : "var(--night-2)" }}>
+                          <Medal level={l} size="lg" />
+                        </span>
+                        <span className={`text-right text-xs ${top ? "text-(--ink-soft)" : "text-white/55"}`}>
+                          <b className="block text-4xl font-bold tabular-nums">
+                            <CountUp value={count(l).toLocaleString("en-US")} />
+                          </b>
+                          อคาเดมี
+                        </span>
+                      </div>
+                      <h3 className="mt-14 text-3xl font-bold">{LEVEL_META[l].label}</h3>
+                      <p className={`text-sm font-semibold ${top ? "text-(--ink-soft)" : "text-white/75"}`}>{sm.th}</p>
+                      <p className={`mt-3 text-sm leading-relaxed ${top ? "text-(--ink-soft)" : "text-white/60"}`}>{sm.audience.th}</p>
+                      <dl className="mt-6 text-sm">
+                        {reqs.map(([k, v]) => (
+                          <div key={k} className={`flex justify-between gap-3 border-t py-2.5 ${top ? "border-(--line)" : "border-white/10"}`}>
+                            <dt className={top ? "text-(--ink-soft)" : "text-white/55"}>{k}</dt>
+                            <dd className="text-right font-semibold">{v}</dd>
+                          </div>
+                        ))}
+                      </dl>
+                      <InfoDialog
+                        wide
+                        title="เกณฑ์มาตรฐานอคาเดมี"
+                        className={`mt-6 inline-flex items-center justify-between gap-2 rounded-xl px-5 py-3.5 text-left text-sm font-semibold transition-colors ${
+                          top ? "bg-(--ink) text-white hover:bg-[#13306a]" : "bg-white/[0.06] text-white ring-1 ring-white/15 hover:bg-white/10"
+                        }`}
+                        label={
+                          <>
+                            ดูเกณฑ์ทั้งหมด {criteriaCount(l)} ข้อ
+                            <ArrowRight className="h-4 w-4" />
+                          </>
+                        }
+                      >
+                        <CriteriaExplorer initialLevel={l} />
+                      </InfoDialog>
+                    </div>
                   </article>
                 </li>
               );
             })}
-          </ol>
+          </InView>
         </div>
       </section>
 
       {/* ===== ขั้นตอนการขอใบอนุญาต ===== */}
-      <section className="px-4 py-20 sm:px-6">
-        <div className="mx-auto max-w-6xl">
-          <div className="grid grid-cols-1 gap-10 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:gap-16">
+      <section id="apply" className="scroll-mt-16 px-4 py-20 sm:px-6 lg:py-28">
+        <div className="mx-auto max-w-7xl">
+          <InView className="flex flex-wrap items-end justify-between gap-6">
             <div>
-              <p className={eyebrowLight}>How to apply</p>
-              <h2 className={`${s} mt-2 text-3xl font-bold text-(--ink) sm:text-5xl`}>ขอใบอนุญาตออนไลน์ใน 4 ขั้นตอน</h2>
-              <p className="mt-3 max-w-md text-sm leading-relaxed text-(--ink-soft)">ทุกขั้นตอนทำผ่านพอร์ทัลอคาเดมี — ติดตามสถานะและความเห็นจากสมาคมฯ ได้ตลอด</p>
-              <div className="mt-8 flex flex-wrap gap-3">
-                <Link href={applyHref} className="inline-flex h-12 items-center gap-2 rounded-lg bg-(--ink) px-6 text-sm font-semibold text-white hover:bg-[#13306a]">
-                  {academyUser ? "ไปที่พอร์ทัลอคาเดมี" : "สมัครบัญชีอคาเดมี"}
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
-                {!academyUser && (
-                  <Link href="/academies/login" className="inline-flex h-12 items-center rounded-lg px-6 text-sm font-semibold text-(--ink) ring-1 ring-(--line) hover:ring-(--ink)">
-                    เข้าสู่ระบบพอร์ทัล
-                  </Link>
-                )}
-              </div>
+              <p className={`${theme.up} ${eyebrow} text-(--accent)`}>How to apply</p>
+              <h2 className="mt-3 text-4xl font-bold leading-tight text-(--ink) sm:text-5xl">
+                <span className={theme.line}>
+                  <span style={i(0)}>ขอใบอนุญาตออนไลน์</span>
+                </span>
+                <span className={theme.line}>
+                  <span style={i(1)}>ใน 4 ขั้นตอน</span>
+                </span>
+              </h2>
+              <p className={`${theme.up} mt-4 max-w-md text-sm leading-relaxed text-(--ink-soft)`} style={i(2)}>
+                ทุกขั้นตอนทำผ่านพอร์ทัลอคาเดมี — ติดตามสถานะและความเห็นจากสมาคมฯ ได้ตลอด
+              </p>
             </div>
-            <ol className="relative grid grid-cols-1 gap-4 sm:grid-cols-2">
-              {STEPS.map((st, i) => (
-                <li key={st.title} className="rounded-2xl bg-white p-6 ring-1 ring-(--line)">
-                  <span className={`${s} flex h-11 w-11 items-center justify-center rounded-full border-2 border-(--accent) text-lg font-bold text-(--accent)`}>{i + 1}</span>
-                  <p className={`${s} mt-4 text-xl font-bold text-(--ink)`}>{st.title}</p>
-                  <p className="mt-1.5 text-sm leading-relaxed text-(--ink-soft)">{st.text}</p>
-                </li>
-              ))}
-            </ol>
-          </div>
+            <div className={`${theme.up} flex flex-wrap gap-3`} style={i(3)}>
+              <Link href={applyHref} className="inline-flex h-13 items-center gap-2 rounded-xl bg-(--ink) px-7 text-sm font-semibold text-white transition-transform hover:-translate-y-0.5">
+                {academyUser ? "ไปที่พอร์ทัลอคาเดมี" : "สมัครบัญชีอคาเดมี"}
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+              {!academyUser && (
+                <Link href="/academies/login" className="inline-flex h-13 items-center rounded-xl bg-white px-7 text-sm font-semibold text-(--ink) ring-1 ring-(--line) hover:ring-(--ink)">
+                  เข้าสู่ระบบพอร์ทัล
+                </Link>
+              )}
+            </div>
+          </InView>
+          <InView as="ol" className="relative mt-14 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4 lg:gap-6">
+            {/* เส้นเชื่อมขั้นตอน (จอใหญ่) */}
+            <span aria-hidden className="absolute left-7 right-[12%] top-7 hidden h-0.5 bg-(--line) lg:block">
+              <span className={`${theme.grow} block h-full bg-(--gold)`} />
+            </span>
+            {STEPS.map((st, n) => (
+              <li key={st.title} className="relative">
+                <span className={`${theme.pop} relative flex h-14 w-14 items-center justify-center rounded-2xl bg-(--ink) text-xl font-bold text-(--gold) shadow-lg`} style={i(n)}>
+                  {n + 1}
+                </span>
+                <div className={theme.up} style={i(n * 2 + 2)}>
+                  <p className="mt-6 text-xl font-bold text-(--ink)">{st.title}</p>
+                  <p className="mt-2 text-sm leading-relaxed text-(--ink-soft)">{st.text}</p>
+                </div>
+              </li>
+            ))}
+          </InView>
         </div>
       </section>
 

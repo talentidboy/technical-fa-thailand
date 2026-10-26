@@ -1,5 +1,5 @@
 import { isLevel, type AcademyLevel } from "@/lib/academy";
-import { academySerif } from "@/components/typefaces/academy";
+import { academyFont } from "@/components/typefaces/academy";
 
 // สีเหรียญแต่ละระดับ: หน้าเหรียญ · วงขอบใน · ริบบิ้น
 export const MEDAL: Record<AcademyLevel, { face: string; ring: string; ribbon: string; letter: string }> = {
@@ -31,7 +31,7 @@ export function Medal({ level, size = "md", className = "" }: { level: string | 
         style={{ background: m?.face ?? "#cbd5e1" }}
       >
         <span className="flex h-[78%] w-[78%] items-center justify-center rounded-full border-2" style={{ borderColor: m?.ring ?? "#e2e8f0" }}>
-          <span className={`${academySerif.className} ${s.letter} font-bold leading-none text-white`}>{m?.letter ?? "–"}</span>
+          <span className={`${academyFont.className} ${s.letter} font-bold leading-none text-white`}>{m?.letter ?? "–"}</span>
         </span>
       </span>
     </span>

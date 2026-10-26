@@ -6,7 +6,7 @@ import { getAcademyUser } from "@/lib/auth";
 import thailandMap from "@/lib/thailand-map.json";
 import { AuthShell } from "@/components/academy/AuthShell";
 import { RegisterForm } from "@/components/academy/RegisterForm";
-import { academySerif } from "@/components/typefaces/academy";
+import { academyFont } from "@/components/typefaces/academy";
 import { ArrowLeft, ClipboardCheck, FileUp, ShieldCheck, Users } from "lucide-react";
 
 export const metadata: Metadata = { title: "สมัครบัญชีอคาเดมี | Academy Licensing" };
@@ -41,7 +41,7 @@ export default async function AcademyRegisterPage() {
           </Link>
         </span>
       </div>
-      <h2 className={`${academySerif.className} mt-6 text-4xl font-bold text-[#0b1f44]`}>สมัครบัญชีอคาเดมี</h2>
+      <h2 className={`${academyFont.className} mt-6 text-4xl font-bold text-[#0b1f44]`}>สมัครบัญชีอคาเดมี</h2>
       <p className="mt-2 text-sm text-slate-500">อคาเดมีใหม่เริ่มใช้งานได้ทันที · อคาเดมีที่มีในทะเบียนแล้ว รอสมาคมฯ ยืนยันสิทธิ์ดูแล</p>
       <div className="mt-8">
         <RegisterForm academies={academies} provinces={provinces} />
