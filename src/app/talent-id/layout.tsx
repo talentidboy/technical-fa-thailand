@@ -41,8 +41,10 @@ export default async function TalentIdLayout({
 }: {
   children: React.ReactNode;
 }) {
+  // ข้อมูลนักฟุตบอลเยาวชน — แอดมิน/เจ้าหน้าที่เท่านั้น (โค้ชที่ล็อกอินแล้วเข้าไม่ได้)
   const user = await getCurrentUser();
   if (!user) redirect("/login");
+  if (user.role !== "ADMIN" && user.role !== "STAFF") redirect(user.role === "COACH" ? "/me" : "/");
 
   return (
     <div style={SCOUT_THEME} className="min-h-screen bg-indigo-950 text-white">

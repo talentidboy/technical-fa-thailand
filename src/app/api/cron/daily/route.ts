@@ -20,6 +20,12 @@ export async function GET(request: NextRequest) {
   if (!authorized(request)) return new NextResponse("Unauthorized", { status: 401 });
   const now = new Date();
 
+  // ===== 0) ล้างข้อมูลชั่วคราว: session ที่หมดอายุ + ประวัติรหัสผ่านผิดที่เก่ากว่า 1 วัน =====
+  await Promise.all([
+    prisma.session.deleteMany({ where: { expiresAt: { lt: now } } }),
+    prisma.loginAttempt.deleteMany({ where: { createdAt: { lt: new Date(now.getTime() - 86_400_000) } } }),
+  ]);
+
   // ===== 1) ใบอนุญาตใกล้หมด / เพิ่งหมด (ดูเฉพาะใบระดับสูงสุดของแต่ละสาย) =====
   const records = await prisma.licenseRecord.findMany({
     where: { expireDate: { gte: new Date(now.getTime() - 8 * 86_400_000), lte: new Date(now.getTime() + 91 * 86_400_000) } },

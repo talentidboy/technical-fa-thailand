@@ -87,6 +87,13 @@ export async function requireUser() {
   return user;
 }
 
+// แอดมินหรือเจ้าหน้าที่เท่านั้น (โค้ชที่ล็อกอินแล้วเข้าไม่ได้) — ข้อมูลภายใน เช่น Talent ID ไฟล์ส่งออก ใบประกาศของผู้อื่น
+export async function requireStaff() {
+  const user = await requireUser();
+  if (user.role !== "ADMIN" && user.role !== "STAFF") redirect(user.role === "COACH" ? "/me" : "/");
+  return user;
+}
+
 export async function requireAdmin() {
   const user = await requireUser();
   if (user.role !== "ADMIN") {

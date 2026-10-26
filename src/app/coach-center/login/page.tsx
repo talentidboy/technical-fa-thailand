@@ -1,4 +1,5 @@
 import { BrandLogo } from "@/components/BrandLogo";
+import { LOCKED_MESSAGE } from "@/lib/login-guard";
 import Link from "next/link";
 import Image from "next/image";
 import { redirect } from "next/navigation";
@@ -21,7 +22,7 @@ const POINTS = [
 export default async function CoachLoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: "1" | "disabled" | "staff" }>;
+  searchParams: Promise<{ error?: "1" | "disabled" | "staff" | "locked" }>;
 }) {
   const currentUser = await getCurrentUser();
   if (currentUser) {
@@ -97,7 +98,9 @@ export default async function CoachLoginPage({
             <p role="alert" className="mt-6 flex items-start gap-2 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 ring-1 ring-red-100">
               <AlertCircle className="mt-0.5 h-4 w-4 flex-none" />
               <span>
-                {error === "disabled" ? (
+                {error === "locked" ? (
+                  LOCKED_MESSAGE
+                ) : error === "disabled" ? (
                   "บัญชีนี้ถูกระงับการใช้งาน กรุณาติดต่อผู้ดูแลระบบ"
                 ) : error === "staff" ? (
                   <>

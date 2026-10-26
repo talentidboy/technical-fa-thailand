@@ -24,6 +24,23 @@ const nextConfig: NextConfig = {
       bodySizeLimit: "4mb",
     },
   },
+  // หัวข้อความด้านความปลอดภัยของทุกหน้า: ห้ามเว็บอื่นฝังหน้าเราใน iframe (กันหลอกกด) · บังคับ HTTPS ·
+  // ห้ามเบราว์เซอร์เดาชนิดไฟล์ · ไม่ส่งที่อยู่เต็มไปเว็บอื่น · ปิดกล้อง/ไมค์/ตำแหน่งที่เว็บไม่ได้ใช้
+  async headers() {
+    return [
+      {
+        source: "/:path*",
+        headers: [
+          { key: "X-Frame-Options", value: "SAMEORIGIN" },
+          { key: "Content-Security-Policy", value: "frame-ancestors 'self'; base-uri 'self'; object-src 'none'" },
+          { key: "Strict-Transport-Security", value: "max-age=31536000; includeSubDomains" },
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), payment=()" },
+        ],
+      },
+    ];
+  },
   images: {
     remotePatterns: [
       {

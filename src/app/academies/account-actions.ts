@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { createSession, destroySession, hashPassword, verifyPassword } from "@/lib/auth";
 import { audit } from "@/lib/audit";
+import { clearFailedLogins, loginLocked, recordFailedLogin } from "@/lib/login-guard";
 import type { FormResult } from "@/components/ResultForm";
 
 const text = (fd: FormData, key: string) =>
@@ -16,8 +17,13 @@ const optional = (fd: FormData, key: string) => text(fd, key) || null;
 export async function academyLogin(formData: FormData) {
   const email = text(formData, "email").toLowerCase();
   const password = String(formData.get("password") ?? "");
+  if (await loginLocked(email)) redirect("/academies/login?error=locked");
   const user = await prisma.systemUser.findUnique({ where: { email } });
-  if (!user || !(await verifyPassword(password, user.passwordHash))) redirect("/academies/login?error=1");
+  if (!user || !(await verifyPassword(password, user.passwordHash))) {
+    await recordFailedLogin(email);
+    redirect("/academies/login?error=1");
+  }
+  await clearFailedLogins(email);
   if (!user.isActive) redirect("/academies/login?error=disabled");
   if (user.role === "COACH") redirect("/academies/login?error=coach");
   await prisma.systemUser.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } });

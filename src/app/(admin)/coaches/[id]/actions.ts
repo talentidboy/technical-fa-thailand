@@ -1,7 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { requireAdmin, requireUser } from "@/lib/auth";
+import { requireAdmin } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { audit } from "@/lib/audit";
 import { notifyCoaches } from "@/lib/notify";
@@ -51,7 +51,8 @@ export async function createLicenseRecord(formData: FormData) {
 
 // อนุญาตให้ Admin และ Staff ยืนยันอัปเกรดระดับได้ทั้งคู่ แต่ต้องติ๊กยืนยันว่าผู้ฝึกสอนผ่านการประเมินก่อนเสมอ
 export async function confirmLicenseUpgrade(formData: FormData) {
-  const approver = await requireUser();
+  // ออกใบอนุญาตระดับใหม่ได้เฉพาะผู้ดูแลระบบ (เดิม requireUser ทำให้บัญชีโค้ชเรียกได้)
+  const approver = await requireAdmin();
   const coachId = Number(formData.get("coachId"));
   const licenseType = String(formData.get("licenseType") ?? "").trim();
   const recordType = String(formData.get("recordType") ?? "").trim();

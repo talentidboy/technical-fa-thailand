@@ -1,12 +1,13 @@
 import { NextResponse, type NextRequest } from "next/server";
 import ExcelJS from "exceljs";
 import { prisma } from "@/lib/prisma";
-import { requireUser } from "@/lib/auth";
+import { requireStaff } from "@/lib/auth";
 import { buildCoachWhere } from "@/lib/coach-filters";
 import { labelFor, GENDER_OPTIONS } from "@/lib/constants";
 
 export async function GET(request: NextRequest) {
-  await requireUser();
+  // ข้อมูลส่วนบุคคลของผู้ฝึกสอนทุกคน — แอดมิน/เจ้าหน้าที่เท่านั้น
+  await requireStaff();
 
   const params = Object.fromEntries(request.nextUrl.searchParams.entries());
   const where = buildCoachWhere(params);

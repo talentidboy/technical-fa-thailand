@@ -901,3 +901,15 @@ model Notification {
   @@index([emailedAt])
   @@map("notifications")
 }
+
+// การเข้าสู่ระบบที่รหัสผ่านไม่ถูกต้อง — ใช้จำกัดการเดารหัสผ่าน (ต่ออีเมล / ต่อ IP ภายใน 15 นาที) · งานรายวันลบรายการเก่ากว่า 1 วัน
+model LoginAttempt {
+  id        Int      @id @default(autoincrement())
+  email     String
+  ip        String?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([email, createdAt])
+  @@index([ip, createdAt])
+  @@map("login_attempts")
+}

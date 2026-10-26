@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { LOCKED_MESSAGE } from "@/lib/login-guard";
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { getAcademyUser, getCurrentUser } from "@/lib/auth";
@@ -15,6 +16,7 @@ const ERRORS: Record<string, string> = {
   "1": "อีเมลหรือรหัสผ่านไม่ถูกต้อง",
   disabled: "บัญชีนี้ถูกระงับการใช้งาน — โปรดติดต่อสมาคมฯ",
   coach: "บัญชีผู้ฝึกสอนเข้าสู่ระบบที่ศูนย์อบรมผู้ฝึกสอน",
+  locked: LOCKED_MESSAGE,
 };
 
 const POINTS = [

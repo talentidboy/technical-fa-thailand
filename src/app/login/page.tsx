@@ -1,4 +1,5 @@
 import { BrandLogo } from "@/components/BrandLogo";
+import { LOCKED_MESSAGE } from "@/lib/login-guard";
 import Link from "next/link";
 import Image from "next/image";
 import { redirect } from "next/navigation";
@@ -11,7 +12,7 @@ import { ArrowLeft } from "lucide-react";
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: "1" | "disabled" | "coach" }>;
+  searchParams: Promise<{ error?: "1" | "disabled" | "coach" | "locked" }>;
 }) {
   const currentUser = await getCurrentUser();
   if (currentUser) {
@@ -66,7 +67,9 @@ export default async function LoginPage({
           <form action={login} className="mt-6 space-y-4">
             {error && (
               <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">
-                {error === "disabled"
+                {error === "locked"
+                  ? LOCKED_MESSAGE
+                  : error === "disabled"
                   ? "บัญชีนี้ถูกระงับการใช้งาน กรุณาติดต่อผู้ดูแลระบบ"
                   : error === "coach"
                     ? (

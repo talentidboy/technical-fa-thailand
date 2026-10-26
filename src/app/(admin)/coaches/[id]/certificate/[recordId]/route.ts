@@ -2,7 +2,7 @@ import { coachName } from "@/lib/coach-name";
 import { NextResponse } from "next/server";
 import { parseId } from "@/lib/route-id";
 import { prisma } from "@/lib/prisma";
-import { requireUser } from "@/lib/auth";
+import { requireStaff } from "@/lib/auth";
 import { generateCertificatePdf } from "@/lib/certificate-pdf";
 import { LICENSE_TYPES, RECORD_TYPES, labelFor } from "@/lib/constants";
 
@@ -10,7 +10,8 @@ export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string; recordId: string }> },
 ) {
-  await requireUser();
+  // ใบประกาศของผู้ฝึกสอนคนใดก็ได้ — แอดมิน/เจ้าหน้าที่เท่านั้น (โค้ชดาวน์โหลดของตัวเองที่ /me/certificate)
+  await requireStaff();
   const { recordId } = await params;
 
   const record = await prisma.licenseRecord.findUnique({

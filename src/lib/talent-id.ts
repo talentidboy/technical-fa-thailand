@@ -5,6 +5,7 @@ import {
   escapeAirtableFormulaString,
   type AirtableRecord,
 } from "./airtable";
+import { requireStaff } from "./auth";
 
 type RawFields = Record<string, unknown>;
 
@@ -251,7 +252,9 @@ function mapPlayer(record: AirtableRecord<RawFields>): TalentPlayer {
 // หมายเหตุ: ตาราง Players มีมากกว่า 2,000 แถว — ใช้เฉพาะหน้า Home/Standouts ที่ต้อง
 // สรุปภาพรวมทั้งหมดจริงๆ เท่านั้น (ดึงช้าโดยธรรมชาติ เพราะต้องวน ~21+ รอบ) หน้ารายชื่อ
 // ผู้เล่นให้ใช้ getTalentPlayersPage() แทน ซึ่งผลัก filter/sort/pagination ไปที่ Airtable
+// ทุกฟังก์ชันที่ดึงข้อมูลนักฟุตบอลเยาวชนตรวจสิทธิ์ที่นี่อีกชั้น (นอกจาก layout) — แอดมิน/เจ้าหน้าที่เท่านั้น
 export async function getTalentPlayers(): Promise<TalentPlayer[]> {
+  await requireStaff();
   const records = await getAirtableRecords<RawFields>(TABLE_NAME);
   return records.map(mapPlayer);
 }
@@ -320,6 +323,7 @@ function buildFilterFormula(query: TalentPlayerQuery): string | undefined {
 export async function getTalentPlayersPage(
   query: TalentPlayerQuery,
 ): Promise<{ players: TalentPlayer[]; offset?: string }> {
+  await requireStaff();
   const sortKey = query.sortKey ?? "name";
   const asc = (query.sortAsc !== false) !== (sortKey === "age");
   const { records, offset } = await queryAirtablePage<RawFields>(TABLE_NAME, {
@@ -332,6 +336,7 @@ export async function getTalentPlayersPage(
 }
 
 export async function getTalentPlayerById(id: string): Promise<TalentPlayer | null> {
+  await requireStaff();
   const record = await getAirtableRecord<RawFields>(TABLE_NAME, id);
   return record ? mapPlayer(record) : null;
 }

@@ -1,4 +1,5 @@
 import { getAllMatchStats } from "@/lib/talent-match-stats";
+import { requireStaff } from "@/lib/auth";
 import { Users } from "lucide-react";
 import { Breadcrumb } from "@/components/talent-id/Breadcrumb";
 import { StatsExplorer } from "@/components/talent-id/StatsExplorer";
@@ -7,6 +8,8 @@ import { ScoreStrip, TalentPageHead } from "@/components/talent-id/TalentUi";
 export const fetchCache = "default-cache";
 
 export default async function TalentIdStatsPage() {
+  // ข้อมูลนักฟุตบอลเยาวชน — แอดมิน/เจ้าหน้าที่เท่านั้น
+  await requireStaff();
   let data: Awaited<ReturnType<typeof getAllMatchStats>> = [];
   let loadError: string | null = null;
   try {

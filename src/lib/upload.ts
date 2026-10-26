@@ -10,8 +10,9 @@ const MAX_SIZE_BYTES = 4 * 1024 * 1024;
 let client: ReturnType<typeof createClient> | null = null;
 function storage() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  if (!url || !key) throw new Error("ระบบอัปโหลดรูปยังไม่ได้ตั้งค่า (NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY)");
+  // ใช้กุญแจฝั่งเซิร์ฟเวอร์ (service role) ถ้ามี — เมื่อตั้งแล้วปิดสิทธิ์อัปโหลดของ anon ที่ bucket "uploads" ได้ ไม่ให้ใครใช้กุญแจสาธารณะอัปไฟล์เอง
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !key) throw new Error("ระบบอัปโหลดรูปยังไม่ได้ตั้งค่า (NEXT_PUBLIC_SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY)");
   client ??= createClient(url, key);
   return client.storage.from(BUCKET);
 }
