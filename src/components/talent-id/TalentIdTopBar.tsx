@@ -7,6 +7,7 @@ import { Activity, LayoutDashboard, Trophy, Users } from "lucide-react";
 import { TALENT_ID_LOGO_URL } from "@/lib/brand";
 import { HomeButton } from "@/components/HomeButton";
 import { talentFont } from "@/components/typefaces/talent";
+import { AdminSwitcher } from "@/components/admin/AdminSwitcher";
 
 const NAV = [
   { href: "/talent-id", label: "ภาพรวม", icon: LayoutDashboard },
@@ -19,7 +20,7 @@ const NAV = [
 const isActive = (pathname: string, href: string) => pathname === href || (href === "/talent-id/players" && /^\/talent-id\/rec/.test(pathname));
 
 // แถบบนของ Talent ID (ห้องวิเคราะห์ข้อมูล): โลโก้ · แท็บเมนู · ผู้ใช้ · ปุ่มกลับหน้าแรกมุมขวาสุด (โทรศัพท์ใช้แถบเมนูล่างจอแทนแท็บ)
-export function TalentIdTopBar({ email, roleLabel }: { email?: string; roleLabel?: string }) {
+export function TalentIdTopBar({ email, roleLabel, isAdmin = false }: { email?: string; roleLabel?: string; isAdmin?: boolean }) {
   const pathname = usePathname();
   return (
     <header className="sticky top-0 z-30 border-b border-white/10 bg-indigo-950">
@@ -55,6 +56,9 @@ export function TalentIdTopBar({ email, roleLabel }: { email?: string; roleLabel
         </nav>
 
         <div className="ml-auto flex flex-none items-center gap-4">
+          <div className="hidden xl:block">
+            <AdminSwitcher current="talent" isAdmin={isAdmin} />
+          </div>
           {email && (
             <span className="hidden text-right leading-tight xl:block">
               <span className="block max-w-48 truncate text-xs text-indigo-200" title={email}>

@@ -37,6 +37,7 @@ import { ManageDialogButton } from "@/components/g15/ManageDialogButton";
 import { formatMatchDateTime } from "@/lib/g15";
 import { withStage, stageInfo, isLive, matchdayMap, isKnockoutRound, type G15Stage } from "@/lib/g15-stage";
 import { ArrowLeft, ClipboardList, ExternalLink, Users, Star, FileText, MonitorPlay } from "lucide-react";
+import { AdminSwitcher } from "@/components/admin/AdminSwitcher";
 
 type RosterPlayer = {
   id: number;
@@ -186,6 +187,9 @@ export default async function G15ManageMatchPage({
               <p className="truncate text-[11px] text-indigo-300">จัดการรายละเอียดนัดการแข่งขัน G15</p>
             </div>
           </Link>
+          <div className="ml-auto hidden md:block">
+            <AdminSwitcher current="g15" isAdmin={currentUser?.role === "ADMIN"} />
+          </div>
           <Link
             href={manageHref}
             className="inline-flex flex-none items-center gap-1.5 whitespace-nowrap rounded-lg border border-white/15 px-2.5 py-2 text-sm font-medium text-indigo-200 transition-colors hover:bg-white/10 hover:text-white sm:px-3"

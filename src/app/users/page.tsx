@@ -7,6 +7,7 @@ import { createSystemUser, deleteSystemUser } from "./actions";
 import { Field, SelectField } from "@/components/FormField";
 import { ADMIN_STAFF_ROLES } from "@/lib/constants";
 import { UserPlus, Trash2, ShieldCheck, ArrowLeft } from "lucide-react";
+import { AdminSwitcher } from "@/components/admin/AdminSwitcher";
 
 export default async function UsersPage({
   searchParams,
@@ -39,6 +40,9 @@ export default async function UsersPage({
               </p>
             </div>
           </Link>
+          <div className="ml-auto hidden md:block">
+            <AdminSwitcher current="users" isAdmin={currentUser?.role === "ADMIN"} />
+          </div>
           <Link
             href="/"
             className="inline-flex items-center gap-1.5 rounded-lg border border-white/15 px-3 py-2 text-sm font-medium text-indigo-200 transition-colors hover:bg-white/10 hover:text-white"

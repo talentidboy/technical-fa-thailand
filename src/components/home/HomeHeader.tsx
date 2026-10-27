@@ -7,7 +7,7 @@ import { BrandLogo } from "@/components/BrandLogo";
 import { display } from "@/components/fonts";
 import { logout } from "@/app/login/actions";
 import { DEPARTMENTS, departmentHref } from "./departments";
-import { ArrowRight, CalendarDays, ChevronDown, Lock, LogOut, Megaphone, Menu, UserCog, X } from "lucide-react";
+import { ArrowRight, CalendarDays, ChevronDown, ListChecks, Lock, LogOut, Megaphone, Menu, UserCog, X } from "lucide-react";
 
 export type HeaderUser = { email: string; roleLabel: string; isAdmin: boolean; isStaff: boolean };
 export type HeaderEvent = { id: number; title: string; color: string; when: string };
@@ -140,6 +140,7 @@ export function HomeHeader({ user, events }: { user: HeaderUser | null; events: 
             <p className="text-xs text-slate-500">{user.roleLabel}</p>
           </div>
           <div className="py-1.5 text-sm">
+            {user.isStaff && <MenuLink href="/admin" icon={<ListChecks className="h-4 w-4" />} label="ศูนย์ควบคุม (งานที่ต้องทำ)" />}
             <MenuLink href="/dashboard" icon={<ArrowRight className="h-4 w-4" />} label="แดชบอร์ดศูนย์อบรมผู้ฝึกสอน" />
             {user.isStaff && <MenuLink href="/announcements" icon={<Megaphone className="h-4 w-4" />} label="จัดการข่าวประกาศ" />}
             {user.isAdmin && <MenuLink href="/users" icon={<UserCog className="h-4 w-4" />} label="ผู้ใช้งานระบบ" />}

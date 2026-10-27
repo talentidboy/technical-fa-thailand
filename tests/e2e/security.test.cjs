@@ -40,7 +40,7 @@ module.exports = {
       await p.goto(`${BASE}/login`, { waitUntil: "networkidle", timeout: 240_000 });
       await p.locator('input[name="email"]').fill(email);
       await p.locator('input[name="password"]').fill(password);
-      await Promise.all([p.waitForURL(/\/login\?error=|\/$/, { timeout: 30_000 }), p.locator('form button[type="submit"]').first().click()]);
+      await Promise.all([p.waitForURL(/\/login\?error=|\/admin$/, { timeout: 30_000 }), p.locator('form button[type="submit"]').first().click()]);
       return new URL(p.url()).searchParams.get("error");
     };
     const first = await attempt("wrong-1");

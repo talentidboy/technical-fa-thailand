@@ -19,6 +19,7 @@ import { Field } from "@/components/FormField";
 import { LogoPasteField } from "@/components/g15/LogoPasteField";
 import { ModalTrigger } from "@/components/Modal";
 import { ArrowLeft, Shield, Users, UserCog, Trash2, ChevronDown, UserMinus, UserPlus } from "lucide-react";
+import { AdminSwitcher } from "@/components/admin/AdminSwitcher";
 
 function toDateInputValue(date: Date | null) {
   if (!date) return "";
@@ -124,6 +125,9 @@ export default async function G15ManageTeamPage({
               <p className="truncate text-[11px] text-indigo-300">จัดการข้อมูลทีม G15</p>
             </div>
           </Link>
+          <div className="ml-auto hidden md:block">
+            <AdminSwitcher current="g15" isAdmin={currentUser?.role === "ADMIN"} />
+          </div>
           <Link
             href="/g15-womens-series/manage"
             className="inline-flex flex-none items-center gap-1.5 whitespace-nowrap rounded-lg border border-white/15 px-2.5 py-2 text-sm font-medium text-indigo-200 transition-colors hover:bg-white/10 hover:text-white sm:px-3"

@@ -48,7 +48,7 @@ export default async function TalentIdLayout({
 
   return (
     <div style={SCOUT_THEME} className="min-h-screen bg-indigo-950 text-white">
-      <TalentIdTopBar email={user.email} roleLabel={ROLE_LABELS[user.role] ?? user.role} />
+      <TalentIdTopBar email={user.email} roleLabel={ROLE_LABELS[user.role] ?? user.role} isAdmin={user.role === "ADMIN"} />
       <main className="relative overflow-x-hidden pb-24 md:pb-0">
         <div className="relative mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8">{children}</div>
       </main>

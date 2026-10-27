@@ -9,6 +9,7 @@ import { AwardsEditor } from "@/components/g15/AwardsEditor";
 import { ALL_AWARDS, BEST_XI_SLOTS, positionGroup, coachRank } from "@/lib/g15-awards";
 import { loadAwards, awardSuggestions } from "@/lib/g15-awards-data";
 import { ArrowLeft, Award, ExternalLink, Sparkles } from "lucide-react";
+import { AdminSwitcher } from "@/components/admin/AdminSwitcher";
 
 // เลือกผู้ได้รับรางวัลทั้งหมด + ทีมยอดเยี่ยม 4-3-3 (holding) ในหน้าเดียว แล้วบันทึกครั้งเดียว
 export default async function G15AwardsManagePage() {
@@ -63,6 +64,9 @@ export default async function G15AwardsManagePage() {
               <p className="truncate text-[11px] text-indigo-300">จัดการรางวัล G15</p>
             </div>
           </Link>
+          <div className="ml-auto hidden md:block">
+            <AdminSwitcher current="g15" isAdmin={user?.role === "ADMIN"} />
+          </div>
           <Link
             href="/g15-womens-series/manage"
             className="inline-flex flex-none items-center gap-1.5 rounded-lg border border-white/15 px-3 py-2 text-sm font-medium text-indigo-200 hover:bg-white/10 hover:text-white"

@@ -80,6 +80,7 @@ module.exports = {
         who: "แอดมิน",
         token: admin,
         pages: [
+          "/admin",
           "/dashboard",
           "/dashboard/report",
           "/coaches",

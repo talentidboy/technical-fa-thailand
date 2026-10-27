@@ -6,6 +6,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { OfficialCountdown } from "@/components/g15/OfficialCountdown";
 import { matchdayMap } from "@/lib/g15-stage";
 import { ArrowLeft, ClipboardList } from "lucide-react";
+import { AdminSwitcher } from "@/components/admin/AdminSwitcher";
 
 const BANGKOK_TZ = "Asia/Bangkok";
 
@@ -52,6 +53,9 @@ export default async function G15CountdownPage() {
               <p className="truncate text-[11px] text-indigo-300">Official Countdown · G15 Women&apos;s Football Series</p>
             </div>
           </Link>
+          <div className="ml-auto hidden md:block">
+            <AdminSwitcher current="g15" isAdmin={user?.role === "ADMIN"} />
+          </div>
           <Link
             href="/g15-womens-series/manage"
             className="inline-flex h-10 flex-none items-center gap-1.5 whitespace-nowrap rounded-lg border border-white/15 px-3 text-sm font-medium text-indigo-200 transition-colors hover:bg-white/10 hover:text-white"

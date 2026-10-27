@@ -28,7 +28,8 @@ export async function login(formData: FormData) {
   await prisma.systemUser.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } });
   await createSession(user.id);
   // บัญชีอคาเดมีเข้าได้เฉพาะพอร์ทัลของตัวเอง
-  redirect(user.role === "ACADEMY" ? "/academies/portal" : "/");
+  // แอดมิน/เจ้าหน้าที่ → ศูนย์ควบคุม (งานค้างทุกหมวด)
+  redirect(user.role === "ACADEMY" ? "/academies/portal" : "/admin");
 }
 
 export async function logout() {

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { AcademyLogo } from "@/components/SectionLogos";
 import { usePathname } from "next/navigation";
 import { ArrowUpRight, BadgeCheck, Building2, FileCheck2, History, LayoutDashboard, UserCheck } from "lucide-react";
+import { AdminSwitcher } from "@/components/admin/AdminSwitcher";
 
 type Counts = { applications: number; accounts: number; expiring: number };
 
@@ -18,7 +19,7 @@ const ITEMS = [
 ];
 
 // เมนูหลักของหน้าจัดการ: แถบด้านซ้าย (จอใหญ่) / แถบบนเลื่อนแนวนอน (มือถือ)
-export function ManageNav({ counts, email }: { counts: Counts; email: string }) {
+export function ManageNav({ counts, email, isAdmin }: { counts: Counts; email: string; isAdmin: boolean }) {
   const path = usePathname();
   // หน้ารายละเอียดอคาเดมี /academies/manage/123 นับเป็นเมนู "อคาเดมี"
   const isActive = (href: string, exact?: boolean) =>
@@ -33,6 +34,9 @@ export function ManageNav({ counts, email }: { counts: Counts; email: string }) 
           <span className="mt-1 block text-[11px] text-white/60">ระบบจัดการ (สมาคมฯ)</span>
         </span>
       </Link>
+      <div className="hidden px-3 pb-3 lg:block">
+        <AdminSwitcher current="academy" isAdmin={isAdmin} wide />
+      </div>
       <nav aria-label="เมนูจัดการ" className="flex gap-1 overflow-x-auto px-2 pb-2 lg:flex-1 lg:flex-col lg:px-3 lg:pb-0">
         {ITEMS.map(({ href, label, icon: Icon, exact, count }) => {
           const active = isActive(href, exact);

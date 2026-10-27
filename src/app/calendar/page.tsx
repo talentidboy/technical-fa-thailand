@@ -7,6 +7,7 @@ import CalendarGrid from "./CalendarGrid";
 import AddEventButton from "./AddEventButton";
 import CalendarFilters from "./CalendarFilters";
 import { ArrowLeft } from "lucide-react";
+import { AdminSwitcher } from "@/components/admin/AdminSwitcher";
 
 const QUARTERS = [
   { q: 1, months: [1, 2, 3], label: "ไตรมาส 1 (ม.ค. - มี.ค.)" },
@@ -86,6 +87,9 @@ export default async function CalendarPage({
               </p>
             </div>
           </Link>
+          <div className="ml-auto hidden md:block">
+            <AdminSwitcher current="calendar" isAdmin={currentUser?.role === "ADMIN"} />
+          </div>
           <Link
             href="/"
             className="inline-flex items-center gap-1.5 rounded-lg border border-white/15 px-3 py-2 text-sm font-medium text-indigo-200 transition-colors hover:bg-white/10 hover:text-white"

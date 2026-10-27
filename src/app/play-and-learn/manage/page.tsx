@@ -58,6 +58,7 @@ import {
   Pencil,
   Download,
 } from "lucide-react";
+import { AdminSwitcher } from "@/components/admin/AdminSwitcher";
 
 const inputClass =
   "rounded-lg border border-slate-200 px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100";
@@ -106,6 +107,9 @@ export default async function PlayAndLearnManagePage({ searchParams }: { searchP
               <p className="text-[11px] text-indigo-300">จัดการหน้า Play and Learn</p>
             </div>
           </Link>
+          <div className="ml-auto hidden md:block">
+            <AdminSwitcher current="play" isAdmin={user?.role === "ADMIN"} />
+          </div>
           <Link
             href="/play-and-learn"
             className="inline-flex items-center gap-1.5 rounded-lg border border-white/15 px-3 py-2 text-sm font-medium text-indigo-200 transition-colors hover:bg-white/10 hover:text-white"

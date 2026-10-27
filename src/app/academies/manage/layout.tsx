@@ -20,7 +20,7 @@ export default async function ManageLayout({ children }: { children: React.React
   ]);
   return (
     <div className="min-h-screen bg-slate-50 lg:flex">
-      <ManageNav counts={{ applications, accounts, expiring }} email={user.email} />
+      <ManageNav counts={{ applications, accounts, expiring }} email={user.email} isAdmin={user.role === "ADMIN"} />
       <div className="min-w-0 flex-1">{children}</div>
     </div>
   );

@@ -24,6 +24,7 @@ import type { LucideIcon } from "lucide-react";
 import { logout } from "@/app/login/actions";
 import { display } from "@/components/fonts";
 import { CoachCentreLogo } from "@/components/SectionLogos";
+import { AdminSwitcher } from "@/components/admin/AdminSwitcher";
 
 type NavItem = {
   href: string;
@@ -149,6 +150,10 @@ export function Sidebar({
         >
           <X className="h-5 w-5" />
         </button>
+      </div>
+
+      <div className="px-3 pt-1">
+        <AdminSwitcher current="coach" isAdmin={role === "ADMIN"} wide />
       </div>
 
       <nav className="flex-1 space-y-6 overflow-y-auto px-3 py-4">

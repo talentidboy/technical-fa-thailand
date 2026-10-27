@@ -17,6 +17,7 @@ import { StageSwitcher } from "@/components/g15/StageSwitcher";
 import { parseStage, withStage, stageInfo } from "@/lib/g15-stage";
 import { NationalManage } from "./NationalManage";
 import { Trash2, ArrowLeft, MapPin, ChevronRight, ChevronDown, Flame, ClipboardList } from "lucide-react";
+import { AdminSwitcher } from "@/components/admin/AdminSwitcher";
 
 export default async function G15ManagePage({
   searchParams,
@@ -31,13 +32,13 @@ export default async function G15ManagePage({
   const stage = parseStage((await searchParams).stage);
 
   return (
-    <ManageShell stage={stage}>
+    <ManageShell stage={stage} isAdmin={currentUser.role === "ADMIN"}>
       {stage === "NATIONAL" ? <NationalManage /> : <RegionalManage />}
     </ManageShell>
   );
 }
 
-function ManageShell({ stage, children }: { stage: ReturnType<typeof parseStage>; children: React.ReactNode }) {
+function ManageShell({ stage, isAdmin, children }: { stage: ReturnType<typeof parseStage>; isAdmin: boolean; children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-slate-50">
       <header className="sticky top-0 z-20 border-b border-white/10 bg-indigo-950/80 backdrop-blur">
@@ -53,6 +54,9 @@ function ManageShell({ stage, children }: { stage: ReturnType<typeof parseStage>
               </p>
             </div>
           </Link>
+          <div className="ml-auto hidden md:block">
+            <AdminSwitcher current="g15" isAdmin={isAdmin} />
+          </div>
           <Link
             href={withStage("/g15-womens-series", stage)}
             className="inline-flex flex-none items-center gap-1.5 whitespace-nowrap rounded-lg border border-white/15 px-2.5 py-2 text-sm font-medium text-indigo-200 transition-colors hover:bg-white/10 hover:text-white sm:px-3"
