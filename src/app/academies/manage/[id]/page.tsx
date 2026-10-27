@@ -17,7 +17,7 @@ import { IssueLicenceForm, RevokeLicenceForm } from "@/components/academy/Licenc
 import { Card, Empty, PageBody, PageHeader, TabLinks, btn } from "@/components/academy/ManageUi";
 import { deleteAcademy, deleteLicence, reactivateLicence, toggleAcademyActive, updateAcademy, updateLicence } from "../actions";
 import { AcademyFields, LicenceFields } from "../fields";
-import { BadgeCheck, CheckCircle2, ExternalLink, Eye, EyeOff, RotateCcw, Save, Trash2, TriangleAlert } from "lucide-react";
+import { BadgeCheck, Building2, CheckCircle2, ExternalLink, Eye, EyeOff, FileCheck2, Gavel, Globe, History, LayoutGrid, Phone, RotateCcw, Save, Shirt, Trash2, TriangleAlert, UserCheck, Users } from "lucide-react";
 
 const TABS = ["overview", "info", "licences", "people", "applications", "accounts", "history"] as const;
 type Tab = (typeof TABS)[number];
@@ -124,7 +124,7 @@ export default async function AcademyManagePage({ params, searchParams }: { para
 
         {tab === "overview" && (
           <div className="grid gap-6 lg:grid-cols-3">
-            <Card title="ใบอนุญาตปัจจุบัน" className="lg:col-span-2" actions={<Link href={tabHref("licences")} className={`${btn.link} text-xs`}>จัดการใบอนุญาต</Link>}>
+            <Card title="ใบอนุญาตปัจจุบัน" icon={BadgeCheck} tone="amber" className="lg:col-span-2" actions={<Link href={tabHref("licences")} className={`${btn.link} text-xs`}>จัดการใบอนุญาต</Link>}>
               {current ? (
                 <dl className="grid gap-4 sm:grid-cols-4">
                   <div>
@@ -158,7 +158,7 @@ export default async function AcademyManagePage({ params, searchParams }: { para
                 </div>
               )}
             </Card>
-            <Card title="การแสดงผลบนหน้าสาธารณะ">
+            <Card title="การแสดงผลบนหน้าสาธารณะ" icon={Globe} tone="emerald">
               <p className="text-sm text-slate-600">{showPublicly(academy.active, state) ? "แสดงอยู่บนแผนที่และทำเนียบ" : academy.active ? "ไม่แสดง (ไม่มีใบอนุญาตที่มีผล)" : "ปิดการแสดงไว้"}</p>
               <ResultForm action={toggleAcademyActive} quiet className="mt-3">
                 <input type="hidden" name="id" value={academy.id} />
@@ -168,7 +168,7 @@ export default async function AcademyManagePage({ params, searchParams }: { para
                 </button>
               </ResultForm>
             </Card>
-            <Card title="ติดต่อ (ใช้ภายใน)" actions={<Link href={tabHref("info")} className={`${btn.link} text-xs`}>แก้ไข</Link>}>
+            <Card title="ติดต่อ (ใช้ภายใน)" icon={Phone} tone="violet" actions={<Link href={tabHref("info")} className={`${btn.link} text-xs`}>แก้ไข</Link>}>
               <dl className="space-y-2 text-sm">
                 {[
                   ["ผู้ประสานงาน", academy.contactName],
@@ -183,7 +183,7 @@ export default async function AcademyManagePage({ params, searchParams }: { para
                 ))}
               </dl>
             </Card>
-            <Card title="พอร์ทัลอคาเดมี" className="lg:col-span-2">
+            <Card title="พอร์ทัลอคาเดมี" icon={LayoutGrid} className="lg:col-span-2">
               <dl className="grid gap-3 sm:grid-cols-4">
                 {[
                   { k: "บัญชีผู้ดูแล", v: academy.members.length, sub: pendingMembers ? `รออนุมัติ ${pendingMembers}` : null, t: "accounts" as const },
@@ -199,7 +199,7 @@ export default async function AcademyManagePage({ params, searchParams }: { para
                 ))}
               </dl>
             </Card>
-            <Card title="แก้ไขล่าสุด" flush className="lg:col-span-3" actions={<Link href={tabHref("history")} className={`${btn.link} text-xs`}>ทั้งหมด</Link>}>
+            <Card title="แก้ไขล่าสุด" icon={History} tone="ink" flush className="lg:col-span-3" actions={<Link href={tabHref("history")} className={`${btn.link} text-xs`}>ทั้งหมด</Link>}>
               {logs.length === 0 ? <Empty>ยังไม่มีการแก้ไข</Empty> : <LogList logs={logs} />}
             </Card>
           </div>
@@ -207,7 +207,7 @@ export default async function AcademyManagePage({ params, searchParams }: { para
 
         {tab === "info" && (
           <>
-            <Card title="ข้อมูลอคาเดมี">
+            <Card title="ข้อมูลอคาเดมี" icon={Building2}>
               <ResultForm action={updateAcademy}>
                 <input type="hidden" name="id" value={academy.id} />
                 <AcademyFields academy={academy} provinces={getProvinceOptions().map((p) => p.nameTh)} />
@@ -217,7 +217,7 @@ export default async function AcademyManagePage({ params, searchParams }: { para
                 </button>
               </ResultForm>
             </Card>
-            <Card title="ลบอคาเดมี" className="border-red-200">
+            <Card title="ลบอคาเดมี" icon={Trash2} tone="red" className="border-red-200">
               <p className="text-sm text-slate-600">ลบออกจากทะเบียนพร้อมใบอนุญาตทั้งหมด (เก็บสำเนาไว้ในบันทึกการแก้ไข) — อคาเดมีที่มีบัญชีหรือใบสมัครในพอร์ทัลแล้วลบไม่ได้ ให้ปิดการแสดงแทน</p>
               <ResultForm action={deleteAcademy} quiet className="mt-3">
                 <input type="hidden" name="id" value={academy.id} />
@@ -232,7 +232,7 @@ export default async function AcademyManagePage({ params, searchParams }: { para
 
         {tab === "licences" && (
           <>
-            <Card title="คำสั่งใบอนุญาต">
+            <Card title="คำสั่งใบอนุญาต" icon={Gavel} tone="amber">
               {active ? (
                 <>
                   <p className="mb-4 text-sm text-slate-600">
@@ -264,7 +264,7 @@ export default async function AcademyManagePage({ params, searchParams }: { para
                 </>
               )}
             </Card>
-            <Card title={`ประวัติใบอนุญาต (${licences.length})`} flush>
+            <Card title={`ประวัติใบอนุญาต (${licences.length})`} icon={History} tone="amber" flush>
               {licences.length === 0 ? (
                 <Empty>ยังไม่มีใบอนุญาต</Empty>
               ) : (
@@ -314,7 +314,7 @@ export default async function AcademyManagePage({ params, searchParams }: { para
 
         {tab === "people" && (
           <div className="grid gap-6 lg:grid-cols-2">
-            <Card title={`บุคลากร (${staff.length})`} flush>
+            <Card title={`บุคลากร (${staff.length})`} icon={Users} tone="violet" flush>
               {staff.length === 0 ? (
                 <Empty>อคาเดมียังไม่ได้กรอกรายชื่อบุคลากร</Empty>
               ) : (
@@ -348,7 +348,7 @@ export default async function AcademyManagePage({ params, searchParams }: { para
                 </ul>
               )}
             </Card>
-            <Card title={`ทีมและนักเตะ (${teams.length} ทีม · ${players} คน)`} flush>
+            <Card title={`ทีมและนักเตะ (${teams.length} ทีม · ${players} คน)`} icon={Shirt} tone="emerald" flush>
               {academy.playerConsentAt && (
                 <p className="border-b border-slate-100 px-5 py-2 text-xs text-slate-500">
                   ยืนยันความยินยอม PDPA โดย {academy.playerConsentBy} · {thaiDate(academy.playerConsentAt)}
@@ -408,7 +408,7 @@ export default async function AcademyManagePage({ params, searchParams }: { para
         )}
 
         {tab === "applications" && (
-          <Card title={`ใบสมัคร (${academy.applications.length})`} flush>
+          <Card title={`ใบสมัคร (${academy.applications.length})`} icon={FileCheck2} flush>
             {academy.applications.length === 0 ? (
               <Empty>ยังไม่มีใบสมัครผ่านระบบ</Empty>
             ) : (
@@ -439,6 +439,8 @@ export default async function AcademyManagePage({ params, searchParams }: { para
         {tab === "accounts" && (
           <Card
             title={`บัญชีผู้ดูแล (${academy.members.length})`}
+            icon={UserCheck}
+            tone="violet"
             flush
             actions={
               <Link href={`/academies/manage/accounts?academy=${academy.id}`} className={`${btn.link} text-xs`}>
@@ -472,7 +474,7 @@ export default async function AcademyManagePage({ params, searchParams }: { para
         )}
 
         {tab === "history" && (
-          <Card title="ประวัติการแก้ไข" flush>
+          <Card title="ประวัติการแก้ไข" icon={History} tone="ink" flush>
             {logs.length === 0 ? <Empty>ยังไม่มีการแก้ไข</Empty> : <LogList logs={logs} />}
           </Card>
         )}

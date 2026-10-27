@@ -34,7 +34,7 @@ export default async function LicencesPage({ searchParams }: { searchParams: Pro
       </PageHeader>
       <PageBody>
         <p className="text-sm text-slate-500">{tab.hint}</p>
-        <Card flush>
+        <Card flush tone="amber">
           {list.length === 0 ? (
             <Empty>ไม่มีรายการ</Empty>
           ) : (

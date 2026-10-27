@@ -4,7 +4,7 @@ import { loadAcademies, matchesQuery } from "@/lib/academy-data";
 import { ISSUES, issueCounts as countIssues, type IssueKey } from "@/lib/academy-issues";
 import { LevelBadge, StateChip } from "@/components/academy/AcademyUi";
 import { Card, PageBody, PageHeader, btn, input } from "@/components/academy/ManageUi";
-import { ChevronLeft, ChevronRight, Download, Plus, Search, TriangleAlert } from "lucide-react";
+import { Building2, ChevronLeft, ChevronRight, Download, Plus, Search, TriangleAlert } from "lucide-react";
 
 const PAGE = 50;
 
@@ -71,7 +71,7 @@ export default async function AcademyRegistryPage({
       />
       <PageBody>
         {issueCounts.length > 0 && (
-          <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
+          <div className="rounded-2xl border border-orange-200 border-l-4 border-l-orange-500 bg-orange-50 p-4">
             <p className="flex items-center gap-1.5 text-sm font-semibold text-amber-900">
               <TriangleAlert className="h-4 w-4" />
               ข้อมูลที่ควรตรวจสอบ
@@ -90,7 +90,7 @@ export default async function AcademyRegistryPage({
           </div>
         )}
 
-        <form action="/academies/manage/academies" className="grid gap-2 sm:grid-cols-2 lg:grid-cols-[minmax(0,1.6fr)_1fr_1fr_1fr_auto]">
+        <form action="/academies/manage/academies" className="grid gap-2 rounded-2xl bg-white p-3 ring-1 ring-slate-200 sm:grid-cols-2 lg:grid-cols-[minmax(0,1.6fr)_1fr_1fr_1fr_auto]">
           <label className="relative">
             <span className="sr-only">ค้นหา</span>
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -130,6 +130,7 @@ export default async function AcademyRegistryPage({
 
         <Card
           flush
+          icon={Building2}
           title={
             <>
               {list.length.toLocaleString()} อคาเดมี{issue && <span className="ml-2 font-normal text-amber-700">· {ISSUES[issue].label}</span>}
@@ -148,7 +149,7 @@ export default async function AcademyRegistryPage({
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full min-w-4xl text-sm">
-                <thead className="bg-slate-50 text-left text-xs text-slate-500">
+                <thead className="bg-[#e6f3fc] text-left text-xs font-semibold text-[#0b6cb0]">
                   <tr>
                     <th className="px-5 py-2.5 font-medium">อคาเดมี</th>
                     <th className="px-3 py-2.5 font-medium">จังหวัด</th>
@@ -161,9 +162,9 @@ export default async function AcademyRegistryPage({
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {shown.map((a) => (
-                    <tr key={a.id} className={`hover:bg-slate-50 ${a.active ? "" : "opacity-60"}`}>
+                    <tr key={a.id} className={`hover:bg-[#f4f8fc] ${a.active ? "" : "opacity-60"}`}>
                       <td className="px-5 py-2.5">
-                        <Link href={`/academies/manage/${a.id}`} className="font-semibold text-slate-900 hover:underline">
+                        <Link href={`/academies/manage/${a.id}`} className="font-semibold text-[#0b1220] hover:text-[#0b6cb0] hover:underline">
                           {a.nameEn}
                         </Link>
                         {a.nameTh && <p className="text-xs text-slate-500">{a.nameTh}</p>}

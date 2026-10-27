@@ -9,13 +9,14 @@ import { AdminSwitcher } from "@/components/admin/AdminSwitcher";
 
 type Counts = { applications: number; accounts: number; expiring: number };
 
+// สีไอคอนประจำเมนู (ตรงกับการ์ดงานในหน้าภาพรวม)
 const ITEMS = [
-  { href: "/academies/manage", label: "ภาพรวม", icon: LayoutDashboard, exact: true },
-  { href: "/academies/manage/academies", label: "อคาเดมี", icon: Building2 },
-  { href: "/academies/manage/licences", label: "ใบอนุญาต", icon: BadgeCheck, count: "expiring" as const },
-  { href: "/academies/manage/applications", label: "ใบสมัคร", icon: FileCheck2, count: "applications" as const },
-  { href: "/academies/manage/accounts", label: "บัญชีอคาเดมี", icon: UserCheck, count: "accounts" as const },
-  { href: "/academies/manage/activity", label: "บันทึกการแก้ไข", icon: History },
+  { href: "/academies/manage", label: "ภาพรวม", icon: LayoutDashboard, exact: true, color: "#7cc4f0" },
+  { href: "/academies/manage/academies", label: "อคาเดมี", icon: Building2, color: "#5eead4" },
+  { href: "/academies/manage/licences", label: "ใบอนุญาต", icon: BadgeCheck, count: "expiring" as const, color: "#fcd34d" },
+  { href: "/academies/manage/applications", label: "ใบสมัคร", icon: FileCheck2, count: "applications" as const, color: "#93c5fd" },
+  { href: "/academies/manage/accounts", label: "บัญชีอคาเดมี", icon: UserCheck, count: "accounts" as const, color: "#c4b5fd" },
+  { href: "/academies/manage/activity", label: "บันทึกการแก้ไข", icon: History, color: "#cbd5e1" },
 ];
 
 // เมนูหลักของหน้าจัดการ: แถบด้านซ้าย (จอใหญ่) / แถบบนเลื่อนแนวนอน (มือถือ)
@@ -26,7 +27,7 @@ export function ManageNav({ counts, email, isAdmin }: { counts: Counts; email: s
     exact ? path === href : path.startsWith(href) || (href === "/academies/manage/academies" && /^\/academies\/manage\/\d+/.test(path));
 
   return (
-    <div className="bg-[#04223a] text-white lg:sticky lg:top-0 lg:flex lg:h-screen lg:w-72 lg:flex-none lg:flex-col">
+    <div className="bg-[#0b1220] text-white lg:sticky lg:top-0 lg:flex lg:h-screen lg:w-72 lg:flex-none lg:flex-col">
       <Link href="/academies/manage" className="flex items-center gap-2.5 px-4 py-3 lg:px-5 lg:py-5">
         <BrandLogo tone="white" className="h-8" />
         <span className="leading-tight">
@@ -38,7 +39,7 @@ export function ManageNav({ counts, email, isAdmin }: { counts: Counts; email: s
         <AdminSwitcher current="academy" isAdmin={isAdmin} wide />
       </div>
       <nav aria-label="เมนูจัดการ" className="flex gap-1 overflow-x-auto px-2 pb-2 lg:flex-1 lg:flex-col lg:px-3 lg:pb-0">
-        {ITEMS.map(({ href, label, icon: Icon, exact, count }) => {
+        {ITEMS.map(({ href, label, icon: Icon, exact, count, color }) => {
           const active = isActive(href, exact);
           const n = count ? counts[count] : 0;
           return (
@@ -46,13 +47,13 @@ export function ManageNav({ counts, email, isAdmin }: { counts: Counts; email: s
               key={href}
               href={href}
               aria-current={active ? "page" : undefined}
-              className={`flex flex-none items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-                active ? "bg-white text-[#0b1f44]" : "text-white/75 hover:bg-white/10 hover:text-white"
+              className={`flex flex-none items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-colors ${
+                active ? "bg-[#1e96dc] text-white shadow-[0_6px_16px_-8px_#1e96dc]" : "text-white/80 hover:bg-white/10 hover:text-white"
               }`}
             >
-              <Icon className="h-4 w-4 flex-none" />
+              <Icon className="h-[1.1rem] w-[1.1rem] flex-none" style={active ? undefined : { color }} />
               <span className="flex-1">{label}</span>
-              {n > 0 && <span className="rounded-full bg-amber-400 px-1.5 text-[11px] font-bold text-[#0b1f44]">{n}</span>}
+              {n > 0 && <span className="rounded-full bg-[#ffd426] px-2 text-[11px] font-bold text-[#0b1220]">{n}</span>}
             </Link>
           );
         })}

@@ -19,7 +19,7 @@ export default async function ManageLayout({ children }: { children: React.React
     prisma.academyLicence.count({ where: { status: "ACTIVE", expiresAt: { gte: now, lte: soon }, academy: { active: true } } }),
   ]);
   return (
-    <div className="min-h-screen bg-slate-50 lg:flex">
+    <div className="min-h-screen bg-[#f4f8fc] lg:flex">
       <ManageNav counts={{ applications, accounts, expiring }} email={user.email} isAdmin={user.role === "ADMIN"} />
       <div className="min-w-0 flex-1">{children}</div>
     </div>

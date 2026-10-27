@@ -3,7 +3,7 @@ import { ResultForm } from "@/components/ResultForm";
 import { Card, PageBody, PageHeader, btn } from "@/components/academy/ManageUi";
 import { createAcademy } from "../../actions";
 import { AcademyFields, LicenceFields } from "../../fields";
-import { Plus } from "lucide-react";
+import { BadgeCheck, Building2, Plus } from "lucide-react";
 
 export default function NewAcademyPage() {
   const provinces = getProvinceOptions().map((p) => p.nameTh);
@@ -12,10 +12,10 @@ export default function NewAcademyPage() {
       <PageHeader title="เพิ่มอคาเดมี" description="เพิ่มอคาเดมีเข้าทะเบียนโดยเจ้าหน้าที่ — อคาเดมีสมัครเองได้ที่หน้าสมัครของพอร์ทัล" crumbs={[{ href: "/academies/manage/academies", label: "อคาเดมี" }]} />
       <PageBody>
         <ResultForm action={createAcademy} className="space-y-6">
-          <Card title="ข้อมูลอคาเดมี">
+          <Card title="ข้อมูลอคาเดมี" icon={Building2}>
             <AcademyFields provinces={provinces} />
           </Card>
-          <Card title="ใบอนุญาตใบแรก (ไม่บังคับ)">
+          <Card title="ใบอนุญาตใบแรก (ไม่บังคับ)" icon={BadgeCheck} tone="amber">
             <p className="mb-4 text-xs text-slate-500">เลือกระดับเพื่อออกใบอนุญาตพร้อมกัน · เลขที่ใบอนุญาตเว้นว่างได้ ระบบออกเลขให้อัตโนมัติ (FAT-G-ปี-ลำดับ)</p>
             <LicenceFields />
           </Card>

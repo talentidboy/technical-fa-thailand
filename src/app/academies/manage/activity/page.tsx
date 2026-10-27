@@ -35,7 +35,7 @@ export default async function ActivityPage({ searchParams }: { searchParams: Pro
             กรอง
           </button>
         </form>
-        <Card flush>
+        <Card flush tone="ink">
           {logs.length === 0 ? (
             <Empty>ยังไม่มีรายการ</Empty>
           ) : (
