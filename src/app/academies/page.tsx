@@ -12,6 +12,7 @@ import { PublicFooter, PublicHeader } from "@/components/academy/PublicChrome";
 import { COIN, Podium } from "@/components/academy/Podium";
 import { AcademyCrest } from "@/components/academy/AcademyCrest";
 import { InView } from "@/components/academy/InView";
+import { LevelTabs } from "@/components/academy/LevelTabs";
 import { CountUp } from "@/components/play-and-learn/CountUp";
 import { academyFont, academyPoster } from "@/components/typefaces/academy";
 import theme from "@/components/academy/public.module.css";
@@ -416,66 +417,83 @@ export default async function AcademiesPage({
               แต่ละระดับมีเกณฑ์ 3 หมวด: การจัดการและองค์กร · โปรแกรมการฝึกสอน · สุขภาพและสวัสดิการ — พัฒนาทีละขั้นจนพร้อมรับรองระดับเอเชีย
             </p>
           </InView>
-          <InView as="ol" className="mt-14 grid grid-cols-1 items-start gap-6 md:grid-cols-3">
-            {ACADEMY_LEVELS.map((l, n) => {
-              const sm = LEVEL_SUMMARY[l];
-              const reqs = [["หัวหน้าอคาเดมี", sm.head], ["ผู้ฝึกสอน", sm.coaches], ...(sm.assistants ? [["ผู้ช่วยผู้ฝึกสอน", sm.assistants]] : []), ["ทีม / นักกีฬา", sm.teams]];
-              return (
-                <li key={l} className={theme.up} style={i(n * 2)}>
-                  <article className={`${theme.tier} flex flex-col overflow-hidden rounded-3xl bg-white ring-2 ring-(--ink) ${n === 1 ? "md:mt-8" : n === 2 ? "md:mt-16" : ""}`}>
-                    <div className="flex items-center justify-between gap-4 bg-(--sky-soft) px-6 pb-4 pt-5">
-                      <Coin level={l} className="h-16 w-24" />
-                      <span className="text-right text-xs font-bold text-(--ink-soft)">
-                        <b className={`${P} block text-4xl font-extrabold tabular-nums text-(--ink)`}>
-                          <CountUp value={count(l).toLocaleString("en-US")} />
-                        </b>
-                        อคาเดมี
+          {/* แท็บระดับ: กดแล้วแสดงเฉพาะการ์ดของระดับนั้น */}
+          <div className="mt-14">
+            <LevelTabs
+              items={ACADEMY_LEVELS.map((l) => {
+                const sm = LEVEL_SUMMARY[l];
+                const reqs = [["หัวหน้าอคาเดมี", sm.head], ["ผู้ฝึกสอน", sm.coaches], ...(sm.assistants ? [["ผู้ช่วยผู้ฝึกสอน", sm.assistants]] : []), ["ทีม / นักกีฬา", sm.teams]];
+                return {
+                  key: l,
+                  tab: (
+                    <span className="flex flex-col items-center gap-2 px-2 py-4 text-center sm:flex-row sm:gap-4 sm:px-5 sm:text-left">
+                      <Coin level={l} className="h-10 w-14 flex-none sm:h-12 sm:w-16" />
+                      <span className="min-w-0">
+                        <span className={`${P} block text-base font-extrabold leading-tight sm:text-xl`}>ระดับ{LEVEL_META[l].th}</span>
+                        <span className="block text-xs font-semibold text-(--ink)/60">
+                          {LEVEL_META[l].label} · {count(l).toLocaleString("en-US")} อคาเดมี
+                        </span>
                       </span>
-                    </div>
-                    <div className="flex flex-1 flex-col px-6 pb-6 pt-5">
-                      <h3 className={`${P} text-3xl font-extrabold uppercase leading-[0.95] text-(--ink)`}>
-                        FAT <span style={{ color: LEVEL_TEXT[l] }}>{LEVEL_META[l].label}</span>
-                        <span className="block text-xl">Level Academy</span>
-                      </h3>
-                      <p className="mt-2 text-sm leading-relaxed text-(--ink-soft)">{sm.audience.th}</p>
-                      {/* กล่องเหลืองข้อกำหนดหลัก (แบบโปสเตอร์) */}
-                      <dl className="mt-5 space-y-1.5 rounded-2xl bg-(--yellow) p-4 text-sm text-(--ink)">
-                        {reqs.map(([k, v]) => (
-                          <div key={k} className="flex justify-between gap-3">
-                            <dt className="font-medium text-(--ink)/70">{k}</dt>
-                            <dd className="text-right font-bold">{v}</dd>
-                          </div>
-                        ))}
-                      </dl>
-                      <ul className="mt-5 space-y-2 text-sm text-(--ink)">
-                        {sm.highlights.map((h) => (
-                          <li key={h} className="flex gap-2.5">
-                            <span className="mt-0.5 flex h-5 w-5 flex-none items-center justify-center rounded-full bg-(--ink) text-(--yellow)">
-                              <Check className="h-3 w-3" strokeWidth={3} />
-                            </span>
-                            {h}
-                          </li>
-                        ))}
-                      </ul>
-                      <InfoDialog
-                        wide
-                        title="เกณฑ์มาตรฐานอคาเดมี"
-                        className="mt-6 inline-flex items-center justify-between gap-2 rounded-2xl bg-(--ink) px-5 py-3.5 text-left text-sm font-bold text-white transition-colors hover:bg-(--sky-deep)"
-                        label={
-                          <>
-                            ดูเกณฑ์ทั้งหมด {criteriaCount(l)} ข้อ
-                            <ArrowRight className="h-4 w-4" />
-                          </>
-                        }
-                      >
-                        <CriteriaExplorer initialLevel={l} />
-                      </InfoDialog>
-                    </div>
-                  </article>
-                </li>
-              );
-            })}
-          </InView>
+                    </span>
+                  ),
+                  panel: (
+                    <article className="grid overflow-hidden rounded-3xl bg-white ring-2 ring-(--ink) shadow-[8px_8px_0_var(--ink)] lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+                      <div className="flex flex-col justify-between gap-8 bg-(--sky-soft) p-6 sm:p-10">
+                        <div>
+                          <Coin level={l} className="h-24 w-36" />
+                          <h3 className={`${P} mt-6 text-4xl font-extrabold uppercase leading-[0.95] text-(--ink) sm:text-5xl`}>
+                            FAT <span style={{ color: LEVEL_TEXT[l] }}>{LEVEL_META[l].label}</span>
+                            <span className="block text-2xl sm:text-3xl">Level Academy</span>
+                          </h3>
+                          <p className="mt-4 max-w-md leading-relaxed text-(--ink-soft)">{sm.audience.th}</p>
+                        </div>
+                        <p className="flex items-baseline gap-3">
+                          <b className={`${P} text-6xl font-extrabold tabular-nums text-(--ink)`}>
+                            <CountUp value={count(l).toLocaleString("en-US")} />
+                          </b>
+                          <span className="text-sm font-bold text-(--ink-soft)">อคาเดมีที่ได้รับการรับรอง</span>
+                        </p>
+                      </div>
+                      <div className="flex flex-col p-6 sm:p-10">
+                        {/* กล่องเหลืองข้อกำหนดหลัก (แบบโปสเตอร์) */}
+                        <dl className="space-y-2 rounded-2xl bg-(--yellow) p-5 text-sm text-(--ink) sm:text-base">
+                          {reqs.map(([k, v]) => (
+                            <div key={k} className="flex justify-between gap-3">
+                              <dt className="font-medium text-(--ink)/70">{k}</dt>
+                              <dd className="text-right font-bold">{v}</dd>
+                            </div>
+                          ))}
+                        </dl>
+                        <ul className="mt-6 grid gap-3 text-sm text-(--ink) sm:grid-cols-2">
+                          {sm.highlights.map((h) => (
+                            <li key={h} className="flex gap-2.5">
+                              <span className="mt-0.5 flex h-5 w-5 flex-none items-center justify-center rounded-full bg-(--ink) text-(--yellow)">
+                                <Check className="h-3 w-3" strokeWidth={3} />
+                              </span>
+                              {h}
+                            </li>
+                          ))}
+                        </ul>
+                        <InfoDialog
+                          wide
+                          title="เกณฑ์มาตรฐานอคาเดมี"
+                          className="mt-8 inline-flex items-center justify-between gap-2 self-start rounded-2xl bg-(--ink) px-6 py-3.5 text-left text-sm font-bold text-white transition-colors hover:bg-(--sky-deep)"
+                          label={
+                            <>
+                              ดูเกณฑ์ทั้งหมด {criteriaCount(l)} ข้อ
+                              <ArrowRight className="h-4 w-4" />
+                            </>
+                          }
+                        >
+                          <CriteriaExplorer initialLevel={l} />
+                        </InfoDialog>
+                      </div>
+                    </article>
+                  ),
+                };
+              })}
+            />
+          </div>
         </div>
       </section>
 
