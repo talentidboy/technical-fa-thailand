@@ -145,7 +145,7 @@ export function ThailandMap({ academies }: { academies: MapAcademy[] }) {
       <svg
         ref={svgRef}
         viewBox={`${-PAD} ${-TOP} ${W + PAD * 2} ${H + TOP + BOTTOM}`}
-        className="block h-auto w-full"
+        className="block h-auto w-full rounded-2xl"
         role="img"
         aria-label={`แผนที่ประเทศไทย: อคาเดมีที่ได้รับการรับรอง ${visible.length} แห่ง ใน ${provinceCount} จังหวัด`}
         onPointerMove={onPointer}
@@ -155,9 +155,13 @@ export function ThailandMap({ academies }: { academies: MapAcademy[] }) {
         }}
       >
         <g className={styles.zoom} style={{ transform: `translate(${view.tx}px, ${view.ty}px) scale(${view.s})` }}>
-          {/* ความหนาของแผ่นแผนที่: เงาเข้มสองชั้นเลื่อนลงด้านล่าง */}
-          <path d={OUTLINE} fill="#000308" transform="translate(0 9)" pointerEvents="none" />
-          <path d={OUTLINE} fill="#0b1733" stroke="#0b1733" strokeWidth={1.5} transform="translate(0 4.5)" pointerEvents="none" />
+          {/* ความหนาของแผ่นแผนที่ (เฉพาะตอนดูทั้งประเทศ) — ตอนซูมเข้าจังหวัด ชั้นนี้จะขยายตามจนเป็นก้อนเงาบังจังหวัดข้างเคียง จึงซ่อนไว้ */}
+          {!sel && (
+            <>
+              <path d={OUTLINE} fill="#000308" transform="translate(0 9)" pointerEvents="none" />
+              <path d={OUTLINE} fill="#0b1733" stroke="#0b1733" strokeWidth={1.5} transform="translate(0 4.5)" pointerEvents="none" />
+            </>
+          )}
           {map.provinces.map((p, i) => {
             const n = countOf(p.th);
             return (

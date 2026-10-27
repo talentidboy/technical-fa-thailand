@@ -1,11 +1,9 @@
 import Link from "next/link";
-import Image from "next/image";
 import type { Metadata } from "next";
 import { getAcademyUser, getCurrentUser } from "@/lib/auth";
 import { ACADEMY_LEVELS, LEVEL_META, compareAcademies, isLevel, levelRank, showPublicly } from "@/lib/academy";
 import { loadAcademies, matchesQuery } from "@/lib/academy-data";
 import { LEVEL_SUMMARY, criteriaCount } from "@/lib/academy-criteria";
-import { academyBg } from "@/lib/section-images";
 import { StateChip } from "@/components/academy/AcademyUi";
 import { CriteriaExplorer } from "@/components/academy/CriteriaExplorer";
 import { ThailandMap } from "@/components/academy/ThailandMap";
@@ -84,11 +82,6 @@ export default async function AcademiesPage({
 
       {/* ===== ฮีโร่ + แผนที่ + แถบตัวเลข ===== */}
       <section id="map" className="relative isolate scroll-mt-16 overflow-hidden bg-(--night) text-white">
-        <Image src={academyBg} alt="" fill priority placeholder="blur" sizes="100vw" className={`${theme.kenburns} -z-20 object-cover opacity-60`} />
-        <div className="absolute inset-0 -z-10 bg-linear-to-r from-(--night) via-(--night)/85 to-(--night)/25" />
-        <div className="absolute inset-0 -z-10 bg-linear-to-t from-(--night) via-(--night)/20 to-(--night)/50" />
-        {/* เส้นทองแนวตั้งบางๆ แบ่งจังหวะภาพ */}
-        <span aria-hidden className="absolute inset-y-0 left-[58%] -z-10 hidden w-px bg-linear-to-b from-transparent via-(--gold)/40 to-transparent lg:block" />
 
         <div className="mx-auto grid max-w-7xl grid-cols-1 items-center gap-12 px-4 pb-12 pt-14 sm:px-6 lg:min-h-[calc(100svh-12rem)] lg:grid-cols-[minmax(0,1fr)_minmax(0,31rem)] lg:gap-16 lg:pt-16">
           <div>
@@ -101,7 +94,7 @@ export default async function AcademiesPage({
               <p className={`${eyebrow} leading-relaxed text-(--gold)`}>
                 FAT Academy Licensing
                 <br />
-                <span className="text-white/55">FIFA Grow Together</span>
+                <span className="text-white/55">2025 Edition</span>
               </p>
             </div>
             <h1 className="mt-8 text-[2.8rem] font-bold leading-[1.04] sm:text-7xl xl:text-[5.4rem]">
@@ -120,7 +113,7 @@ export default async function AcademiesPage({
               </span>
             </h1>
             <p className={`${theme.rise} mt-7 max-w-lg text-base leading-relaxed text-white/75 sm:text-lg`} style={i(4)}>
-              ทำเนียบศูนย์ฝึกเยาวชนที่ได้รับใบอนุญาตจากสมาคมฯ ตามเกณฑ์ FIFA และ AFC — ค้นหาตามจังหวัด หรือดูตามระดับ Gold · Silver · Bronze
+              ทำเนียบศูนย์ฝึกเยาวชนที่ได้รับใบอนุญาตจากสมาคมฯ ตามเกณฑ์มาตรฐานปี 2025 — ค้นหาตามจังหวัด หรือดูตามระดับ Gold · Silver · Bronze
             </p>
             <div className={`${theme.rise} mt-9 flex flex-wrap items-center gap-x-7 gap-y-4`} style={i(5)}>
               <a href="#directory" className="group inline-flex h-14 items-center justify-center gap-2.5 rounded-xl bg-(--gold) px-8 text-base font-bold text-(--night) shadow-[0_14px_36px_-12px_rgb(242_193_78/0.75)] transition-transform hover:-translate-y-0.5">
@@ -136,7 +129,7 @@ export default async function AcademiesPage({
               <InfoDialog title="Academy Licensing คืออะไร" className={darkLink} label="เกี่ยวกับโครงการ">
                 <p className="text-sm leading-relaxed">
                   ระบบการออกใบอนุญาตรับรองมาตรฐานศูนย์ฝึกเยาวชนหรืออคาเดมีฟุตบอล (Youth Football Academy) ที่จัดทำโดยสมาคมกีฬาฟุตบอลแห่งประเทศไทย ในพระบรมราชูปถัมภ์ (FAT)
-                  ภายใต้โครงการความร่วมมือกับ FIFA (Grow Together) และอิงเกณฑ์มาตรฐานของสมาพันธ์ฟุตบอลแห่งเอเชีย (AFC)
+                  อิงเกณฑ์มาตรฐานของสมาพันธ์ฟุตบอลแห่งเอเชีย (AFC) · เกณฑ์ฉบับปี 2025 (2025 Edition)
                 </p>
                 <ul className="mt-5 divide-y divide-slate-200 border-y border-slate-200">
                   {ACADEMY_LEVELS.map((l) => (
@@ -170,7 +163,7 @@ export default async function AcademiesPage({
         </div>
 
         {/* แถบตัวเลขเต็มความกว้าง */}
-        <div className="border-t border-white/10 bg-(--night)/70">
+        <div className="border-t border-white/10 bg-(--night-2)/60">
           <dl className="mx-auto grid max-w-7xl grid-cols-2 px-4 sm:px-6 lg:grid-cols-4">
             <div className={`${theme.rise} flex flex-col-reverse gap-1 py-6 pr-4 lg:py-8`} style={i(7)}>
               <dt className="text-sm text-white/60">
@@ -398,7 +391,7 @@ export default async function AcademiesPage({
             {ACADEMY_LEVELS.map((l, n) => {
               const sm = LEVEL_SUMMARY[l];
               const top = l === "GOLD";
-              const reqs = [["หัวหน้าอคาเดมี", sm.head], ["ผู้ฝึกสอน", sm.coaches], ...(sm.assistants ? [["ผู้ช่วยผู้ฝึกสอน", sm.assistants]] : []), ["จำนวนทีม", sm.teams]];
+              const reqs = [["หัวหน้าอคาเดมี", sm.head], ["ผู้ฝึกสอน", sm.coaches], ...(sm.assistants ? [["ผู้ช่วยผู้ฝึกสอน", sm.assistants]] : []), ["ทีม / นักกีฬา", sm.teams]];
               return (
                 <li key={l} className={theme.up} style={i(n * 2)}>
                   <article className={`${theme.tier} relative flex flex-col overflow-hidden rounded-3xl ${top ? "bg-white text-(--ink) ring-2 ring-(--gold) md:pb-4" : "bg-(--night-2) ring-1 ring-white/10"}`}>

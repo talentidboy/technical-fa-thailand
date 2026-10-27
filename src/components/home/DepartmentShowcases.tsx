@@ -295,14 +295,14 @@ export function AcademyShowcase({ total, byLevel }: { total: number; byLevel: Re
         <div>
           <div className="flex items-center gap-4">
             <AcademyLogo className="h-11 sm:h-12" />
-            <Eyebrow className="text-[#f2c14e]">FIFA Grow Together</Eyebrow>
+            <Eyebrow className="text-[#f2c14e]">Criteria 2025</Eyebrow>
           </div>
           <h2 className="mt-6 text-4xl font-bold leading-[1.05] sm:text-6xl">
             Academy
             <br />
             <span className="text-[#f2c14e]">Licensing</span>
           </h2>
-          <p className="mt-4 hidden max-w-md leading-relaxed text-white/70 sm:block">ทำเนียบอคาเดมีและศูนย์ฝึกเยาวชนที่ได้รับการรับรองมาตรฐานจากสมาคมฯ ตามเกณฑ์ FIFA และ AFC — ค้นหาบนแผนที่ทั่วประเทศ</p>
+          <p className="mt-4 hidden max-w-md leading-relaxed text-white/70 sm:block">ทำเนียบอคาเดมีและศูนย์ฝึกเยาวชนที่ได้รับการรับรองมาตรฐานจากสมาคมฯ ตามเกณฑ์ปี 2025 — ค้นหาบนแผนที่ทั่วประเทศ</p>
           <div className="mt-8 flex flex-wrap gap-3">
             <Link href="/academies" className="inline-flex items-center gap-2 rounded-xl bg-[#f2c14e] px-6 py-3.5 text-sm font-bold text-[#060d22] transition-transform hover:-translate-y-0.5">
               แผนที่และทำเนียบอคาเดมี

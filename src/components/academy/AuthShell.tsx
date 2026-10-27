@@ -1,11 +1,9 @@
 import { BrandLogo } from "@/components/BrandLogo";
-import Image from "next/image";
 import Link from "next/link";
 import type { LucideIcon } from "lucide-react";
 import { AcademyLogo } from "@/components/SectionLogos";
 import { HomeButton } from "@/components/HomeButton";
 import { academyFont } from "@/components/typefaces/academy";
-import { academyBg } from "@/lib/section-images";
 
 // โครงหน้าเข้าสู่ระบบ / สมัครของ Academy Licensing: ซ้ายแผงภาพกิจกรรม Academy Visit ทับสีกรมท่า · ขวาฟอร์ม (มือถือ: แผงซ้ายย่อเป็นแถบบน)
 export function AuthShell({
@@ -26,8 +24,6 @@ export function AuthShell({
   return (
     <div className={`${academyFont.className} min-h-screen bg-white lg:grid ${wide ? "lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)]" : "lg:grid-cols-2"}`}>
       <aside className="relative isolate overflow-hidden bg-[#071530] px-6 pb-8 pt-6 text-white sm:px-10 lg:sticky lg:top-0 lg:flex lg:h-screen lg:flex-col lg:justify-between lg:py-10">
-        <Image src={academyBg} alt="" fill priority placeholder="blur" sizes="(min-width: 1024px) 50vw, 100vw" className="-z-10 object-cover" />
-        <div className="absolute inset-0 -z-10 bg-[#071530]/85" />
         <div className="absolute inset-x-0 top-0 h-1 bg-[#d9b45a]" />
 
         <div className="flex items-center justify-between gap-3">

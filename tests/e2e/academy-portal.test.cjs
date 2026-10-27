@@ -61,7 +61,7 @@ module.exports = {
     check("ปุ่มอันดับจังหวัด → เลือกจังหวัดจากอันดับ", await until(async () => (await pub.getByRole("link", { name: /Bangkok Bronze Academy/ }).count()) >= 2, 5000));
     await pub.keyboard.press("Escape");
     await pub.getByRole("button", { name: "เกี่ยวกับโครงการ" }).click();
-    check("ปุ่มเกี่ยวกับโครงการ → เปิดกล่องข้อมูล", await pub.getByRole("dialog").getByText("Grow Together", { exact: false }).isVisible());
+    check("ปุ่มเกี่ยวกับโครงการ → เปิดกล่องข้อมูล", await pub.getByRole("dialog").getByText("2025 Edition", { exact: false }).isVisible());
     await pub.keyboard.press("Escape");
     check("กด Esc ปิดกล่องข้อมูล", (await pub.getByRole("dialog").count()) === 0);
     await pub.getByRole("button", { name: /^Bronze/ }).click();
@@ -160,7 +160,7 @@ module.exports = {
     }
     await ac.goto(`${BASE}/academies/portal`, { waitUntil: "networkidle" });
     const readiness = ac.locator("section", { hasText: "ความพร้อมตามเกณฑ์" });
-    check("ภาพรวม: เกณฑ์อัตโนมัติผ่านระดับ Bronze ครบ 4 ข้อ", (await readiness.locator("tbody tr").evaluateAll((rows) => rows.filter((r) => r.querySelectorAll("td")[1]?.querySelector('[aria-label="ผ่าน"]')).length)) === 4);
+    check("ภาพรวม: เกณฑ์อัตโนมัติผ่านระดับ Bronze ครบ 3 ข้อ (เกณฑ์ 2025)", (await readiness.locator("tbody tr").evaluateAll((rows) => rows.filter((r) => r.querySelectorAll("td")[1]?.querySelector('[aria-label="ผ่าน"]')).length)) === 3);
 
     // ===== 4) ใบสมัคร + แนบเอกสาร =====
     await ac.goto(`${BASE}/academies/portal/applications`, { waitUntil: "networkidle" });

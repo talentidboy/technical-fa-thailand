@@ -70,7 +70,7 @@ export function PublicFooter() {
           </div>
           <p className="mt-6 text-2xl font-bold text-white">FAT Academy Licensing</p>
           <p className="mt-2 max-w-sm text-sm leading-relaxed">
-            ใบอนุญาตรับรองมาตรฐานศูนย์ฝึกเยาวชนและอคาเดมีฟุตบอล โดยสมาคมกีฬาฟุตบอลแห่งประเทศไทย ในพระบรมราชูปถัมภ์ ร่วมกับ FIFA (Grow Together) ตามเกณฑ์ AFC
+            ใบอนุญาตรับรองมาตรฐานศูนย์ฝึกเยาวชนและอคาเดมีฟุตบอล โดยสมาคมกีฬาฟุตบอลแห่งประเทศไทย ในพระบรมราชูปถัมภ์ ตามเกณฑ์มาตรฐานปี 2025
           </p>
         </div>
         <div className="text-sm">

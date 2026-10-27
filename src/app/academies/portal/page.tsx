@@ -13,7 +13,7 @@ export const metadata: Metadata = { title: "พอร์ทัลอคาเด
 const AUTO_LABELS: Record<string, string> = {
   "1.1.3": "หัวหน้าอคาเดมี",
   "1.3.1": "ผู้ฝึกสอน",
-  "1.6.1": "จำนวนทีม",
+  "1.6.1": "จำนวนทีม / นักกีฬา",
   "1.6.2": "นักเตะต่อทีม",
 };
 
@@ -130,6 +130,13 @@ export default async function AcademyPortalHome() {
                     </td>
                     {ACADEMY_LEVELS.map((l) => {
                       const r = autoChecks(l, check.staff, check.teams)[code];
+                      // บางเกณฑ์ไม่มีในบางระดับ (เช่น Bronze ไม่มีข้อ 1.6.2 ตามเกณฑ์ 2025)
+                      if (!r)
+                        return (
+                          <td key={l} className="py-2 text-center text-slate-300" title="ระดับนี้ไม่มีเกณฑ์ข้อนี้">
+                            —
+                          </td>
+                        );
                       return (
                         <td key={l} className="py-2 text-center" title={r.detail}>
                           {r.ok ? <CheckCircle2 className="mx-auto h-5 w-5 text-emerald-500" aria-label="ผ่าน" /> : <XCircle className="mx-auto h-5 w-5 text-slate-300" aria-label="ยังไม่ผ่าน" />}

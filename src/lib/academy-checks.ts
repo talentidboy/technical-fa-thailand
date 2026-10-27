@@ -11,15 +11,16 @@ export const STAFF_ROLES: Record<string, string> = {
   ADMIN: "เจ้าหน้าที่ / เลขานุการ",
   OTHER: "อื่น ๆ",
 };
-export const LICENCE_LEVELS: Record<string, string> = { PRO: "AFC Pro", A: "AFC A", B: "AFC B", C: "AFC C", OTHER: "อื่น ๆ" };
-export const LICENCE_RANK: Record<string, number> = { C: 1, B: 2, A: 3, PRO: 4 };
+export const LICENCE_LEVELS: Record<string, string> = { PRO: "AFC Pro", A: "AFC A", B: "AFC B", C: "AFC C", G: "FAT G Diploma", OTHER: "อื่น ๆ" };
+export const LICENCE_RANK: Record<string, number> = { G: 1, C: 2, B: 3, A: 4, PRO: 5 };
 export const POSITIONS: Record<string, string> = { GK: "ผู้รักษาประตู", DF: "กองหลัง", MF: "กองกลาง", FW: "กองหน้า" };
 
-// ข้อกำหนดตามระดับ (เกณฑ์ 1.1.3 / 1.3.1 / 1.6.1 / 1.6.2)
-const REQ: Record<AcademyLevel, { head: string; coaches: { n: number; min: string }; assistants?: { n: number; min: string }; teams: number }> = {
-  BRONZE: { head: "C", coaches: { n: 1, min: "C" }, teams: 1 },
-  SILVER: { head: "B", coaches: { n: 2, min: "C" }, teams: 2 },
-  GOLD: { head: "A", coaches: { n: 3, min: "B" }, assistants: { n: 3, min: "C" }, teams: 3 },
+// ข้อกำหนดตามระดับ เกณฑ์ปี 2025 (1.1.3 หัวหน้าอคาเดมี / 1.3.1 ผู้ฝึกสอน / 1.6.1 ทีมหรือจำนวนนักกีฬา / 1.6.2 นักกีฬาต่อทีม)
+// Bronze: ไม่กำหนดจำนวนทีม — ต้องมีนักกีฬารวมอย่างน้อย 10 คน (players) และไม่มีเกณฑ์ 1.6.2
+const REQ: Record<AcademyLevel, { head: string; coaches: { n: number; min: string }; assistants?: { n: number; min: string }; teams?: number; players?: number }> = {
+  BRONZE: { head: "G", coaches: { n: 1, min: "G" }, players: 10 },
+  SILVER: { head: "C", coaches: { n: 2, min: "G" }, teams: 2 },
+  GOLD: { head: "A", coaches: { n: 1, min: "B" }, assistants: { n: 1, min: "C" }, teams: 3 },
 };
 
 export type StaffForCheck = { name: string; role: string; licence: string | null; verifiedLicence: string | null };
@@ -45,28 +46,35 @@ export function autoChecks(level: AcademyLevel, staff: StaffForCheck[], teams: T
   const coaches = staff.filter((s) => (s.role === "HEAD" || s.role === "COACH") && atLeast(effectiveLicence(s), req.coaches.min));
   const assistants = req.assistants ? staff.filter((s) => s.role === "ASSISTANT" && atLeast(effectiveLicence(s), req.assistants!.min)) : [];
   const teamResults = teams.map(teamCheck);
+  const totalPlayers = teams.reduce((n, t) => n + t.players.length, 0);
   return {
     "1.1.3": {
       ok: headOk,
       detail: heads.length
-        ? `หัวหน้าอคาเดมี: ${heads.map((h) => `${h.name} (${LICENCE_LEVELS[effectiveLicence(h) ?? ""] ?? "ไม่มีใบอนุญาต"})`).join(", ")} · ต้องการ AFC ${req.head} ขึ้นไป`
+        ? `หัวหน้าอคาเดมี: ${heads.map((h) => `${h.name} (${LICENCE_LEVELS[effectiveLicence(h) ?? ""] ?? "ไม่มีใบอนุญาต"})`).join(", ")} · ต้องการ ${LICENCE_LEVELS[req.head]} ขึ้นไป`
         : "ยังไม่ได้ระบุหัวหน้าอคาเดมีในรายชื่อบุคลากร",
     },
     "1.3.1": {
       ok: coaches.length >= req.coaches.n && (!req.assistants || assistants.length >= req.assistants.n),
       detail:
-        `ผู้ฝึกสอน AFC ${req.coaches.min} ขึ้นไป ${coaches.length}/${req.coaches.n} คน` +
-        (req.assistants ? ` · ผู้ช่วยผู้ฝึกสอน AFC ${req.assistants.min} ขึ้นไป ${assistants.length}/${req.assistants.n} คน` : ""),
+        `ผู้ฝึกสอน ${LICENCE_LEVELS[req.coaches.min]} ขึ้นไป ${coaches.length}/${req.coaches.n} คน` +
+        (req.assistants ? ` · ผู้ช่วยผู้ฝึกสอน ${LICENCE_LEVELS[req.assistants.min]} ขึ้นไป ${assistants.length}/${req.assistants.n} คน` : ""),
     },
-    "1.6.1": { ok: teams.length >= req.teams, detail: `มีทีม ${teams.length}/${req.teams} ทีม${teams.length ? ` (${teams.map((t) => t.name).join(", ")})` : ""}` },
-    "1.6.2": {
-      ok: teams.length > 0 && teamResults.every((r) => r.ok),
-      detail: teamResults.length ? teamResults.map((r) => r.detail).join(" · ") : "ยังไม่มีทีม",
-    },
+    "1.6.1": req.players
+      ? { ok: totalPlayers >= req.players, detail: `นักกีฬารวม ${totalPlayers}/${req.players} คน` }
+      : { ok: teams.length >= (req.teams ?? 0), detail: `มีทีม ${teams.length}/${req.teams} ทีม${teams.length ? ` (${teams.map((t) => t.name).join(", ")})` : ""}` },
+    ...(req.teams
+      ? {
+          "1.6.2": {
+            ok: teams.length > 0 && teamResults.every((r) => r.ok),
+            detail: teamResults.length ? teamResults.map((r) => r.detail).join(" · ") : "ยังไม่มีทีม",
+          },
+        }
+      : {}),
   };
 }
 
-// ระดับใบอนุญาตสูงสุดที่ยังไม่หมดอายุของผู้ฝึกสอน (จากฐานข้อมูลใบอนุญาต) — ไม่นับใบ Grassroots / GK
+// ระดับใบอนุญาตสูงสุดที่ยังไม่หมดอายุของผู้ฝึกสอน (จากฐานข้อมูลใบอนุญาต) — นับ FAT G Diploma ขึ้นไป (ไม่นับใบ GK และหลักสูตรอื่น)
 export function verifiedCoachLicence(records: { licenseType: string; expireDate: Date | null }[], now: Date) {
   let best: string | null = null;
   for (const r of records) {

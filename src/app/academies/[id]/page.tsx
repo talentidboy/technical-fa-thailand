@@ -1,5 +1,4 @@
 import Link from "next/link";
-import Image from "next/image";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
@@ -7,7 +6,6 @@ import { getAcademyUser, getCurrentUser } from "@/lib/auth";
 import { parseId } from "@/lib/route-id";
 import { LEVEL_META, LICENCE_STATUS, currentLicence, isLevel, licenceState, showPublicly, thaiDate, tierLabel, levelRank } from "@/lib/academy";
 import { LEVEL_SUMMARY } from "@/lib/academy-criteria";
-import { academyBg } from "@/lib/section-images";
 import { StateChip } from "@/components/academy/AcademyUi";
 import { PublicFooter, PublicHeader } from "@/components/academy/PublicChrome";
 import { MEDAL, Medal } from "@/components/academy/Medal";
@@ -54,8 +52,6 @@ export default async function AcademyProfilePage({ params }: { params: Promise<{
       <main>
         {/* ===== ฮีโร่: ตรา + ชื่อ + บัตรใบอนุญาต ===== */}
         <section className="relative isolate overflow-hidden bg-(--night) text-white">
-          <Image src={academyBg} alt="" fill priority placeholder="blur" sizes="100vw" className={`${theme.kenburns} -z-20 object-cover opacity-20`} />
-          <div className="absolute inset-0 -z-10 bg-linear-to-b from-(--night)/70 to-(--night)" />
           <div className="mx-auto grid max-w-6xl gap-12 px-4 pb-16 pt-8 sm:px-6 lg:grid-cols-[minmax(0,1fr)_25rem] lg:items-center lg:pb-20">
             <div className="lg:col-span-2">
               <Link href="/academies#directory" className="inline-flex items-center gap-1.5 text-sm text-white/60 transition-colors hover:text-white">
