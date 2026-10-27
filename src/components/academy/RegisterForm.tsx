@@ -100,7 +100,7 @@ export function RegisterForm({ academies, provinces }: { academies: PickerAcadem
         <input type="checkbox" name="consent" required className="mt-0.5 h-4 w-4 rounded border-slate-300" />
         ยินยอมให้สมาคมฯ ใช้ข้อมูลที่กรอกเพื่อการพิจารณาและบริหารใบอนุญาตอคาเดมี (ข้อมูลติดต่อไม่แสดงต่อสาธารณะ)
       </label>
-      <button type="submit" className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[#0b1f44] px-5 py-3 text-sm font-semibold text-white hover:bg-[#13306a]">
+      <button type="submit" className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#0b1220] px-5 py-3 text-sm font-bold text-white hover:bg-[#1e96dc]">
         <UserPlus className="h-4 w-4" />
         สมัครบัญชี
       </button>

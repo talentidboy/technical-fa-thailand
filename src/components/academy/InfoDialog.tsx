@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import styles from "./ThailandMap.module.css";
-import { display } from "@/components/fonts";
+import { academyFont, academyPoster } from "@/components/typefaces/academy";
 
 function removeParam(name: string) {
   const url = new URL(window.location.href);
@@ -61,18 +61,19 @@ export function InfoDialog({
         </button>
       )}
       {open && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/50 sm:items-center sm:p-4" onClick={close}>
+        <div className={`${academyFont.className} fixed inset-0 z-50 flex items-end justify-center bg-[#0b1220]/60 sm:items-center sm:p-4`} onClick={close}>
           <div
             role="dialog"
             aria-modal="true"
             aria-label={title}
             onClick={(e) => e.stopPropagation()}
-            className={`${styles.sheet} relative max-h-[92svh] w-full overflow-y-auto rounded-t-lg bg-white p-6 text-slate-700 shadow-2xl sm:rounded-lg sm:p-8 ${wide ? "sm:max-w-5xl" : "sm:max-w-lg"}`}
+            className={`${styles.sheet} relative max-h-[92svh] w-full overflow-y-auto rounded-t-3xl bg-white p-6 text-slate-700 shadow-2xl sm:rounded-3xl sm:p-8 ${wide ? "sm:max-w-5xl" : "sm:max-w-lg"}`}
           >
-            <button type="button" onClick={close} aria-label="ปิด" className="absolute right-4 top-4 rounded p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700">
+            <button type="button" onClick={close} aria-label="ปิด" className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-[#ffd426] hover:text-[#0b1220]">
               <X className="h-5 w-5" />
             </button>
-            <h2 className={`${display.className} border-b border-slate-200 pb-3 pr-8 text-2xl font-semibold text-slate-900`}>{title}</h2>
+            <h2 className={`${academyPoster.className} pr-10 text-2xl font-bold text-[#0b1220] sm:text-3xl`}>{title}</h2>
+            <span aria-hidden className="mt-2 block h-1.5 w-14 rounded-full bg-[#ffd426]" />
             <div className="mt-4">{children}</div>
           </div>
         </div>

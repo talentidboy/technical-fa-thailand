@@ -4,17 +4,17 @@ import { G15_IMAGE_URL, GRASSROOTS_LOGO_URL, PLAY_AND_LEARN_ELEMENTS, PLAY_AND_L
 import { GRASSROOTS_YEAR, grassrootsCoaches, grassrootsPlayers } from "@/lib/grassroots-data";
 import { LEVEL_META, type AcademyLevel } from "@/lib/academy";
 import { formatMatchDateShort, formatMatchTimeShort } from "@/lib/g15";
-import { academyBg, coachCentreBg, g15Bg, grassrootsBg, talentIdBg } from "@/lib/section-images";
+import { coachCentreBg, g15Bg, grassrootsBg, talentIdBg } from "@/lib/section-images";
 import { TRAINING_CENTRE_AREAS } from "@/lib/constants";
 import { display } from "@/components/fonts";
 import { AcademyLogo, CoachCentreLogo, DataCentreLogo } from "@/components/SectionLogos";
 import { LicenceFan } from "@/components/coach/LicenceFan";
 import { levelTone } from "@/components/coach/CoachUi";
-import { MEDAL, Medal } from "@/components/academy/Medal";
+import { COIN } from "@/components/academy/Podium";
 import { TeamBadge } from "@/components/g15/TeamBadge";
 import { TacticsBoard } from "@/components/training/TacticsBoard";
 import { AREA_INFO } from "@/components/training/areas";
-import { academyFont } from "@/components/typefaces/academy";
+import { academyFont, academyPoster } from "@/components/typefaces/academy";
 import { grassrootsFont } from "@/components/typefaces/grassroots";
 import { talentFont } from "@/components/typefaces/talent";
 import { markerFont, trainingFont } from "@/components/typefaces/training";
@@ -283,55 +283,56 @@ function TeamSide({ team }: { team: G15Side }) {
   );
 }
 
-// ================= Academy Licensing: กรมท่าลึก + ทอง (ชุดเดียวกับหน้า Academy) · ตัวเลขรวมสีทอง · การ์ดโลหะสามระดับ =================
+// ================= Academy Licensing: ฟ้าโปสเตอร์ + ดำ + เหลือง (ชุดเดียวกับหน้า Academy) · กล่องเหลืองบอกจำนวน · การ์ดเหรียญสามระดับ =================
 export function AcademyShowcase({ total, byLevel }: { total: number; byLevel: Record<AcademyLevel, number> }) {
   const order: AcademyLevel[] = ["GOLD", "SILVER", "BRONZE"];
-  const metal = (l: AcademyLevel) => `linear-gradient(120deg, ${MEDAL[l].ribbon}, ${MEDAL[l].face} 45%, ${MEDAL[l].ring} 70%, ${MEDAL[l].face})`;
   return (
-    <div className={`${academyFont.className} relative isolate flex h-full items-center overflow-hidden bg-[#060d22] text-white`}>
-      <Image src={academyBg} alt="" fill sizes="100vw" placeholder="blur" className="-z-20 object-cover opacity-45" style={{ objectPosition: "50% 20%" }} />
-      <div className="absolute inset-0 -z-10 bg-linear-to-r from-[#060d22] via-[#060d22]/85 to-[#060d22]/40" />
+    <div className={`${academyFont.className} relative isolate flex h-full items-center overflow-hidden bg-[#1e96dc] text-[#0b1220]`}>
+      <span className="absolute -right-24 -top-24 -z-10 h-96 w-96 rounded-full bg-white/10" />
+      <span className="absolute -bottom-32 left-[38%] -z-10 h-80 w-80 rounded-full bg-[#0b6cb0]/40" />
       <div className={`${wrap} grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,30rem)] lg:items-center`}>
         <div>
           <div className="flex items-center gap-4">
             <AcademyLogo className="h-11 sm:h-12" />
-            <Eyebrow className="text-[#f2c14e]">Criteria 2025</Eyebrow>
+            <Eyebrow className="text-[#0b1220]">Criteria 2025</Eyebrow>
           </div>
-          <h2 className="mt-6 text-4xl font-bold leading-[1.05] sm:text-6xl">
-            Academy
+          <h2 className={`${academyPoster.className} mt-6 text-4xl font-extrabold leading-[1.05] sm:text-6xl`}>
+            FAT Academy
             <br />
-            <span className="text-[#f2c14e]">Licensing</span>
+            <span className="text-white [text-shadow:3px_3px_0_#0b1220]">Licensing</span>
           </h2>
-          <p className="mt-4 hidden max-w-md leading-relaxed text-white/70 sm:block">ทำเนียบอคาเดมีและศูนย์ฝึกเยาวชนที่ได้รับการรับรองมาตรฐานจากสมาคมฯ ตามเกณฑ์ปี 2025 — ค้นหาบนแผนที่ทั่วประเทศ</p>
+          <p className="mt-4 hidden max-w-md leading-relaxed text-[#0b1220]/80 sm:block">ทำเนียบอคาเดมีและศูนย์ฝึกเยาวชนที่ได้รับการรับรองมาตรฐานจากสมาคมฯ ตามเกณฑ์ปี 2025 — ค้นหาบนแผนที่ทั่วประเทศ</p>
           <div className="mt-8 flex flex-wrap gap-3">
-            <Link href="/academies" className="inline-flex items-center gap-2 rounded-xl bg-[#f2c14e] px-6 py-3.5 text-sm font-bold text-[#060d22] transition-transform hover:-translate-y-0.5">
+            <Link href="/academies" className="inline-flex items-center gap-2 rounded-xl bg-[#0b1220] px-6 py-3.5 text-sm font-bold text-white shadow-[4px_4px_0_#ffd426] transition-transform hover:-translate-y-0.5">
               แผนที่และทำเนียบอคาเดมี
               <ArrowRight className="h-4 w-4" />
             </Link>
-            <Link href="/academies/register" className="hidden items-center gap-2 rounded-xl border border-white/25 px-6 py-3.5 text-sm font-semibold transition-colors hover:bg-white/10 sm:inline-flex">
+            <Link href="/academies/register" className="hidden items-center gap-2 rounded-xl bg-white px-6 py-3.5 text-sm font-bold transition-transform hover:-translate-y-0.5 sm:inline-flex">
               สมัครรับการรับรอง
             </Link>
           </div>
         </div>
         <div>
-          <p className="flex items-baseline gap-3">
-            <span className="text-6xl font-bold tabular-nums text-[#f2c14e] sm:text-7xl">{total.toLocaleString("en-US")}</span>
-            <span className="text-sm text-white/65">
+          <p className="inline-flex items-baseline gap-3 rounded-2xl bg-[#ffd426] px-5 py-3 shadow-[4px_4px_0_#0b1220]">
+            <span className={`${academyPoster.className} text-5xl font-extrabold tabular-nums sm:text-6xl`}>{total.toLocaleString("en-US")}</span>
+            <span className="text-sm font-semibold">
               อคาเดมี
               <br />
               ที่ได้รับการรับรอง
             </span>
           </p>
           <ul className="mt-6 grid grid-cols-3 gap-3">
-            {order.map((lv) => (
+            {order.map((lv, n) => (
               <li key={lv}>
-                <Link href={`/academies?level=${lv}#directory`} className="group block overflow-hidden rounded-2xl bg-white/[0.05] ring-1 ring-white/10 transition-transform hover:-translate-y-1">
-                  <span className="block h-2" style={{ background: metal(lv) }} />
-                  <span className="flex flex-col items-center px-2 pb-4 pt-4 text-center">
-                    <Medal level={lv} size="md" />
-                    <span className="mt-8 text-3xl font-bold leading-none tabular-nums">{byLevel[lv]}</span>
-                    <span className="mt-1 text-xs text-white/60">{LEVEL_META[lv].label}</span>
+                <Link
+                  href={`/academies?level=${lv}#directory`}
+                  className={`flex flex-col items-center rounded-2xl px-2 pb-4 pt-5 text-center transition-transform hover:-translate-y-1 ${n === 1 ? "bg-[#0b1220] text-white" : "bg-white"}`}
+                >
+                  <span className="flex h-12 w-12 items-center justify-center rounded-full text-lg font-extrabold" style={{ background: COIN[lv].face, color: COIN[lv].ink, boxShadow: `0 4px 0 ${COIN[lv].side}` }}>
+                    {COIN[lv].letter}
                   </span>
+                  <span className={`${academyPoster.className} mt-4 text-3xl font-extrabold leading-none tabular-nums`}>{byLevel[lv]}</span>
+                  <span className={`mt-1 text-xs font-semibold ${n === 1 ? "text-white/60" : "text-[#0b1220]/60"}`}>{LEVEL_META[lv].label}</span>
                 </Link>
               </li>
             ))}
