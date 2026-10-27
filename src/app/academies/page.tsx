@@ -13,6 +13,7 @@ import { COIN, Podium } from "@/components/academy/Podium";
 import { AcademyCrest } from "@/components/academy/AcademyCrest";
 import { InView } from "@/components/academy/InView";
 import { LevelTabs } from "@/components/academy/LevelTabs";
+import { Parallax } from "@/components/academy/Parallax";
 import { CountUp } from "@/components/play-and-learn/CountUp";
 import { academyFont, academyPoster } from "@/components/typefaces/academy";
 import theme from "@/components/academy/public.module.css";
@@ -31,6 +32,8 @@ const inkLink = "font-bold text-(--ink) underline decoration-(--ink)/30 decorati
 const i = (n: number) => ({ "--i": n }) as React.CSSProperties;
 // ตัวอักษรสีระดับบนพื้นขาว (เข้มกว่าสีเหรียญให้อ่านง่าย)
 const LEVEL_TEXT: Record<AcademyLevel, string> = { BRONZE: "#c14d14", SILVER: "#5b6b80", GOLD: "#a77700" };
+
+const RIBBON = ["FAT Academy Licensing", "2025 Edition", "Gold", "Silver", "Bronze", "Youth Football"];
 
 const STEPS = [
   { title: "สมัครบัญชีอคาเดมี", text: "ลงทะเบียนผู้ดูแลอคาเดมี ใช้งานพอร์ทัลได้ทันที" },
@@ -100,35 +103,35 @@ export default async function AcademiesPage({
       <PublicHeader viewer={viewer} />
 
       <section id="map" className="scroll-mt-16">
-        {/* ===== ฮีโร่: ฟ้าสด + แท่นสามมิติ ===== */}
-        <div className="relative isolate overflow-hidden bg-(--sky)">
-          {/* วงกลมตกแต่งแบบโปสเตอร์ (สีเรียบ ไม่เบลอ) */}
-          <span aria-hidden className="absolute -right-24 -top-24 -z-10 h-80 w-80 rounded-full bg-white/15" />
-          <span aria-hidden className="absolute bottom-10 left-[46%] -z-10 hidden h-28 w-28 rounded-full border-2 border-dashed border-white/50 lg:block" />
-          <span aria-hidden className="absolute -bottom-16 -left-16 -z-10 h-56 w-56 rounded-full bg-white/10" />
-          <span aria-hidden className="absolute right-[38%] top-16 -z-10 h-10 w-10 rounded-full bg-white/30" />
+        {/* ===== ฮีโร่: เวทีโปสเตอร์ — รัศมีแสง + แท่นสามมิติ + แถบตัวอักษรเอียง · ขยับตามเมาส์ ===== */}
+        <Parallax className="relative isolate overflow-hidden bg-(--sky)">
+          <span aria-hidden className="absolute -bottom-24 -left-24 -z-10 h-72 w-72 rounded-full bg-white/10" />
 
-          <div className="mx-auto grid max-w-7xl grid-cols-1 items-center gap-10 px-4 pb-14 pt-12 sm:px-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,36rem)] lg:pb-20 lg:pt-16">
+          <div className="mx-auto grid max-w-7xl grid-cols-1 items-center gap-6 px-4 pb-36 pt-10 sm:px-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,38rem)] lg:pb-40 lg:pt-12">
             <div>
               <p className={`${theme.rise} ${eyebrow} flex items-center gap-3 text-(--ink)`} style={i(0)}>
                 <span className="h-1 w-10 rounded-full bg-(--ink)" />
                 FAT Academy Licensing · 2025 Edition
               </p>
-              <h1 className={`${P} mt-6 text-[2.9rem] font-extrabold leading-[1.02] text-(--ink) sm:text-7xl xl:text-[5.2rem]`}>
+              <h1 className={`${P} mt-5 text-[2.8rem] font-extrabold leading-[1.02] text-(--ink) sm:text-7xl xl:text-[4.9rem]`}>
                 <span className={`${theme.rise} block`} style={i(1)}>
                   อคาเดมีฟุตบอล
                 </span>
-                <span className={`${theme.rise} block`} style={i(2)}>
+                <span className={`${theme.rise} flex items-center gap-4`} style={i(2)}>
                   เยาวชน
+                  <span aria-hidden className="inline-flex -rotate-6 flex-col rounded-2xl bg-(--yellow) px-3.5 py-1.5 text-center shadow-[4px_4px_0_var(--ink)] transition-transform duration-300 hover:rotate-3">
+                    <span className="text-[10px] font-bold uppercase tracking-[0.2em]">Criteria</span>
+                    <span className="text-2xl leading-none sm:text-3xl">2025</span>
+                  </span>
                 </span>
                 <span className={`${theme.rise} block text-white [text-shadow:4px_4px_0_var(--ink)]`} style={i(3)}>
                   ที่ผ่านการรับรอง
                 </span>
               </h1>
-              <p className={`${theme.rise} mt-6 max-w-lg text-base font-medium leading-relaxed text-(--ink)/80 sm:text-lg`} style={i(4)}>
-                ทำเนียบศูนย์ฝึกเยาวชนที่ได้รับใบอนุญาตจากสมาคมฯ ตามเกณฑ์มาตรฐานปี 2025 — ค้นหาตามจังหวัด หรือดูตามระดับ Gold · Silver · Bronze
+              <p className={`${theme.rise} mt-5 max-w-lg text-base font-medium leading-relaxed text-(--ink)/80 sm:text-lg`} style={i(4)}>
+                ทำเนียบศูนย์ฝึกเยาวชนที่ได้รับใบอนุญาตจากสมาคมฯ — ค้นหาตามจังหวัด หรือดูตามระดับ Gold · Silver · Bronze
               </p>
-              <div className={`${theme.rise} mt-8 flex flex-wrap items-center gap-x-7 gap-y-4`} style={i(5)}>
+              <div className={`${theme.rise} mt-7 flex flex-wrap items-center gap-x-7 gap-y-4`} style={i(5)}>
                 <a href="#directory" className="inline-flex h-14 items-center justify-center gap-2.5 rounded-2xl bg-(--ink) px-8 text-base font-bold text-white shadow-[5px_5px_0_var(--yellow)] transition-transform hover:-translate-y-0.5">
                   <Search className="h-5 w-5" />
                   ค้นหาอคาเดมี
@@ -139,23 +142,25 @@ export default async function AcademiesPage({
                 </Link>
               </div>
 
-              {/* ป้ายเหลืองตัวเลข */}
-              <dl className={`${theme.rise} mt-9 flex flex-wrap gap-3`} style={i(6)}>
-                <div className="flex flex-col-reverse rounded-2xl bg-(--yellow) px-5 py-3 text-(--ink)">
-                  <dt className="text-xs font-bold">อคาเดมีที่ได้รับการรับรอง</dt>
-                  <dd className={`${P} text-4xl font-extrabold tabular-nums`}>
-                    <CountUp value={all.length.toLocaleString("en-US")} />
-                  </dd>
-                </div>
-                <div className="flex flex-col-reverse rounded-2xl bg-white px-5 py-3 text-(--ink)">
-                  <dt className="text-xs font-bold">จังหวัด</dt>
-                  <dd className={`${P} text-4xl font-extrabold tabular-nums`}>
-                    <CountUp value={String(provinces.length)} />
-                  </dd>
-                </div>
+              {/* แถบตัวเลข: กล่องขาวขอบดำ แบ่งช่อง */}
+              <dl className={`${theme.rise} mt-8 inline-grid grid-cols-3 divide-x-2 divide-(--ink) overflow-hidden rounded-2xl bg-white text-(--ink) ring-2 ring-(--ink) shadow-[5px_5px_0_var(--ink)]`} style={i(6)}>
+                {(
+                  [
+                    ["อคาเดมี", all.length.toLocaleString("en-US"), "bg-(--yellow)"],
+                    ["จังหวัด", String(provinces.length), ""],
+                    ["ระดับ", "3", ""],
+                  ] as const
+                ).map(([k, v, bg]) => (
+                  <div key={k} className={`flex flex-col-reverse px-5 py-2.5 sm:px-6 ${bg}`}>
+                    <dt className="text-xs font-bold">{k}</dt>
+                    <dd className={`${P} text-3xl font-extrabold tabular-nums sm:text-4xl`}>
+                      <CountUp value={v} />
+                    </dd>
+                  </div>
+                ))}
               </dl>
 
-              <div className={`${theme.rise} mt-7 flex flex-wrap gap-x-6 gap-y-2 text-sm`} style={i(7)}>
+              <div className={`${theme.rise} mt-6 flex flex-wrap gap-x-6 gap-y-2 text-sm`} style={i(7)}>
                 <InfoDialog title="Academy Licensing คืออะไร" className={inkLink} label="เกี่ยวกับโครงการ">
                   <p className="text-sm leading-relaxed">
                     ระบบการออกใบอนุญาตรับรองมาตรฐานศูนย์ฝึกเยาวชนหรืออคาเดมีฟุตบอล (Youth Football Academy) ที่จัดทำโดยสมาคมกีฬาฟุตบอลแห่งประเทศไทย ในพระบรมราชูปถัมภ์ (FAT)
@@ -184,9 +189,55 @@ export default async function AcademiesPage({
               </div>
             </div>
 
-            <Podium counts={counts} className="mx-auto w-full max-w-xl" />
+            {/* เวทีแท่น: รัศมีแสงหมุนช้าด้านหลัง (ขยับสวนเมาส์) + แท่น (ขยับตามเมาส์) */}
+            <div className="relative">
+              <div aria-hidden className="absolute left-1/2 top-1/2 -z-10 h-[52rem] w-[52rem] -translate-x-1/2 -translate-y-1/2">
+                <div className={`${theme.far} h-full w-full`}>
+                  <div className={`${theme.rays} h-full w-full rounded-full`} />
+                </div>
+              </div>
+              <div className={theme.near}>
+                <Podium counts={counts} className="mx-auto w-full max-w-2xl" />
+              </div>
+            </div>
           </div>
-        </div>
+
+          {/* แถบตัวอักษรวิ่งไขว้กันท้ายฮีโร่ */}
+          <div aria-hidden className={`${P} pointer-events-none absolute inset-x-0 bottom-8 h-16 select-none text-sm font-extrabold uppercase tracking-[0.18em] sm:text-base`}>
+            <div className="absolute -inset-x-12 top-1 rotate-[1.6deg] overflow-hidden bg-(--yellow) py-2.5 text-(--ink)">
+              <div className={`${theme.ribbon} ${theme.ribbonBack}`}>
+                {[0, 1].map((k) => (
+                  <span key={k} className="flex flex-none">
+                    {Array.from({ length: 4 }, (_, n) =>
+                      RIBBON.map((w) => (
+                        <span key={`${n}-${w}`} className="flex items-center gap-5 pr-5 whitespace-nowrap">
+                          {w}
+                          <span className="h-2 w-2 rotate-45 bg-(--ink)" />
+                        </span>
+                      )),
+                    )}
+                  </span>
+                ))}
+              </div>
+            </div>
+            <div className="absolute -inset-x-12 top-1 -rotate-[1.6deg] overflow-hidden bg-(--ink) py-2.5 text-white">
+              <div className={theme.ribbon}>
+                {[0, 1].map((k) => (
+                  <span key={k} className="flex flex-none">
+                    {Array.from({ length: 4 }, (_, n) =>
+                      RIBBON.map((w) => (
+                        <span key={`${n}-${w}`} className="flex items-center gap-5 pr-5 whitespace-nowrap">
+                          {w}
+                          <span className="h-2 w-2 rotate-45 bg-(--yellow)" />
+                        </span>
+                      )),
+                    )}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+        </Parallax>
 
         {/* ===== แผนที่ ===== */}
         <div className="bg-white">
