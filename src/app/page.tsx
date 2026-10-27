@@ -42,11 +42,11 @@ const ACCENT: Record<string, string> = {
   data: "#60a5fa",
 };
 
-// การ์ดหมวดงานแบบ bento: ขนาดตามความสำคัญ (4 คอลัมน์ × 3 แถว)
+// การ์ดหมวดงานแบบ bento: ขนาดตามความสำคัญ (คอม 4 คอลัมน์ × 3 แถว · มือถือ 2 คอลัมน์ เรียงตำแหน่งแบบเดียวกัน)
 const SPAN: Record<string, string> = {
-  coach: "lg:col-span-2 lg:row-span-2",
-  g15: "lg:col-span-2",
-  data: "lg:col-span-2",
+  coach: "col-span-2 lg:row-span-2",
+  g15: "col-span-2",
+  data: "col-span-2",
 };
 
 // ระดับใบอนุญาตหลักของ AFC (ต่ำ → สูง)
@@ -190,15 +190,15 @@ export default async function HomePage() {
               </svg>
             </span>
           </h1>
-          <p className={`${styles.rise} mt-8 max-w-xl text-lg leading-relaxed text-white/80 sm:text-xl`} style={{ animationDelay: "400ms" }}>
+          <p className={`${styles.rise} mt-6 max-w-xl text-base leading-relaxed text-white/80 sm:mt-8 sm:text-xl`} style={{ animationDelay: "400ms" }}>
             ฝ่ายเทคนิค สมาคมกีฬาฟุตบอลแห่งประเทศไทย ในพระบรมราชูปถัมภ์ — พัฒนาผู้ฝึกสอน อคาเดมี และนักฟุตบอลเยาวชนไทย
           </p>
-          <div className={`${styles.rise} mt-10 flex flex-wrap gap-3`} style={{ animationDelay: "520ms" }}>
-            <a href="#departments" className="inline-flex items-center gap-2 rounded-xl bg-amber-400 px-8 py-4 text-sm font-semibold text-[#073c5e] shadow-[0_14px_36px_-12px_rgb(251_191_36/0.7)] transition-transform hover:-translate-y-0.5">
+          <div className={`${styles.rise} mt-8 flex gap-2.5 sm:mt-10 sm:gap-3`} style={{ animationDelay: "520ms" }}>
+            <a href="#departments" className="inline-flex items-center gap-2 whitespace-nowrap rounded-xl bg-amber-400 px-4 py-3 text-[13px] font-semibold sm:px-8 sm:py-4 sm:text-sm text-[#073c5e] shadow-[0_14px_36px_-12px_rgb(251_191_36/0.7)] transition-transform hover:-translate-y-0.5">
               สำรวจหมวดงาน
               <ArrowDown className="h-4 w-4" />
             </a>
-            <Link href="/courses" className="inline-flex items-center gap-2 rounded-xl border border-white/35 px-8 py-4 text-sm font-semibold text-white transition-colors hover:bg-white/10">
+            <Link href="/courses" className="inline-flex items-center gap-2 whitespace-nowrap rounded-xl border border-white/35 px-4 py-3 text-[13px] font-semibold sm:px-8 sm:py-4 sm:text-sm text-white transition-colors hover:bg-white/10">
               หลักสูตรอบรมผู้ฝึกสอน
             </Link>
           </div>
@@ -217,14 +217,14 @@ export default async function HomePage() {
 
       {/* ===== ตัวเลขจริงจากระบบ ===== */}
       <section aria-label="ตัวเลขสำคัญ" className="relative z-10 -mt-20 px-4 sm:px-6">
-        <div className="mx-auto grid max-w-7xl grid-cols-2 overflow-hidden rounded-2xl bg-white shadow-[0_30px_60px_-30px_rgb(4_34_58/0.45)] ring-1 ring-black/5 lg:grid-cols-4">
+        <div className="mx-auto grid max-w-7xl grid-cols-4 overflow-hidden rounded-2xl bg-white shadow-[0_30px_60px_-30px_rgb(4_34_58/0.45)] ring-1 ring-black/5 lg:grid-cols-4">
           {stats.map((s, i) => (
-            <Link key={s.label} href={s.href} className={`group relative border-slate-100 p-5 transition-colors hover:bg-[#f5f4f0] sm:p-8 ${i % 2 ? "border-l" : ""} ${i > 1 ? "border-t lg:border-t-0" : ""} ${i === 2 ? "lg:border-l" : ""}`}>
-              <span className="absolute left-5 top-0 h-1 w-10 rounded-b-full bg-amber-400 transition-[width] duration-300 group-hover:w-20 sm:left-8" />
-              <p className={`${h} text-3xl font-semibold text-[#073c5e] sm:text-5xl`}>
+            <Link key={s.label} href={s.href} className={`group relative border-slate-100 px-2.5 pb-3.5 pt-4 transition-colors hover:bg-[#f5f4f0] sm:p-8 ${i ? "border-l" : ""}`}>
+              <span className="absolute left-2.5 top-0 h-1 w-6 rounded-b-full bg-amber-400 transition-[width] duration-300 group-hover:w-20 sm:left-8 sm:w-10" />
+              <p className={`${h} text-lg font-semibold text-[#073c5e] sm:text-5xl`}>
                 <CountUp value={s.n.toLocaleString("en-US")} />
               </p>
-              <p className="mt-1.5 flex items-center gap-1 text-xs text-slate-500 sm:text-sm">
+              <p className="mt-1 flex items-center gap-1 text-[10px] leading-tight text-slate-500 sm:mt-1.5 sm:text-sm">
                 {s.label}
                 <ArrowUpRight className="h-3.5 w-3.5 opacity-0 transition-opacity group-hover:opacity-100" />
               </p>
@@ -234,7 +234,7 @@ export default async function HomePage() {
       </section>
 
       {/* ===== สไลด์แนะนำหมวดงาน: เลื่อนเองทีละหมวด ===== */}
-      <div className="mt-20 sm:mt-24">
+      <div className="mt-14 sm:mt-24">
         <ShowcaseCarousel
           slides={[
             {
@@ -269,25 +269,25 @@ export default async function HomePage() {
       </div>
 
       {/* ===== หมวดงาน: การ์ดภาพแบบ bento — ทางเข้าหมวดงานจุดเดียวบนหน้าแรก ===== */}
-      <section id="departments" className="scroll-mt-20 px-4 pb-24 pt-24 sm:px-6 lg:pt-28">
+      <section id="departments" className="scroll-mt-20 px-4 pb-16 pt-16 sm:px-6 sm:pb-24 sm:pt-24 lg:pt-28">
         <span id="categories" className="sr-only" />
         <div className="mx-auto max-w-7xl">
-          <Reveal className="flex flex-wrap items-end justify-between gap-6">
+          <Reveal className="flex items-end justify-between gap-4 sm:gap-6">
             <div>
               <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-amber-700">Departments</p>
-              <h2 className={`${h} mt-3 text-4xl font-semibold leading-tight text-[#073c5e] sm:text-6xl`}>
+              <h2 className={`${h} mt-3 whitespace-nowrap text-[1.7rem] font-semibold leading-tight text-[#073c5e] sm:text-6xl`}>
                 ทุกงานเทคนิค
                 <br />
                 ในที่เดียว
               </h2>
             </div>
-            <p className="max-w-sm text-sm leading-relaxed text-slate-500">
+            <p className="max-w-sm text-[11px] leading-relaxed text-slate-500 sm:text-sm">
               {DEPARTMENTS.length} หมวดงานของฝ่ายเทคนิค เลือกหมวดที่ต้องการได้เลย — หมวดที่มีรูปกุญแจสำหรับเจ้าหน้าที่ ต้องเข้าสู่ระบบก่อนใช้งาน
             </p>
           </Reveal>
-          <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:auto-rows-[19rem] lg:grid-cols-4">
+          <div className="mt-8 grid grid-cols-2 gap-3 sm:mt-12 sm:gap-5 lg:auto-rows-[19rem] lg:grid-cols-4">
             {DEPARTMENTS.map((d, i) => (
-              <Reveal key={d.key} delay={i * 70} className={`h-full lg:min-h-0 ${d.key === "coach" ? "min-h-[26rem]" : "min-h-[19rem]"} ${SPAN[d.key] ?? ""}`}>
+              <Reveal key={d.key} delay={i * 70} className={`h-full lg:min-h-0 ${d.key === "coach" ? "min-h-[21rem] sm:min-h-[26rem]" : "min-h-[12.5rem] sm:min-h-[19rem]"} ${SPAN[d.key] ?? ""}`}>
                 <DepartmentTile d={d} n={i + 1} href={dept[d.key].href} locked={dept[d.key].locked} big={d.key === "coach"} extra={tileExtra[d.key]} />
               </Reveal>
             ))}
@@ -296,21 +296,21 @@ export default async function HomePage() {
       </section>
 
       {/* ===== ผู้ฝึกสอนทั่วประเทศ ===== */}
-      <section className="bg-white px-4 py-24 sm:px-6">
-        <div className="mx-auto grid max-w-7xl grid-cols-1 items-center gap-14 lg:grid-cols-[minmax(0,1fr)_minmax(0,26rem)]">
+      <section className="bg-white px-4 py-14 sm:px-6 sm:py-24">
+        <div className="mx-auto grid max-w-7xl grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] items-center gap-4 sm:gap-14 lg:grid-cols-[minmax(0,1fr)_minmax(0,26rem)]">
           <Reveal>
             <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-amber-700">Coaches Nationwide</p>
-            <h2 className={`${h} mt-3 text-4xl font-semibold text-[#073c5e] sm:text-5xl`}>ผู้ฝึกสอนทั่วประเทศ</h2>
-            <p className="mt-4 max-w-xl text-sm leading-relaxed text-slate-500">
+            <h2 className={`${h} mt-3 whitespace-nowrap text-xl font-semibold text-[#073c5e] sm:text-5xl`}>ผู้ฝึกสอนทั่วประเทศ</h2>
+            <p className="mt-3 max-w-xl text-[11px] leading-relaxed text-slate-500 sm:mt-4 sm:text-sm">
               จำนวนผู้ฝึกสอนตามจังหวัดที่ระบุไว้ในระบบ ({mappedCoaches.toLocaleString("en-US")} จาก {coachTotal.toLocaleString("en-US")} คน) — ข้อมูลจังหวัดจะครบขึ้นเมื่อผู้ฝึกสอนอัปเดตข้อมูลของตนเอง
             </p>
             {topProvinces.length > 0 && (
-              <ol className="mt-10 space-y-3.5">
+              <ol className="mt-5 space-y-2 sm:mt-10 sm:space-y-3.5">
                 {topProvinces.map((p, i) => (
-                  <li key={p.code} className="grid grid-cols-[1.5rem_8rem_minmax(0,1fr)_3.5rem] items-center gap-3 text-sm">
+                  <li key={p.code} className="grid grid-cols-[0.9rem_minmax(0,1fr)_2.5rem] items-center gap-2 text-xs sm:grid-cols-[1.5rem_8rem_minmax(0,1fr)_3.5rem] sm:gap-3 sm:text-sm">
                     <span className={`${h} text-right tabular-nums ${i < 3 ? "font-semibold text-amber-600" : "text-slate-400"}`}>{i + 1}</span>
                     <span className="truncate font-medium text-slate-800">{p.name}</span>
-                    <span className="h-2 overflow-hidden rounded-full bg-slate-100">
+                    <span className="hidden h-2 overflow-hidden rounded-full bg-slate-100 sm:block">
                       <span className="block h-full rounded-full bg-[#073c5e]" style={{ width: `${(p.n / topProvinces[0].n) * 100}%` }} />
                     </span>
                     <span className="text-right font-semibold tabular-nums text-slate-900">{p.n.toLocaleString("en-US")}</span>
@@ -318,11 +318,11 @@ export default async function HomePage() {
                 ))}
               </ol>
             )}
-            <div className="mt-8 flex items-center gap-3 text-xs text-slate-500" aria-label="คำอธิบายสีแผนที่">
+            <div className="mt-6 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[10px] text-slate-500 sm:mt-8 sm:text-xs" aria-label="คำอธิบายสีแผนที่">
               <span>ผู้ฝึกสอนต่อจังหวัด</span>
               <span className="flex">
                 {[{ l: "0", c: "#e6e8ee" }, ...COACH_BINS.map((b, i) => ({ l: i === COACH_BINS.length - 1 ? `${b}+` : String(b), c: COACH_COLORS[i] }))].map((b) => (
-                  <span key={b.l} className="flex w-8 flex-col items-center gap-1">
+                  <span key={b.l} className="flex w-5 flex-col items-center gap-1 sm:w-8">
                     <span className="h-2 w-full" style={{ background: b.c }} />
                     <span className="tabular-nums">{b.l}</span>
                   </span>
@@ -340,9 +340,9 @@ export default async function HomePage() {
 
       {/* ===== ท้ายเว็บ ===== */}
       <footer id="contact" className="bg-[#04223a] text-white/70">
-        <div className="mx-auto grid max-w-7xl gap-10 px-4 py-16 sm:px-6 md:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1fr]">
-          <div>
-            <BrandLogo tone="white" className="h-14" />
+        <div className="mx-auto grid max-w-7xl grid-cols-3 gap-x-4 gap-y-8 px-4 py-12 sm:gap-10 sm:px-6 sm:py-16 lg:grid-cols-[1.4fr_1fr_1fr_1fr]">
+          <div className="col-span-3 lg:col-span-1">
+            <BrandLogo tone="white" className="h-11 sm:h-14" />
             <p className="mt-5 max-w-sm text-sm leading-relaxed">ฝ่ายเทคนิค สมาคมกีฬาฟุตบอลแห่งประเทศไทย ในพระบรมราชูปถัมภ์</p>
             <p className="mt-4 flex items-center gap-2 text-sm">
               <Mail className="h-4 w-4" />
@@ -390,7 +390,7 @@ function DepartmentTile({ d, n, href, locked, big, extra }: { d: Department; n: 
       style={{ "--tile": d.hex, "--accent": ACCENT[d.key] } as React.CSSProperties}
       className={`${tile.tile} group relative flex h-full flex-col overflow-hidden rounded-3xl bg-(--tile) text-white shadow-[0_24px_48px_-30px_rgb(0_0_0/0.7)] ring-1 ring-black/10 transition-[transform,box-shadow] duration-500 hover:-translate-y-1.5 hover:shadow-[0_36px_60px_-30px_rgb(0_0_0/0.75)]`}
     >
-      <div className="relative min-h-28 flex-1 overflow-hidden">
+      <div className="relative min-h-20 flex-1 overflow-hidden sm:min-h-28">
         {d.image ? (
           <Image
             src={d.image}
@@ -405,34 +405,34 @@ function DepartmentTile({ d, n, href, locked, big, extra }: { d: Department; n: 
           <Icon className="absolute -right-6 -top-6 h-36 w-36 text-white/10" />
         )}
         <div className="absolute inset-0 bg-linear-to-t from-(--tile) via-transparent to-black/30" />
-        <span className={`${h} absolute left-4 top-4 rounded-md bg-black/55 px-2 py-0.5 text-xs font-semibold tabular-nums`}>{String(n).padStart(2, "0")}</span>
+        <span className={`${h} absolute left-3 top-3 rounded-md bg-black/55 px-1.5 py-0.5 text-[10px] font-semibold tabular-nums sm:left-4 sm:top-4 sm:px-2 sm:text-xs`}>{String(n).padStart(2, "0")}</span>
         {locked && (
-          <span className="absolute right-4 top-4 inline-flex items-center gap-1 rounded-md bg-black/55 px-2 py-1 text-[11px] font-medium">
+          <span className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-md bg-black/55 px-1.5 py-0.5 text-[10px] font-medium sm:right-4 sm:top-4 sm:px-2 sm:py-1 sm:text-[11px]">
             <Lock className="h-3 w-3" />
             เจ้าหน้าที่
           </span>
         )}
       </div>
-      <div className={`relative ${big ? "px-6 pb-6 sm:px-8 sm:pb-8" : "px-5 pb-5"}`}>
+      <div className={`relative ${big ? "px-5 pb-5 sm:px-8 sm:pb-8" : "px-3.5 pb-3.5 sm:px-5 sm:pb-5"}`}>
         {/* โลโก้คร่อมรอยต่อภาพกับพื้นสี */}
-        <span className={`absolute -top-7 flex h-14 items-center justify-center rounded-xl bg-white px-2.5 shadow-lg ring-4 ring-(--tile) ${big ? "left-6 sm:left-8" : "left-5"}`}>
+        <span className={`absolute -top-6 flex h-12 items-center justify-center rounded-xl bg-white px-2 shadow-lg ring-4 ring-(--tile) sm:-top-7 sm:h-14 sm:px-2.5 ${big ? "left-5 sm:left-8" : "left-3.5 sm:left-5"}`}>
           {d.logo ? (
-            <Image src={d.logo} alt="" className="h-8 w-auto" />
+            <Image src={d.logo} alt="" className="h-6 w-auto sm:h-8" />
           ) : d.badge ? (
-            <span className="relative h-10 w-10">
+            <span className="relative h-8 w-8 sm:h-10 sm:w-10">
               <Image src={d.badge} alt="" fill sizes="40px" className="object-contain" />
             </span>
           ) : (
             <Icon className="h-6 w-6" style={{ color: d.hex }} />
           )}
         </span>
-        <div className="pt-10">
+        <div className="pt-8 sm:pt-10">
           <span className={`${tile.tileBar} block h-1 rounded-full bg-(--accent)`} />
-          <h3 className={`${h} mt-3 font-semibold leading-tight ${big ? "text-3xl sm:text-5xl" : "text-xl"}`}>{d.title}</h3>
-          <p className={`mt-1.5 text-white/75 ${big ? "max-w-md text-sm sm:text-base" : "line-clamp-2 text-[13px] leading-snug"}`}>{d.subtitle}</p>
-          <div className="mt-4 flex items-center justify-between gap-3">
-            <span className="min-w-0 truncate text-xs font-semibold text-white/65">{locked ? (d.guestHref ? "เข้าสู่ระบบ / สมัครสมาชิก" : "เข้าสู่ระบบเพื่อใช้งาน") : extra}</span>
-            <span className={`${tile.tileGo} flex h-10 w-10 flex-none items-center justify-center rounded-full bg-white/10 ring-1 ring-white/25`}>
+          <h3 className={`${h} mt-2.5 font-semibold leading-tight sm:mt-3 ${big ? "text-2xl sm:text-5xl" : "text-[15px] sm:text-xl"}`}>{d.title}</h3>
+          <p className={`mt-1.5 text-white/75 ${big ? "max-w-md text-xs sm:text-base" : "hidden text-[13px] leading-snug sm:line-clamp-2"}`}>{d.subtitle}</p>
+          <div className="mt-3 flex items-center justify-between gap-2 sm:mt-4 sm:gap-3">
+            <span className="min-w-0 truncate text-[10px] font-semibold text-white/65 sm:text-xs">{locked ? (d.guestHref ? "เข้าสู่ระบบ / สมัครสมาชิก" : "เข้าสู่ระบบเพื่อใช้งาน") : extra}</span>
+            <span className={`${tile.tileGo} flex h-8 w-8 flex-none items-center justify-center rounded-full bg-white/10 ring-1 ring-white/25 sm:h-10 sm:w-10`}>
               <ArrowRight className="h-4 w-4" />
             </span>
           </div>
@@ -445,8 +445,8 @@ function DepartmentTile({ d, n, href, locked, big, extra }: { d: Department; n: 
 function FooterCol({ title, links }: { title: string; links: { href: string; label: string }[] }) {
   return (
     <div>
-      <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/45">{title}</p>
-      <ul className="mt-4 space-y-2.5 text-sm">
+      <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/45 sm:text-[11px]">{title}</p>
+      <ul className="mt-3 space-y-2 text-xs sm:mt-4 sm:space-y-2.5 sm:text-sm">
         {links.map((l) => (
           <li key={l.label}>
             <Link href={l.href} className="hover:text-white">

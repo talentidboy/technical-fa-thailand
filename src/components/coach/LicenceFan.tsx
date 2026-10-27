@@ -5,10 +5,11 @@ import { display, levelTone } from "./CoachUi";
 import styles from "./coach.module.css";
 
 // บัตรใบอนุญาต G → PRO วางเรียงแบบไพ่ในมือ — ชี้แล้วกางออก/ยกใบที่เลือก · กดไปที่รายละเอียดระดับนั้นในหน้าหลักสูตร
-export function LicenceFan() {
+// fixed = คงรูปพัดทุกขนาดจอ (ใช้คู่กับ FitWidth ที่ย่อทั้งชิ้น) · ปกติจอแคบจะกลายเป็นแถวบัตรเลื่อนแนวนอน
+export function LicenceFan({ fixed = false }: { fixed?: boolean }) {
   const mid = (coreProgramSteps.length - 1) / 2;
   return (
-    <div className={styles.fan}>
+    <div className={`${styles.fan} ${fixed ? styles.fanFixed : ""}`}>
       {coreProgramSteps.map((s, i) => {
         const tone = levelTone(s.level);
         const k = i - mid;

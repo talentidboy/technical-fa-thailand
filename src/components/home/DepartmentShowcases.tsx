@@ -12,6 +12,7 @@ import { LicenceFan } from "@/components/coach/LicenceFan";
 import { levelTone } from "@/components/coach/CoachUi";
 import { COIN } from "@/components/academy/Podium";
 import { TeamBadge } from "@/components/g15/TeamBadge";
+import { FitWidth } from "./FitWidth";
 import { TacticsBoard } from "@/components/training/TacticsBoard";
 import { AREA_INFO } from "@/components/training/areas";
 import { academyFont, academyPoster } from "@/components/typefaces/academy";
@@ -24,7 +25,8 @@ import styles from "./showcase.module.css";
 import { ArrowRight, ArrowUpRight, Lock, Trophy } from "lucide-react";
 
 // สไลด์แนะนำหมวดงานบนหน้าแรก (ใช้ใน ShowcaseCarousel) — แต่ละสไลด์เต็มความกว้างในสไตล์ของหมวดนั้นเอง
-// ทุกสไลด์ h-full + จัดเนื้อหากึ่งกลางแนวตั้ง เพราะสไลด์ซ้อนกันในช่องเดียวที่สูงเท่าสไลด์ที่สูงที่สุด · บนมือถือซ่อนส่วนรองให้สไลด์สั้นใกล้เคียงกัน
+// ทุกสไลด์ h-full + จัดเนื้อหากึ่งกลางแนวตั้ง เพราะสไลด์ซ้อนกันในช่องเดียวที่สูงเท่าสไลด์ที่สูงที่สุด
+// มือถือวางแบบเดียวกับคอม (ข้อความซ้าย · ภาพขวา) ตัวอักษรเล็กลง ภาพประกอบย่อทั้งชิ้นด้วย <FitWidth> · ส่วนรองบางส่วนซ่อนบนมือถือ
 
 const h = display.className;
 const TZ = { timeZone: "Asia/Bangkok" } as const;
@@ -33,8 +35,8 @@ const wrap = "mx-auto w-full max-w-7xl px-4 py-12 sm:px-6 lg:py-16";
 // ป้ายชื่อหมวดแบบอังกฤษตัวเล็ก สีตามหมวด
 function Eyebrow({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
-    <p className={`flex items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.28em] ${className}`}>
-      <span className="h-px w-8 bg-current opacity-60" />
+    <p className={`flex items-center gap-2 text-[9px] font-semibold uppercase tracking-[0.18em] sm:gap-3 sm:text-[11px] sm:tracking-[0.28em] ${className}`}>
+      <span className="h-px w-5 bg-current opacity-60 sm:w-8" />
       <span className="whitespace-nowrap">{children}</span>
     </p>
   );
@@ -52,11 +54,11 @@ export function CoachShowcase({ href, locked, levels, total, sessions }: { href:
         <Image src={coachCentreBg} alt="" fill sizes="55vw" placeholder="blur" className="object-cover opacity-30" style={{ objectPosition: "50% 25%" }} />
         <div className="absolute inset-0 bg-linear-to-r from-[#031a2c] via-[#031a2c]/70 to-[#031a2c]/30" />
       </div>
-      <div className={`${wrap} grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,32rem)] lg:items-center`}>
+      <div className={`${wrap} grid grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)] items-center gap-3 sm:gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,32rem)]`}>
         <div>
           <Eyebrow className="text-[#e3bb63]">Coach Education</Eyebrow>
-          <CoachCentreLogo tone="white" className="mt-6 h-10 sm:h-12" />
-          <h2 className={`${h} mt-5 text-4xl font-semibold leading-[1.05] sm:text-6xl`}>
+          <CoachCentreLogo tone="white" className="mt-4 h-7 sm:mt-6 sm:h-12" />
+          <h2 className={`${h} mt-3 text-2xl font-semibold leading-[1.05] sm:mt-5 sm:text-6xl`}>
             ศูนย์อบรม
             <br />
             <span className="text-[#e3bb63]">ผู้ฝึกสอนฟุตบอล</span>
@@ -84,19 +86,21 @@ export function CoachShowcase({ href, locked, levels, total, sessions }: { href:
             </ol>
           </div>
 
-          <div className="mt-8 flex flex-wrap gap-3">
-            <Link href={href} className="inline-flex items-center gap-2 rounded-lg bg-[#e3bb63] px-6 py-3.5 text-sm font-semibold text-[#031a2c] transition-colors hover:bg-[#edc977]">
+          <div className="mt-5 flex flex-wrap gap-2 sm:mt-8 sm:gap-3">
+            <Link href={href} className="inline-flex items-center gap-2 rounded-lg bg-[#e3bb63] px-3.5 py-2.5 text-xs sm:px-6 sm:py-3.5 sm:text-sm font-semibold text-[#031a2c] transition-colors hover:bg-[#edc977]">
               {locked ? "เข้าสู่ระบบ / สมัครสมาชิก" : "เข้าสู่ศูนย์อบรม"}
               <ArrowRight className="h-4 w-4" />
             </Link>
-            <Link href="/courses" className="inline-flex items-center gap-2 rounded-lg border border-white/25 px-6 py-3.5 text-sm font-semibold transition-colors hover:bg-white/10">
+            <Link href="/courses" className="inline-flex items-center gap-2 rounded-lg border border-white/25 px-3.5 py-2.5 text-xs sm:px-6 sm:py-3.5 sm:text-sm font-semibold transition-colors hover:bg-white/10">
               หลักสูตรอบรม
             </Link>
           </div>
         </div>
 
         <div className="min-w-0">
-          <LicenceFan />
+          <FitWidth width={560}>
+            <LicenceFan fixed />
+          </FitWidth>
           <div className="mt-8 hidden sm:block" style={{ "--paper": "#031a2c" } as React.CSSProperties}>
             <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-[#e3bb63]">Now Enrolling · เปิดรับสมัคร</p>
             {sessions.length === 0 ? (
@@ -167,41 +171,43 @@ export function G15Showcase({ teams, played, board }: { teams: number; played: n
       <div className="absolute inset-0 -z-10 bg-linear-to-r from-g15-950 via-g15-950/85 to-g15-950/30" />
       <div className="absolute inset-0 -z-10 bg-linear-to-t from-g15-950 via-transparent to-g15-950/40" />
 
-      <div className={`${wrap} grid gap-10 lg:grid-cols-[minmax(0,1fr)_28rem] lg:items-center`}>
+      <div className={`${wrap} grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] items-center gap-4 sm:gap-10 lg:grid-cols-[minmax(0,1fr)_28rem]`}>
         <div>
           <Eyebrow className="text-g15-200">Matchday · U15 Women</Eyebrow>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={G15_IMAGE_URL} alt="" className="mt-6 hidden h-16 w-16 rounded-xl object-cover ring-2 ring-white/20 sm:block" />
-          <h2 className={`${h} mt-5 text-4xl font-semibold uppercase leading-[0.95] sm:text-7xl`}>
+          <h2 className={`${h} mt-3 text-2xl font-semibold uppercase leading-[0.95] sm:mt-5 sm:text-7xl`}>
             G15 Women&apos;s
             <br />
             Football Series
-            <span className="ml-3 align-top text-2xl text-g15-300 sm:text-4xl">2026</span>
+            <span className="ml-1.5 align-top text-sm text-g15-300 sm:ml-3 sm:text-4xl">2026</span>
           </h2>
           <p className="mt-5 hidden max-w-lg leading-relaxed text-white/75 sm:block">เวทีฟุตบอลหญิงรุ่นอายุไม่เกิน 15 ปี จากรอบภูมิภาคสู่รอบชิงแชมป์ประเทศไทย — ตาราง ผลการแข่งขัน สถิติ และรางวัลครบทุกนัด</p>
-          <dl className="mt-8 flex divide-x divide-white/15">
+          <dl className="mt-5 flex divide-x divide-white/15 sm:mt-8">
             {[
               { n: teams, l: "ทีมที่ร่วมการแข่งขัน" },
               { n: played, l: "นัดที่แข่งจบแล้ว" },
             ].map((s) => (
-              <div key={s.l} className="flex flex-col-reverse px-6 first:pl-0">
-                <dt className="text-xs text-white/60">{s.l}</dt>
-                <dd className={`${h} text-4xl font-semibold tabular-nums sm:text-5xl`}>{s.n.toLocaleString("en-US")}</dd>
+              <div key={s.l} className="flex flex-col-reverse px-3 first:pl-0 sm:px-6">
+                <dt className="text-[10px] text-white/60 sm:text-xs">{s.l}</dt>
+                <dd className={`${h} text-2xl font-semibold tabular-nums sm:text-5xl`}>{s.n.toLocaleString("en-US")}</dd>
               </div>
             ))}
           </dl>
-          <div className="mt-8 flex flex-wrap gap-3">
-            <Link href="/g15-womens-series" className="inline-flex items-center gap-2 rounded-lg bg-white px-6 py-3.5 text-sm font-semibold text-g15-900 transition-colors hover:bg-g15-100">
+          <div className="mt-5 flex flex-wrap gap-2 sm:mt-8 sm:gap-3">
+            <Link href="/g15-womens-series" className="inline-flex items-center gap-2 rounded-lg bg-white px-3.5 py-2.5 text-xs sm:px-6 sm:py-3.5 sm:text-sm font-semibold text-g15-900 transition-colors hover:bg-g15-100">
               เข้าสู่ G15 Series
               <ArrowRight className="h-4 w-4" />
             </Link>
-            <Link href="/g15-womens-series/matches" className="hidden items-center gap-2 rounded-lg border border-white/30 px-6 py-3.5 text-sm font-semibold transition-colors hover:bg-white/10 sm:inline-flex">
+            <Link href="/g15-womens-series/matches" className="hidden items-center gap-2 rounded-lg border border-white/30 px-3.5 py-2.5 text-xs sm:px-6 sm:py-3.5 sm:text-sm font-semibold transition-colors hover:bg-white/10 sm:inline-flex">
               ตารางแข่งขันและผลบอล
             </Link>
           </div>
         </div>
 
-        <Scoreboard board={board} />
+        <FitWidth width={420}>
+          <Scoreboard board={board} />
+        </FitWidth>
       </div>
     </div>
   );
@@ -266,7 +272,7 @@ function Scoreboard({ board }: { board: G15Board }) {
         </div>
         <TeamSide team={board.away} />
       </div>
-      <span className="flex items-center justify-between border-t border-white/10 px-6 py-3.5 text-sm font-semibold text-white/80 group-hover:text-white">
+      <span className="flex items-center justify-between border-t border-white/10 px-3.5 py-2.5 text-xs sm:px-6 sm:py-3.5 sm:text-sm font-semibold text-white/80 group-hover:text-white">
         รายละเอียดนัดนี้
         <ArrowUpRight className="h-4 w-4" />
       </span>
@@ -290,29 +296,29 @@ export function AcademyShowcase({ total, byLevel }: { total: number; byLevel: Re
     <div className={`${academyFont.className} relative isolate flex h-full items-center overflow-hidden bg-[#1e96dc] text-[#0b1220]`}>
       <span className="absolute -right-24 -top-24 -z-10 h-96 w-96 rounded-full bg-white/10" />
       <span className="absolute -bottom-32 left-[38%] -z-10 h-80 w-80 rounded-full bg-[#0b6cb0]/40" />
-      <div className={`${wrap} grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,30rem)] lg:items-center`}>
+      <div className={`${wrap} grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] items-center gap-4 sm:gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,30rem)]`}>
         <div>
-          <div className="flex items-center gap-4">
-            <AcademyLogo className="h-11 sm:h-12" />
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+            <AcademyLogo className="h-8 sm:h-12" />
             <Eyebrow className="text-[#0b1220]">Criteria 2025</Eyebrow>
           </div>
-          <h2 className={`${academyPoster.className} mt-6 text-4xl font-extrabold leading-[1.05] sm:text-6xl`}>
+          <h2 className={`${academyPoster.className} mt-4 text-2xl font-extrabold leading-[1.05] sm:mt-6 sm:text-6xl`}>
             FAT Academy
             <br />
             <span className="text-white [text-shadow:3px_3px_0_#0b1220]">Licensing</span>
           </h2>
           <p className="mt-4 hidden max-w-md leading-relaxed text-[#0b1220]/80 sm:block">ทำเนียบอคาเดมีและศูนย์ฝึกเยาวชนที่ได้รับการรับรองมาตรฐานจากสมาคมฯ ตามเกณฑ์ปี 2025 — ค้นหาบนแผนที่ทั่วประเทศ</p>
-          <div className="mt-8 flex flex-wrap gap-3">
-            <Link href="/academies" className="inline-flex items-center gap-2 rounded-xl bg-[#0b1220] px-6 py-3.5 text-sm font-bold text-white shadow-[4px_4px_0_#ffd426] transition-transform hover:-translate-y-0.5">
+          <div className="mt-5 flex flex-wrap gap-2 sm:mt-8 sm:gap-3">
+            <Link href="/academies" className="inline-flex items-center gap-2 rounded-xl bg-[#0b1220] px-3.5 py-2.5 text-xs sm:px-6 sm:py-3.5 sm:text-sm font-bold text-white shadow-[4px_4px_0_#ffd426] transition-transform hover:-translate-y-0.5">
               แผนที่และทำเนียบอคาเดมี
               <ArrowRight className="h-4 w-4" />
             </Link>
-            <Link href="/academies/register" className="hidden items-center gap-2 rounded-xl bg-white px-6 py-3.5 text-sm font-bold transition-transform hover:-translate-y-0.5 sm:inline-flex">
+            <Link href="/academies/register" className="hidden items-center gap-2 rounded-xl bg-white px-3.5 py-2.5 text-xs sm:px-6 sm:py-3.5 sm:text-sm font-bold transition-transform hover:-translate-y-0.5 sm:inline-flex">
               สมัครรับการรับรอง
             </Link>
           </div>
         </div>
-        <div>
+        <FitWidth width={440}>
           <p className="inline-flex items-baseline gap-3 rounded-2xl bg-[#ffd426] px-5 py-3 shadow-[4px_4px_0_#0b1220]">
             <span className={`${academyPoster.className} text-5xl font-extrabold tabular-nums sm:text-6xl`}>{total.toLocaleString("en-US")}</span>
             <span className="text-sm font-semibold">
@@ -337,7 +343,7 @@ export function AcademyShowcase({ total, byLevel }: { total: number; byLevel: Re
               </li>
             ))}
           </ul>
-        </div>
+        </FitWidth>
       </div>
     </div>
   );
@@ -350,20 +356,20 @@ export function PlayShowcase() {
       <Image src={PLAY_AND_LEARN_ELEMENTS.flowerYellow} alt="" width={64} height={64} className="pointer-events-none absolute right-[8%] top-10 -z-10 h-16 w-16 rotate-12" />
       <Image src={PLAY_AND_LEARN_ELEMENTS.flowerPurple} alt="" width={64} height={64} className="pointer-events-none absolute bottom-12 left-[3%] -z-10 hidden h-14 w-14 sm:block" />
       <Image src={PLAY_AND_LEARN_ELEMENTS.flowerPink} alt="" width={64} height={64} className="pointer-events-none absolute left-[46%] top-16 -z-10 hidden h-12 w-12 -rotate-12 lg:block" />
-      <div className={`${wrap} relative grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,26rem)] lg:items-center`}>
+      <div className={`${wrap} relative grid grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)] items-center gap-4 sm:gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,26rem)]`}>
         <div>
-          <div className="flex items-center gap-4">
-            <Image src={PLAY_AND_LEARN_LOGO_URL} alt="Play and Learn" width={120} height={120} className="h-16 w-auto rounded-xl bg-white p-1 sm:h-20" />
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+            <Image src={PLAY_AND_LEARN_LOGO_URL} alt="Play and Learn" width={120} height={120} className="h-11 w-auto rounded-xl bg-white p-1 sm:h-20" />
             <Eyebrow className="text-[#be185d]">Play and Learn</Eyebrow>
           </div>
-          <h2 className="mt-6 text-5xl font-extrabold leading-[1.02] text-[#be185d] sm:text-7xl">
+          <h2 className="mt-4 text-3xl font-extrabold leading-[1.02] text-[#be185d] sm:mt-6 sm:text-7xl">
             Play
             <br />
             and Learn
           </h2>
-          <p className="mt-4 max-w-sm text-base leading-relaxed text-[#4a0d2a]/80">ฟุตบอลสำหรับเด็กหญิงวัย 5–8 ปี เรียนรู้ผ่านการเล่นไปกับ “กุ๋งกิ๋ง”</p>
+          <p className="mt-3 max-w-sm text-xs leading-relaxed text-[#4a0d2a]/80 sm:mt-4 sm:text-base">ฟุตบอลสำหรับเด็กหญิงวัย 5–8 ปี เรียนรู้ผ่านการเล่นไปกับ “กุ๋งกิ๋ง”</p>
 
-          <p className="mt-7 text-xs font-bold text-[#be185d]">พาสปอร์ตแห่งการผจญภัย {PLAY_AND_LEARN_PASSPORT_URLS.length} บท</p>
+          <p className="mt-5 text-[11px] font-bold text-[#be185d] sm:mt-7 sm:text-xs">พาสปอร์ตแห่งการผจญภัย {PLAY_AND_LEARN_PASSPORT_URLS.length} บท</p>
           <ul className="mt-3 grid max-w-[12.5rem] grid-cols-4 gap-2 sm:flex sm:max-w-none sm:gap-2.5">
             {PLAY_AND_LEARN_PASSPORT_URLS.map((_, i) => (
               <li key={i}>
@@ -380,7 +386,7 @@ export function PlayShowcase() {
             ))}
           </ul>
 
-          <Link href="/play-and-learn" className="mt-9 inline-flex items-center gap-2 rounded-2xl bg-[#db2777] px-6 py-3.5 text-sm font-bold text-white shadow-[0_6px_0_#9d174d] transition-transform hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-[0_2px_0_#9d174d]">
+          <Link href="/play-and-learn" className="mt-6 inline-flex items-center gap-2 rounded-2xl bg-[#db2777] sm:mt-9 px-3.5 py-2.5 text-xs sm:px-6 sm:py-3.5 sm:text-sm font-bold text-white shadow-[0_6px_0_#9d174d] transition-transform hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-[0_2px_0_#9d174d]">
             ไปเล่นกันเลย
             <ArrowRight className="h-4 w-4" />
           </Link>
@@ -390,7 +396,7 @@ export function PlayShowcase() {
           alt=""
           width={260}
           height={320}
-          className={`pointer-events-none absolute bottom-6 right-4 h-36 w-auto sm:h-48 lg:static lg:mx-auto lg:h-[26rem] ${styles.sway}`}
+          className={`pointer-events-none mx-auto h-44 w-auto sm:h-64 lg:h-[26rem] ${styles.sway}`}
         />
       </div>
     </div>
@@ -424,14 +430,14 @@ export function GrassrootsShowcase() {
       </div>
 
       <div className="flex flex-1 items-center">
-        <div className={`${wrap} grid gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,28rem)] lg:items-center`}>
+        <div className={`${wrap} grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] items-center gap-4 sm:gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,28rem)]`}>
           <div>
-            <div className="flex items-center gap-4">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={GRASSROOTS_LOGO_URL} alt="" className="h-14 w-14 rounded-full bg-white object-contain p-1.5 shadow-lg sm:h-16 sm:w-16" />
-              <span className="text-sm text-white/75">โครงการปี {GRASSROOTS_YEAR}</span>
+              <img src={GRASSROOTS_LOGO_URL} alt="" className="h-10 w-10 rounded-full bg-white object-contain p-1 shadow-lg sm:h-16 sm:w-16 sm:p-1.5" />
+              <span className="text-xs text-white/75 sm:text-sm">โครงการปี {GRASSROOTS_YEAR}</span>
             </div>
-            <h2 className="mt-5 text-5xl font-semibold leading-[1.02] sm:text-7xl">
+            <h2 className="mt-3 text-3xl font-semibold leading-[1.02] sm:mt-5 sm:text-7xl">
               Grassroots
               <br />
               <span className="text-[#fde047]">Football</span>
@@ -439,25 +445,25 @@ export function GrassrootsShowcase() {
             <p className="mt-4 hidden max-w-md text-lg text-white/85 sm:block">
               ฟุตบอล<span className="whitespace-nowrap">รากหญ้า</span> ปูพื้นฐานเยาวชนทั่วประเทศ — ให้เด็กทุกคนได้เล่นอย่างสนุกและปลอดภัย
             </p>
-            <ul className="mt-8 flex flex-wrap gap-3 sm:gap-4">
+            <ul className="mt-5 flex flex-wrap gap-2 sm:mt-8 sm:gap-4">
               {stickers.map((s) => (
                 <li
                   key={s.l}
-                  className={`${festival.sticker} flex h-24 w-24 flex-col items-center justify-center rounded-full text-center shadow-[0_8px_0_rgb(0_0_0/0.18)] sm:h-32 sm:w-32`}
+                  className={`${festival.sticker} flex h-16 w-16 flex-col items-center justify-center rounded-full text-center shadow-[0_8px_0_rgb(0_0_0/0.18)] sm:h-32 sm:w-32`}
                   style={{ background: s.bg, color: s.fg, transform: `rotate(${s.r}deg)` }}
                 >
-                  <span className="text-2xl font-semibold leading-none tabular-nums sm:text-4xl">{s.n.toLocaleString("en-US")}</span>
-                  <span className="mt-1 text-xs sm:text-sm">{s.l}</span>
+                  <span className="text-base font-semibold leading-none tabular-nums sm:text-4xl">{s.n.toLocaleString("en-US")}</span>
+                  <span className="mt-0.5 text-[10px] sm:mt-1 sm:text-sm">{s.l}</span>
                 </li>
               ))}
             </ul>
-            <Link href="/grassroots-football" className="mt-9 inline-flex items-center gap-2 rounded-full bg-white px-6 py-3.5 font-medium text-[#064e3b] shadow-[0_6px_0_#064e3b] transition-transform hover:-translate-y-0.5">
+            <Link href="/grassroots-football" className="mt-6 inline-flex items-center gap-2 rounded-full bg-white px-4 py-2.5 text-xs font-medium sm:mt-9 sm:px-6 sm:py-3.5 sm:text-base text-[#064e3b] shadow-[0_6px_0_#064e3b] transition-transform hover:-translate-y-0.5">
               ดูข้อมูลโครงการ
               <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
 
-          <div className="relative mx-auto hidden w-full max-w-md md:block">
+          <FitWidth width={448} className="relative mx-auto w-full max-w-md">
             <div className="rotate-2 bg-white p-3 pb-14 shadow-2xl">
               <div className="relative aspect-4/3 overflow-hidden">
                 <Image src={grassrootsBg} alt="เด็กๆ ในกิจกรรมฟุตบอลรากหญ้า" fill sizes="(min-width: 1024px) 28rem, 90vw" placeholder="blur" className="object-cover" style={{ objectPosition: "50% 35%" }} />
@@ -478,7 +484,7 @@ export function GrassrootsShowcase() {
                 ))}
               </ul>
             </div>
-          </div>
+          </FitWidth>
         </div>
       </div>
     </div>
@@ -490,8 +496,9 @@ export function TalentShowcase({ href, locked }: { href: string; locked: boolean
   const corner = "absolute h-7 w-7 border-[#facc15]";
   return (
     <div className={`${talentFont.className} flex h-full items-center bg-[#0d1117] text-white`}>
-      <div className={`${wrap} grid gap-8 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] lg:items-center lg:gap-14`}>
-        <div className="relative aspect-video overflow-hidden ring-1 ring-white/10 lg:aspect-4/3">
+      <div className={`${wrap} grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] items-center gap-4 sm:gap-8 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] lg:gap-14`}>
+        <FitWidth width={520}>
+        <div className="relative aspect-4/3 overflow-hidden ring-1 ring-white/10">
           <Image src={talentIdBg} alt="" fill sizes="(min-width: 1024px) 50vw, 100vw" placeholder="blur" className="object-cover contrast-125 grayscale" style={{ objectPosition: "50% 60%" }} />
           <div className="absolute inset-0 bg-[#0d1117]/40" />
           <span className={`${corner} left-4 top-4 border-l-2 border-t-2`} />
@@ -512,17 +519,18 @@ export function TalentShowcase({ href, locked }: { href: string; locked: boolean
           </span>
           <span className="absolute bottom-7 right-7 text-[11px] font-semibold tracking-[0.2em] text-[#facc15]">AGE 13–17</span>
         </div>
+        </FitWidth>
 
         <div>
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={TALENT_ID_LOGO_URL} alt="" className="h-12 w-12 rounded-md bg-white object-contain p-1" />
+            <img src={TALENT_ID_LOGO_URL} alt="" className="h-9 w-9 rounded-md bg-white object-contain p-1 sm:h-12 sm:w-12" />
             <Eyebrow className="text-[#facc15]">Talent Identification</Eyebrow>
           </div>
-          <h2 className="mt-6 text-5xl font-bold uppercase leading-none sm:text-7xl">
+          <h2 className="mt-4 text-3xl font-bold uppercase leading-none sm:mt-6 sm:text-7xl">
             Talent <span className="text-[#facc15]">ID</span>
           </h2>
-          <p className="mt-4 max-w-md leading-relaxed text-white/70">สืบค้นและคัดกรองนักฟุตบอลดาวรุ่นจากทุกภูมิภาค ด้วยข้อมูลที่เป็นระบบ</p>
+          <p className="mt-3 max-w-md text-xs leading-relaxed text-white/70 sm:mt-4 sm:text-base">สืบค้นและคัดกรองนักฟุตบอลดาวรุ่นจากทุกภูมิภาค ด้วยข้อมูลที่เป็นระบบ</p>
           <ul className="mt-6 hidden max-w-md grid-cols-2 gap-x-4 gap-y-2.5 text-sm text-white/85 sm:grid">
             {["โปรไฟล์และข้อมูลร่างกาย", "ผังตำแหน่งบนสนาม", "ผลประเมินและเกรด", "รุ่นคัดเลือกตามภูมิภาค"].map((t) => (
               <li key={t} className="flex items-center gap-2">
@@ -532,12 +540,12 @@ export function TalentShowcase({ href, locked }: { href: string; locked: boolean
             ))}
           </ul>
           {locked && (
-            <p className="mt-8 flex items-center gap-2 text-xs text-white/55">
+            <p className="mt-5 flex items-center gap-2 text-[11px] text-white/55 sm:mt-8 sm:text-xs">
               <Lock className="h-3.5 w-3.5" />
               ข้อมูลนักฟุตบอลเยาวชน เปิดให้เฉพาะเจ้าหน้าที่
             </p>
           )}
-          <Link href={href} className={`${locked ? "mt-3" : "mt-8"} inline-flex items-center gap-2 bg-[#facc15] px-6 py-3.5 text-sm font-bold text-[#0d1117] transition-colors hover:bg-[#fde047]`}>
+          <Link href={href} className={`${locked ? "mt-3" : "mt-8"} inline-flex items-center gap-2 bg-[#facc15] px-3.5 py-2.5 text-xs sm:px-6 sm:py-3.5 sm:text-sm font-bold text-[#0d1117] transition-colors hover:bg-[#fde047]`}>
             {locked ? "เข้าสู่ระบบเจ้าหน้าที่" : "เปิด Talent ID"}
             <ArrowRight className="h-4 w-4" />
           </Link>
@@ -559,17 +567,17 @@ export function DataShowcase({ articles, total, byArea }: { articles: LatestArti
     <div className={`${trainingFont.className} flex h-full items-center bg-[#e4e7ec]`}>
       <div className={wrap}>
         <div className="rounded-lg bg-linear-to-b from-[#d7dbe1] to-[#aab1bc] p-2.5 shadow-[0_30px_60px_-30px_rgb(15_23_42/0.5)]">
-          <div className="grid gap-8 rounded-sm bg-[#fdfdfb] p-6 text-[#111827] sm:p-9 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] lg:items-center lg:gap-12">
+          <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] items-center gap-4 rounded-sm bg-[#fdfdfb] p-4 text-[#111827] sm:gap-8 sm:p-9 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] lg:gap-12">
             <div>
-              <div className="flex items-center gap-4">
-                <DataCentreLogo className="h-14 sm:h-16" />
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                <DataCentreLogo className="h-9 sm:h-16" />
                 <Eyebrow className="text-[#1d4ed8]">Data & Articles</Eyebrow>
               </div>
-              <h2 className="mt-6 text-4xl font-bold leading-[1.05] sm:text-5xl">
+              <h2 className="mt-4 text-xl font-bold leading-[1.05] sm:mt-6 sm:text-5xl">
                 Technical Data
                 <br />& Articles Centre
               </h2>
-              <p className="mt-3 text-slate-600">ศูนย์ข้อมูลและบทความด้านเทคนิค ของฝ่ายเทคนิค สมาคมฯ</p>
+              <p className="mt-2 text-xs text-slate-600 sm:mt-3 sm:text-base">ศูนย์ข้อมูลและบทความด้านเทคนิค ของฝ่ายเทคนิค สมาคมฯ</p>
               <ul className="mt-7 hidden gap-3 sm:grid sm:grid-cols-3">
                 {notes.map((n, i) => (
                   <li key={n.key}>
@@ -584,13 +592,13 @@ export function DataShowcase({ articles, total, byArea }: { articles: LatestArti
                   </li>
                 ))}
               </ul>
-              <div className="mt-8 flex flex-wrap items-center justify-between gap-4">
-                <Link href="/training-centre" className={`${markerFont.className} inline-flex items-center gap-2 text-2xl text-[#1d4ed8] underline decoration-[#1d4ed8]/40 decoration-2 underline-offset-8 hover:decoration-[#1d4ed8]`}>
+              <div className="mt-5 flex flex-wrap items-center justify-between gap-4 sm:mt-8">
+                <Link href="/training-centre" className={`${markerFont.className} inline-flex items-center gap-2 text-base text-[#1d4ed8] sm:text-2xl underline decoration-[#1d4ed8]/40 decoration-2 underline-offset-8 hover:decoration-[#1d4ed8]`}>
                   {total > 0 ? `อ่านบทความทั้งหมด ${total} เรื่อง` : "เข้าศูนย์ข้อมูล"}
                   <ArrowRight className="h-5 w-5" />
                 </Link>
                 {/* รางปากกาไวท์บอร์ด */}
-                <span aria-hidden className="flex items-end gap-1.5 rounded-sm bg-[#c9ced6] px-2.5 py-1.5">
+                <span aria-hidden className="hidden items-end gap-1.5 rounded-sm bg-[#c9ced6] px-2.5 py-1.5 sm:flex">
                   {["#1d4ed8", "#dc2626", "#15803d", "#111827"].map((c) => (
                     <span key={c} className="h-2.5 w-9 rounded-full" style={{ background: c }} />
                   ))}

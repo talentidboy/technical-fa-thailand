@@ -5,6 +5,11 @@
   height: 25rem;
 }
 
+/* พัดคงรูป (หน้าแรก): ไม่ใช้กฎจอแคบด้านล่าง */
+.fanFixed {
+  flex: none;
+}
+
 .card {
   position: absolute;
   bottom: 0;
@@ -30,7 +35,7 @@
 }
 
 @media (max-width: 1023px) {
-  .fan {
+  .fan:not(.fanFixed) {
     display: flex;
     height: auto;
     gap: 0.875rem;
@@ -39,12 +44,12 @@
     padding-bottom: 0.5rem;
     scrollbar-width: none;
   }
-  .fan::-webkit-scrollbar {
+  .fan:not(.fanFixed)::-webkit-scrollbar {
     display: none;
   }
-  .card,
-  .fan:hover .card,
-  .fan .card:hover {
+  .fan:not(.fanFixed) .card,
+  .fan:not(.fanFixed):hover .card,
+  .fan:not(.fanFixed) .card:hover {
     position: relative;
     left: auto;
     flex: none;
