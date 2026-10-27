@@ -1,5 +1,6 @@
 // ตัวรันชุดทดสอบ E2E:  npm run test:e2e  (หรือ npm run test:e2e -- renewal  เพื่อรันเฉพาะไฟล์ที่ชื่อมีคำนี้)
-// 1) สร้าง schema ทดสอบ (แยกจากข้อมูลจริง) 2) เปิดเว็บโหมด dev ที่ชี้ไป schema นั้น 3) รันทุกไฟล์ *.test.cjs
+// 1) สร้าง schema ทดสอบ (แยกจากข้อมูลจริง) 2) build แล้วเปิดเว็บแบบ production ที่ชี้ไป schema นั้น 3) รันทุกไฟล์ *.test.cjs
+// (ใส่ --dev เพื่อใช้โหมด dev แทน — เร็วกว่าตอนแก้โค้ด แต่ Next.js 16.4 โหมด dev บางหน้า reload วนเองเมื่อข้อมูลว่าง ทำให้ผลทดสอบไม่นิ่ง)
 // 4) ปิดเว็บ + ลบ schema ทดสอบ (ใส่ --keep เพื่อเก็บไว้ดู)  — ถ้ามีข้อใดไม่ผ่าน exit code = 1
 const path = require("path");
 const fs = require("fs");
@@ -9,6 +10,7 @@ const h = require("./harness.cjs");
 
 const args = process.argv.slice(2);
 const keep = args.includes("--keep");
+const devMode = args.includes("--dev");
 const filters = args.filter((a) => !a.startsWith("--"));
 const ARTIFACTS = path.join(h.ROOT, "tests", "e2e", ".artifacts");
 
@@ -49,9 +51,19 @@ async function waitForServer(child, log) {
   console.log(`▶ สร้าง schema ทดสอบ "${h.SCHEMA}"`);
   execSync("npx prisma db push", { cwd: h.ROOT, stdio: "ignore", env: { ...process.env, DIRECT_URL: h.schemaUrl() } });
 
-  console.log(`▶ เปิดเว็บทดสอบที่ ${h.BASE}`);
+  if (!devMode) {
+    console.log("▶ build เว็บแบบ production");
+    try {
+      execSync("npx next build", { cwd: h.ROOT, stdio: "pipe", env: { ...process.env, NEXT_TELEMETRY_DISABLED: "1" } });
+    } catch (err) {
+      throw new Error(`build ไม่สำเร็จ:
+${String(err.stdout ?? "").slice(-3000)}
+${String(err.stderr ?? "").slice(-2000)}`);
+    }
+  }
+  console.log(`▶ เปิดเว็บทดสอบที่ ${h.BASE}${devMode ? " (dev)" : ""}`);
   const log = [];
-  const server = spawn("npx", ["next", "dev", "-p", String(h.PORT)], {
+  const server = spawn("npx", ["next", devMode ? "dev" : "start", "-p", String(h.PORT)], {
     cwd: h.ROOT,
     // ปิดอีเมลจริง + กำหนดรหัสงานอัตโนมัติสำหรับทดสอบ + เอกสารอคาเดมีเก็บในโฟลเดอร์ทดสอบ (ไม่ขึ้นที่เก็บไฟล์จริง)
     env: { ...process.env, TEST_DB_SCHEMA: h.SCHEMA, EMAIL_DISABLED: "1", CRON_SECRET: h.CRON_SECRET, ACADEMY_DOCS_DIR: path.join(ARTIFACTS, "academy-docs") },
@@ -83,6 +95,8 @@ async function waitForServer(child, log) {
   } finally {
     if (browser) await browser.close();
     killTree(server);
+    // เก็บ log ของเว็บทดสอบไว้ดูย้อนหลังเมื่อหน้าค้าง/ช้า
+    fs.writeFileSync(path.join(ARTIFACTS, "server.log"), log.join(""));
     if (!keep) await h.dropSchema().catch(() => {});
   }
 

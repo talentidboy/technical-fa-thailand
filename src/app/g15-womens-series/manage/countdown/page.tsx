@@ -1,12 +1,9 @@
-import { BrandLogo } from "@/components/BrandLogo";
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { OfficialCountdown } from "@/components/g15/OfficialCountdown";
 import { matchdayMap } from "@/lib/g15-stage";
-import { ArrowLeft, ClipboardList } from "lucide-react";
-import { AdminSwitcher } from "@/components/admin/AdminSwitcher";
+import { ClipboardList } from "lucide-react";
 
 const BANGKOK_TZ = "Asia/Bangkok";
 
@@ -44,27 +41,6 @@ export default async function G15CountdownPage() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <header className="sticky top-0 z-20 border-b border-white/10 bg-indigo-950/80 backdrop-blur">
-        <div className="mx-auto flex max-w-4xl items-center justify-between gap-2 px-4 py-3 sm:gap-3 sm:px-6 sm:py-4">
-          <Link href="/g15-womens-series/manage" className="flex min-w-0 items-center gap-2">
-            <BrandLogo tone="white" className="h-9" />
-            <div className="min-w-0">
-              <p className="truncate text-sm font-bold text-white">FA Thailand Technical</p>
-              <p className="truncate text-[11px] text-indigo-300">Official Countdown · G15 Women&apos;s Football Series</p>
-            </div>
-          </Link>
-          <div className="ml-auto hidden md:block">
-            <AdminSwitcher current="g15" isAdmin={user?.role === "ADMIN"} />
-          </div>
-          <Link
-            href="/g15-womens-series/manage"
-            className="inline-flex h-10 flex-none items-center gap-1.5 whitespace-nowrap rounded-lg border border-white/15 px-3 text-sm font-medium text-indigo-200 transition-colors hover:bg-white/10 hover:text-white"
-          >
-            <ArrowLeft className="h-4 w-4 flex-none" />
-            <span className="hidden sm:inline">กลับหน้าจัดการข้อมูล</span>
-          </Link>
-        </div>
-      </header>
 
       <div className="mx-auto max-w-4xl space-y-8 px-4 py-8 sm:px-6 sm:py-10">
         <div className="flex items-start gap-3">

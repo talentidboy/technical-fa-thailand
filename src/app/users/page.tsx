@@ -1,4 +1,3 @@
-import { BrandLogo } from "@/components/BrandLogo";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
@@ -6,8 +5,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { createSystemUser, deleteSystemUser } from "./actions";
 import { Field, SelectField } from "@/components/FormField";
 import { ADMIN_STAFF_ROLES } from "@/lib/constants";
-import { UserPlus, Trash2, ShieldCheck, ArrowLeft } from "lucide-react";
-import { AdminSwitcher } from "@/components/admin/AdminSwitcher";
+import { UserPlus, Trash2, ShieldCheck } from "lucide-react";
 
 export default async function UsersPage({
   searchParams,
@@ -27,31 +25,6 @@ export default async function UsersPage({
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <header className="sticky top-0 z-20 border-b border-white/10 bg-indigo-950/80 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-6 py-4">
-          <Link href="/" className="flex items-center gap-2">
-            <BrandLogo tone="white" className="h-9" />
-            <div>
-              <p className="text-sm font-bold text-white">
-                FA Thailand Technical
-              </p>
-              <p className="text-[11px] text-indigo-300">
-                ตั้งค่าระดับองค์กร: ผู้ใช้งานระบบ
-              </p>
-            </div>
-          </Link>
-          <div className="ml-auto hidden md:block">
-            <AdminSwitcher current="users" isAdmin={currentUser?.role === "ADMIN"} />
-          </div>
-          <Link
-            href="/"
-            className="inline-flex items-center gap-1.5 rounded-lg border border-white/15 px-3 py-2 text-sm font-medium text-indigo-200 transition-colors hover:bg-white/10 hover:text-white"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            กลับหน้าแรก
-          </Link>
-        </div>
-      </header>
 
       <div className="mx-auto max-w-6xl space-y-8 px-6 py-10">
         <div>

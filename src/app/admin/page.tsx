@@ -2,12 +2,10 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
 import { requireStaff } from "@/lib/auth";
-import { logout } from "@/app/login/actions";
-import { BrandLogo } from "@/components/BrandLogo";
-import { HomeButton } from "@/components/HomeButton";
 import { areasFor } from "@/components/admin/areas";
+import { AdminFrame } from "@/components/admin/AdminFrame";
 import { display } from "@/components/fonts";
-import { ArrowRight, BadgeCheck, Bug, CalendarClock, CheckCircle2, ClipboardList, FilePlus2, Inbox, LogOut, Megaphone, Plus, RefreshCcw, ShieldCheck, UserPlus, UserRoundCheck } from "lucide-react";
+import { ArrowRight, BadgeCheck, Bug, CalendarClock, CheckCircle2, ClipboardList, FilePlus2, Inbox, Megaphone, Plus, RefreshCcw, ShieldCheck, UserPlus, UserRoundCheck } from "lucide-react";
 
 export const metadata: Metadata = { title: "ศูนย์ควบคุม | FA Thailand Technical" };
 
@@ -57,31 +55,8 @@ export default async function AdminHubPage() {
   ].filter((q) => q.show);
 
   return (
+    <AdminFrame area="hub" title="ศูนย์ควบคุม" user={user} items={[{ href: "/admin", label: "งานที่ต้องทำ", icon: "tasks" }]} publicHref="/" publicLabel="ดูหน้าแรกของเว็บ">
     <div className="min-h-screen bg-slate-50">
-      <header className="border-t-[3px] border-amber-400 bg-[#04223a] text-white">
-        <div className="mx-auto flex max-w-6xl items-center gap-4 px-4 py-3 sm:px-6">
-          <Link href="/admin" className="flex items-center gap-3">
-            <BrandLogo tone="white" className="h-9" />
-            <span className="leading-tight">
-              <span className={`${h} block text-sm font-semibold`}>ศูนย์ควบคุม</span>
-              <span className="block text-[11px] text-white/55">ระบบจัดการฝ่ายเทคนิค</span>
-            </span>
-          </Link>
-          <div className="ml-auto flex items-center gap-2">
-            <span className="hidden text-right text-xs leading-tight sm:block">
-              <span className="block text-white">{user.email}</span>
-              <span className="text-white/50">{isAdmin ? "ผู้ดูแลระบบ" : "เจ้าหน้าที่"}</span>
-            </span>
-            <form action={logout}>
-              <button type="submit" className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm text-white/75 hover:bg-white/10 hover:text-white">
-                <LogOut className="h-4 w-4" />
-                <span className="hidden sm:inline">ออกจากระบบ</span>
-              </button>
-            </form>
-            <HomeButton tone="dark" />
-          </div>
-        </div>
-      </header>
 
       <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
         <p className="text-sm text-slate-500">{now.toLocaleDateString("th-TH", { timeZone: "Asia/Bangkok", weekday: "long", day: "numeric", month: "long", year: "numeric" })}</p>
@@ -185,5 +160,6 @@ export default async function AdminHubPage() {
         </section>
       </main>
     </div>
+    </AdminFrame>
   );
 }

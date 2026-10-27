@@ -26,7 +26,7 @@ export function ManageNav({ counts, email, isAdmin }: { counts: Counts; email: s
     exact ? path === href : path.startsWith(href) || (href === "/academies/manage/academies" && /^\/academies\/manage\/\d+/.test(path));
 
   return (
-    <div className="bg-[#0b1f44] text-white lg:sticky lg:top-0 lg:flex lg:h-screen lg:w-60 lg:flex-none lg:flex-col">
+    <div className="bg-[#04223a] text-white lg:sticky lg:top-0 lg:flex lg:h-screen lg:w-72 lg:flex-none lg:flex-col">
       <Link href="/academies/manage" className="flex items-center gap-2.5 px-4 py-3 lg:px-5 lg:py-5">
         <BrandLogo tone="white" className="h-8" />
         <span className="leading-tight">

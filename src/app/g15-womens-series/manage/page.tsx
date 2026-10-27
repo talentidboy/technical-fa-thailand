@@ -1,4 +1,3 @@
-import { BrandLogo } from "@/components/BrandLogo";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
@@ -14,10 +13,9 @@ import { TeamBadge } from "@/components/g15/TeamBadge";
 import { LogoPasteField } from "@/components/g15/LogoPasteField";
 import { MatchRegionFields } from "@/components/g15/MatchRegionFields";
 import { StageSwitcher } from "@/components/g15/StageSwitcher";
-import { parseStage, withStage, stageInfo } from "@/lib/g15-stage";
+import { parseStage, stageInfo } from "@/lib/g15-stage";
 import { NationalManage } from "./NationalManage";
-import { Trash2, ArrowLeft, MapPin, ChevronRight, ChevronDown, Flame, ClipboardList } from "lucide-react";
-import { AdminSwitcher } from "@/components/admin/AdminSwitcher";
+import { Trash2, MapPin, ChevronRight, ChevronDown, Flame, ClipboardList } from "lucide-react";
 
 export default async function G15ManagePage({
   searchParams,
@@ -32,40 +30,15 @@ export default async function G15ManagePage({
   const stage = parseStage((await searchParams).stage);
 
   return (
-    <ManageShell stage={stage} isAdmin={currentUser.role === "ADMIN"}>
+    <ManageShell stage={stage}>
       {stage === "NATIONAL" ? <NationalManage /> : <RegionalManage />}
     </ManageShell>
   );
 }
 
-function ManageShell({ stage, isAdmin, children }: { stage: ReturnType<typeof parseStage>; isAdmin: boolean; children: React.ReactNode }) {
+function ManageShell({ stage, children }: { stage: ReturnType<typeof parseStage>; children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-slate-50">
-      <header className="sticky top-0 z-20 border-b border-white/10 bg-indigo-950/80 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-2 px-4 py-3 sm:gap-3 sm:px-6 sm:py-4">
-          <Link href={withStage("/g15-womens-series", stage)} className="flex min-w-0 items-center gap-2">
-            <BrandLogo tone="white" className="h-9" />
-            <div className="min-w-0">
-              <p className="truncate text-sm font-bold text-white">
-                FA Thailand Technical
-              </p>
-              <p className="truncate text-[11px] text-indigo-300">
-                จัดการข้อมูล G15 Women&apos;s Football Series
-              </p>
-            </div>
-          </Link>
-          <div className="ml-auto hidden md:block">
-            <AdminSwitcher current="g15" isAdmin={isAdmin} />
-          </div>
-          <Link
-            href={withStage("/g15-womens-series", stage)}
-            className="inline-flex flex-none items-center gap-1.5 whitespace-nowrap rounded-lg border border-white/15 px-2.5 py-2 text-sm font-medium text-indigo-200 transition-colors hover:bg-white/10 hover:text-white sm:px-3"
-          >
-            <ArrowLeft className="h-4 w-4 flex-none" />
-            <span className="hidden sm:inline">กลับหน้า G15</span>
-          </Link>
-        </div>
-      </header>
 
       <div className="mx-auto max-w-6xl space-y-6 px-4 py-8 sm:px-6 sm:py-10">
         <div className="flex flex-wrap items-end justify-between gap-4">

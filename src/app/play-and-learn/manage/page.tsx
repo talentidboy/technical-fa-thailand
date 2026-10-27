@@ -1,4 +1,3 @@
-import { BrandLogo } from "@/components/BrandLogo";
 import Link from "next/link";
 import Image from "next/image";
 import { redirect } from "next/navigation";
@@ -37,7 +36,6 @@ import {
   type PlKind,
 } from "@/lib/play-and-learn";
 import {
-  ArrowLeft,
   Plus,
   Trash2,
   Save,
@@ -58,7 +56,7 @@ import {
   Pencil,
   Download,
 } from "lucide-react";
-import { AdminSwitcher } from "@/components/admin/AdminSwitcher";
+import { AdminFrame } from "@/components/admin/AdminFrame";
 
 const inputClass =
   "rounded-lg border border-slate-200 px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100";
@@ -67,15 +65,15 @@ const fileClass =
 const iconButton = "inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900";
 
 const TABS = [
-  { key: "general", label: "ข้อความทั่วไป", icon: FileText },
-  { key: "centers", label: "ศูนย์ฝึก", icon: MapPin },
-  { key: "PASSPORT", label: "พาสปอร์ต", icon: BookOpen },
-  { key: "EVENT", label: "กิจกรรม / ข่าวสาร", icon: CalendarHeart },
-  { key: "PHOTO", label: "แกลเลอรี", icon: Images },
-  { key: "VIDEO", label: "วิดีโอ", icon: Clapperboard },
-  { key: "FAQ", label: "คำถามที่พบบ่อย", icon: CircleHelp },
-  { key: "TESTIMONIAL", label: "เสียงจากผู้ปกครอง", icon: Quote },
-  { key: "PARTNER", label: "พาร์ทเนอร์", icon: Handshake },
+  { key: "general", label: "ข้อความทั่วไป", icon: FileText, nav: "file" },
+  { key: "centers", label: "ศูนย์ฝึก", icon: MapPin, nav: "pin" },
+  { key: "PASSPORT", label: "พาสปอร์ต", icon: BookOpen, nav: "book" },
+  { key: "EVENT", label: "กิจกรรม / ข่าวสาร", icon: CalendarHeart, nav: "calendarHeart" },
+  { key: "PHOTO", label: "แกลเลอรี", icon: Images, nav: "images" },
+  { key: "VIDEO", label: "วิดีโอ", icon: Clapperboard, nav: "clapper" },
+  { key: "FAQ", label: "คำถามที่พบบ่อย", icon: CircleHelp, nav: "help" },
+  { key: "TESTIMONIAL", label: "เสียงจากผู้ปกครอง", icon: Quote, nav: "quote" },
+  { key: "PARTNER", label: "พาร์ทเนอร์", icon: Handshake, nav: "handshake" },
 ] as const;
 type Tab = (typeof TABS)[number]["key"];
 
@@ -97,59 +95,37 @@ export default async function PlayAndLearnManagePage({ searchParams }: { searchP
     key === "centers" ? centerCount : key === "general" ? null : (kindCounts.find((k) => k.kind === key)?._count._all ?? 0);
 
   return (
+    <AdminFrame
+      area="play"
+      title="Play and Learn"
+      user={user}
+      publicHref="/play-and-learn"
+      publicLabel="ดูหน้า Play and Learn"
+      items={TABS.map(({ key, label, nav }) => ({ href: `/play-and-learn/manage?tab=${key}`, label, icon: nav, badge: count(key), active: key === tab }))}
+    >
     <div className="min-h-screen bg-slate-50">
-      <header className="sticky top-0 z-20 border-b border-white/10 bg-indigo-950/80 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-6 py-4">
-          <Link href="/play-and-learn" className="flex items-center gap-2">
-            <BrandLogo tone="white" className="h-9" />
-            <div>
-              <p className="text-sm font-bold text-white">FA Thailand Technical</p>
-              <p className="text-[11px] text-indigo-300">จัดการหน้า Play and Learn</p>
-            </div>
-          </Link>
-          <div className="ml-auto hidden md:block">
-            <AdminSwitcher current="play" isAdmin={user?.role === "ADMIN"} />
-          </div>
-          <Link
-            href="/play-and-learn"
-            className="inline-flex items-center gap-1.5 rounded-lg border border-white/15 px-3 py-2 text-sm font-medium text-indigo-200 transition-colors hover:bg-white/10 hover:text-white"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            <span className="hidden sm:inline">ดูหน้า Play and Learn</span>
-          </Link>
-        </div>
-      </header>
-
       <div className="mx-auto max-w-5xl px-6 py-8">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">จัดการหน้า Play and Learn</h1>
+          <p className="text-sm font-semibold text-pink-600">จัดการหน้า Play and Learn</p>
+          <h1 className="mt-1 text-2xl font-bold text-slate-900">{TABS.find((t) => t.key === tab)?.label}</h1>
           <p className="mt-1 text-sm text-slate-500">
-            แก้ไขทุกส่วนของหน้าเว็บได้จากที่นี่ บันทึกแล้วแสดงผลทันที · หมวดที่ยังไม่มีรายการ (หรือซ่อนไว้ทั้งหมด) จะไม่แสดงบนหน้าเว็บ
+            เลือกหมวดจากแถบซ้าย · บันทึกแล้วแสดงผลทันที · หมวดที่ยังไม่มีรายการ (หรือซ่อนไว้ทั้งหมด) จะไม่แสดงบนหน้าเว็บ
           </p>
         </div>
 
-        <nav aria-label="หมวดที่จัดการ" className="-mx-6 mt-6 overflow-x-auto px-6 pb-1">
-          <div className="flex w-max gap-2 md:w-auto md:flex-wrap">
-            {TABS.map(({ key, label, icon: Icon }) => {
-              const active = key === tab;
-              const n = count(key);
-              return (
-                <Link
-                  key={key}
-                  href={`/play-and-learn/manage?tab=${key}`}
-                  aria-current={active ? "page" : undefined}
-                  className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-2 text-sm font-medium transition-colors ${
-                    active ? "border-pink-300 bg-pink-500 text-white shadow-sm shadow-pink-200" : "border-slate-200 bg-white text-slate-600 hover:border-pink-200 hover:text-pink-600"
-                  }`}
-                >
-                  <Icon className="h-4 w-4" />
-                  {label}
-                  {n !== null && (
-                    <span className={`rounded-full px-1.5 text-[11px] font-bold ${active ? "bg-white/25" : "bg-slate-100 text-slate-500"}`}>{n}</span>
-                  )}
-                </Link>
-              );
-            })}
+        {/* มือถือ: แถบเลือกหมวดเลื่อนแนวนอน (จอใหญ่ใช้แถบซ้าย) */}
+        <nav aria-label="หมวดที่จัดการ" className="-mx-6 mt-5 overflow-x-auto px-6 pb-1 lg:hidden">
+          <div className="flex w-max gap-2">
+            {TABS.map(({ key, label }) => (
+              <Link
+                key={key}
+                href={`/play-and-learn/manage?tab=${key}`}
+                aria-current={key === tab ? "page" : undefined}
+                className={`rounded-lg border px-3 py-1.5 text-sm font-medium ${key === tab ? "border-pink-500 bg-pink-500 text-white" : "border-slate-200 bg-white text-slate-600"}`}
+              >
+                {label}
+              </Link>
+            ))}
           </div>
         </nav>
 
@@ -160,6 +136,7 @@ export default async function PlayAndLearnManagePage({ searchParams }: { searchP
         </div>
       </div>
     </div>
+    </AdminFrame>
   );
 }
 

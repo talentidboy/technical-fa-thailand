@@ -1,4 +1,3 @@
-import Link from "next/link";
 import Image from "next/image";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
@@ -6,10 +5,8 @@ import { getCurrentUser } from "@/lib/auth";
 import { createTrainingArticle, deleteTrainingArticle } from "./actions";
 import { Field, SelectField } from "@/components/FormField";
 import { TRAINING_CENTRE_AREAS, labelFor } from "@/lib/constants";
-import { Trash2, Plus, ArrowLeft, ImagePlus } from "lucide-react";
+import { Trash2, Plus, ImagePlus } from "lucide-react";
 import { trainingFont } from "@/components/typefaces/training";
-import { TrainingHeader } from "@/components/training/TrainingHeader";
-import { AdminSwitcher } from "@/components/admin/AdminSwitcher";
 
 function formatDate(date: Date) {
   return date.toLocaleDateString("th-TH", {
@@ -35,19 +32,6 @@ export default async function TrainingCentreManagePage() {
 
   return (
     <div className={`${trainingFont.className} min-h-screen bg-[#eceff2]`}>
-      <TrainingHeader
-        actions={
-          <>
-          <div className="hidden md:block">
-            <AdminSwitcher current="data" isAdmin={currentUser?.role === "ADMIN"} tone="light" />
-          </div>
-          <Link href="/training-centre" className="inline-flex h-10 items-center gap-1.5 rounded-lg px-3 text-sm font-semibold text-slate-700 hover:bg-slate-100">
-            <ArrowLeft className="h-4 w-4" />
-            <span className="hidden sm:inline">กลับหน้าศูนย์ข้อมูลและบทความ</span>
-          </Link>
-          </>
-        }
-      />
 
       <div className="mx-auto max-w-6xl space-y-8 px-4 py-10 sm:px-6">
         <div>
