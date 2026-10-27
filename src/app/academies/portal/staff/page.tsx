@@ -7,7 +7,9 @@ import { ResultForm } from "@/components/ResultForm";
 import { ConfirmSubmit } from "@/components/ConfirmSubmit";
 import { TextField, fieldClass } from "@/components/academy/AcademyShell";
 import { addStaff, deleteStaff, updateStaff } from "../actions";
-import { BadgeCheck, Pencil, Plus, Save, Trash2, TriangleAlert } from "lucide-react";
+import { Card, btn } from "@/components/academy/ManageUi";
+import { PortalTitle } from "@/components/academy/PortalUi";
+import { BadgeCheck, Pencil, Plus, Save, Trash2, TriangleAlert, UserPlus, Users } from "lucide-react";
 
 export const metadata: Metadata = { title: "บุคลากร | พอร์ทัลอคาเดมี" };
 
@@ -66,23 +68,24 @@ export default async function PortalStaffPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-xl font-bold text-slate-900">บุคลากร</h1>
-        <p className="mt-1 text-sm text-slate-500">
-          หัวหน้าอคาเดมี ผู้ฝึกสอน และเจ้าหน้าที่ — ใช้ตรวจเกณฑ์ข้อ 1.1.3 และ 1.3.1 · กรอก AFC ID หรือเลขที่ใบอนุญาตเพื่อให้ระบบยืนยันระดับใบอนุญาตจากฐานข้อมูลของสมาคมฯ
-        </p>
-      </div>
+      <PortalTitle
+        title="บุคลากร"
+        description="หัวหน้าอคาเดมี ผู้ฝึกสอน และเจ้าหน้าที่ — ใช้ตรวจเกณฑ์ข้อ 1.1.3 และ 1.3.1 · กรอก AFC ID หรือเลขที่ใบอนุญาตเพื่อให้ระบบยืนยันระดับใบอนุญาตจากฐานข้อมูลของสมาคมฯ"
+      />
 
-      <section className="overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-slate-200">
+      <Card title={`รายชื่อบุคลากร (${staff.length} คน)`} icon={Users} tone="violet" flush>
         {staff.length === 0 ? (
-          <p className="px-6 py-10 text-center text-sm text-slate-400">ยังไม่มีรายชื่อบุคลากร</p>
+          <p className="px-6 py-10 text-center text-sm text-slate-400">ยังไม่มีรายชื่อบุคลากร — เริ่มจากเพิ่มหัวหน้าอคาเดมีในกล่องด้านล่าง</p>
         ) : (
           <ul className="divide-y divide-slate-100">
             {staff.map((s) => (
               <li key={s.id}>
                 <div className="flex flex-wrap items-center gap-3 px-5 py-3.5">
+                  <span aria-hidden className={`flex h-10 w-10 flex-none items-center justify-center rounded-full text-sm font-bold ${s.role === "HEAD" ? "bg-[#ffd426] text-[#0b1220]" : "bg-violet-50 text-violet-700"}`}>
+                    {s.name.trim().charAt(0) || "?"}
+                  </span>
                   <div className="min-w-0 flex-1">
-                    <p className="font-semibold text-slate-900">{s.name}</p>
+                    <p className="font-semibold text-[#0b1220]">{s.name}</p>
                     <p className="text-xs text-slate-500">
                       {STAFF_ROLES[s.role] ?? s.role}
                       {s.licence && ` · แจ้ง ${LICENCE_LEVELS[s.licence] ?? s.licence}`}
@@ -108,14 +111,14 @@ export default async function PortalStaffPage() {
                   </ResultForm>
                 </div>
                 <details className="border-t border-slate-100">
-                  <summary className="flex cursor-pointer items-center gap-1.5 px-5 py-2 text-xs font-semibold text-indigo-600 hover:bg-slate-50">
+                  <summary className="flex cursor-pointer items-center gap-1.5 px-5 py-2 text-xs font-bold text-[#0b6cb0] hover:bg-[#f4f8fc]">
                     <Pencil className="h-3.5 w-3.5" />
                     แก้ไข
                   </summary>
                   <ResultForm action={updateStaff} className="border-t border-slate-100 p-5">
                     <input type="hidden" name="id" value={s.id} />
                     <StaffFields staff={s} />
-                    <button type="submit" className="mt-4 inline-flex items-center gap-2 rounded-lg bg-indigo-700 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-800">
+                    <button type="submit" className={`${btn.primary} mt-4`}>
                       <Save className="h-4 w-4" />
                       บันทึก
                     </button>
@@ -125,18 +128,17 @@ export default async function PortalStaffPage() {
             ))}
           </ul>
         )}
-      </section>
+      </Card>
 
-      <section className="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
-        <h2 className="font-semibold text-slate-900">เพิ่มบุคลากร</h2>
-        <ResultForm action={addStaff} resetOnSuccess successText="เพิ่มแล้ว" className="mt-4">
+      <Card title="เพิ่มบุคลากร" icon={UserPlus} tone="sky">
+        <ResultForm action={addStaff} resetOnSuccess successText="เพิ่มแล้ว">
           <StaffFields />
-          <button type="submit" className="mt-4 inline-flex items-center gap-2 rounded-lg bg-indigo-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-800">
+          <button type="submit" className={`${btn.primary} mt-4`}>
             <Plus className="h-4 w-4" />
             เพิ่มบุคลากร
           </button>
         </ResultForm>
-      </section>
+      </Card>
     </div>
   );
 }
