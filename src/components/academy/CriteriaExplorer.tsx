@@ -11,9 +11,11 @@ const COIN: Record<AcademyLevel, string> = { BRONZE: "#f47b3c", SILVER: "#a3b0bf
 const COLUMN_TONE: Record<AcademyLevel, string> = { BRONZE: "bg-orange-50/70", SILVER: "bg-slate-50", GOLD: "bg-amber-50/70" };
 
 // เกณฑ์มาตรฐานแต่ละระดับ (ฉบับปี 2025) — ดูเป็นรายการของระดับที่เลือกทีละหมวด (บอกข้อที่เพิ่มใหม่/ยกระดับจากระดับก่อนหน้า) หรือเป็นตารางเทียบ 3 ระดับ
-export function CriteriaExplorer({ initialLevel = "BRONZE" }: { initialLevel?: AcademyLevel }) {
+// lockLevel = เปิดจากการ์ดของระดับใดระดับหนึ่ง: แสดงเฉพาะระดับนั้น (ไม่มีแท็บระดับอื่นและตารางเทียบ)
+export function CriteriaExplorer({ initialLevel = "BRONZE", lockLevel = false }: { initialLevel?: AcademyLevel; lockLevel?: boolean }) {
   const [level, setLevel] = useState<AcademyLevel>(initialLevel);
   const [view, setView] = useState<"list" | "table">("list");
+  const shownView = lockLevel ? "list" : view;
   const [catNo, setCatNo] = useState(ACADEMY_CRITERIA[0].no);
   const i = LEVEL_INDEX[level];
   const s = LEVEL_SUMMARY[level];
@@ -28,6 +30,13 @@ export function CriteriaExplorer({ initialLevel = "BRONZE" }: { initialLevel?: A
 
   return (
     <div>
+      {lockLevel ? (
+        <p data-level-lock className="inline-flex items-center gap-2.5 rounded-xl bg-[#0b1220] px-4 py-2 text-sm font-bold text-white">
+          <span className="h-3.5 w-3.5 flex-none rounded-full ring-2 ring-white/70" style={{ background: COIN[level] }} />
+          ระดับ{LEVEL_META[level].th} · {LEVEL_META[level].label}
+          <span className="text-xs font-medium text-white/60">{COUNTS[level]} ข้อ</span>
+        </p>
+      ) : (
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div role="tablist" aria-label="ระดับ" className="grid grid-cols-3 gap-1.5 rounded-xl bg-[#e6f3fc] p-1.5">
           {ACADEMY_LEVELS.map((l) => (
@@ -65,8 +74,9 @@ export function CriteriaExplorer({ initialLevel = "BRONZE" }: { initialLevel?: A
           ))}
         </div>
       </div>
+      )}
 
-      {view === "list" ? (
+      {shownView === "list" ? (
         <div className="mt-5">
           {/* ข้อกำหนดหลักของระดับ — กล่องเหลืองแบบโปสเตอร์ */}
           <dl className={`grid grid-cols-2 gap-x-4 gap-y-3 rounded-2xl bg-[#ffd426] p-4 text-[#0b1220] ${keyReqs.length === 4 ? "sm:grid-cols-4" : "sm:grid-cols-3"}`}>

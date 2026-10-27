@@ -30,7 +30,7 @@ export function LevelTabs({ items }: { items: { key: string; tab: ReactNode; pan
           );
         })}
       </div>
-      <div key={current.key} role="tabpanel" id={`level-panel-${current.key}`} aria-labelledby={`level-tab-${current.key}`} className={`${theme.rise} mt-8`}>
+      <div key={current.key} role="tabpanel" id={`level-panel-${current.key}`} aria-labelledby={`level-tab-${current.key}`} className={`${theme.fadeIn} mt-8`}>
         {current.panel}
       </div>
     </div>

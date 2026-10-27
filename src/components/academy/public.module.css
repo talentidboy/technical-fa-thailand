@@ -148,6 +148,11 @@
   }
 }
 
+/* แผงที่สลับ (เช่น แท็บระดับ): จางเข้าอย่างเดียว — ไม่ใช้ transform เพื่อไม่ให้กล่องลอย (position: fixed) ข้างในติดกรอบ */
+.fadeIn {
+  animation: fade 450ms ease both;
+}
+
 /* แท่งที่กดได้: ยกขึ้นเมื่อชี้ */
 .lift {
   cursor: pointer;
@@ -260,6 +265,7 @@
   .coin,
   .bob,
   .fade,
+  .fadeIn,
   .confetti,
   .rays,
   .ribbon,

@@ -93,8 +93,14 @@ module.exports = {
     check("หน้าแรกไม่แสดงเกณฑ์ทั้งหมดจนกว่าจะกดปุ่ม", (await pub.getByText("Internship agreement").count()) === 0 && (await pub.getByRole("dialog").count()) === 0);
     await pub.locator("#levels").getByRole("button", { name: /ดูเกณฑ์/ }).first().click();
     const criteria = pub.getByRole("dialog");
-    check("กดดูเกณฑ์ → เปิดกล่องเกณฑ์ (Bronze)", (await criteria.locator('[aria-label="ระดับ"] [aria-selected="true"]').innerText()).includes("Bronze"));
+    check("กดดูเกณฑ์จากการ์ด → เปิดกล่องเกณฑ์เฉพาะระดับ Bronze", (await criteria.locator("[data-level-lock]").innerText()).includes("Bronze") && (await criteria.locator('[aria-label="ระดับ"]').count()) === 0);
     check("เกณฑ์ Bronze ไม่มีข้อเฉพาะระดับทอง", (await criteria.getByText("Internship agreement").count()) === 0);
+    const box = await criteria.boundingBox();
+    check("กล่องเกณฑ์ลอยอยู่กลางจอ (ไม่ติดในการ์ด) + ปุ่มปิดกดได้", !!box && box.y >= 0 && (await criteria.getByRole("button", { name: "ปิด", exact: true }).isVisible()));
+    await criteria.getByRole("button", { name: "ปิด", exact: true }).click();
+    check("กดปิด → กล่องหาย", (await pub.getByRole("dialog").count()) === 0);
+    await pub.locator("#map").getByRole("button", { name: "เกณฑ์มาตรฐาน", exact: true }).click();
+    check("ปุ่มเกณฑ์มาตรฐาน (ฮีโร่) → เลือกได้ทุกระดับ เริ่มที่ Bronze", (await criteria.locator('[aria-label="ระดับ"] [aria-selected="true"]').innerText()).includes("Bronze"));
     await criteria.getByRole("tab", { name: /Gold/ }).click();
     check("เลือก Gold → เห็นเกณฑ์ระดับทอง + ป้ายเพิ่มใหม่", await until(async () => (await criteria.getByText("Internship agreement").count()) === 1, 3000));
     await criteria.getByRole("tab", { name: /^3\./ }).click();

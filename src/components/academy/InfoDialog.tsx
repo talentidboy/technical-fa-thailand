@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
+import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import styles from "./ThailandMap.module.css";
 import { academyFont, academyPoster } from "@/components/typefaces/academy";
@@ -32,6 +33,12 @@ export function InfoDialog({
   children: React.ReactNode;
 }) {
   const [open, setOpen] = useState(defaultOpen);
+  // วางกล่องไว้ที่ <body> เสมอ — ถ้าอยู่ในกล่องที่มี transform (เช่น การ์ดที่กำลังเล่นอนิเมชัน) position: fixed จะติดอยู่ในกล่องนั้น
+  const mounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
 
   function close() {
     setOpen(false);
@@ -60,7 +67,9 @@ export function InfoDialog({
           {label}
         </button>
       )}
-      {open && (
+      {open &&
+        mounted &&
+        createPortal(
         <div className={`${academyFont.className} fixed inset-0 z-50 flex items-end justify-center bg-[#0b1220]/60 sm:items-center sm:p-4`} onClick={close}>
           <div
             role="dialog"
@@ -76,8 +85,9 @@ export function InfoDialog({
             <span aria-hidden className="mt-2 block h-1.5 w-14 rounded-full bg-[#ffd426]" />
             <div className="mt-4">{children}</div>
           </div>
-        </div>
-      )}
+        </div>,
+          document.body,
+        )}
     </>
   );
 }

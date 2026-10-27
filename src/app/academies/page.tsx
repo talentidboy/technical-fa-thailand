@@ -536,7 +536,7 @@ export default async function AcademiesPage({
                             </>
                           }
                         >
-                          <CriteriaExplorer initialLevel={l} />
+                          <CriteriaExplorer initialLevel={l} lockLevel />
                         </InfoDialog>
                       </div>
                     </article>
