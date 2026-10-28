@@ -14,7 +14,7 @@ import { LevelBadge, StateChip } from "@/components/academy/AcademyUi";
 import { GENDERS } from "@/components/academy/TeamFields";
 import { ActionSwitch } from "@/components/academy/ActionSwitch";
 import { IssueLicenceForm, RevokeLicenceForm } from "@/components/academy/LicenceForms";
-import { Card, Empty, PageBody, PageHeader, TabLinks, btn } from "@/components/academy/ManageUi";
+import { Card, Empty, PageBody, PageHeader, TabLinks, btn, input } from "@/components/academy/ManageUi";
 import { deleteAcademy, deleteLicence, reactivateLicence, toggleAcademyActive, updateAcademy, updateLicence } from "../actions";
 import { AcademyFields, LicenceFields } from "../fields";
 import { BadgeCheck, Building2, CheckCircle2, ExternalLink, Eye, EyeOff, FileCheck2, Gavel, Globe, History, LayoutGrid, Phone, RotateCcw, Save, Shirt, Trash2, TriangleAlert, UserCheck, Users } from "lucide-react";
@@ -59,6 +59,7 @@ export default async function AcademyManagePage({ params, searchParams }: { para
   const players = teams.reduce((n, t) => n + t.players.length, 0);
   const pendingMembers = academy.members.filter((m) => m.status === "PENDING").length;
   const submittedApps = academy.applications.filter((a) => a.status === "SUBMITTED").length;
+  const portalData = academy.members.length > 0 || academy.applications.length > 0;
   const base = `/academies/manage/${academy.id}`;
   const tabHref = (t: Tab) => (t === "overview" ? base : `${base}?tab=${t}`);
   const days = active?.expiresAt ? daysUntil(active.expiresAt, now) : null;
@@ -95,14 +96,20 @@ export default async function AcademyManagePage({ params, searchParams }: { para
           </span>
         }
         actions={
-          showPublicly(academy.active, state) ? (
-            <Link href={`/academies/${academy.id}`} className={btn.secondary}>
-              <ExternalLink className="h-4 w-4" />
-              หน้าสาธารณะ
+          <>
+            {showPublicly(academy.active, state) ? (
+              <Link href={`/academies/${academy.id}`} className={btn.secondary}>
+                <ExternalLink className="h-4 w-4" />
+                หน้าสาธารณะ
+              </Link>
+            ) : (
+              <span className="text-xs text-slate-400">ไม่แสดงบนหน้าสาธารณะ</span>
+            )}
+            <Link href={`${tabHref("info")}#delete`} className={btn.danger}>
+              <Trash2 className="h-4 w-4" />
+              ลบ
             </Link>
-          ) : (
-            <span className="text-xs text-slate-400">ไม่แสดงบนหน้าสาธารณะ</span>
-          )
+          </>
         }
       >
         <TabLinks
@@ -217,16 +224,44 @@ export default async function AcademyManagePage({ params, searchParams }: { para
                 </button>
               </ResultForm>
             </Card>
-            <Card title="ลบอคาเดมี" icon={Trash2} tone="red" className="border-red-200">
-              <p className="text-sm text-slate-600">ลบออกจากทะเบียนพร้อมใบอนุญาตทั้งหมด (เก็บสำเนาไว้ในบันทึกการแก้ไข) — อคาเดมีที่มีบัญชีหรือใบสมัครในพอร์ทัลแล้วลบไม่ได้ ให้ปิดการแสดงแทน</p>
-              <ResultForm action={deleteAcademy} quiet className="mt-3">
-                <input type="hidden" name="id" value={academy.id} />
-                <ConfirmSubmit message={`ลบ “${academy.nameEn}” และใบอนุญาตทั้งหมดใช่ไหม?`} className={btn.danger}>
-                  <Trash2 className="h-4 w-4" />
-                  ลบอคาเดมี
-                </ConfirmSubmit>
-              </ResultForm>
-            </Card>
+            <div id="delete" className="scroll-mt-6">
+              <Card title="ลบอคาเดมี" icon={Trash2} tone="red" className="border-red-200">
+                {portalData ? (
+                  <>
+                    <p className="text-sm text-slate-600">อคาเดมีนี้มีข้อมูลในพอร์ทัลแล้ว — ลบแล้วสิ่งเหล่านี้หายถาวร กู้คืนไม่ได้:</p>
+                    <ul className="mt-2 grid gap-1.5 text-sm sm:grid-cols-2">
+                      {[
+                        `ใบอนุญาต ${licences.length} ใบ (เก็บสำเนาในบันทึกการแก้ไข)`,
+                        `บัญชีผู้ดูแล ${academy.members.length} บัญชี (เข้าสู่ระบบไม่ได้อีก)`,
+                        `ใบสมัคร ${academy.applications.length} ใบ พร้อมเอกสารแนบ`,
+                        `บุคลากร ${staff.length} คน · ทีม ${teams.length} ทีม · นักเตะ ${players} คน`,
+                      ].map((t) => (
+                        <li key={t} className="flex items-start gap-1.5 rounded-lg bg-red-50 px-3 py-2 text-red-800">
+                          <TriangleAlert className="mt-0.5 h-3.5 w-3.5 flex-none" />
+                          {t}
+                        </li>
+                      ))}
+                    </ul>
+                    <p className="mt-3 text-xs text-slate-500">ถ้าแค่ไม่อยากให้แสดง ใช้ “ปิดการแสดงบนหน้าสาธารณะ” แทนได้ · ลบได้เฉพาะผู้ดูแลระบบ</p>
+                  </>
+                ) : (
+                  <p className="text-sm text-slate-600">ลบออกจากทะเบียนพร้อมใบอนุญาตทั้งหมด {licences.length} ใบ (เก็บสำเนาไว้ในบันทึกการแก้ไข)</p>
+                )}
+                <ResultForm action={deleteAcademy} quiet className="mt-3 flex flex-wrap items-end gap-2">
+                  <input type="hidden" name="id" value={academy.id} />
+                  {portalData && (
+                    <label className="flex min-w-60 flex-1 flex-col gap-1 text-xs font-semibold text-slate-600">
+                      พิมพ์ชื่ออคาเดมี “{academy.nameEn}” เพื่อยืนยัน
+                      <input name="confirmName" autoComplete="off" placeholder={academy.nameEn} className={input} />
+                    </label>
+                  )}
+                  <ConfirmSubmit message={`ลบ “${academy.nameEn}” ถาวรใช่ไหม? ย้อนกลับไม่ได้`} className={btn.dangerSolid}>
+                    <Trash2 className="h-4 w-4" />
+                    ลบอคาเดมี
+                  </ConfirmSubmit>
+                </ResultForm>
+              </Card>
+            </div>
           </>
         )}
 

@@ -347,7 +347,7 @@ module.exports = {
     check("แอดมินเห็นรายชื่อนักเตะ", (await ad.getByText("เด็กชายเอ ทดสอบ").count()) === 1);
     await ad.goto(`${BASE}/academies/manage/${nsId}?tab=info`, { waitUntil: "networkidle" });
     const delRes = await submit(ad.locator("form", { has: ad.getByRole("button", { name: "ลบอคาเดมี" }) }), ad.getByRole("button", { name: "ลบอคาเดมี" }));
-    check("ลบอคาเดมีที่มีข้อมูลพอร์ทัลไม่ได้", delRes.includes("ลบไม่ได้") && !!(await one(`select 1 from academies where id=$1`, [nsId])));
+    check("ลบอคาเดมีที่มีข้อมูลพอร์ทัล: ต้องพิมพ์ชื่อยืนยันก่อน", delRes.includes("พิมพ์ชื่ออคาเดมี") && !!(await one(`select 1 from academies where id=$1`, [nsId])));
     await ad.goto(`${BASE}/academies/manage/applications/${appId}`, { waitUntil: "networkidle" });
     await ad.screenshot({ path: path.join(ctx.artifactsDir, "academy-review.png"), fullPage: true });
 
@@ -371,6 +371,17 @@ module.exports = {
     check("มือถือ: พอร์ทัลไม่ล้นแนวนอน", mOverflow <= 0, `${mOverflow}px`);
     await pub.goto(`${BASE}/academies`, { waitUntil: "networkidle" });
     await pub.screenshot({ path: path.join(ctx.artifactsDir, "academies-map.png") });
+
+    // ===== 13) ลบอคาเดมีที่มีข้อมูลพอร์ทัล (พิมพ์ชื่อยืนยัน) → ลบบัญชี ใบสมัคร เอกสาร ทีม นักเตะ ไปด้วย =====
+    const docCount = async () => (await one(`select count(*)::int n from academy_documents where academy_id=$1`, [nsId])).n;
+    check("ก่อนลบ: มีเอกสารของอคาเดมี", (await docCount()) > 0);
+    await ad.goto(`${BASE}/academies/manage/${nsId}?tab=info`, { waitUntil: "networkidle" });
+    await ad.locator('[name="confirmName"]').fill("New Star Academy");
+    await ad.getByRole("button", { name: "ลบอคาเดมี" }).click();
+    await ad.waitForURL(/\/academies\/manage\/academies$/, { timeout: 30_000 }).catch(() => {});
+    check("ลบอคาเดมีที่มีข้อมูลพอร์ทัล (ผู้ดูแลระบบ)", !(await one(`select 1 from academies where id=$1`, [nsId])));
+    check("ลบแล้ว: บัญชีผู้ดูแล ใบสมัคร ทีม นักเตะ เอกสาร หายหมด", !(await one(`select 1 from system_users where email='newstar@test.invalid'`)) && !(await one(`select 1 from academy_applications where academy_id=$1`, [nsId])) && !(await one(`select 1 from academy_players where team_id=$1`, [teamId])) && (await docCount()) === 0);
+    check("ลบแล้ว: บันทึกไม่เก็บข้อมูลนักเตะ", !JSON.stringify((await one(`select details from audit_logs where action='ACADEMY_DELETE' order by id desc limit 1`)).details).includes("เด็กชายเอ"));
 
     const errors = await sql("select count(*)::int n from error_logs where source='SERVER'");
     check("ไม่มี error ฝั่งเซิร์ฟเวอร์", errors[0].n === 0, JSON.stringify(await sql("select path, message from error_logs limit 3")));

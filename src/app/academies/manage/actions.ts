@@ -8,6 +8,7 @@ import { audit, changedFields } from "@/lib/audit";
 import { ISSUE_KINDS, bangkokDay, currentLicence, isLevel, parseFormDate, LEVEL_META } from "@/lib/academy";
 import { nextLicenceNo } from "@/lib/academy-data";
 import { saveUploadedPhoto } from "@/lib/upload";
+import { removeStoredDocument } from "@/lib/academy-docs";
 import type { FormResult } from "@/components/ResultForm";
 
 async function requireAdminOrStaff() {
@@ -145,13 +146,32 @@ export async function toggleAcademyActive(formData: FormData) {
 export async function deleteAcademy(formData: FormData): Promise<FormResult> {
   const res = await attempt(async (user) => {
     const id = idOf(formData);
-    const academy = await prisma.academy.findUnique({ where: { id }, include: { licences: true, _count: { select: { members: true, applications: true } } } });
+    const academy = await prisma.academy.findUnique({
+      where: { id },
+      include: {
+        licences: true,
+        members: { select: { userId: true, user: { select: { email: true, role: true } } } },
+        documents: { select: { fileKey: true } },
+        _count: { select: { applications: true, staff: true, teams: true } },
+      },
+    });
     if (!academy) throw new Error("ไม่พบอคาเดมี");
-    // ข้อมูลในพอร์ทัล (บัญชี ใบสมัคร เอกสาร รายชื่อนักเตะ) กู้คืนจากบันทึกไม่ได้ — ให้ปิดการแสดงแทน
-    if (academy._count.members || academy._count.applications) throw new Error("อคาเดมีนี้มีบัญชีหรือใบสมัครในพอร์ทัลแล้ว ลบไม่ได้ — ใช้ “ปิดการแสดงบนหน้าสาธารณะ” แทน");
-    await prisma.academy.delete({ where: { id } });
-    // เก็บสำเนาข้อมูลไว้ในบันทึก เผื่อต้องกู้คืน
-    await audit(user.email, "ACADEMY_DELETE", { summary: `ลบอคาเดมี ${academy.nameEn} (ใบอนุญาต ${academy.licences.length} ใบ)`, details: academy });
+    // มีข้อมูลในพอร์ทัล (บัญชี ใบสมัคร เอกสาร รายชื่อนักเตะ) = กู้คืนจากบันทึกไม่ได้ → เฉพาะผู้ดูแลระบบ และต้องพิมพ์ชื่ออคาเดมียืนยัน
+    const portal = academy.members.length > 0 || academy._count.applications > 0;
+    if (portal) {
+      if (user.role !== "ADMIN") throw new Error("อคาเดมีนี้มีบัญชีหรือใบสมัครในพอร์ทัลแล้ว — เฉพาะผู้ดูแลระบบเท่านั้นที่ลบได้ (เจ้าหน้าที่ใช้ “ปิดการแสดง” แทน)");
+      if (text(formData, "confirmName") !== academy.nameEn) throw new Error(`พิมพ์ชื่ออคาเดมี “${academy.nameEn}” ให้ตรงเพื่อยืนยันการลบ`);
+    }
+    // บัญชีผู้ดูแลของอคาเดมีนี้ลบไปด้วย (ไม่เหลือบัญชีที่ไม่มีอคาเดมีให้ดูแล) · ข้อมูลอื่นลบตามอคาเดมี (cascade)
+    const accountIds = academy.members.filter((m) => m.user.role === "ACADEMY").map((m) => m.userId);
+    await prisma.$transaction([prisma.systemUser.deleteMany({ where: { id: { in: accountIds }, role: "ACADEMY" } }), prisma.academy.delete({ where: { id } })]);
+    for (const d of academy.documents) await removeStoredDocument(d.fileKey);
+    // เก็บสำเนาข้อมูลทะเบียนไว้ในบันทึก เผื่อต้องกู้คืน (ไม่เก็บข้อมูลนักเตะซึ่งเป็นผู้เยาว์)
+    const { members, documents, _count, ...registry } = academy;
+    await audit(user.email, "ACADEMY_DELETE", {
+      summary: `ลบอคาเดมี ${academy.nameEn} (ใบอนุญาต ${academy.licences.length} ใบ${portal ? ` · บัญชี ${members.length} · ใบสมัคร ${_count.applications} · เอกสาร ${documents.length} · ทีม ${_count.teams}` : ""})`,
+      details: { ...registry, accounts: members.map((m) => m.user.email) },
+    });
   });
   if (res.ok) redirect("/academies/manage/academies");
   return res;
