@@ -2,7 +2,7 @@
 
 import { useActionState, useState } from "react";
 import { Eye, EyeOff, KeyRound, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
-import type { PasswordState } from "@/app/me/settings/actions";
+import type { PasswordState } from "@/lib/password-change";
 
 function PasswordInput({ name, label, autoComplete, show }: { name: string; label: string; autoComplete: string; show: boolean }) {
   return (

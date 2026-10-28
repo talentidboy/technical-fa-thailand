@@ -18,6 +18,7 @@ import {
   Bug,
   History,
   Menu,
+  Settings,
   X,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
@@ -167,6 +168,10 @@ export function Sidebar({
             {adminItems.map(navLink)}
           </div>
         )}
+        <div className="space-y-0.5">
+          <p className="px-3 pb-1.5 text-[11px] font-semibold text-white/40">บัญชีของฉัน</p>
+          {navLink({ href: "/settings", label: "ตั้งค่า / เปลี่ยนรหัสผ่าน", icon: Settings })}
+        </div>
       </nav>
 
       <div className="border-t border-white/10 px-5 py-4">

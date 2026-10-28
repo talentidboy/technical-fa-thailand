@@ -155,5 +155,25 @@ module.exports = {
     await ad.getByRole("button", { name: "ลบผู้ฝึกสอน" }).click();
     await ad.waitForTimeout(1500);
     check("กดลบผู้ฝึกสอนแล้วยกเลิก → ยังอยู่", (await sql("select count(*)::int n from coaches where id=$1", [s.otherB]))[0].n === 1);
+
+    // ตั้งค่าบัญชี: แอดมินเปลี่ยนรหัสผ่านตัวเอง (ต้องใส่รหัสปัจจุบันให้ถูก) · อุปกรณ์อื่นออกจากระบบ เครื่องนี้ใช้ต่อได้
+    const bcrypt = require(process.cwd() + "/node_modules/bcryptjs");
+    await sql("update system_users set password_hash=$1 where email=$2", [await bcrypt.hash("old-pass-123", 10), ADMIN_EMAIL]);
+    const otherDevice = await ctx.login("ADMIN", { email: `e2e-other-${Date.now()}@test.invalid` });
+    const adminId = (await sql("select user_id from system_users where email=$1", [ADMIN_EMAIL]))[0].user_id;
+    await sql("update sessions set user_id=$1 where session_token=$2", [adminId, otherDevice]);
+    await ad.goto(`${BASE}/settings`, { waitUntil: "networkidle" });
+    const pw = async (cur, next, expect) => {
+      await ad.locator('[name="currentPassword"]').fill(cur);
+      await ad.locator('[name="newPassword"]').fill(next);
+      await ad.locator('[name="confirmPassword"]').fill(next);
+      await ad.getByRole("button", { name: "เปลี่ยนรหัสผ่าน" }).click();
+      return ad.getByText(expect).waitFor({ timeout: 30_000 }).then(() => true, () => false);
+    };
+    check("ตั้งค่า: รหัสปัจจุบันผิด → แจ้งเตือน", await pw("wrong-pass", "new-pass-456", "รหัสผ่านปัจจุบันไม่ถูกต้อง"));
+    check("ตั้งค่า: เปลี่ยนรหัสผ่านสำเร็จ", await pw("old-pass-123", "new-pass-456", /เปลี่ยนรหัสผ่านเรียบร้อย/));
+    const hash = (await sql("select password_hash from system_users where user_id=$1", [adminId]))[0].password_hash;
+    check("รหัสใหม่ใช้ได้ + บันทึกการแก้ไข", (await bcrypt.compare("new-pass-456", hash)) && (await sql("select count(*)::int n from audit_logs where action='PASSWORD_CHANGE'"))[0].n === 1);
+    check("อุปกรณ์อื่นออกจากระบบ เครื่องนี้ใช้ต่อได้", (await sql("select count(*)::int n from sessions where session_token=$1", [otherDevice]))[0].n === 0 && (await sql("select count(*)::int n from sessions where session_token=$1", [admin]))[0].n === 1);
   },
 };

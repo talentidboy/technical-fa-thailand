@@ -19,6 +19,7 @@ export const AUDIT_ACTIONS: Record<string, { label: string; tone: string }> = {
   ACCOUNT_RENAME: { label: "เปลี่ยนชื่อผู้ใช้", tone: "bg-indigo-50 text-indigo-700" },
   ACCOUNT_TOGGLE: { label: "ระงับ/เปิดบัญชี", tone: "bg-amber-50 text-amber-700" },
   ACCOUNT_DELETE: { label: "ลบบัญชีโค้ช", tone: "bg-red-50 text-red-700" },
+  PASSWORD_CHANGE: { label: "เปลี่ยนรหัสผ่านตัวเอง", tone: "bg-indigo-50 text-indigo-700" },
   PROFILE_REQUEST: { label: "คำขอแก้ไขข้อมูล", tone: "bg-sky-50 text-sky-700" },
   DATA_FIX: { label: "แก้ข้อมูลอัตโนมัติ", tone: "bg-slate-100 text-slate-700" },
   ACADEMY_CREATE: { label: "เพิ่มอคาเดมี", tone: "bg-emerald-50 text-emerald-700" },

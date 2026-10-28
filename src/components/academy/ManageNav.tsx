@@ -67,6 +67,10 @@ export function ManageNav({ counts, email, isAdmin }: { counts: Counts; email: s
           ระบบหลักฝ่ายเทคนิค
           <ArrowUpRight className="h-3 w-3" />
         </Link>
+        <Link href="/settings" className="mt-1.5 flex items-center gap-1 hover:text-white">
+          ตั้งค่า / เปลี่ยนรหัสผ่าน
+          <ArrowUpRight className="h-3 w-3" />
+        </Link>
         <p className="mt-3 truncate" title={email}>
           {email}
         </p>
