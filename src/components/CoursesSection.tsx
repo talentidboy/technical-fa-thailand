@@ -1,5 +1,5 @@
 import { ExternalLink } from "lucide-react";
-import { CourseStep } from "./CourseStep";
+import { CoreProgramExplorer } from "./CoreProgramExplorer";
 import { coreProgramSteps } from "@/lib/coach-program";
 import { display, SectionHead } from "@/components/coach/CoachUi";
 
@@ -44,7 +44,7 @@ export function CoursesSection() {
           no="01"
           eyebrow="AFC Core Program"
           title={"หลักสูตรหลักผู้ฝึกสอน 5\u00a0ระดับ"}
-          sub="สายหลักสูตรที่ 1 — กดที่แต่ละระดับเพื่อดูรายละเอียด ชั่วโมงเรียน และรายวิชา"
+          sub="สายหลักสูตรที่ 1 — ไต่ขั้นจาก G ถึง PRO · กดที่ขั้นบันไดเพื่อดูรายละเอียด ชั่วโมงเรียน และรายวิชา"
           action={
             <a
               href="https://fathailand.org/coaching-detail/AFC-Core-Program"
@@ -57,11 +57,7 @@ export function CoursesSection() {
             </a>
           }
         />
-        <ol className="space-y-5">
-          {coreProgramSteps.map((step, index) => (
-            <CourseStep key={step.level} step={step} index={index} last={index === coreProgramSteps.length - 1} />
-          ))}
-        </ol>
+        <CoreProgramExplorer steps={coreProgramSteps} />
       </div>
 
       {/* ผู้รักษาประตู + ฟิตเนส */}
