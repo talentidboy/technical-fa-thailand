@@ -268,6 +268,13 @@ module.exports = {
     await bkk.waitForURL(/\/academies\/portal$/, { timeout: 30_000 }).catch(() => {});
     check("เข้าสู่ระบบอคาเดมีด้วยรหัสใหม่ → พอร์ทัล", new URL(bkk.url()).pathname === "/academies/portal" && (await bkk.locator("main").innerText()).includes("Bangkok Bronze Academy"));
 
+    // ลบบัญชีอคาเดมี (ผู้ดูแลระบบ) — อคาเดมียังอยู่ · บัญชีที่ลบเข้าพอร์ทัลไม่ได้
+    const bkkToken = await cookieOf(bkk);
+    await ad.goto(`${BASE}/academies/manage/accounts`, { waitUntil: "networkidle" });
+    await ad.getByRole("button", { name: "ลบบัญชี bkk@test.invalid" }).click();
+    check("ลบบัญชีอคาเดมี → ผู้ใช้หาย อคาเดมียังอยู่", (await until(async () => !(await one(`select 1 from system_users where email='bkk@test.invalid'`)))) && !!(await one(`select 1 from academies where id=$1`, [bkkId])));
+    check("บัญชีที่ถูกลบเข้าพอร์ทัลไม่ได้", ((await fetchAs("/academies/portal", bkkToken)).headers.get("location") ?? "").includes("/academies/login"));
+
     // ===== 7) แอดมินตรวจใบสมัคร: ส่งกลับให้แก้ =====
     await ad.goto(`${BASE}/academies/manage/applications`, { waitUntil: "networkidle" });
     await ad.getByRole("link", { name: /New Star Academy/ }).click();
@@ -287,6 +294,11 @@ module.exports = {
     await fix.locator('[name="note"]').fill("แก้ไข 1 ข้อแล้วส่งใหม่");
     await submit(fix, "ส่งกลับให้แก้ไข");
     check("ส่งกลับให้แก้ไข + แจ้งเตือนอคาเดมี", (await one(`select status from academy_applications where id=$1`, [appId])).status === "NEEDS_FIX" && !!(await one(`select 1 from academy_notices where academy_id=$1 and title like '%ต้องแก้ไข%'`, [nsId])));
+    check("แจ้งเตือนบอกสิ่งที่ต้องแก้รายข้อ", (await one(`select body from academy_notices where academy_id=$1 and title like '%ต้องแก้ไข%'`, [nsId])).body.includes(`ข้อ ${target.criterion}: ขอสำเนาสัญญาจ้างที่ลงนามแล้ว`));
+    await ad.reload({ waitUntil: "networkidle" });
+    await ad.getByRole("button", { name: "ดึงกลับมาตรวจต่อ" }).click();
+    check("ดึงใบสมัครที่ส่งกลับให้แก้ กลับมาตรวจต่อได้", await until(async () => (await one(`select status from academy_applications where id=$1`, [appId])).status === "SUBMITTED"));
+    await sql(`update academy_applications set status='NEEDS_FIX' where id=$1`, [appId]);
 
     // ===== 8) อคาเดมีแก้แล้วส่งใหม่ =====
     await ac.goto(`${BASE}/academies/portal/applications/${appId}`, { waitUntil: "networkidle" });

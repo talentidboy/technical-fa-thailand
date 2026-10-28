@@ -103,6 +103,22 @@ export async function toggleAcademyAccount(formData: FormData) {
   });
 }
 
+// ลบบัญชีผู้ดูแลอคาเดมีถาวร (เฉพาะผู้ดูแลระบบ) — ข้อมูลอคาเดมี ทีม และใบสมัครยังอยู่ครบ · ลบได้เฉพาะบัญชีประเภทอคาเดมี
+export async function deleteAcademyAccount(formData: FormData) {
+  return attempt(async (admin) => {
+    if (admin.role !== "ADMIN") throw new Error("เฉพาะผู้ดูแลระบบเท่านั้นที่ลบบัญชีได้");
+    const member = await prisma.academyMember.findUnique({ where: { id: idOf(formData) }, include: { user: true, academy: { select: { nameEn: true } } } });
+    if (!member) throw new Error("ไม่พบบัญชี");
+    if (member.user.role !== "ACADEMY") throw new Error("ลบได้เฉพาะบัญชีอคาเดมี");
+    // ลบผู้ใช้ = ลบสิทธิ์ดูแลและ session ไปด้วย (cascade)
+    await prisma.systemUser.delete({ where: { id: member.userId } });
+    await audit(admin.email, "ACADEMY_ACCOUNT", {
+      summary: `ลบบัญชี ${member.user.email} (ผู้ดูแล ${member.academy.nameEn})`,
+      details: { academyId: member.academyId, memberId: member.id, email: member.user.email },
+    });
+  });
+}
+
 // ===================== ตรวจใบสมัคร =====================
 async function reviewable(applicationId: number) {
   const app = await prisma.academyApplication.findUnique({ where: { id: applicationId }, include: { academy: { select: { nameEn: true } }, evidence: true } });
@@ -141,7 +157,8 @@ export async function requestFix(formData: FormData) {
     await prisma.academyApplication.update({ where: { id: app.id }, data: { status: "NEEDS_FIX", decisionNote: note } });
     await notifyAcademy(app.academyId, {
       title: `ใบสมัคร FAT ${LEVEL_META[app.level as keyof typeof LEVEL_META]?.label} ต้องแก้ไข ${toFix.length} ข้อ`,
-      body: [note, `ข้อที่ต้องแก้: ${toFix.map((e) => e.criterion).join(", ")}`].filter(Boolean).join("\n"),
+      // แจ้งทีละข้อว่าต้องแก้อะไร (ตามความเห็นที่ผู้ตรวจเขียนไว้)
+      body: [note, ...toFix.map((e) => `• ข้อ ${e.criterion}${e.reviewNote ? `: ${e.reviewNote}` : ""}`)].filter(Boolean).join("\n"),
       link: `/academies/portal/applications/${app.id}`,
     });
     await audit(admin.email, "ACADEMY_REVIEW", { summary: `ส่งใบสมัครของ ${app.academy.nameEn} กลับให้แก้ไข ${toFix.length} ข้อ`, details: { academyId: app.academyId, applicationId: app.id } });
@@ -201,5 +218,21 @@ export async function rejectApplication(formData: FormData) {
       link: `/academies/portal/applications/${app.id}`,
     });
     await audit(admin.email, "ACADEMY_REVIEW", { summary: `ไม่อนุมัติใบสมัครของ ${app.academy.nameEn}`, details: { academyId: app.academyId, applicationId: app.id, note } });
+  });
+}
+
+// ดึงใบสมัครที่ส่งกลับให้แก้ / ไม่อนุมัติ กลับมาเป็น "รอตรวจ" (เช่น ตัดสินผิด หรืออคาเดมีส่งเอกสารเพิ่มทางอื่นแล้ว)
+export async function reopenApplication(formData: FormData) {
+  return attempt(async (admin) => {
+    const app = await prisma.academyApplication.findUnique({ where: { id: idOf(formData) }, include: { academy: { select: { nameEn: true } } } });
+    if (!app) throw new Error("ไม่พบใบสมัคร");
+    if (app.status !== "NEEDS_FIX" && app.status !== "REJECTED") throw new Error("เปิดตรวจใหม่ได้เฉพาะใบสมัครที่ส่งกลับให้แก้ไขหรือไม่อนุมัติ");
+    await prisma.academyApplication.update({ where: { id: app.id }, data: { status: "SUBMITTED", decidedAt: null, decidedBy: null } });
+    await notifyAcademy(app.academyId, {
+      title: `สมาคมฯ เปิดตรวจใบสมัคร FAT ${LEVEL_META[app.level as keyof typeof LEVEL_META]?.label} อีกครั้ง`,
+      body: "ระหว่างตรวจจะแก้ไขใบสมัครไม่ได้",
+      link: `/academies/portal/applications/${app.id}`,
+    });
+    await audit(admin.email, "ACADEMY_REVIEW", { summary: `เปิดตรวจใบสมัครของ ${app.academy.nameEn} อีกครั้ง`, details: { academyId: app.academyId, applicationId: app.id, from: app.status } });
   });
 }
