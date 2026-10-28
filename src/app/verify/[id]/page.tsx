@@ -5,6 +5,14 @@ import { getHighestLicense } from "@/lib/license-rank";
 import { getLicenseStatus } from "@/lib/license-status";
 import { LICENSE_TYPES, labelFor } from "@/lib/constants";
 import { ShieldCheck, ShieldX, ShieldQuestion } from "lucide-react";
+import { pageMeta } from "@/lib/seo";
+
+export const metadata = pageMeta({
+  title: "ตรวจสอบใบอนุญาตผู้ฝึกสอน",
+  description: "ตรวจสอบความถูกต้องของใบอนุญาตผู้ฝึกสอนฟุตบอลที่ออกโดยสมาคมกีฬาฟุตบอลแห่งประเทศไทย",
+  path: "/verify",
+  noindex: true,
+});
 
 export default async function VerifyPage({
   params,

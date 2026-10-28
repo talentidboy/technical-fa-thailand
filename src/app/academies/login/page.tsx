@@ -2,6 +2,7 @@ import Link from "next/link";
 import { LOCKED_MESSAGE } from "@/lib/login-guard";
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
+import { pageMeta } from "@/lib/seo";
 import { getAcademyUser, getCurrentUser } from "@/lib/auth";
 import { authInputClass } from "@/components/academy/AcademyShell";
 import { AuthShell } from "@/components/academy/AuthShell";
@@ -10,7 +11,7 @@ import { academyPoster } from "@/components/typefaces/academy";
 import { academyLogin } from "../account-actions";
 import { AlertCircle, ArrowLeft, Bell, ClipboardCheck, Mail, UserPlus, Users } from "lucide-react";
 
-export const metadata: Metadata = { title: "เข้าสู่ระบบอคาเดมี | Academy Licensing" };
+export const metadata: Metadata = pageMeta({ title: "เข้าสู่ระบบอคาเดมี — Academy Licensing", description: "เข้าสู่ระบบพอร์ทัลอคาเดมี จัดการข้อมูลอคาเดมี บุคลากร ทีม และใบสมัครขอใบอนุญาต", path: "/academies/login" });
 
 const ERRORS: Record<string, string> = {
   "1": "อีเมลหรือรหัสผ่านไม่ถูกต้อง",
@@ -33,7 +34,7 @@ export default async function AcademyLoginPage({ searchParams }: { searchParams:
 
   return (
     <AuthShell eyebrow="Academy Portal" title="พอร์ทัลอคาเดมี" intro="จัดการทุกอย่างของอคาเดมีและใบอนุญาต FAT ได้ในที่เดียว" points={POINTS}>
-      <Link href="/academies" className="inline-flex items-center gap-1 text-sm text-slate-500 hover:text-slate-800">
+      <Link href="/academies" className="inline-flex min-h-10 items-center gap-1 text-sm text-slate-500 hover:text-slate-800">
         <ArrowLeft className="h-4 w-4" />
         ทำเนียบอคาเดมี
       </Link>
@@ -64,7 +65,7 @@ export default async function AcademyLoginPage({ searchParams }: { searchParams:
         <LoginSubmit tone="bg-[#0b1220] hover:bg-[#1e96dc]" />
       </form>
       <details className="group mt-4 text-sm">
-        <summary className="cursor-pointer list-none text-right font-semibold text-indigo-600 hover:text-indigo-800">ลืมรหัสผ่าน?</summary>
+        <summary className="ml-auto flex min-h-10 w-fit cursor-pointer list-none items-center font-semibold text-indigo-600 hover:text-indigo-800">ลืมรหัสผ่าน?</summary>
         <p className="mt-2 rounded-xl bg-slate-50 p-3 text-xs leading-relaxed text-slate-600">
           ติดต่อฝ่ายเทคนิคของสมาคมฯ แจ้งชื่ออคาเดมีและอีเมลที่ใช้สมัคร — เจ้าหน้าที่จะตั้งรหัสผ่านใหม่ให้
         </p>

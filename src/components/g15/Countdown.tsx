@@ -42,7 +42,7 @@ export function Countdown({ target, serverNow }: { target: string; serverNow: nu
         <div key={u.key} className="flex items-center gap-2 sm:gap-3">
           <div className="flex w-14 flex-col items-center rounded-2xl bg-linear-to-b from-g15-600 to-g15-800 px-2 py-2.5 text-white shadow-lg shadow-g15-600/30 sm:w-18 sm:py-3">
             <span className="text-2xl font-extrabold tabular-nums sm:text-3xl">{String(u.value).padStart(2, "0")}</span>
-            <span className="text-[10px] font-medium text-g15-200">
+            <span className="text-[11px] font-medium text-g15-200">
               {u.label} <span className="hidden sm:inline">/ {u.en}</span>
             </span>
           </div>

@@ -62,7 +62,7 @@ export function TeamOfRoundPitch({ picks, title }: { picks: TeamOfRoundPick[]; t
                           <TeamBadge team={p.team} size="sm" />
                         </span>
                       </span>
-                      <span className="line-clamp-2 rounded bg-black/30 px-1.5 py-0.5 text-[10px] font-semibold leading-tight text-white sm:text-[11px]">
+                      <span className="line-clamp-2 rounded bg-black/30 px-1.5 py-0.5 text-[11px] font-semibold leading-tight text-white sm:text-[11px]">
                         {p.firstNameTh} {p.lastNameTh}
                       </span>
                     </Link>

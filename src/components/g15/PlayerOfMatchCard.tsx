@@ -54,7 +54,7 @@ export function PlayerOfMatchCard({
 
       <div className="flex min-h-56 items-end sm:min-h-64">
         <div className="relative z-10 min-w-0 flex-1 self-center py-6 pl-5 pr-2 sm:py-8 sm:pl-8">
-          <p className="inline-flex items-center gap-1.5 rounded-full bg-amber-400 px-2.5 py-1 text-[10px] font-black uppercase tracking-widest text-amber-950 shadow-lg shadow-amber-500/20">
+          <p className="inline-flex items-center gap-1.5 rounded-full bg-amber-400 px-2.5 py-1 text-[11px] font-black uppercase tracking-widest text-amber-950 shadow-lg shadow-amber-500/20">
             <Star className="h-3 w-3 fill-amber-950" />
             Player of the Match
           </p>
@@ -83,7 +83,7 @@ export function PlayerOfMatchCard({
               )}
               {assists > 0 && (
                 <span className="inline-flex items-center gap-1.5 rounded-lg bg-white/10 px-2.5 py-1 text-xs font-bold text-white ring-1 ring-white/15">
-                  <span className="text-[10px] font-black text-amber-300">A</span>
+                  <span className="text-[11px] font-black text-amber-300">A</span>
                   {assists} แอสซิสต์
                 </span>
               )}

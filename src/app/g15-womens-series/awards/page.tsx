@@ -27,10 +27,11 @@ import {
   UserRound,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { pageMeta } from "@/lib/seo";
 
 const heavy = Montserrat({ weight: ["700", "800", "900"], subsets: ["latin"], display: "swap" });
 
-export const metadata = { title: "รางวัล / Awards — G15 Women's Football Series" };
+export const metadata = pageMeta({ title: "รางวัล / Awards — G15 Women's Football Series", description: "รางวัลประจำการแข่งขัน G15 Women's Football Series 2026 — ผู้เล่นยอดเยี่ยม ดาวซัลโว ผู้รักษาประตูยอดเยี่ยม และรางวัลผู้ฝึกสอน", path: "/g15-womens-series/awards" });
 
 const ICON: Record<string, LucideIcon> = {
   MVP: Crown,

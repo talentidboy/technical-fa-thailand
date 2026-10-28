@@ -10,6 +10,9 @@ import { StageSwitcher } from "@/components/g15/StageSwitcher";
 import { TeamBadge } from "@/components/g15/TeamBadge";
 import { Reveal } from "@/components/g15/Reveal";
 import { MapPin, Calendar, Trophy, Goal } from "lucide-react";
+import { pageMeta } from "@/lib/seo";
+
+export const metadata = pageMeta({ title: "สนามแข่งขัน — G15 Women's Football Series", description: "สนามแข่งขันและการเดินทางของ G15 Women's Football Series 2026", path: "/g15-womens-series/stadium" });
 
 const BANGKOK_TZ = "Asia/Bangkok";
 

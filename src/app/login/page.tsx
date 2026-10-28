@@ -8,6 +8,9 @@ import { getCurrentUser } from "@/lib/auth";
 import { login } from "./actions";
 import { COVER_URL } from "@/lib/brand";
 import { ArrowLeft } from "lucide-react";
+import { pageMeta } from "@/lib/seo";
+
+export const metadata = pageMeta({ title: "เข้าสู่ระบบเจ้าหน้าที่", description: "เข้าสู่ระบบสำหรับผู้ดูแลระบบและเจ้าหน้าที่ฝ่ายเทคนิค สมาคมกีฬาฟุตบอลแห่งประเทศไทย", path: "/login" });
 
 export default async function LoginPage({
   searchParams,
@@ -45,7 +48,7 @@ export default async function LoginPage({
         <div className="p-8">
           <Link
             href="/"
-            className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-400 hover:text-slate-600"
+            className="inline-flex min-h-10 items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-slate-700"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
             กลับหน้าแรก
@@ -53,9 +56,9 @@ export default async function LoginPage({
 
           <div className="mt-4 flex flex-col items-center gap-2 text-center">
             <BrandLogo tone="navy" className="h-12" />
-            <h2 className="mt-2 text-lg font-bold text-slate-900">
+            <h1 className="mt-2 text-lg font-bold text-slate-900">
               FA Thailand Technical
-            </h2>
+            </h1>
             <p className="text-xs font-medium uppercase tracking-wide text-amber-600">
               เข้าสู่ระบบ
             </p>

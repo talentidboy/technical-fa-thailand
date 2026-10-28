@@ -13,6 +13,9 @@ import { getProvinceOptions } from "@/lib/thai-address";
 import { coachCentreBg } from "@/lib/section-images";
 import { HomeButton } from "@/components/HomeButton";
 import { ArrowLeft, UserPlus } from "lucide-react";
+import { pageMeta } from "@/lib/seo";
+
+export const metadata = pageMeta({ title: "สมัครบัญชีผู้ฝึกสอน", description: "สมัครบัญชีผู้ฝึกสอนเพื่อดูใบอนุญาต ประวัติการอบรม และสมัครหลักสูตรอบรมผู้ฝึกสอน", path: "/register" });
 
 export default async function RegisterPage({
   searchParams,
@@ -47,7 +50,7 @@ export default async function RegisterPage({
         <div className="p-8">
           <Link
             href="/coach-center/login"
-            className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-400 hover:text-slate-600"
+            className="inline-flex min-h-10 items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-slate-700"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
             กลับไปเข้าสู่ระบบ
@@ -59,9 +62,9 @@ export default async function RegisterPage({
               <span className="h-8 w-px bg-slate-200" />
               <CoachCentreLogo className="h-8" />
             </span>
-            <h2 className="mt-2 text-lg font-bold text-slate-900">
+            <h1 className="mt-2 text-lg font-bold text-slate-900">
               FA Thailand Technical
-            </h2>
+            </h1>
             <p className="text-xs font-medium text-amber-600">
               สมัครสมาชิกผู้ฝึกสอน
             </p>

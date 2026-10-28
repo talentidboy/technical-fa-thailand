@@ -10,7 +10,7 @@ const FORM_STYLE: Record<"W" | "D" | "L", string> = {
 // ใช้ร่วมกันทั้งคอลัมน์ Form ในตารางคะแนน และการ์ด "ข้อมูลก่อนแข่ง" ในหน้ารายละเอียดนัด — size ใหญ่ขึ้นสำหรับบริบทที่มีที่ว่างมากกว่า
 export function FormPills({ results, size = "sm" }: { results: ("W" | "D" | "L")[]; size?: "sm" | "md" }) {
   if (results.length === 0) return <span className="text-xs text-slate-300">—</span>;
-  const box = size === "md" ? "h-5 w-5 text-[10px]" : "h-4 w-4 text-[8px]";
+  const box = size === "md" ? "h-5 w-5 text-[11px]" : "h-4 w-4 text-[8px]";
   return (
     <div className="flex items-center justify-center gap-1">
       {results.map((r, i) => (

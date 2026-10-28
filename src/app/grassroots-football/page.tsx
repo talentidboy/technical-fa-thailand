@@ -10,6 +10,9 @@ import { ProvinceMap, provinceCodeByName } from "@/components/ProvinceMap";
 import { Reveal } from "@/components/g15/Reveal";
 import styles from "./grassroots.module.css";
 import { ArrowDown } from "lucide-react";
+import { pageMeta } from "@/lib/seo";
+
+export const metadata = pageMeta({ title: "ฟุตบอลรากหญ้า Grassroots Football", description: "ฟุตบอลรากหญ้าของสมาคมกีฬาฟุตบอลแห่งประเทศไทย — ฟุตบอลสำหรับทุกคน ทุกวัย ทั่วประเทศ", path: "/grassroots-football" });
 
 const g = grassrootsFont.className;
 

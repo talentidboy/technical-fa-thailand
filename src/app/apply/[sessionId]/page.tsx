@@ -11,10 +11,22 @@ import { applyToSession } from "@/app/me/courses/actions";
 import { COVER_URL } from "@/lib/brand";
 import { ApplyForm } from "./ApplyForm";
 import { ArrowLeft, CalendarDays, MapPin, Users, Clock, LogIn, CheckCircle2, Lock, Send } from "lucide-react";
+import { pageMeta } from "@/lib/seo";
 
 function formatDate(date: Date | null) {
   if (!date) return null;
   return date.toLocaleDateString("th-TH", { year: "numeric", month: "short", day: "numeric" });
+}
+
+export async function generateMetadata({ params }: { params: Promise<{ sessionId: string }> }) {
+  const id = parseId((await params).sessionId);
+  const s = id ? await prisma.courseSession.findUnique({ where: { id }, select: { id: true, name: true, venue: true, course: { select: { title: true } } } }) : null;
+  if (!s) return { title: "ไม่พบรุ่นอบรม" };
+  return pageMeta({
+    title: `สมัครอบรม ${s.course.title} — ${s.name}`,
+    description: `เปิดรับสมัครหลักสูตร ${s.course.title} รุ่น ${s.name}${s.venue ? ` ณ ${s.venue}` : ""} — ศูนย์อบรมผู้ฝึกสอนฟุตบอล สมาคมกีฬาฟุตบอลแห่งประเทศไทย`,
+    path: `/apply/${s.id}`,
+  });
 }
 
 // หน้าสมัครอบรมสาธารณะของแต่ละรุ่น — ลิงก์นี้แอดมินคัดลอกไปประกาศได้เลย (Facebook / LINE)

@@ -15,9 +15,21 @@ import { TeamBadge } from "@/components/g15/TeamBadge";
 import { Reveal } from "@/components/g15/Reveal";
 import { Bebas_Neue } from "next/font/google";
 import { MapPin, Calendar, Trophy, Users, Shirt } from "lucide-react";
+import { pageMeta } from "@/lib/seo";
 
 // ตัวอักษรแคบสูงสำหรับชื่อทีม/หัวข้อ/ตัวเลข (ชุดเดียวกับหน้าสถิติและโปรไฟล์นักกีฬา)
 const display = Bebas_Neue({ weight: "400", subsets: ["latin"], display: "swap" });
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  const id = parseId((await params).id);
+  const t = id ? await prisma.g15Team.findUnique({ where: { id }, select: { id: true, name: true, groupName: true } }) : null;
+  if (!t) return { title: "ไม่พบทีม" };
+  return pageMeta({
+    title: `${t.name} — G15 Women's Football Series`,
+    description: `รายชื่อนักเตะ ผลการแข่งขัน และโปรแกรมของทีม ${t.name}${t.groupName ? ` (${t.groupName})` : ""} ในรายการ G15 Women's Football Series 2026`,
+    path: `/g15-womens-series/teams/${t.id}`,
+  });
+}
 
 // หน้านี้เปิดให้ดูได้แบบสาธารณะไม่ต้องล็อกอิน — ต้องล็อกอินเฉพาะตอนจะ "จัดการข้อมูล" เท่านั้น
 export default async function G15TeamDetailPage({
@@ -239,7 +251,7 @@ export default async function G15TeamDetailPage({
                             <p className={`${display.className} text-4xl leading-none sm:text-5xl ${pts ? "text-white" : "text-g15-950"}`}>
                               {s.value}
                             </p>
-                            <p className={`mt-1 text-[10px] font-semibold uppercase tracking-wider ${pts ? "text-g15-100" : "text-slate-400"}`}>
+                            <p className={`mt-1 text-[11px] font-semibold uppercase tracking-wider ${pts ? "text-g15-100" : "text-slate-400"}`}>
                               {s.label} <span className="normal-case tracking-normal">· {s.title}</span>
                             </p>
                           </div>
@@ -430,7 +442,7 @@ export default async function G15TeamDetailPage({
                       )}
                       {outcome && (
                         <span
-                          className={`ml-auto rounded-md px-2 py-0.5 text-[10px] font-black text-white ${
+                          className={`ml-auto rounded-md px-2 py-0.5 text-[11px] font-black text-white ${
                             outcome === "W" ? "bg-emerald-500" : outcome === "D" ? "bg-amber-400" : "bg-red-400"
                           }`}
                         >
@@ -456,7 +468,7 @@ export default async function G15TeamDetailPage({
                           </span>
                         )}
                         {isFinished && hasPenalties(match) && (
-                          <span className="mt-1 text-[10px] font-semibold text-slate-500">
+                          <span className="mt-1 text-[11px] font-semibold text-slate-500">
                             จุดโทษ {match.homePenalty}-{match.awayPenalty}
                           </span>
                         )}

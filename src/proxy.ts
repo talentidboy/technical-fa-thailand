@@ -12,6 +12,44 @@ const PUBLIC_PATHS = [
   "/coach-center/login",
 ];
 
+// โฟลเดอร์ระดับบนสุดทุกอันใน src/app (รวมในกลุ่ม (admin)) + ไฟล์ใน public — หมวดเหล่านี้ใช้กฎ "ต้องล็อกอินเว้นแต่ระบุว่าเป็นหน้าสาธารณะ"
+// ที่อยู่ที่ไม่ขึ้นต้นด้วยหมวดเหล่านี้ไม่มีหน้าอยู่จริง → ปล่อยให้ขึ้นหน้า 404 (ชุดทดสอบ security ตรวจว่ารายการนี้ครบตามโฟลเดอร์จริง)
+// เพิ่มหมวดใหม่ใน src/app ต้องเพิ่มชื่อที่นี่ด้วย ไม่งั้นหน้าใหม่จะเปิดได้โดยไม่ต้องล็อกอิน
+export const KNOWN_SECTIONS = [
+  "",
+  "academies",
+  "admin",
+  "announcements",
+  "api",
+  "apply",
+  "audit",
+  "calendar",
+  "coach-center",
+  "coaches",
+  "course-sessions",
+  "courses",
+  "dashboard",
+  "errors",
+  "g15",
+  "g15-womens-series",
+  "grassroots-football",
+  "instructors",
+  "login",
+  "me",
+  "news",
+  "play-and-learn",
+  "register",
+  "renewals",
+  "reports",
+  "requests",
+  "settings",
+  "setup",
+  "talent-id",
+  "training-centre",
+  "users",
+  "verify",
+];
+
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
@@ -51,7 +89,12 @@ export function proxy(request: NextRequest) {
     pathname === "/api/client-error" ||
     pathname === "/api/deploy-id" ||
     // งานอัตโนมัติรายวัน (ตรวจสิทธิ์ด้วย CRON_SECRET ในตัว route เอง)
-    pathname === "/api/cron/daily";
+    pathname === "/api/cron/daily" ||
+    // สำหรับเครื่องมือค้นหา (ภาพตัวอย่างลิงก์ /og/*.jpg ผ่านกฎ "หมวดที่ไม่มีหน้า" ด้านล่าง)
+    pathname === "/robots.txt" ||
+    pathname === "/sitemap.xml" ||
+    // พิมพ์ที่อยู่ผิด (หมวดที่ไม่มีในเว็บ) → ให้ขึ้นหน้า "ไม่พบหน้านี้" แทนการเด้งไปหน้าเข้าสู่ระบบ
+    !KNOWN_SECTIONS.includes(pathname.split("/")[1] ?? "");
 
   if (isPublic) return NextResponse.next();
 

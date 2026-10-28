@@ -48,6 +48,7 @@ import {
   Clock,
   Images,
 } from "lucide-react";
+import { pageMeta } from "@/lib/seo";
 
 const OFFICIAL_ROLES = [
   { key: "referee", label: "ผู้ตัดสิน", en: "Referee" },
@@ -59,6 +60,20 @@ const OFFICIAL_ROLES = [
   { key: "generalCoordinator", label: "ผู้ประสานงานกลาง", en: "General Coordinator" },
   { key: "assistantGeneralCoordinator", label: "ผู้ช่วยผู้ประสานงานกลาง", en: "Assistant General Coordinator" },
 ] as const;
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  const id = parseId((await params).id);
+  const m = id
+    ? await prisma.g15Match.findUnique({ where: { id }, select: { id: true, round: true, matchDate: true, venue: true, status: true, homeScore: true, awayScore: true, homeTeam: { select: { name: true } }, awayTeam: { select: { name: true } } } })
+    : null;
+  if (!m) return { title: "ไม่พบการแข่งขัน" };
+  const score = m.status === "FINISHED" && m.homeScore != null && m.awayScore != null ? ` ${m.homeScore}–${m.awayScore} ` : " vs ";
+  return pageMeta({
+    title: `${m.homeTeam.name}${score}${m.awayTeam.name} — G15 Women's Football Series`,
+    description: [m.round, m.matchDate ? formatMatchDateTime(m.matchDate) : null, m.venue].filter(Boolean).join(" · ") || "G15 Women's Football Series 2026",
+    path: `/g15-womens-series/matches/${m.id}`,
+  });
+}
 
 // หน้านี้เปิดให้ดูได้แบบสาธารณะไม่ต้องล็อกอิน — เหมือนหน้าทีม (teams/[id]) ต้องล็อกอินเฉพาะตอนจะจัดการข้อมูลเท่านั้น
 export default async function G15MatchDetailPage({
@@ -224,12 +239,15 @@ export default async function G15MatchDetailPage({
         <HeroArt />
         <div aria-hidden className="absolute left-1/2 top-1/3 -z-10 h-72 w-[42rem] -translate-x-1/2 rounded-full bg-g15-400/25 blur-3xl" />
         <div className="mx-auto max-w-5xl px-5 sm:px-6">
-          <nav className="flex flex-wrap items-center gap-1.5 text-xs text-g15-200">
-            <Link href="/g15-womens-series" className="transition-colors hover:text-white">
+          <h1 className="sr-only">
+            {match.homeTeam.name} พบ {match.awayTeam.name} — G15 Women&apos;s Football Series
+          </h1>
+          <nav aria-label="ตำแหน่งหน้า" className="flex flex-wrap items-center gap-1.5 text-xs text-g15-200">
+            <Link href="/g15-womens-series" className="inline-flex min-h-8 items-center px-1 transition-colors hover:text-white">
               G15
             </Link>
             <span className="text-g15-400/60">›</span>
-            <Link href={withStage("/g15-womens-series/matches", stage)} className="transition-colors hover:text-white">
+            <Link href={withStage("/g15-womens-series/matches", stage)} className="inline-flex min-h-8 items-center transition-colors hover:text-white">
               การแข่งขัน
             </Link>
             <span className="text-g15-400/60">›</span>
@@ -412,7 +430,7 @@ export default async function G15MatchDetailPage({
             {match.liveVideoUrl && (
               <a
                 href="#match-video"
-                className="inline-flex items-center gap-1.5 rounded-full bg-red-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-lg shadow-red-900/30 transition-colors hover:bg-red-500"
+                className="inline-flex items-center gap-1.5 rounded-full bg-red-600 px-3.5 py-2 text-xs font-bold text-white shadow-lg shadow-red-900/30 transition-colors hover:bg-red-500"
               >
                 <span className="h-0 w-0 border-y-4 border-l-[7px] border-y-transparent border-l-white" />
                 {live ? "ดูถ่ายทอดสด" : "ดูวิดีโอ"}
@@ -611,7 +629,7 @@ export default async function G15MatchDetailPage({
                       ].map((s) => (
                         <div key={s.label}>
                           <p className={`text-base font-bold ${s.label === "Pts" ? "text-g15-600" : "text-slate-900"}`}>{s.value}</p>
-                          <p className="text-[10px] uppercase tracking-wide text-slate-400">{s.label}</p>
+                          <p className="text-[11px] uppercase tracking-wide text-slate-400">{s.label}</p>
                         </div>
                       ))}
                     </div>
@@ -648,7 +666,7 @@ export default async function G15MatchDetailPage({
                         {/* พบกันล่าสุดดูข้ามรอบได้ (เคยเจอกันในรอบภูมิภาค) — จึงบอกรอบกำกับไว้ด้วย */}
                         <span className="flex-none text-xs text-slate-400">
                           {formatMatchDateShort(m.matchDate)}
-                          <span className="block text-[10px] text-slate-300">{m.round}</span>
+                          <span className="block text-[11px] text-slate-300">{m.round}</span>
                         </span>
                         <div className="flex flex-1 items-center justify-end gap-2 text-right">
                           <span className="min-w-0 truncate text-sm text-slate-700">{leftTeam.name}</span>

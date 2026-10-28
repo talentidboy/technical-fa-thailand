@@ -15,6 +15,9 @@ import { LicenceFan } from "@/components/coach/LicenceFan";
 import { display, levelTone } from "@/components/coach/CoachUi";
 import styles from "@/components/coach/coach.module.css";
 import { ArrowRight, ArrowUpRight, CalendarDays, Clock, LogIn, MapPin, UserPlus, Users } from "lucide-react";
+import { pageMeta } from "@/lib/seo";
+
+export const metadata = pageMeta({ title: "ศูนย์อบรมผู้ฝึกสอนฟุตบอล", description: "สมัครอบรมผู้ฝึกสอนฟุตบอลหลักสูตร AFC ตรวจสอบใบอนุญาตผู้ฝึกสอน และดูรุ่นที่เปิดรับสมัครของสมาคมกีฬาฟุตบอลแห่งประเทศไทย", path: "/coach-center" });
 
 const h = display.className;
 const TZ = { timeZone: "Asia/Bangkok" } as const;
@@ -147,7 +150,7 @@ export default async function CoachCenterPage() {
               <h2 className={`${h} mt-2 text-4xl font-semibold text-[#031a2c] sm:text-5xl`}>รุ่นอบรมที่เปิดรับสมัคร</h2>
               <p className="mt-2 text-sm text-slate-500">ยังไม่มีบัญชีก็สมัครได้ — ระบบสร้างบัญชีให้พร้อมกับใบสมัคร</p>
             </div>
-            <Link href="/courses" className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#031a2c] hover:underline">
+            <Link href="/courses" className="inline-flex min-h-10 items-center gap-1.5 text-sm font-semibold text-[#031a2c] hover:underline">
               รายละเอียดหลักสูตรทุกระดับ <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
@@ -277,7 +280,7 @@ export default async function CoachCenterPage() {
               </h2>
               <p className="mt-2 max-w-xl text-sm text-white/60">ผ่านระดับก่อนหน้าแล้วจึงสมัครระดับถัดไป — ความสูงของแต่ละขั้นคือชั่วโมงเรียนจริงของหลักสูตร</p>
             </div>
-            <Link href="/courses" className="inline-flex items-center gap-1.5 text-sm font-semibold hover:underline" style={{ color: GOLD }}>
+            <Link href="/courses" className="inline-flex min-h-10 items-center gap-1.5 text-sm font-semibold hover:underline" style={{ color: GOLD }}>
               ดูรายวิชาทุกระดับ <ArrowRight className="h-4 w-4" />
             </Link>
           </div>

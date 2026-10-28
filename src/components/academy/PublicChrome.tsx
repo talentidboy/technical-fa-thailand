@@ -78,14 +78,14 @@ export function PublicFooter() {
         </div>
         <div className="text-sm">
           <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-(--yellow)">For academies</p>
-          <ul className="mt-4 space-y-2.5">
+          <ul className="mt-3 space-y-0.5">
             <li>
-              <Link href="/academies/register" className="hover:text-white">
+              <Link href="/academies/register" className="inline-flex min-h-8 items-center hover:text-white">
                 สมัครและยื่นขอใบอนุญาต
               </Link>
             </li>
             <li>
-              <Link href="/academies/login" className="hover:text-white">
+              <Link href="/academies/login" className="inline-flex min-h-8 items-center hover:text-white">
                 เข้าสู่ระบบพอร์ทัล
               </Link>
             </li>
@@ -93,14 +93,14 @@ export function PublicFooter() {
         </div>
         <div className="text-sm">
           <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-(--yellow)">Explore</p>
-          <ul className="mt-4 space-y-2.5">
+          <ul className="mt-3 space-y-0.5">
             <li>
-              <Link href="/academies#directory" className="hover:text-white">
+              <Link href="/academies#directory" className="inline-flex min-h-8 items-center hover:text-white">
                 ทำเนียบอคาเดมี
               </Link>
             </li>
             <li>
-              <Link href="/" className="hover:text-white">
+              <Link href="/" className="inline-flex min-h-8 items-center hover:text-white">
                 เว็บไซต์ฝ่ายเทคนิค
               </Link>
             </li>

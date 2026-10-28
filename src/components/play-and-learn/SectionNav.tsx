@@ -36,7 +36,7 @@ export function SectionNav({ sections }: { sections: { id: string; label: string
             href={`#${id}`}
             data-section={id}
             aria-current={active === id ? "true" : undefined}
-            className={`flex-none rounded-full px-3 py-1.5 text-xs font-semibold transition-all ${
+            className={`flex-none rounded-full px-3.5 py-2 text-xs font-semibold transition-all ${
               active === id ? "bg-linear-to-r from-pink-400 to-purple-400 text-white shadow-sm shadow-pink-200" : "text-purple-700 hover:bg-pink-50"
             }`}
           >

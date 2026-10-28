@@ -13,6 +13,9 @@ import { TeamBadge } from "@/components/g15/TeamBadge";
 import { Reveal } from "@/components/g15/Reveal";
 import { AnimatedCounter } from "@/components/g15/AnimatedCounter";
 import { Target, BarChart3, Users, CheckCircle2, TrendingUp } from "lucide-react";
+import { pageMeta } from "@/lib/seo";
+
+export const metadata = pageMeta({ title: "สถิติ — G15 Women's Football Series", description: "ดาวซัลโว แอสซิสต์ และสถิติผู้เล่นของ G15 Women's Football Series 2026", path: "/g15-womens-series/stats" });
 
 // ตัวอักษรแคบสูงสำหรับหัวข้อ/ชื่อ/ตัวเลขในการ์ดอันดับ (แบบเดียวกับหน้าโปรไฟล์นักกีฬา)
 const display = Bebas_Neue({ weight: "400", subsets: ["latin"], display: "swap" });

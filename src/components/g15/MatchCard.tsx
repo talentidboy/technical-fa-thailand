@@ -102,18 +102,18 @@ export function MatchCard({ match, now, showDate = false }: { match: MatchCardDa
 
       {/* แถวบน: กลุ่ม/นัด · สถานะ */}
       <div className="flex items-center gap-2 px-4 pt-4 sm:px-5">
-        <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold text-white ${style.bg}`}>
+        <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-bold text-white ${style.bg}`}>
           {match.round}
           {roundEn(match.round) && <span className="font-medium opacity-80"> / {roundEn(match.round)}</span>}
         </span>
         {match.matchNo != null && <span className="text-[11px] font-semibold text-slate-400">นัดที่ {match.matchNo}</span>}
         <span className="ml-auto flex-none">
           {finished ? (
-            <span className="rounded-md bg-g15-950 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-white">Full time</span>
+            <span className="rounded-md bg-g15-950 px-2 py-0.5 text-[11px] font-black uppercase tracking-wider text-white">Full time</span>
           ) : live ? (
             (clock ?? <LivePill />)
           ) : (
-            <span className="rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">Upcoming</span>
+            <span className="rounded-md bg-slate-100 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wider text-slate-500">Upcoming</span>
           )}
         </span>
       </div>
@@ -130,7 +130,7 @@ export function MatchCard({ match, now, showDate = false }: { match: MatchCardDa
                 {match.awayScore}
               </span>
               {pens && (
-                <span className="mt-1 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-800">
+                <span className="mt-1 rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-bold text-amber-800">
                   จุดโทษ {match.homePenalty}-{match.awayPenalty}
                 </span>
               )}
@@ -140,7 +140,7 @@ export function MatchCard({ match, now, showDate = false }: { match: MatchCardDa
               <span className={`${display.className} rounded-xl bg-g15-50 px-3 pt-1 text-4xl leading-tight text-g15-700`}>
                 {match.matchDate ? timeLabel(match.matchDate) : "TBD"}
               </span>
-              <span className="mt-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400">Kick-off</span>
+              <span className="mt-1 text-[11px] font-semibold uppercase tracking-wider text-slate-400">Kick-off</span>
             </>
           )}
           {showDate && match.matchDate && <span className="mt-1.5 text-[11px] font-medium text-slate-400">{dateLabel(match.matchDate)}</span>}

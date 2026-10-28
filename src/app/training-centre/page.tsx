@@ -11,6 +11,9 @@ import { DataCentreLogo } from "@/components/SectionLogos";
 import styles from "@/components/training/training.module.css";
 import { AREA_INFO, areaColor } from "@/components/training/areas";
 import { ArrowRight, Plus, Settings } from "lucide-react";
+import { pageMeta } from "@/lib/seo";
+
+export const metadata = pageMeta({ title: "ศูนย์ข้อมูลและบทความด้านเทคนิค", description: "บทความและความรู้ด้านเทคนิคสำหรับผู้ฝึกสอนฟุตบอลไทย ทั้งเรื่องเกม การฝึกซ้อม และสภาพแวดล้อมการพัฒนานักเตะ", path: "/training-centre" });
 
 const t = trainingFont.className;
 const m = markerFont.className;

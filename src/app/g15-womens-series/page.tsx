@@ -53,6 +53,9 @@ import {
   Sparkles,
   Images,
 } from "lucide-react";
+import { pageMeta } from "@/lib/seo";
+
+export const metadata = pageMeta({ title: "G15 Women's Football Series 2026", description: "การแข่งขันฟุตบอลหญิงรุ่นอายุไม่เกิน 15 ปี — โปรแกรม ผลการแข่งขันสด ตารางคะแนน สถิติ และทีมที่เข้าร่วม", path: "/g15-womens-series" });
 
 // ตัวอักษรแคบสูงสำหรับหัวข้อ/ตัวเลข (ชุดเดียวกับหน้าสถิติ/ตารางคะแนน)
 const display = Bebas_Neue({ weight: "400", subsets: ["latin"], display: "swap" });
@@ -243,6 +246,7 @@ export default async function G15WomensSeriesPage({
 
       {/* Hero — แบนเนอร์ทางการมีชื่อรายการ/สโลแกน/โลโก้ในภาพอยู่แล้ว จึงโชว์เต็มความกว้างไปเลยโดยไม่มีข้อความทับ */}
       <section className="relative isolate overflow-hidden bg-linear-to-br from-g15-950 via-g15-800 to-g15-600 pb-6 sm:pb-8">
+        <h1 className="sr-only">G15 Women&apos;s Football Series 2026 — Beautiful Game, Bright Future</h1>
         <div className="absolute inset-x-0 top-0 h-1.5 animate-shimmer-slide bg-linear-to-r from-amber-600 via-amber-200 via-50% to-amber-600 bg-size-[200%_100%]" />
         <HeroArt />
         <Sparkles className="animate-float-y absolute right-6 top-10 hidden h-6 w-6 text-amber-300/70 sm:block" />

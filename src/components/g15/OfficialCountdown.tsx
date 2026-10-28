@@ -49,7 +49,7 @@ function StepTimer({ target, now, isNext }: { target: number; now: number | null
   const ms = target - now;
   if (ms <= 0) {
     return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-400">
+      <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-400">
         <Check className="h-3 w-3" />
         ผ่านแล้ว
       </span>

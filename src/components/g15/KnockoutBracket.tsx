@@ -170,7 +170,7 @@ export function KnockoutBracket({ ties }: { ties: BracketTie[] }) {
                 <div className="relative flex items-center gap-3">
                   <Trophy className="h-7 w-7 flex-none" />
                   <div className="min-w-0">
-                    <p className="text-[10px] font-bold uppercase tracking-widest">แชมป์ประเทศไทย / Champion</p>
+                    <p className="text-[11px] font-bold uppercase tracking-widest">แชมป์ประเทศไทย / Champion</p>
                     <p className="truncate text-base font-black">{champion.name}</p>
                   </div>
                 </div>

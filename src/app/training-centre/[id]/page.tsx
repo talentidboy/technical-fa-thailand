@@ -7,6 +7,14 @@ import { TRAINING_CENTRE_AREAS, labelFor } from "@/lib/constants";
 import { markerFont, trainingFont } from "@/components/typefaces/training";
 import { TrainingHeader } from "@/components/training/TrainingHeader";
 import { ArrowLeft, Calendar } from "lucide-react";
+import { pageMeta } from "@/lib/seo";
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  const id = parseId((await params).id);
+  const a = id ? await prisma.trainingArticle.findUnique({ where: { id }, select: { id: true, title: true, excerpt: true, coverImageUrl: true } }) : null;
+  if (!a) return { title: "ไม่พบบทความ" };
+  return pageMeta({ title: a.title, description: a.excerpt, path: `/training-centre/${a.id}`, image: a.coverImageUrl });
+}
 
 // สีปากกาประจำหมวด (ตรงกับแฟ้มในหน้าศูนย์ข้อมูลและบทความ)
 const AREA_COLOR: Record<string, string> = { THE_GAME: "#1d4ed8", PRACTICE: "#dc2626", ENVIRONMENT: "#15803d" };

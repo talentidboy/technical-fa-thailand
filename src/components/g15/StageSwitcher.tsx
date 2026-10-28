@@ -44,7 +44,7 @@ export function StageSwitcher({
             <span className="flex flex-col leading-tight">
               <span className="whitespace-nowrap text-sm font-bold">{s.label}</span>
               <span
-                className={`whitespace-nowrap text-[10px] font-medium ${
+                className={`whitespace-nowrap text-[11px] font-medium ${
                   active ? (light ? "text-g15-100" : "text-g15-500") : light ? "text-slate-400" : "text-g15-200/80"
                 }`}
               >

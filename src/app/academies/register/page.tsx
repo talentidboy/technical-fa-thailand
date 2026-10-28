@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
+import { pageMeta } from "@/lib/seo";
 import { prisma } from "@/lib/prisma";
 import { getAcademyUser } from "@/lib/auth";
 import thailandMap from "@/lib/thailand-map.json";
@@ -9,7 +10,7 @@ import { RegisterForm } from "@/components/academy/RegisterForm";
 import { academyPoster } from "@/components/typefaces/academy";
 import { ArrowLeft, ClipboardCheck, FileUp, ShieldCheck, Users } from "lucide-react";
 
-export const metadata: Metadata = { title: "สมัครบัญชีอคาเดมี | Academy Licensing" };
+export const metadata: Metadata = pageMeta({ title: "สมัครบัญชีอคาเดมี — Academy Licensing", description: "สมัครบัญชีอคาเดมีเพื่อยื่นขอใบอนุญาต FAT Bronze / Silver / Gold กรอกข้อมูลบุคลากร ทีม และแนบหลักฐานตามเกณฑ์", path: "/academies/register" });
 
 const STEPS = [
   { icon: Users, title: "1. สมัครบัญชีและกรอกข้อมูล", desc: "ข้อมูลอคาเดมี บุคลากร ทีมและรายชื่อนักเตะ" },
@@ -30,13 +31,13 @@ export default async function AcademyRegisterPage() {
   return (
     <AuthShell eyebrow="Academy Licensing" title="ยื่นขอใบอนุญาตออนไลน์" intro="ขอใบอนุญาตรับรองมาตรฐานอคาเดมี FAT Bronze / Silver / Gold ได้ครบในระบบเดียว" points={STEPS} wide>
       <div className="flex items-center justify-between gap-3 text-sm">
-        <Link href="/academies" className="inline-flex items-center gap-1 text-slate-500 hover:text-slate-800">
+        <Link href="/academies" className="inline-flex min-h-10 items-center gap-1 text-slate-500 hover:text-slate-800">
           <ArrowLeft className="h-4 w-4" />
           ทำเนียบอคาเดมี
         </Link>
         <span className="text-slate-500">
           มีบัญชีแล้ว?{" "}
-          <Link href="/academies/login" className="font-semibold text-indigo-600 hover:text-indigo-800">
+          <Link href="/academies/login" className="inline-flex min-h-10 items-center font-semibold text-indigo-600 hover:text-indigo-800">
             เข้าสู่ระบบ
           </Link>
         </span>

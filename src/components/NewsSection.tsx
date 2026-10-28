@@ -40,7 +40,7 @@ export function NewsSection({ items }: { items: NewsItem[] }) {
               <div className="relative aspect-16/10 overflow-hidden rounded-xl bg-slate-200">
                 <NewsThumb item={lead} sizes="(min-width: 1024px) 60vw, 100vw" />
               </div>
-              <p className="mt-3 flex items-center gap-2 text-[10px] text-slate-500 sm:mt-5 sm:text-xs">
+              <p className="mt-3 flex items-center gap-2 text-[11px] text-slate-500 sm:mt-5 sm:text-xs">
                 {lead.tag && <span className="font-semibold uppercase tracking-wider text-amber-700">{lead.tag}</span>}
                 {lead.tag && <span className="h-3 w-px bg-slate-300" />}
                 {lead.date}
@@ -65,7 +65,7 @@ export function NewsSection({ items }: { items: NewsItem[] }) {
                           <NewsThumb item={item} sizes="(min-width: 640px) 112px, 40vw" />
                         </div>
                         <div className="min-w-0">
-                          <p className="text-[10px] text-slate-500 sm:text-[11px]">
+                          <p className="text-[11px] text-slate-500 sm:text-[11px]">
                             {item.tag && <span className="mr-2 font-semibold text-amber-700">{item.tag}</span>}
                             {item.date}
                           </p>

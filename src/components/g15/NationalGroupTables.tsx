@@ -69,7 +69,7 @@ export function NationalGroupTables({
               </div>
 
               <table className="w-full table-fixed text-left">
-                <thead className="border-b border-slate-100 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                <thead className="border-b border-slate-100 text-[11px] font-bold uppercase tracking-wider text-slate-400">
                   <tr>
                     <th className="w-12 py-2.5 pl-4 text-center">#</th>
                     <th className="py-2.5 pl-1">Team / ทีม</th>
@@ -118,7 +118,7 @@ export function NationalGroupTables({
                             </span>
                             <span className="min-w-0">
                               <span className="line-clamp-2 text-[13px] font-bold leading-snug text-g15-950 group-hover:text-g15-700 sm:text-sm">{row.teamName}</span>
-                              {q && row.played > 0 && <span className="text-[10px] font-semibold text-emerald-600">โซนเข้ารอบรองฯ</span>}
+                              {q && row.played > 0 && <span className="text-[11px] font-semibold text-emerald-600">โซนเข้ารอบรองฯ</span>}
                             </span>
                           </Link>
                         </td>

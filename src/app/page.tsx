@@ -22,6 +22,9 @@ import { Reveal } from "@/components/g15/Reveal";
 import { display } from "@/components/fonts";
 import styles from "./home.module.css";
 import { ArrowDown, ArrowRight, ArrowUpRight, Lock, Mail, MapPin } from "lucide-react";
+import { pageMeta } from "@/lib/seo";
+
+export const metadata = pageMeta({ description: "ฝ่ายเทคนิค สมาคมกีฬาฟุตบอลแห่งประเทศไทย ในพระบรมราชูปถัมภ์ — พัฒนาผู้ฝึกสอน อคาเดมี และนักฟุตบอลเยาวชนไทย", path: "/" });
 
 const h = display.className;
 const TZ = { timeZone: "Asia/Bangkok" } as const;
@@ -224,7 +227,7 @@ export default async function HomePage() {
               <p className={`${h} text-lg font-semibold text-[#073c5e] sm:text-5xl`}>
                 <CountUp value={s.n.toLocaleString("en-US")} />
               </p>
-              <p className="mt-1 flex items-center gap-1 text-[10px] leading-tight text-slate-500 sm:mt-1.5 sm:text-sm">
+              <p className="mt-1 flex items-center gap-1 text-[11px] leading-tight text-slate-500 sm:mt-1.5 sm:text-sm">
                 {s.label}
                 <ArrowUpRight className="h-3.5 w-3.5 opacity-0 transition-opacity group-hover:opacity-100" />
               </p>
@@ -318,7 +321,7 @@ export default async function HomePage() {
                 ))}
               </ol>
             )}
-            <div className="mt-6 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[10px] text-slate-500 sm:mt-8 sm:text-xs" aria-label="คำอธิบายสีแผนที่">
+            <div className="mt-6 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[11px] text-slate-500 sm:mt-8 sm:text-xs" aria-label="คำอธิบายสีแผนที่">
               <span>ผู้ฝึกสอนต่อจังหวัด</span>
               <span className="flex">
                 {[{ l: "0", c: "#e6e8ee" }, ...COACH_BINS.map((b, i) => ({ l: i === COACH_BINS.length - 1 ? `${b}+` : String(b), c: COACH_COLORS[i] }))].map((b) => (
@@ -405,9 +408,9 @@ function DepartmentTile({ d, n, href, locked, big, extra }: { d: Department; n: 
           <Icon className="absolute -right-6 -top-6 h-36 w-36 text-white/10" />
         )}
         <div className="absolute inset-0 bg-linear-to-t from-(--tile) via-transparent to-black/30" />
-        <span className={`${h} absolute left-3 top-3 rounded-md bg-black/55 px-1.5 py-0.5 text-[10px] font-semibold tabular-nums sm:left-4 sm:top-4 sm:px-2 sm:text-xs`}>{String(n).padStart(2, "0")}</span>
+        <span className={`${h} absolute left-3 top-3 rounded-md bg-black/55 px-1.5 py-0.5 text-[11px] font-semibold tabular-nums sm:left-4 sm:top-4 sm:px-2 sm:text-xs`}>{String(n).padStart(2, "0")}</span>
         {locked && (
-          <span className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-md bg-black/55 px-1.5 py-0.5 text-[10px] font-medium sm:right-4 sm:top-4 sm:px-2 sm:py-1 sm:text-[11px]">
+          <span className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-md bg-black/55 px-1.5 py-0.5 text-[11px] font-medium sm:right-4 sm:top-4 sm:px-2 sm:py-1 sm:text-[11px]">
             <Lock className="h-3 w-3" />
             เจ้าหน้าที่
           </span>
@@ -431,7 +434,7 @@ function DepartmentTile({ d, n, href, locked, big, extra }: { d: Department; n: 
           <h3 className={`${h} mt-2.5 font-semibold leading-tight sm:mt-3 ${big ? "text-2xl sm:text-5xl" : "text-[15px] sm:text-xl"}`}>{d.title}</h3>
           <p className={`mt-1.5 text-white/75 ${big ? "max-w-md text-xs sm:text-base" : "hidden text-[13px] leading-snug sm:line-clamp-2"}`}>{d.subtitle}</p>
           <div className="mt-3 flex items-center justify-between gap-2 sm:mt-4 sm:gap-3">
-            <span className="min-w-0 truncate text-[10px] font-semibold text-white/65 sm:text-xs">{locked ? (d.guestHref ? "เข้าสู่ระบบ / สมัครสมาชิก" : "เข้าสู่ระบบเพื่อใช้งาน") : extra}</span>
+            <span className="min-w-0 truncate text-[11px] font-semibold text-white/65 sm:text-xs">{locked ? (d.guestHref ? "เข้าสู่ระบบ / สมัครสมาชิก" : "เข้าสู่ระบบเพื่อใช้งาน") : extra}</span>
             <span className={`${tile.tileGo} flex h-8 w-8 flex-none items-center justify-center rounded-full bg-white/10 ring-1 ring-white/25 sm:h-10 sm:w-10`}>
               <ArrowRight className="h-4 w-4" />
             </span>
@@ -445,11 +448,11 @@ function DepartmentTile({ d, n, href, locked, big, extra }: { d: Department; n: 
 function FooterCol({ title, links }: { title: string; links: { href: string; label: string }[] }) {
   return (
     <div>
-      <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/45 sm:text-[11px]">{title}</p>
-      <ul className="mt-3 space-y-2 text-xs sm:mt-4 sm:space-y-2.5 sm:text-sm">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/45 sm:text-[11px]">{title}</p>
+      <ul className="mt-2 text-xs sm:mt-3 sm:text-sm">
         {links.map((l) => (
           <li key={l.label}>
-            <Link href={l.href} className="hover:text-white">
+            <Link href={l.href} className="inline-flex min-h-8 items-center hover:text-white">
               {l.label}
             </Link>
           </li>

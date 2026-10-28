@@ -45,12 +45,12 @@ function EventIcons({
         </span>
       )}
       {ownGoals > 0 && (
-        <span className="rounded bg-red-50 px-1 text-[10px] font-bold text-red-600" title="ทำเข้าประตูตัวเอง">
+        <span className="rounded bg-red-50 px-1 text-[11px] font-bold text-red-600" title="ทำเข้าประตูตัวเอง">
           OG{ownGoals > 1 && `×${ownGoals}`}
         </span>
       )}
       {assists > 0 && (
-        <span className="rounded bg-sky-50 px-1 text-[10px] font-bold text-sky-600" title="แอสซิสต์">
+        <span className="rounded bg-sky-50 px-1 text-[11px] font-bold text-sky-600" title="แอสซิสต์">
           A{assists > 1 && `×${assists}`}
         </span>
       )}
@@ -124,7 +124,7 @@ function TeamLineup({
             <span className="flex items-center gap-1.5">
               <span className="truncate text-sm font-semibold text-slate-800 group-hover:text-g15-700">{name}</span>
               {l.isCaptain && (
-                <span className="flex h-4 w-4 flex-none items-center justify-center rounded-full bg-amber-400 text-[9px] font-black text-amber-950" title="กัปตัน">
+                <span className="flex h-4 w-4 flex-none items-center justify-center rounded-full bg-amber-400 text-[11px] font-black text-amber-950" title="กัปตัน">
                   C
                 </span>
               )}

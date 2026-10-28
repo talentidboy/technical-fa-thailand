@@ -11,9 +11,22 @@ import { G15Chrome } from "@/components/g15/G15Chrome";
 import { TeamBadge } from "@/components/g15/TeamBadge";
 import { Reveal } from "@/components/g15/Reveal";
 import { User, Goal, Square, ListOrdered } from "lucide-react";
+import { pageMeta } from "@/lib/seo";
 
 // ตัวอักษรแคบสูงสำหรับชื่อ/เบอร์เสื้อบนแบนเนอร์ (โหลดเฉพาะหน้านี้)
 const display = Bebas_Neue({ weight: "400", subsets: ["latin"], display: "swap" });
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  const id = parseId((await params).id);
+  const p = id ? await prisma.g15Player.findUnique({ where: { id }, select: { id: true, firstNameTh: true, lastNameTh: true, team: { select: { name: true } } } }) : null;
+  if (!p) return { title: "ไม่พบผู้เล่น" };
+  return pageMeta({
+    title: `${p.firstNameTh} ${p.lastNameTh} — ${p.team.name}`,
+    description: `สถิติการแข่งขันของ ${p.firstNameTh} ${p.lastNameTh} ทีม ${p.team.name} ในรายการ G15 Women's Football Series 2026`,
+    path: `/g15-womens-series/players/${p.id}`,
+    noindex: true,
+  });
+}
 
 // โปรไฟล์นักกีฬา — สถิติแยกตามรอบ (ลงเล่น/ตัวจริง/ประตู/ใบเหลือง-แดง) จากไลน์อัพ ผู้ทำประตู และใบรายงานผู้ตัดสิน
 // ไม่แสดงวันเกิด/ส่วนสูง/น้ำหนัก/เลขบัตร — นักกีฬาเป็นเยาวชน แสดงเฉพาะข้อมูลที่หน้าทีมเปิดเผยอยู่แล้ว
@@ -108,7 +121,7 @@ export default async function G15PlayerPage({ params }: { params: Promise<{ id: 
             {/* มินิมอล: ป้ายเล็ก PLAYER PROFILE + ขีดสั้น, ชื่ออังกฤษตัวแคบสูงใหญ่ (Bebas Neue), ชื่อไทยบรรทัดเล็ก
                 ข้อมูลทีม/เบอร์/ตำแหน่งอยู่ในการ์ดด้านล่างแล้ว จึงไม่ใส่ซ้ำในแบนเนอร์ */}
             <div className="min-w-0 self-center py-6">
-              <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-g15-900/60 sm:text-xs">Player Profile</p>
+              <p className="text-[11px] font-bold uppercase tracking-[0.25em] text-g15-900/60 sm:text-xs">Player Profile</p>
               <span aria-hidden className="mt-1.5 block h-0.5 w-8 bg-g15-600 sm:mt-2 sm:w-10" />
               {player.firstNameEn || player.lastNameEn ? (
                 <>
@@ -202,7 +215,7 @@ export default async function G15PlayerPage({ params }: { params: Promise<{ id: 
                   ].map((t) => (
                     <div key={t.en} className="bg-white px-2 py-4 text-center">
                       <p className={`text-2xl font-extrabold ${t.color}`}>{t.value}</p>
-                      <p className="mt-0.5 text-[10px] text-slate-400">
+                      <p className="mt-0.5 text-[11px] text-slate-400">
                         {t.label} <span className="hidden sm:inline">/ {t.en}</span>
                       </p>
                     </div>
@@ -238,7 +251,7 @@ export default async function G15PlayerPage({ params }: { params: Promise<{ id: 
                           className="flex flex-wrap items-center gap-x-3 gap-y-1.5 px-5 py-3 transition-colors hover:bg-slate-50"
                         >
                           <span className="w-14 flex-none text-xs text-slate-400">{formatMatchDateShort(m.matchDate)}</span>
-                          <span className={`flex-none rounded-full px-2 py-0.5 text-[10px] font-bold text-white ${roundStyle(m.round).bg}`}>
+                          <span className={`flex-none rounded-full px-2 py-0.5 text-[11px] font-bold text-white ${roundStyle(m.round).bg}`}>
                             {m.round}
                           </span>
                           <span className="flex min-w-0 items-center gap-1.5 text-sm text-slate-700">

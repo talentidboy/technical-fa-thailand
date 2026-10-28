@@ -12,6 +12,9 @@ import { Bebas_Neue } from "next/font/google";
 import { TeamBadge } from "@/components/g15/TeamBadge";
 import { getNationalStandings } from "@/lib/g15";
 import { Users, MapPin, Shirt, ChevronRight } from "lucide-react";
+import { pageMeta } from "@/lib/seo";
+
+export const metadata = pageMeta({ title: "ทีมที่เข้าร่วม — G15 Women's Football Series", description: "ทีมที่เข้าร่วมการแข่งขัน G15 Women's Football Series 2026 ทุกภูมิภาค", path: "/g15-womens-series/teams" });
 
 const display = Bebas_Neue({ weight: "400", subsets: ["latin"], display: "swap" });
 
@@ -140,7 +143,7 @@ export default async function G15TeamsPage({
                                 {t.nationalSeed ?? ""}
                               </span>
                               {st && st.played > 0 && (
-                                <span className="absolute right-2 top-2.5 rounded-full bg-amber-400 px-2 py-0.5 text-[10px] font-black text-amber-950 sm:right-3 sm:top-3 sm:px-2.5 sm:text-[11px]">
+                                <span className="absolute right-2 top-2.5 rounded-full bg-amber-400 px-2 py-0.5 text-[11px] font-black text-amber-950 sm:right-3 sm:top-3 sm:px-2.5 sm:text-[11px]">
                                   อันดับ {st.rank} · {st.points} แต้ม
                                 </span>
                               )}

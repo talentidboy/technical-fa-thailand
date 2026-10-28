@@ -8,6 +8,9 @@ import { GalleryAlbumCard } from "@/components/g15/GalleryAlbumCard";
 import { GalleryLinkManager } from "@/components/g15/GalleryLinkManager";
 import { saveGalleryLink, deleteGalleryLink } from "../manage/actions";
 import { Images, Camera } from "lucide-react";
+import { pageMeta } from "@/lib/seo";
+
+export const metadata = pageMeta({ title: "แกลเลอรี — G15 Women's Football Series", description: "อัลบั้มภาพการแข่งขัน G15 Women's Football Series 2026", path: "/g15-womens-series/gallery" });
 
 // แกลเลอรี = รายการอัลบั้ม (หัวข้อ + ลิงก์ เช่น Google Drive) ล่าสุดก่อน · ไม่แยกรอบ (รวมทุกอัลบั้มในหน้าเดียว)
 // แอดมินเพิ่ม/แก้/ลบได้จากหน้านี้ · stage ใน URL ใช้แค่ให้เมนูด้านบนพารอบเดิมไปหน้าอื่นต่อ

@@ -53,7 +53,7 @@ export function SquadCard({
       <div className="space-y-0.5 px-3 py-2.5">
         {number != null && <p className="text-xs font-black text-g15-600">{number}</p>}
         <p className="line-clamp-2 text-[13px] font-bold leading-snug text-slate-900">{name}</p>
-        {nameEn && <p className="truncate text-[10px] font-semibold uppercase tracking-wide text-slate-400">{nameEn}</p>}
+        {nameEn && <p className="truncate text-[11px] font-semibold uppercase tracking-wide text-slate-400">{nameEn}</p>}
         <p className="truncate text-[11px] font-medium text-g15-500">{caption}</p>
       </div>
     </div>

@@ -65,7 +65,7 @@ export function G15Chrome({ user, stage = DEFAULT_STAGE }: { user: { role: strin
                   }`}
                 >
                   <span className="whitespace-nowrap text-xs font-bold uppercase tracking-wide">{link.label}</span>
-                  <span className="whitespace-nowrap text-[10px] font-medium uppercase tracking-wide opacity-70">{link.en}</span>
+                  <span className="whitespace-nowrap text-[11px] font-medium uppercase tracking-wide opacity-70">{link.en}</span>
                 </Link>
               );
             })}
@@ -91,12 +91,12 @@ export function G15Chrome({ user, stage = DEFAULT_STAGE }: { user: { role: strin
         </div>
       </header>
 
-      {/* แถบเมนูล่างจอสำหรับโทรศัพท์ — ทุกหน้าของ G15 มี padding ล่าง (pb-20) อยู่แล้ว เนื้อหาจึงไม่ถูกบัง */}
+      {/* แถบเมนูล่างจอสำหรับโทรศัพท์ (8 เมนู = 8 คอลัมน์ แถวเดียว) — ทุกหน้าของ G15 มี padding ล่าง (pb-20) อยู่แล้ว เนื้อหาจึงไม่ถูกบัง */}
       <nav
         aria-label="เมนู G15"
         className="fixed inset-x-0 bottom-0 z-30 border-t border-white/10 bg-g15-950/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden"
       >
-        <div className="grid grid-cols-7">
+        <div className="grid grid-cols-8">
           {NAV_LINKS.map(({ href, short, icon: Icon }) => {
             const active = isActive(href);
             return (
@@ -109,7 +109,7 @@ export function G15Chrome({ user, stage = DEFAULT_STAGE }: { user: { role: strin
                 }`}
               >
                 <Icon className="h-5 w-5" />
-                <span className="text-[10px] font-semibold leading-none">{short}</span>
+                <span className="text-[11px] font-semibold leading-none">{short}</span>
               </Link>
             );
           })}

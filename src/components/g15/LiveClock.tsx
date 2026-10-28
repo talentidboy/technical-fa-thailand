@@ -75,7 +75,7 @@ export function LiveClock({
       {pens ? "จุดโทษ" : r.main}
       {r.stoppage && <span className="text-amber-200">{r.stoppage}</span>}
       {r.announcedAdded != null && r.announcedAdded > 0 && live && (
-        <span className="rounded bg-emerald-500 px-1 text-[10px] text-white">+{r.announcedAdded}</span>
+        <span className="rounded bg-emerald-500 px-1 text-[11px] text-white">+{r.announcedAdded}</span>
       )}
     </span>
   );

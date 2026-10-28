@@ -12,6 +12,9 @@ import { authInputClass } from "@/components/academy/AcademyShell";
 import { LoginSubmit, PasswordInput } from "@/components/academy/AuthFields";
 import { HomeButton } from "@/components/HomeButton";
 import { AlertCircle, ArrowLeft, User, UserPlus } from "lucide-react";
+import { pageMeta } from "@/lib/seo";
+
+export const metadata = pageMeta({ title: "เข้าสู่ระบบผู้ฝึกสอน", description: "เข้าสู่ระบบศูนย์อบรมผู้ฝึกสอน ดูใบอนุญาต ประวัติการอบรม และสมัครหลักสูตร", path: "/coach-center/login" });
 
 const POINTS = [
   { title: "ใบอนุญาตทุกระดับในที่เดียว", text: "ดูสถานะและวันหมดอายุ พร้อมบัตรผู้ฝึกสอนดิจิทัลที่ตรวจสอบได้ด้วย QR" },
@@ -87,7 +90,7 @@ export default async function CoachLoginPage({
           <HomeButton />
         </div>
         <div className="w-full max-w-sm">
-          <Link href="/coach-center" className="inline-flex items-center gap-1 text-sm text-slate-500 hover:text-slate-800">
+          <Link href="/coach-center" className="inline-flex min-h-10 items-center gap-1 text-sm text-slate-500 hover:text-slate-800">
             <ArrowLeft className="h-4 w-4" />
             กลับหน้าศูนย์อบรมผู้ฝึกสอน
           </Link>

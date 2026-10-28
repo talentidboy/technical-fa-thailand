@@ -13,6 +13,9 @@ import { KnockoutBracket } from "@/components/g15/KnockoutBracket";
 import { Reveal } from "@/components/g15/Reveal";
 import { MapPin, Trophy, GitBranch } from "lucide-react";
 import { Bebas_Neue } from "next/font/google";
+import { pageMeta } from "@/lib/seo";
+
+export const metadata = pageMeta({ title: "ตารางคะแนน — G15 Women's Football Series", description: "ตารางคะแนนทุกกลุ่มของ G15 Women's Football Series 2026", path: "/g15-womens-series/standings" });
 
 const display = Bebas_Neue({ weight: "400", subsets: ["latin"], display: "swap" });
 

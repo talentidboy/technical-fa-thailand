@@ -119,7 +119,7 @@ export function ThailandMap({ academies }: { academies: MapAcademy[] }) {
               type="button"
               aria-pressed={filter === f}
               onClick={() => setFilter(f)}
-              className={`border-l border-(--line) px-3 py-1.5 transition-colors first:border-l-0 ${filter === f ? "bg-(--ink) text-white" : "text-(--ink-soft) hover:bg-(--sky-soft) hover:text-(--ink)"}`}
+              className={`border-l border-(--line) px-3 py-2 transition-colors first:border-l-0 min-h-9 ${filter === f ? "bg-(--ink) text-white" : "text-(--ink-soft) hover:bg-(--sky-soft) hover:text-(--ink)"}`}
             >
               {f === "ALL" ? "ทั้งหมด" : LEVEL_META[f].label}
             </button>

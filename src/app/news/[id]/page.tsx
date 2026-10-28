@@ -7,6 +7,14 @@ import { prisma } from "@/lib/prisma";
 import { isFacebookUrl } from "@/lib/facebook";
 import { FacebookEmbed } from "@/components/FacebookEmbed";
 import { ArrowLeft, Calendar, Megaphone, ExternalLink } from "lucide-react";
+import { pageMeta } from "@/lib/seo";
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  const id = parseId((await params).id);
+  const a = id ? await prisma.announcement.findUnique({ where: { id }, select: { id: true, title: true, excerpt: true, imageUrl: true } }) : null;
+  if (!a) return { title: "ไม่พบข่าว" };
+  return pageMeta({ title: a.title, description: a.excerpt, path: `/news/${a.id}`, image: a.imageUrl });
+}
 
 export default async function NewsDetailPage({
   params,
@@ -122,7 +130,7 @@ export default async function NewsDetailPage({
 
         <Link
           href="/#news"
-          className="mt-10 inline-flex items-center gap-1.5 text-sm font-medium text-indigo-600 hover:text-indigo-700"
+          className="mt-10 inline-flex min-h-10 items-center gap-1.5 text-sm font-medium text-indigo-600 hover:text-indigo-700"
         >
           <ArrowLeft className="h-4 w-4" />
           กลับไปดูข่าวอื่นๆ

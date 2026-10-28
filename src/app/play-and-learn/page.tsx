@@ -60,6 +60,9 @@ import {
   Star,
   Map as MapIcon,
 } from "lucide-react";
+import { pageMeta } from "@/lib/seo";
+
+export const metadata = pageMeta({ title: "Play and Learn เพลินให้สุดกับฟุตบอล", description: "โครงการ Play and Learn ฟุตบอลสำหรับเด็กเล็ก เรียนรู้ทักษะการเคลื่อนไหว ทักษะสังคม และฟุตบอลขั้นพื้นฐานผ่านการเล่น", path: "/play-and-learn" });
 
 // การ์ดเรียงเป็นตาราง กว้างไม่เกิน 350px และจัดกึ่งกลางเมื่อมีน้อยรายการ
 const cardGrid = "grid justify-center gap-5 grid-cols-[repeat(auto-fit,minmax(min(100%,290px),350px))]";
@@ -991,7 +994,7 @@ function PassportStop({ chapter, index, row }: { chapter: { title: string; extra
   const scene = (
     <span className={`relative block flex-none overflow-hidden shadow-lg shadow-purple-200/60 ring-4 ring-white ${row ? "h-20 w-28 rounded-xl" : "h-22 w-40 rounded-2xl"}`}>
       <PassportScene name={chapter.extra} />
-      <span className="absolute left-1.5 top-1.5 rounded-full bg-white/90 px-2 py-0.5 text-[10px] font-extrabold text-purple-600 shadow-sm">บทที่ {index + 1}</span>
+      <span className="absolute left-1.5 top-1.5 rounded-full bg-white/90 px-2 py-0.5 text-[11px] font-extrabold text-purple-600 shadow-sm">บทที่ {index + 1}</span>
     </span>
   );
   // ป้ายไอคอนอยู่มุมขวาล่างของภาพ — ไม่บังจุดเด่นกลางฉาก
@@ -1074,7 +1077,7 @@ function CenterCard({ center }: { center: PlayAndLearnCenter }) {
         <div className="flex flex-wrap gap-2">
           <a
             href={`tel:${center.tel.replace(/[^\d+]/g, "")}`}
-            className="inline-flex items-center gap-1.5 rounded-full bg-pink-50 px-2.5 py-1 text-xs font-semibold text-pink-700 transition-colors hover:bg-pink-100"
+            className="inline-flex items-center gap-1.5 rounded-full bg-pink-50 px-3 py-2 text-xs font-semibold text-pink-700 transition-colors hover:bg-pink-100"
           >
             <Phone className="h-3 w-3" />
             {center.tel}
@@ -1083,7 +1086,7 @@ function CenterCard({ center }: { center: PlayAndLearnCenter }) {
             href={mapHref}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 rounded-full bg-purple-50 px-2.5 py-1 text-xs font-semibold text-purple-700 transition-colors hover:bg-purple-100"
+            className="inline-flex items-center gap-1.5 rounded-full bg-purple-50 px-3 py-2 text-xs font-semibold text-purple-700 transition-colors hover:bg-purple-100"
           >
             <Navigation className="h-3 w-3" />
             แผนที่
@@ -1138,7 +1141,7 @@ function EventCard({ event, upcoming }: { event: PlayAndLearnItem; upcoming?: bo
         {day && (
           <div className="absolute left-3 top-3 min-w-14 rounded-2xl bg-white px-2.5 py-1.5 text-center shadow-md">
             <p className="text-xl font-extrabold leading-none text-pink-500">{day}</p>
-            <p className="mt-0.5 text-[10px] font-bold text-purple-600">{month}</p>
+            <p className="mt-0.5 text-[11px] font-bold text-purple-600">{month}</p>
           </div>
         )}
         {upcoming && (

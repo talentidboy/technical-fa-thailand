@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
+import { pageMeta } from "@/lib/seo";
 import { prisma } from "@/lib/prisma";
 import { getAcademyUser, getCurrentUser } from "@/lib/auth";
 import { parseId } from "@/lib/route-id";
@@ -24,7 +25,15 @@ async function load(rawId: string) {
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const academy = await load((await params).id);
-  return { title: academy ? `${academy.nameEn} — Academy Licensing | FA Thailand` : "ไม่พบอคาเดมี" };
+  const current = academy ? currentLicence(academy.licences) : null;
+  // อคาเดมีที่ไม่แสดงบนทำเนียบ ต้องไม่เผยชื่อผ่านชื่อหน้า
+  if (!academy || !showPublicly(academy.active, licenceState(current, new Date()))) return { title: "ไม่พบอคาเดมี" };
+  const level = current && isLevel(current.level) ? `FAT ${LEVEL_META[current.level].label} Level Academy` : "อคาเดมีที่ได้รับการรับรอง";
+  return pageMeta({
+    title: `${academy.nameEn} — Academy Licensing`,
+    description: `${academy.nameEn}${academy.nameTh ? ` (${academy.nameTh})` : ""} · ${level}${academy.province ? ` · จังหวัด${academy.province}` : ""} — ทำเนียบอคาเดมี สมาคมกีฬาฟุตบอลแห่งประเทศไทย`,
+    path: `/academies/${academy.id}`,
+  });
 }
 
 const i = (n: number) => ({ "--i": n }) as React.CSSProperties;

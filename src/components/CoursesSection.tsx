@@ -50,7 +50,7 @@ export function CoursesSection() {
               href="https://fathailand.org/coaching-detail/AFC-Core-Program"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#073c5e] hover:underline"
+              className="inline-flex min-h-10 items-center gap-1.5 text-sm font-semibold text-[#073c5e] hover:underline"
             >
               อ่านต่อที่ fathailand.org
               <ExternalLink className="h-3.5 w-3.5" />
@@ -88,7 +88,7 @@ export function CoursesSection() {
                 href={href}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="mt-5 inline-flex items-center gap-1.5 self-start text-sm font-semibold text-[#073c5e] hover:underline"
+                className="mt-3 inline-flex min-h-10 items-center gap-1.5 self-start text-sm font-semibold text-[#073c5e] hover:underline"
               >
                 อ่านต่อที่ fathailand.org
                 <ExternalLink className="h-3.5 w-3.5" />

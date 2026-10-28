@@ -9,6 +9,9 @@ import { StageSwitcher } from "@/components/g15/StageSwitcher";
 import { PublicMatchesBoard } from "@/components/g15/PublicMatchesBoard";
 import { Reveal } from "@/components/g15/Reveal";
 import { Calendar } from "lucide-react";
+import { pageMeta } from "@/lib/seo";
+
+export const metadata = pageMeta({ title: "โปรแกรมและผลการแข่งขัน — G15 Women's Football Series", description: "โปรแกรมการแข่งขันและผลการแข่งขันทุกนัดของ G15 Women's Football Series 2026", path: "/g15-womens-series/matches" });
 
 export default async function G15MatchesPage({
   searchParams,

@@ -5,6 +5,9 @@ import { LicenceFan } from "@/components/coach/LicenceFan";
 import { coreProgramSteps } from "@/lib/coach-program";
 import { display } from "@/components/coach/CoachUi";
 import { ArrowRight, GraduationCap } from "lucide-react";
+import { pageMeta } from "@/lib/seo";
+
+export const metadata = pageMeta({ title: "หลักสูตรอบรมผู้ฝึกสอน AFC", description: "หลักสูตรผู้ฝึกสอนฟุตบอล 5 ระดับ G · C · B · A · PRO มาตรฐานสมาพันธ์ฟุตบอลเอเชีย พร้อมชั่วโมงเรียน รายวิชา และหลักสูตรผู้รักษาประตู / ฟิตเนส", path: "/courses" });
 
 const GOLD = "#e3bb63";
 

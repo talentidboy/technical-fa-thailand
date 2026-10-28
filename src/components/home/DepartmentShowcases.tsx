@@ -35,7 +35,7 @@ const wrap = "mx-auto w-full max-w-7xl px-4 py-12 sm:px-6 lg:py-16";
 // ป้ายชื่อหมวดแบบอังกฤษตัวเล็ก สีตามหมวด
 function Eyebrow({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
-    <p className={`flex items-center gap-2 text-[9px] font-semibold uppercase tracking-[0.18em] sm:gap-3 sm:text-[11px] sm:tracking-[0.28em] ${className}`}>
+    <p className={`flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] sm:gap-3 sm:text-[11px] sm:tracking-[0.28em] ${className}`}>
       <span className="h-px w-5 bg-current opacity-60 sm:w-8" />
       <span className="whitespace-nowrap">{children}</span>
     </p>
@@ -189,7 +189,7 @@ export function G15Showcase({ teams, played, board }: { teams: number; played: n
               { n: played, l: "นัดที่แข่งจบแล้ว" },
             ].map((s) => (
               <div key={s.l} className="flex flex-col-reverse px-3 first:pl-0 sm:px-6">
-                <dt className="text-[10px] text-white/60 sm:text-xs">{s.l}</dt>
+                <dt className="text-[11px] text-white/60 sm:text-xs">{s.l}</dt>
                 <dd className={`${h} text-2xl font-semibold tabular-nums sm:text-5xl`}>{s.n.toLocaleString("en-US")}</dd>
               </div>
             ))}
@@ -453,7 +453,7 @@ export function GrassrootsShowcase() {
                   style={{ background: s.bg, color: s.fg, transform: `rotate(${s.r}deg)` }}
                 >
                   <span className="text-base font-semibold leading-none tabular-nums sm:text-4xl">{s.n.toLocaleString("en-US")}</span>
-                  <span className="mt-0.5 text-[10px] sm:mt-1 sm:text-sm">{s.l}</span>
+                  <span className="mt-0.5 text-[11px] sm:mt-1 sm:text-sm">{s.l}</span>
                 </li>
               ))}
             </ul>
@@ -583,7 +583,7 @@ export function DataShowcase({ articles, total, byArea }: { articles: LatestArti
                   <li key={n.key}>
                     <Link href={n.href} className={`${styles.note} relative block h-full bg-[#fef9c3] px-3.5 pb-3 pt-4 shadow-md`} style={{ transform: `rotate(${[-1.5, 1.2, -0.8][i % 3]}deg)` }}>
                       <span className="absolute left-1/2 top-1 h-3 w-3 -translate-x-1/2 rounded-full bg-red-600 shadow" />
-                      <span className="block text-[10px] font-semibold uppercase tracking-[0.16em]" style={{ color: AREA_INFO[n.area]?.color }}>
+                      <span className="block text-[11px] font-semibold uppercase tracking-[0.16em]" style={{ color: AREA_INFO[n.area]?.color }}>
                         {TRAINING_CENTRE_AREAS.find((x) => x.value === n.area)?.label ?? n.area}
                       </span>
                       <span className="mt-0.5 line-clamp-2 block text-sm font-semibold leading-snug">{n.title}</span>

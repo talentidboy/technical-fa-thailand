@@ -62,5 +62,31 @@ module.exports = {
     const stored = (await sql(`select count(*)::int n from error_logs where source='CLIENT' and message like 'spam %'`))[0].n;
     check("ยิงบันทึกข้อผิดพลาดรัวๆ → รับไม่เกิน 30 รายการ", last === 429 && stored <= 30, `last=${last} stored=${stored}`);
     await sql(`delete from error_logs where source='CLIENT' and message like 'spam %'`);
+
+    // ===== 5) หมวดที่ล็อกอิน / ที่อยู่ผิด / ไฟล์สำหรับเครื่องมือค้นหา =====
+    // รายการหมวดใน proxy ต้องครบทุกโฟลเดอร์ใน src/app — ไม่งั้นหมวดใหม่จะเปิดได้โดยไม่ต้องล็อกอิน
+    const fs = require("fs");
+    const appDir = path.join(ROOT, "src", "app");
+    const dirs = (d) => fs.readdirSync(d, { withFileTypes: true }).filter((e) => e.isDirectory()).map((e) => e.name);
+    const folders = [...dirs(appDir).filter((n) => !n.startsWith("(")), ...dirs(appDir).filter((n) => n.startsWith("(")).flatMap((g) => dirs(path.join(appDir, g)))];
+    const known = [...fs.readFileSync(path.join(ROOT, "src", "proxy.ts"), "utf8").match(/KNOWN_SECTIONS = \[([\s\S]*?)\]/)[1].matchAll(/"([^"]*)"/g)].map((m) => m[1]);
+    const missing = folders.filter((f) => !known.includes(f));
+    check("proxy: รายการหมวดครบทุกโฟลเดอร์ใน src/app", missing.length === 0, missing.join(", "));
+    const typo = await fetchAs("/no-such-page", null);
+    check("ที่อยู่ผิด → หน้า 404 (ไม่เด้งไปหน้าเข้าสู่ระบบ)", typo.status === 404, String(typo.status));
+    for (const url of ["/dashboard", "/talent-id", "/academies/manage", "/settings"]) {
+      const res = await fetchAs(url, null);
+      check(`ยังไม่ล็อกอิน: ${url} → หน้าเข้าสู่ระบบ`, res.status >= 300 && res.status < 400 && (res.headers.get("location") ?? "").includes("/login"), String(res.status));
+    }
+    const robots = await fetchAs("/robots.txt", null);
+    const sitemap = await fetchAs("/sitemap.xml", null);
+    const sitemapText = await sitemap.text();
+    check("robots.txt + sitemap.xml เปิดได้โดยไม่ต้องล็อกอิน", robots.status === 200 && (await robots.text()).includes("Sitemap:") && sitemap.status === 200 && sitemapText.includes("<urlset"));
+    check("sitemap ไม่มีหน้านักเตะเยาวชน / หน้าหลังบ้าน", !/players\/|\/manage|\/portal|\/verify\//.test(sitemapText));
+    const homeHtml = await (await fetchAs("/", null)).text();
+    const og = homeHtml.match(/property="og:image" content="([^"]+)"/)?.[1];
+    check("หน้าแรกมีภาพตัวอย่างลิงก์ (og:image)", !!og);
+    const ogRes = og ? await fetchAs(new URL(og).pathname + new URL(og).search, null) : null;
+    check("ภาพตัวอย่างลิงก์เปิดได้โดยไม่ต้องล็อกอิน", ogRes?.status === 200 && (ogRes.headers.get("content-type") ?? "").startsWith("image/"), String(ogRes?.status));
   },
 };

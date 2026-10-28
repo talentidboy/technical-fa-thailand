@@ -141,11 +141,11 @@ export function PublicMatchesBoard({ matches, regionOrder }: { matches: Match[];
         }`}
       >
         {sum.live && <span className="absolute right-2 top-2 h-2 w-2 animate-pulse rounded-full bg-red-500" />}
-        <span className={`text-[10px] font-bold uppercase tracking-wide ${active ? "text-amber-300" : "text-g15-500"}`}>
+        <span className={`text-[11px] font-bold uppercase tracking-wide ${active ? "text-amber-300" : "text-g15-500"}`}>
           {sum.matchday != null ? `นัดที่ ${sum.matchday}` : top}
         </span>
         <span className={`${display.className} text-2xl leading-tight`}>{main}</span>
-        <span className={`flex items-center gap-1 text-[10px] font-medium ${active ? "text-white/75" : "text-slate-400"}`}>
+        <span className={`flex items-center gap-1 text-[11px] font-medium ${active ? "text-white/75" : "text-slate-400"}`}>
           {sum.done && <CheckCircle2 className={`h-3 w-3 ${active ? "text-emerald-300" : "text-emerald-500"}`} />}
           {sum.matchday != null ? `${top} · ` : ""}
           {sum.count} นัด

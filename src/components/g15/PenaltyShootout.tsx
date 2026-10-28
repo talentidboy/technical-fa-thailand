@@ -148,7 +148,7 @@ export function PenaltyShootout({
                 <span className={`line-clamp-2 text-xs font-bold leading-snug sm:text-sm ${won ? "text-amber-200" : "text-white/85"}`}>
                   {teams[side].name}
                 </span>
-                {st.first === side && <span className="text-[10px] font-semibold text-white/40">ยิงก่อน</span>}
+                {st.first === side && <span className="text-[11px] font-semibold text-white/40">ยิงก่อน</span>}
               </div>
             );
             return teamBlock;
@@ -172,7 +172,7 @@ export function PenaltyShootout({
                 <TeamBadge team={badge(teams[side])} size="sm" />
                 <span className="truncate text-xs font-semibold text-white/80">{teams[side].name}</span>
                 {st.nextSide === side && (
-                  <span className="flex-none rounded bg-amber-400 px-1.5 py-0.5 text-[10px] font-black text-amber-950">ถึงตา</span>
+                  <span className="flex-none rounded bg-amber-400 px-1.5 py-0.5 text-[11px] font-black text-amber-950">ถึงตา</span>
                 )}
               </span>
               {dots(side, "lg")}
@@ -196,7 +196,7 @@ export function PenaltyShootout({
         {/* ผู้ยิงทีละรอบ */}
         {rounds > 0 && (
           <div className="mt-4">
-            <div className="mb-1.5 grid grid-cols-[minmax(0,1fr)_2rem_minmax(0,1fr)] items-center gap-2 px-1 text-[10px] font-bold uppercase tracking-wider text-white/40">
+            <div className="mb-1.5 grid grid-cols-[minmax(0,1fr)_2rem_minmax(0,1fr)] items-center gap-2 px-1 text-[11px] font-bold uppercase tracking-wider text-white/40">
               <span className="truncate text-right">{home.name}</span>
               <span className="text-center">รอบ</span>
               <span className="truncate">{away.name}</span>

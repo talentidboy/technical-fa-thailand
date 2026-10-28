@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
+import { pageMeta } from "@/lib/seo";
 import { getAcademyUser, getCurrentUser } from "@/lib/auth";
 import { ACADEMY_LEVELS, LEVEL_META, compareAcademies, isLevel, levelRank, showPublicly, type AcademyLevel } from "@/lib/academy";
 import { loadAcademies, matchesQuery } from "@/lib/academy-data";
@@ -19,16 +20,17 @@ import { academyFont, academyPoster } from "@/components/typefaces/academy";
 import theme from "@/components/academy/public.module.css";
 import { ArrowRight, Check, ChevronLeft, ChevronRight, MapPin, Search } from "lucide-react";
 
-export const metadata: Metadata = {
-  title: "Academy Licensing — ทำเนียบอคาเดมีที่ได้รับการรับรอง | FA Thailand",
+export const metadata: Metadata = pageMeta({
+  title: "Academy Licensing — ทำเนียบอคาเดมีที่ได้รับการรับรอง",
   description: "ทำเนียบอคาเดมีฟุตบอลเยาวชนที่ได้รับใบอนุญาตรับรองมาตรฐาน FAT Bronze / Silver / Gold จากสมาคมกีฬาฟุตบอลแห่งประเทศไทย ในพระบรมราชูปถัมภ์",
-};
+  path: "/academies",
+});
 
 const PAGE = 12;
 const LEVELS_DESC = [...ACADEMY_LEVELS].reverse();
 const P = academyPoster.className;
 const eyebrow = "text-[11px] font-bold uppercase tracking-[0.26em]";
-const inkLink = "font-bold text-(--ink) underline decoration-(--ink)/30 decoration-2 underline-offset-[6px] transition-colors hover:decoration-(--ink)";
+const inkLink = "inline-flex min-h-10 items-center font-bold text-(--ink) underline decoration-(--ink)/30 decoration-2 underline-offset-[6px] transition-colors hover:decoration-(--ink)";
 const i = (n: number) => ({ "--i": n }) as React.CSSProperties;
 // ตัวอักษรสีระดับบนพื้นขาว (เข้มกว่าสีเหรียญให้อ่านง่าย)
 const LEVEL_TEXT: Record<AcademyLevel, string> = { BRONZE: "#c14d14", SILVER: "#5b6b80", GOLD: "#a77700" };
@@ -120,7 +122,7 @@ export default async function AcademiesPage({
                 <span className={`${theme.rise} flex items-center gap-4`} style={i(2)}>
                   เยาวชน
                   <span aria-hidden className="inline-flex -rotate-6 flex-col rounded-2xl bg-(--yellow) px-3.5 py-1.5 text-center shadow-[4px_4px_0_var(--ink)] transition-transform duration-300 hover:rotate-3">
-                    <span className="text-[10px] font-bold uppercase tracking-[0.2em]">Criteria</span>
+                    <span className="text-[11px] font-bold uppercase tracking-[0.2em]">Criteria</span>
                     <span className="text-2xl leading-none sm:text-3xl">2025</span>
                   </span>
                 </span>
@@ -258,7 +260,7 @@ export default async function AcademiesPage({
                   {topProvinces.map(([name, n], k) => (
                     <li key={name} className={`${theme.up} grid grid-cols-[1.75rem_8.5rem_minmax(0,1fr)_2.5rem] items-center gap-3 text-sm`} style={i(k + 2)}>
                       <span className={`${P} flex h-7 w-7 items-center justify-center rounded-lg text-xs font-bold ${k === 0 ? "bg-(--yellow) text-(--ink)" : "bg-(--sky-soft) text-(--sky-deep)"}`}>{k + 1}</span>
-                      <Link href={href({ province: name, level: null, page: null })} className="truncate font-semibold text-(--ink) hover:text-(--sky-deep)">
+                      <Link href={href({ province: name, level: null, page: null })} className="block truncate py-1.5 font-semibold text-(--ink) hover:text-(--sky-deep)">
                         {name}
                       </Link>
                       <span className="h-2.5 overflow-hidden rounded-full bg-(--sky-soft)">
@@ -287,7 +289,7 @@ export default async function AcademiesPage({
                         <AcademyCrest name={a.nameEn} logoUrl={a.logoUrl} level={a.level} size="sm" />
                         <span className="flex flex-col">
                           <span className="whitespace-nowrap text-sm font-semibold text-white">{a.nameEn}</span>
-                          <span className="text-[10px] font-bold uppercase tracking-[0.16em]" style={{ color: isLevel(a.level) ? COIN[a.level].face : "#94a3b8" }}>
+                          <span className="text-[11px] font-bold uppercase tracking-[0.16em]" style={{ color: isLevel(a.level) ? COIN[a.level].face : "#94a3b8" }}>
                             FAT {isLevel(a.level) ? LEVEL_META[a.level].label : ""}
                           </span>
                         </span>
