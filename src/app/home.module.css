@@ -70,18 +70,6 @@
   }
 }
 
-/* เส้นพู่กันทองใต้ "Technical": ลากจากซ้ายไปขวาหลังหัวข้อขึ้นครบ */
-.brush {
-  stroke-dasharray: 1;
-  stroke-dashoffset: 1;
-  animation: brush 900ms cubic-bezier(0.6, 0, 0.2, 1) 800ms forwards;
-}
-@keyframes brush {
-  to {
-    stroke-dashoffset: 0;
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
   .kenburns,
   .rise {
@@ -90,9 +78,5 @@
   .slide,
   .caption {
     display: none;
-  }
-  .brush {
-    animation: none;
-    stroke-dashoffset: 0;
   }
 }

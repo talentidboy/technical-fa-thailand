@@ -16,6 +16,7 @@ import { HomeHeader } from "@/components/home/HomeHeader";
 import { DEPARTMENTS, departmentHref, type Department } from "@/components/home/departments";
 import { AcademyShowcase, CoachShowcase, DataShowcase, G15Showcase, GrassrootsShowcase, PlayShowcase, TalentShowcase, type G15Board } from "@/components/home/DepartmentShowcases";
 import { ShowcaseCarousel } from "@/components/home/ShowcaseCarousel";
+import { HeroUpdates } from "@/components/home/HeroUpdates";
 import tile from "@/components/home/showcase.module.css";
 import { CountUp } from "@/components/play-and-learn/CountUp";
 import { Reveal } from "@/components/g15/Reveal";
@@ -99,6 +100,14 @@ export default async function HomePage() {
   const articleTotal = articleAreas.reduce((n, a) => n + a._count._all, 0);
   const levels = CORE_LEVELS.map((level, i) => ({ level, n: levelCounts[i], title: coreProgramSteps.find((x) => x.level === level)?.title }));
   const levelTotal = levelCounts.reduce((a, b) => a + b, 0);
+  const heroSessions = sessions.map((x) => ({
+    id: x.id,
+    course: x.course.title,
+    name: x.name,
+    venue: x.venue,
+    start: x.startDate,
+    daysLeft: x.applicationDeadline ? Math.ceil((x.applicationDeadline.getTime() - now.getTime()) / 86_400_000) : null,
+  }));
 
   // กระดานสกอร์ G15: กำลังแข่ง → แชมป์ (จบนัดชิงแล้ว) → นัดถัดไป → ผลล่าสุด
   const featured = g15Live ?? (g15Last?.round === ROUND_FINAL ? g15Last : (g15Next ?? g15Last));
@@ -173,44 +182,52 @@ export default async function HomePage() {
             <Image src={d.image!} alt="" fill sizes="100vw" placeholder={typeof d.image === "string" ? "empty" : "blur"} style={d.imagePosition ? { objectPosition: d.imagePosition } : undefined} className="object-cover" />
           </div>
         ))}
-        <div className="absolute inset-0 -z-10 bg-linear-to-r from-[#04223a] via-[#04223a]/80 to-[#04223a]/10" />
-        <div className="absolute inset-0 -z-10 bg-linear-to-t from-[#04223a] via-transparent to-[#04223a]/60" />
+        <div className="absolute inset-0 -z-10 bg-linear-to-r from-[#04223a]/95 via-[#04223a]/60 to-[#04223a]/20" />
+        <div className="absolute inset-0 -z-10 bg-linear-to-t from-[#04223a] via-transparent to-[#04223a]/55" />
 
-        <div className="mx-auto w-full max-w-7xl px-4 sm:px-6">
-          <p className={`${styles.rise} flex items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.28em] text-amber-300`}>
-            <span className="h-px w-10 bg-amber-300" />
-            FA Thailand · Technical Department
-          </p>
-          <h1 className={`${h} mt-7 text-[3.6rem] font-semibold leading-[0.92] sm:text-8xl lg:text-[9rem]`}>
-            <span className={`${styles.rise} block`} style={{ animationDelay: "120ms" }}>
-              FA Thailand
-            </span>
-            <span className={`${styles.rise} relative inline-block pb-5 text-amber-300`} style={{ animationDelay: "260ms" }}>
-              Technical
-              {/* เส้นพู่กันทองลากใต้คำ */}
-              <svg aria-hidden viewBox="0 0 400 24" preserveAspectRatio="none" className="absolute -bottom-1 left-0 h-4 w-full sm:h-7">
-                <path d="M4 16 C 90 4, 210 4, 396 12" pathLength={1} className={styles.brush} fill="none" stroke="currentColor" strokeWidth="6" strokeLinecap="round" />
-              </svg>
-            </span>
-          </h1>
-          <p className={`${styles.rise} mt-6 max-w-xl text-base leading-relaxed text-white/80 sm:mt-8 sm:text-xl`} style={{ animationDelay: "400ms" }}>
-            ฝ่ายเทคนิค สมาคมกีฬาฟุตบอลแห่งประเทศไทย ในพระบรมราชูปถัมภ์ — พัฒนาผู้ฝึกสอน อคาเดมี และนักฟุตบอลเยาวชนไทย
-          </p>
-          <div className={`${styles.rise} mt-8 flex gap-2.5 sm:mt-10 sm:gap-3`} style={{ animationDelay: "520ms" }}>
-            <a href="#departments" className="inline-flex items-center gap-2 whitespace-nowrap rounded-xl bg-amber-400 px-4 py-3 text-[13px] font-semibold sm:px-8 sm:py-4 sm:text-sm text-[#073c5e] shadow-[0_14px_36px_-12px_rgb(251_191_36/0.7)] transition-transform hover:-translate-y-0.5">
-              สำรวจหมวดงาน
-              <ArrowDown className="h-4 w-4" />
-            </a>
-            <Link href="/courses" className="inline-flex items-center gap-2 whitespace-nowrap rounded-xl border border-white/35 px-4 py-3 text-[13px] font-semibold sm:px-8 sm:py-4 sm:text-sm text-white transition-colors hover:bg-white/10">
-              หลักสูตรอบรมผู้ฝึกสอน
-            </Link>
+        {/* ซ้าย: ชื่อ + คำอธิบาย + ปุ่ม · ขวา (มือถืออยู่ใต้ปุ่ม): การ์ดอัปเดตล่าสุด */}
+        <div className="mx-auto grid w-full max-w-7xl items-center gap-10 px-4 sm:px-6 lg:grid-cols-[minmax(0,1fr)_22rem] xl:grid-cols-[minmax(0,1fr)_24rem] xl:gap-16">
+          <div>
+            <p className={`${styles.rise} flex items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.24em] text-amber-300`}>
+              <span className="h-px w-8 bg-amber-300" />
+              FA Thailand · Technical Department
+            </p>
+            <h1 className={`${h} mt-5 text-[3.25rem] font-semibold leading-[0.95] sm:mt-6 sm:text-7xl xl:text-8xl`}>
+              <span className={`${styles.rise} block`} style={{ animationDelay: "120ms" }}>
+                FA Thailand
+              </span>
+              <span className={`${styles.rise} block text-amber-300`} style={{ animationDelay: "240ms" }}>
+                Technical
+              </span>
+            </h1>
+            <p className={`${styles.rise} mt-5 max-w-xl border-l-2 border-amber-300/70 pl-4 text-[15px] leading-relaxed text-white/85 sm:mt-7 sm:text-lg`} style={{ animationDelay: "360ms" }}>
+              ฝ่ายเทคนิค สมาคมกีฬาฟุตบอลแห่งประเทศไทย ในพระบรมราชูปถัมภ์ — พัฒนาผู้ฝึกสอน อคาเดมี และนักฟุตบอลเยาวชนไทย
+            </p>
+            <div className={`${styles.rise} mt-7 flex gap-2.5 sm:mt-9 sm:gap-3`} style={{ animationDelay: "480ms" }}>
+              <a href="#departments" className="inline-flex min-h-11 items-center gap-2 whitespace-nowrap rounded-lg bg-amber-400 px-4 text-[13px] font-semibold text-[#073c5e] transition-colors hover:bg-amber-300 sm:min-h-12 sm:px-7 sm:text-sm">
+                สำรวจหมวดงาน
+                <ArrowDown className="h-4 w-4" />
+              </a>
+              <Link href="/courses" className="inline-flex min-h-11 items-center gap-2 whitespace-nowrap rounded-lg bg-white/10 px-4 text-[13px] font-semibold text-white ring-1 ring-white/30 transition-colors hover:bg-white/20 sm:min-h-12 sm:px-7 sm:text-sm">
+                หลักสูตรอบรมผู้ฝึกสอน
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </div>
+          </div>
+
+          <div className={styles.rise} style={{ animationDelay: "600ms" }}>
+            <HeroUpdates
+              board={g15Board}
+              session={heroSessions[0] ?? null}
+              news={announcements[0] ? { id: announcements[0].id, title: announcements[0].title, imageUrl: announcements[0].imageUrl, date: announcements[0].createdAt } : null}
+            />
           </div>
         </div>
 
         {/* ชื่อหมวดของภาพที่กำลังแสดง (จางเข้า-ออกพร้อมภาพ) */}
-        <div aria-hidden className="absolute bottom-28 right-6 hidden text-right text-xs text-white/60 sm:block lg:right-10">
+        <div aria-hidden className="absolute bottom-28 left-6 hidden text-xs text-white/60 lg:block lg:left-10">
           {HERO_SLIDES.map((d, k) => (
-            <span key={d.key} className={`${styles.caption} absolute bottom-0 right-0 flex items-center gap-2 whitespace-nowrap`} style={{ animationDelay: `${(k + 1) * 6}s` }}>
+            <span key={d.key} className={`${styles.caption} absolute bottom-0 left-0 flex items-center gap-2 whitespace-nowrap`} style={{ animationDelay: `${(k + 1) * 6}s` }}>
               <span className="h-px w-6 bg-amber-300" />
               {d.title}
             </span>
@@ -250,14 +267,7 @@ export default async function HomePage() {
                   locked={dept.coach.locked}
                   levels={levels}
                   total={levelTotal}
-                  sessions={sessions.map((x) => ({
-                    id: x.id,
-                    course: x.course.title,
-                    name: x.name,
-                    venue: x.venue,
-                    start: x.startDate,
-                    daysLeft: x.applicationDeadline ? Math.ceil((x.applicationDeadline.getTime() - now.getTime()) / 86_400_000) : null,
-                  }))}
+                  sessions={heroSessions}
                 />
               ),
             },
