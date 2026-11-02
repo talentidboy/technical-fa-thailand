@@ -10,6 +10,7 @@ const PUBLIC_PATHS = [
   "/play-and-learn",
   "/coach-center",
   "/coach-center/login",
+  "/verify",
 ];
 
 // โฟลเดอร์ระดับบนสุดทุกอันใน src/app (รวมในกลุ่ม (admin)) + ไฟล์ใน public — หมวดเหล่านี้ใช้กฎ "ต้องล็อกอินเว้นแต่ระบุว่าเป็นหน้าสาธารณะ"

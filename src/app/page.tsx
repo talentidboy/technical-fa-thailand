@@ -357,6 +357,7 @@ export default async function HomePage() {
               { href: "/courses", label: "หลักสูตรอบรม" },
               { href: "/coach-center", label: "ศูนย์อบรมผู้ฝึกสอน" },
               { href: "/coach-center/login", label: "เข้าสู่ระบบผู้ฝึกสอน" },
+              { href: "/verify", label: "ตรวจสอบใบอนุญาตผู้ฝึกสอน" },
             ]}
           />
           <FooterCol

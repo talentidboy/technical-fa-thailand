@@ -5,6 +5,10 @@ import { requireAdmin } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { audit } from "@/lib/audit";
 import { notifyCoaches } from "@/lib/notify";
+import { assertNoSameLevel } from "@/lib/license-guard";
+import { normalizeCertNo } from "@/lib/cert-no";
+import { coachName } from "@/lib/coach-name";
+import type { FormResult } from "@/components/ResultForm";
 
 function optionalString(formData: FormData, key: string) {
   const value = String(formData.get(key) ?? "").trim();
@@ -21,14 +25,18 @@ function optionalInt(formData: FormData, key: string) {
   return value ? Number(value) : null;
 }
 
-export async function createLicenseRecord(formData: FormData) {
+// คืนผลแทนการ throw — ฟอร์มแสดงข้อความผิดพลาดใต้ปุ่มได้ (เช่น มีใบระดับนี้อยู่แล้ว)
+export async function createLicenseRecord(formData: FormData): Promise<FormResult> {
   const admin = await requireAdmin();
   const coachId = Number(formData.get("coachId"));
   const licenseType = String(formData.get("licenseType") ?? "").trim();
   const recordType = String(formData.get("recordType") ?? "").trim();
 
-  if (!licenseType || !recordType) {
-    throw new Error("กรุณาเลือกระดับใบอนุญาตและประเภทการได้มา");
+  if (!licenseType || !recordType) return { ok: false, error: "กรุณาเลือกระดับใบอนุญาตและประเภทการได้มา" };
+  try {
+    await assertNoSameLevel(coachId, licenseType);
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "เพิ่มใบอนุญาตไม่สำเร็จ" };
   }
 
   const created = await prisma.licenseRecord.create({
@@ -47,6 +55,7 @@ export async function createLicenseRecord(formData: FormData) {
 
   revalidatePath(`/coaches/${coachId}`);
   revalidatePath("/dashboard");
+  return { ok: true };
 }
 
 // อนุญาตให้ Admin และ Staff ยืนยันอัปเกรดระดับได้ทั้งคู่ แต่ต้องติ๊กยืนยันว่าผู้ฝึกสอนผ่านการประเมินก่อนเสมอ
@@ -64,6 +73,7 @@ export async function confirmLicenseUpgrade(formData: FormData) {
   if (!confirmedPass) {
     throw new Error("กรุณายืนยันว่าผู้ฝึกสอนผ่านการประเมิน/อบรมระดับนี้แล้ว");
   }
+  await assertNoSameLevel(coachId, licenseType);
 
   const created = await prisma.licenseRecord.create({
     data: {
@@ -83,6 +93,40 @@ export async function confirmLicenseUpgrade(formData: FormData) {
 
   revalidatePath(`/coaches/${coachId}`);
   revalidatePath("/dashboard");
+}
+
+// แก้เลขที่ใบ / วันที่ออก / วันหมดอายุ ของใบที่บันทึกไว้ (ข้อมูลเดิมไม่ครบหรือพิมพ์ผิด) — ระดับแก้ไม่ได้ (ลบแล้วเพิ่มใหม่แทน)
+export async function updateLicenseRecord(formData: FormData): Promise<FormResult> {
+  const admin = await requireAdmin();
+  try {
+    const id = Number(formData.get("id"));
+    const record = await prisma.licenseRecord.findUnique({ where: { id }, include: { coach: { select: { nameTh: true, surnameTh: true, nameEn: true, familyNameEn: true } } } });
+    if (!record) return { ok: false, error: "ไม่พบใบอนุญาตนี้" };
+    const certificateNo = optionalString(formData, "certificateNo");
+    const issueDate = optionalDate(formData, "issueDate");
+    const expireDate = optionalDate(formData, "expireDate");
+    if (issueDate && expireDate && expireDate <= issueDate) return { ok: false, error: "วันหมดอายุต้องหลังวันที่ออกใบ" };
+    if (certificateNo) {
+      const key = normalizeCertNo(certificateNo);
+      const same = await prisma.licenseRecord.findMany({
+        where: { id: { not: id }, licenseType: record.licenseType, certificateNo: { not: null } },
+        select: { certificateNo: true, coachId: true, coach: { select: { nameTh: true, surnameTh: true, nameEn: true, familyNameEn: true } } },
+      });
+      const taken = same.find((r) => normalizeCertNo(r.certificateNo) === key);
+      if (taken) return { ok: false, error: `เลขที่ ${certificateNo} เป็นของ ${coachName(taken.coach)} อยู่แล้ว — ถ้าเป็นคนเดียวกัน ให้รวมประวัติแทน` };
+    }
+    const updated = await prisma.licenseRecord.update({ where: { id }, data: { certificateNo, issueDate, expireDate } });
+    await audit(admin.email, "LICENSE_UPDATE", {
+      coachId: record.coachId,
+      summary: `แก้ไขใบอนุญาต ${record.licenseType} ของ ${coachName(record.coach)}`,
+      details: { before: { certificateNo: record.certificateNo, issueDate: record.issueDate, expireDate: record.expireDate }, after: { certificateNo, issueDate, expireDate } },
+    });
+    revalidatePath(`/coaches/${record.coachId}`);
+    revalidatePath("/coaches/data-check");
+    return updated ? { ok: true } : { ok: false, error: "บันทึกไม่สำเร็จ" };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "บันทึกไม่สำเร็จ" };
+  }
 }
 
 export async function deleteLicenseRecord(formData: FormData) {

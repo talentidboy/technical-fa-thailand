@@ -7,6 +7,7 @@ export const AUDIT_ACTIONS: Record<string, { label: string; tone: string }> = {
   LICENSE_CREATE: { label: "เพิ่มใบอนุญาต", tone: "bg-emerald-50 text-emerald-700" },
   LICENSE_UPGRADE: { label: "ยืนยันอัปเกรดระดับ", tone: "bg-emerald-50 text-emerald-700" },
   LICENSE_DELETE: { label: "ลบใบอนุญาต", tone: "bg-red-50 text-red-700" },
+  LICENSE_UPDATE: { label: "แก้ไขใบอนุญาต", tone: "bg-sky-50 text-sky-700" },
   RENEWAL_APPROVE: { label: "ต่ออายุใบอนุญาต", tone: "bg-emerald-50 text-emerald-700" },
   RENEWAL_REJECT: { label: "ไม่อนุมัติต่ออายุ", tone: "bg-amber-50 text-amber-700" },
   RENEWAL_UNDO: { label: "ยกเลิกการต่ออายุ", tone: "bg-red-50 text-red-700" },

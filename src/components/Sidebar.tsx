@@ -18,6 +18,7 @@ import {
   Bug,
   History,
   Menu,
+  ScanSearch,
   Settings,
   X,
 } from "lucide-react";
@@ -84,6 +85,7 @@ export function Sidebar({
           { href: "/course-sessions", label: "หลักสูตรอบรม", icon: BookOpen },
           { href: "/renewals", label: "ต่ออายุใบอนุญาต", icon: CalendarClock, badge: renewalRequestCount },
           { href: "/coaches/accounts", label: "บัญชีผู้ฝึกสอน", icon: KeyRound },
+          { href: "/coaches/data-check", label: "ตรวจข้อมูลผู้ฝึกสอน", icon: ScanSearch },
           { href: "/requests", label: "คำขอแก้ไขข้อมูล", icon: Inbox, badge: pendingRequestCount },
           { href: "/audit", label: "บันทึกการแก้ไข", icon: History },
           { href: "/errors", label: "บันทึกข้อผิดพลาด", icon: Bug, badge: errorCount },
@@ -93,7 +95,7 @@ export function Sidebar({
   const isActive = (href: string) =>
     pathname === href ||
     (href === "/dashboard" && pathname.startsWith("/dashboard/")) ||
-    (href === "/coaches" && pathname.startsWith("/coaches/") && !pathname.startsWith("/coaches/accounts")) ||
+    (href === "/coaches" && pathname.startsWith("/coaches/") && !pathname.startsWith("/coaches/accounts") && !pathname.startsWith("/coaches/data-check")) ||
     (href !== "/dashboard" && href !== "/coaches" && pathname.startsWith(`${href}/`));
 
   const navLink = ({ href, label, icon: Icon, badge }: NavItem) => {

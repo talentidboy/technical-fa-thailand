@@ -6,6 +6,7 @@ import { requireAdmin } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { CORE_LICENSE_PROGRESSION } from "@/lib/constants";
 import { getHighestCoreLevel } from "@/lib/license-rank";
+import { ONE_PER_LEVEL_HINT } from "@/lib/license-guard";
 import { nthCertificateNo, LIVE_APPLICATION_STATUSES } from "@/lib/course-workflow";
 import { audit } from "@/lib/audit";
 import { notifyCoaches } from "@/lib/notify";
@@ -181,6 +182,14 @@ export async function confirmResults(input: {
       if (!issueDate || Number.isNaN(issueDate.getTime())) throw new Error("กรุณาระบุวันที่ออกใบ");
       if (expireDate && expireDate <= issueDate) throw new Error("วันหมดอายุต้องหลังวันที่ออกใบ");
       if (!input.startNo.trim()) throw new Error("กรุณาระบุเลขที่ใบประกาศเริ่มต้น");
+    }
+
+    // 1 คน 1 ใบต่อ 1 ระดับ: คนที่มีใบระดับนี้อยู่แล้วออกใบใหม่ไม่ได้ (ให้ต่ออายุใบเดิมแทน หรือย้ายไปกลุ่ม "ไม่ผ่าน/ไม่ออกใบ")
+    if (licenseType) {
+      const holders = passed.filter((a) => a.coach.licenseRecords.some((r) => r.licenseType === licenseType));
+      if (holders.length > 0) {
+        throw new Error(`มีใบอนุญาตระดับนี้อยู่แล้ว ${holders.length} คน: ${holders.map((a) => coachName(a.coach)).join(", ")} — ${ONE_PER_LEVEL_HINT}`);
+      }
     }
 
     const numbers = passed.map((_, i) => nthCertificateNo(input.startNo.trim(), i));

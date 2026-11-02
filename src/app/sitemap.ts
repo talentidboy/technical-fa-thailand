@@ -11,6 +11,7 @@ const STATIC: { path: string; priority: number; changeFrequency: MetadataRoute.S
   { path: "/", priority: 1, changeFrequency: "weekly" },
   { path: "/coach-center", priority: 0.9, changeFrequency: "weekly" },
   { path: "/courses", priority: 0.8, changeFrequency: "monthly" },
+  { path: "/verify", priority: 0.6, changeFrequency: "monthly" },
   { path: "/academies", priority: 0.9, changeFrequency: "weekly" },
   { path: "/academies/register", priority: 0.5, changeFrequency: "yearly" },
   { path: "/g15-womens-series", priority: 0.9, changeFrequency: "daily" },

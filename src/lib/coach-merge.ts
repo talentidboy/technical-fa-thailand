@@ -1,5 +1,6 @@
 import { prisma } from "./prisma";
 import { coachName } from "./coach-name";
+import { normalizeCertNo } from "./cert-no";
 
 // รวมประวัติผู้ฝึกสอนที่ซ้ำ: ย้ายใบอนุญาต / ใบสมัคร / ประวัติทำงาน / การแจ้งเตือน / บัญชี จาก "source" ไปไว้ที่ "target"
 // ช่องข้อมูลที่ target ว่าง เติมจาก source แล้วลบ source — บันทึกสำเนาข้อมูล source ไว้ในบันทึกการแก้ไข
@@ -27,6 +28,12 @@ function conflicts(source: Loaded, target: Loaded) {
   if (source.afcId && target.afcId && source.afcId.trim().toUpperCase() !== target.afcId.trim().toUpperCase())
     out.push("AFC ID ไม่ตรงกัน — น่าจะไม่ใช่คนเดียวกัน");
   if (source.systemUser && target.systemUser) out.push("ทั้งสองประวัติมีบัญชีเข้าสู่ระบบ — ลบบัญชีของประวัติที่จะรวมออกก่อน");
+  // 1 คน 1 ใบต่อ 1 ระดับ: ระดับเดียวกันแต่เลขที่ใบต่างกัน → ต้องลบใบที่ผิดออกก่อน
+  for (const r of source.licenseRecords) {
+    const t = target.licenseRecords.find((x) => x.licenseType === r.licenseType);
+    if (t && r.certificateNo && t.certificateNo && normalizeCertNo(r.certificateNo) !== normalizeCertNo(t.certificateNo))
+      out.push(`ใบระดับ ${r.licenseType} เลขที่ไม่ตรงกัน (${t.certificateNo} / ${r.certificateNo}) — ลบใบที่ผิดออกก่อน`);
+  }
   return out;
 }
 
@@ -81,8 +88,25 @@ export async function mergeCoaches(sourceId: number, targetId: number) {
   const moveAfc = !target.afcId && !!source.afcId;
 
   await prisma.$transaction(async (tx) => {
-    await tx.licenseRecord.updateMany({ where: { coachId: source.id }, data: { coachId: target.id } });
+    // ใบอนุญาต: ระดับที่ target ไม่มี → ย้ายไป · ระดับที่มีทั้งคู่ (ใบเดียวกัน) → เติมช่องที่ target ว่างจากใบของ source
+    // ย้ายใบสมัคร/ประวัติต่ออายุที่ผูกกับใบของ source มาที่ใบของ target แล้วลบใบซ้ำ (1 คน 1 ใบต่อ 1 ระดับ)
+    for (const r of source.licenseRecords) {
+      const t = target.licenseRecords.find((x) => x.licenseType === r.licenseType);
+      if (!t) {
+        await tx.licenseRecord.update({ where: { id: r.id }, data: { coachId: target.id } });
+        continue;
+      }
+      await tx.licenseRecord.update({
+        where: { id: t.id },
+        data: { certificateNo: t.certificateNo ?? r.certificateNo, issueDate: t.issueDate ?? r.issueDate, expireDate: t.expireDate ?? r.expireDate },
+      });
+      await tx.licenseRenewal.updateMany({ where: { licenseRecordId: r.id }, data: { licenseRecordId: t.id } });
+      const targetLinked = await tx.application.findFirst({ where: { licenseRecordId: t.id }, select: { id: true } });
+      await tx.application.updateMany({ where: { licenseRecordId: r.id }, data: { licenseRecordId: targetLinked ? null : t.id } });
+      await tx.licenseRecord.delete({ where: { id: r.id } });
+    }
     await tx.employment.updateMany({ where: { coachId: source.id }, data: { coachId: target.id } });
+    await tx.academyStaff.updateMany({ where: { coachId: source.id }, data: { coachId: target.id } });
     await tx.profileEditRequest.updateMany({ where: { coachId: source.id }, data: { coachId: target.id } });
     await tx.notification.updateMany({ where: { coachId: source.id }, data: { coachId: target.id } });
     // ใบสมัครรุ่นเดียวกันซ้ำ → เก็บของ target

@@ -70,6 +70,7 @@ export default async function CoachCenterPage() {
           { href: "#pathway", label: "เส้นทางใบอนุญาต" },
           { href: "#how", label: "ขั้นตอนการสมัคร" },
           { href: "/courses", label: "หลักสูตรทั้งหมด" },
+          { href: "/verify", label: "ตรวจสอบใบอนุญาต" },
         ]}
         cta={
           <Link href="/coach-center/login" className="hidden h-10 items-center gap-1.5 rounded-lg bg-[#e3bb63] px-4 text-sm font-semibold text-[#031a2c] hover:bg-[#ecc97b] sm:inline-flex">

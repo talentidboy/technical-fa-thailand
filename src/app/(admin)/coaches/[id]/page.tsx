@@ -26,6 +26,8 @@ import { getHighestCoreLevel, getNextCoreLevel } from "@/lib/license-rank";
 import { currentLicenseRecords, formatThaiDate, RENEWAL_STATUS } from "@/lib/license-renewal";
 import { RenewOneButton } from "@/components/renewal/RenewOneButton";
 import { MergeCoachPanel } from "@/components/MergeCoachPanel";
+import { LicenseEditForm } from "@/components/LicenseEditForm";
+import { ResultForm } from "@/components/ResultForm";
 import { ConfirmSubmit } from "@/components/ConfirmSubmit";
 import { profileCompleteness } from "@/lib/profile-completeness";
 import { AUDIT_ACTIONS } from "@/lib/audit-actions";
@@ -359,8 +361,10 @@ export default async function CoachDetailPage({
         </div>
 
         {isAdmin && (
-          <form
+          <ResultForm
             action={createLicenseRecord}
+            resetOnSuccess
+            successText="เพิ่มใบอนุญาตแล้ว"
             className="grid grid-cols-1 gap-4 border-b border-slate-100 p-6 sm:grid-cols-2 lg:grid-cols-3"
           >
             <input type="hidden" name="coachId" value={coach.id} />
@@ -396,7 +400,7 @@ export default async function CoachDetailPage({
                 เพิ่มใบอนุญาต
               </button>
             </div>
-          </form>
+          </ResultForm>
         )}
 
         {coach.licenseRecords.length === 0 ? (
@@ -485,6 +489,7 @@ export default async function CoachDetailPage({
                               <IdCard className="h-4 w-4" />
                             </a>
                           )}
+                          {isAdmin && <LicenseEditForm record={record} />}
                           {isAdmin && (
                             <form action={deleteLicenseRecord}>
                               <input

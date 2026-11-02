@@ -28,6 +28,12 @@ async function seed(ctx) {
     // ต่างชาติ (ไม่มีชื่อไทย)
     foreign: await coach({ name_th: "", surname_th: "", name_en: "MARCO", family_name_en: "GOCKEL", afc_id: "AFC/1/GER" }),
     // โค้ชที่มีบัญชี: ใบอนุญาตหมดใน 20 วัน (แจ้ง 30 วัน) + GK หมดใน 60 วัน (แจ้ง 90 วัน)
+    // เลขใบเดียวกันอยู่ 2 ประวัติ (ขีดธรรมดา / ขีดยูนิโคด) — หน้าตรวจข้อมูลต้องจับคู่ได้ · B มีใบ G ไม่มีเลขที่
+    sameA: await coach({ name_th: "ทดสอบ", surname_th: "เลขซ้ำ", afc_id: "AFC/9/THA" }, [["C", -500, 600, "C-20/0777"]]),
+    sameB: await coach({ name_th: "ทดสอบ", surname_th: "เลขซ้ำสอง" }, [
+      ["C", -500, 600, "C‐20/0777"],
+      ["G", -900, 200, null],
+    ]),
     member: await coach({ name_th: "สมใจ", surname_th: "แจ้งเตือน", tel_no: "0822222222" }, [
       ["B", -1075, 20, "B-23/0001"],
       ["GK_I", -1035, 60, "GK-23/0001"],
@@ -103,6 +109,47 @@ module.exports = {
         kept.id_number === "1100100100100",
     );
     check("บันทึก: รวมประวัติ (เก็บสำเนาประวัติที่ถูกลบ)", (await audits("COACH_MERGE", s.dupNew)).length === 1);
+
+    // ===== 1 คน 1 ใบต่อ 1 ระดับ: เพิ่มใบ C ซ้ำให้คนที่มี C แล้ว → แจ้งในฟอร์ม ไม่บันทึก =====
+    await ad.goto(`${BASE}/coaches/${s.dupNew}`, { waitUntil: "networkidle" });
+    const add2 = ad.locator("form", { has: ad.getByRole("button", { name: "เพิ่มใบอนุญาต" }) });
+    await add2.locator('select[name="licenseType"]').selectOption("C");
+    await add2.locator('select[name="recordType"]').selectOption("TRAINING");
+    await add2.getByRole("button", { name: "เพิ่มใบอนุญาต" }).click();
+    check("ใบระดับเดิมซ้ำ → ข้อความเตือนในฟอร์ม", await ad.getByText(/มีใบอนุญาตระดับ C อยู่แล้ว/).waitFor({ timeout: 30_000 }).then(() => true, () => false));
+    check("ใบระดับเดิมซ้ำ → ไม่ถูกบันทึก", (await sql("select count(*)::int n from license_records where coach_id=$1 and license_type='C'", [s.dupNew]))[0].n === 1);
+
+    // ===== ตรวจข้อมูลผู้ฝึกสอน: เลขใบซ้ำ → รวมประวัติ (ใบระดับเดียวกันไม่ซ้อน) · แก้เลขที่ใบในแถว =====
+    await ad.goto(`${BASE}/coaches/data-check`, { waitUntil: "networkidle" });
+    check("ตรวจข้อมูล: จับเลขใบซ้ำได้แม้ขีดต่างแบบ", (await ad.locator("#duplicates").innerText()).includes("ทดสอบ เลขซ้ำสอง"));
+    await ad.getByRole("link", { name: `รวมประวัติ #${s.sameB} → #${s.sameA}` }).click();
+    await ad.waitForURL(new RegExp(`/coaches/${s.sameA}\\?mergeWith=${s.sameB}`));
+    await ad.getByText("เก็บประวัตินี้ไว้").first().waitFor();
+    await ad.waitForTimeout(1500);
+    await ad.getByRole("button", { name: "ยืนยันรวมประวัติ" }).click();
+    await ad.waitForURL(new RegExp(`/coaches/${s.sameA}$`), { timeout: 30_000 });
+    const mergedRecs = await sql("select license_type, certificate_no from license_records where coach_id=$1 order by license_type", [s.sameA]);
+    check("รวมแล้ว: ใบ C เหลือใบเดียว + ได้ใบ G มา", JSON.stringify(mergedRecs.map((r) => r.license_type)) === '["C","G"]', JSON.stringify(mergedRecs));
+
+    await ad.goto(`${BASE}/coaches/data-check?type=G`, { waitUntil: "networkidle" });
+    const row = ad.locator("#incomplete li", { hasText: "ทดสอบ เลขซ้ำ" });
+    await row.locator("summary", { hasText: "แก้ไข" }).click();
+    await row.locator('input[name="certificateNo"]').fill("Intro.9999");
+    await row.getByRole("button", { name: "บันทึก" }).click();
+    await row.getByText("บันทึกแล้ว").waitFor({ timeout: 30_000 }).catch(() => {});
+    check("แก้เลขที่ใบในหน้าตรวจข้อมูล", (await sql("select certificate_no from license_records where coach_id=$1 and license_type='G'", [s.sameA]))[0]?.certificate_no === "Intro.9999");
+    check("บันทึก: แก้ไขใบอนุญาต (ค่าก่อน/หลัง)", (await audits("LICENSE_UPDATE", s.sameA)).length === 1);
+
+    // ===== ตรวจสอบใบอนุญาตแบบค้นหา (สาธารณะ ไม่ต้องล็อกอิน) — ไม่แสดงข้อมูลส่วนตัว =====
+    const pub = async (q) => {
+      const res = await fetch(`${BASE}/verify?q=${encodeURIComponent(q)}`, { redirect: "manual" });
+      return { status: res.status, text: await res.text() };
+    };
+    const byName = await pub("สมศักดิ์ ซ้ำซ้อน");
+    check("ค้นหาด้วยชื่อ (ไม่ต้องล็อกอิน)", byName.status === 200 && byName.text.includes("C-25/0100"), String(byName.status));
+    check("ไม่แสดงเลขบัตร / เบอร์โทร", !byName.text.includes("1100100100100") && !byName.text.includes("0811111111"));
+    check("ค้นหาด้วยเลขที่ใบ", (await pub("Intro.9999")).text.includes("ทดสอบ เลขซ้ำ"));
+    check("ชื่อสั้นเกินไป → ไม่ค้น", (await pub("ab")).text.includes("อย่างน้อย 3 ตัวอักษร"));
 
     // ===== แจ้งเตือน: งานอัตโนมัติรายวัน =====
     const noAuth = await fetch(`${BASE}/api/cron/daily`);

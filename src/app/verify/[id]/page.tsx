@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { coachName, coachInitial } from "@/lib/coach-name";
 import { prisma } from "@/lib/prisma";
 import { parseId } from "@/lib/route-id";
@@ -89,6 +90,9 @@ export default async function VerifyPage({
             </span>
           </p>
         )}
+        <Link href="/verify" className="mt-5 inline-block text-xs font-semibold text-indigo-700 hover:underline">
+          ค้นหาผู้ฝึกสอนคนอื่น
+        </Link>
       </div>
     </div>
   );
