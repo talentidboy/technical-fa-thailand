@@ -151,6 +151,16 @@ module.exports = {
     check("ค้นหาด้วยเลขที่ใบ", (await pub("Intro.9999")).text.includes("ทดสอบ เลขซ้ำ"));
     check("ชื่อสั้นเกินไป → ไม่ค้น", (await pub("ab")).text.includes("อย่างน้อย 3 ตัวอักษร"));
 
+    // ลิงก์ตรวจสอบใช้รหัสสุ่ม (เดาไม่ได้) · ลิงก์เลขลำดับแบบเดิมยังเปิดได้แต่แสดงแบบย่อ
+    const token = (await sql("select verify_token from coaches where id=$1", [s.dupNew]))[0].verify_token;
+    check("ผู้ฝึกสอนทุกคนมีรหัสตรวจสอบ 16 ตัว (รวมคนที่เพิ่มใหม่)", /^[0-9a-f]{16}$/.test(token) && (await sql("select count(*)::int n from coaches where verify_token is null"))[0].n === 0);
+    check("ผลค้นหาลิงก์ไปหน้าตรวจสอบด้วยรหัสสุ่ม", byName.text.includes(`/verify/${token}`) && !byName.text.includes(`/verify/${s.dupNew}"`));
+    const byToken = await fetch(`${BASE}/verify/${token}`, { redirect: "manual" });
+    const tokenText = await byToken.text();
+    check("เปิดด้วยรหัสสุ่ม → ข้อมูลเต็ม", byToken.status === 200 && tokenText.includes("สมศักดิ์") && !tokenText.includes("รูปแบบเดิม"));
+    const legacyText = await (await fetch(`${BASE}/verify/${s.dupNew}`, { redirect: "manual" })).text();
+    check("ลิงก์เลขลำดับแบบเดิม → แสดงแบบย่อ", legacyText.includes("สมศักดิ์") && legacyText.includes("รูปแบบเดิม"));
+
     // ===== แจ้งเตือน: งานอัตโนมัติรายวัน =====
     const noAuth = await fetch(`${BASE}/api/cron/daily`);
     check("งานอัตโนมัติ: ไม่มีรหัส → 401", noAuth.status === 401);

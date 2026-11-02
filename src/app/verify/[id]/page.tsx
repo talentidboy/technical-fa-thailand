@@ -37,11 +37,15 @@ const VERDICT: Record<LicenseStatus, { label: string; en: string; sub: string; i
   unknown: { label: "ไม่พบวันหมดอายุในทะเบียน", en: "UNVERIFIED", sub: "มีรายชื่อในทะเบียนของสมาคมฯ — ติดต่อฝ่ายเทคนิคเพื่อยืนยันสถานะ", icon: ShieldQuestion, band: "bg-slate-600", text: "text-slate-700" },
 };
 
+const TOKEN = /^[0-9a-f]{16}$/;
+
 // หน้าตรวจสอบใบอนุญาตจาก QR บนบัตรผู้ฝึกสอน (สาธารณะ) — แสดงเฉพาะชื่อ รูป และข้อมูลใบอนุญาต ไม่แสดงข้อมูลส่วนตัวอื่น
+// ลิงก์ใหม่ใช้รหัสสุ่ม 16 ตัว (/verify/<รหัส>) · ลิงก์แบบเดิมเป็นเลขลำดับ (/verify/123) ยังเปิดได้ แต่ไม่แสดงรูปและ AFC ID เพราะไล่เปลี่ยนเลขได้
 export default async function VerifyPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const legacy = !TOKEN.test(id);
   const coach = await prisma.coach.findUnique({
-    where: { id: parseId(id) ?? 0 },
+    where: legacy ? { id: parseId(id) ?? 0 } : { verifyToken: id },
     select: {
       id: true,
       nameTh: true,
@@ -108,7 +112,7 @@ export default async function VerifyPage({ params }: { params: Promise<{ id: str
 
             {/* ผู้ถือใบอนุญาต */}
             <div className="flex items-center gap-4 px-5 py-5">
-              {coach.photoUrl ? (
+              {coach.photoUrl && !legacy ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={coach.photoUrl} alt={`รูปของ ${coachName(coach)}`} className="h-28 w-[5.5rem] flex-none rounded-lg object-cover ring-1 ring-slate-200" />
               ) : (
@@ -118,9 +122,11 @@ export default async function VerifyPage({ params }: { params: Promise<{ id: str
                 <p className="text-[11px] font-semibold text-slate-400">ผู้ถือใบอนุญาต</p>
                 <h1 className={`${display.className} text-2xl font-semibold leading-tight text-[#031a2c]`}>{coachName(coach)}</h1>
                 {thai && en && <p className="mt-0.5 text-sm font-medium uppercase text-slate-500">{en}</p>}
-                <p className="mt-1.5 text-xs text-slate-500">
-                  AFC ID <span className="font-semibold text-slate-700">{coach.afcId ?? "—"}</span>
-                </p>
+                {!legacy && (
+                  <p className="mt-1.5 text-xs text-slate-500">
+                    AFC ID <span className="font-semibold text-slate-700">{coach.afcId ?? "—"}</span>
+                  </p>
+                )}
               </div>
             </div>
 
@@ -171,6 +177,11 @@ export default async function VerifyPage({ params }: { params: Promise<{ id: str
               </div>
             )}
 
+            {legacy && (
+              <p className="border-t border-amber-100 bg-amber-50 px-5 py-3 text-xs leading-relaxed text-amber-800">
+                QR นี้เป็นรูปแบบเดิม จึงแสดงข้อมูลแบบย่อ — ผู้ฝึกสอนเปิดบัตรใหม่ได้ที่หน้า “บัตรประจำตัว” ในระบบ (QR แบบใหม่แสดงรูปและข้อมูลครบ)
+              </p>
+            )}
             <p className="flex items-center gap-1.5 border-t border-slate-100 bg-slate-50 px-5 py-3 text-xs text-slate-500">
               <Clock className="h-3.5 w-3.5 flex-none" />
               ตรวจสอบจากทะเบียนจริงเมื่อ {checkedAt} น.

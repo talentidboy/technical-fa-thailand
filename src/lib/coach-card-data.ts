@@ -16,7 +16,8 @@ export async function getCoachCardData(coachId: number, origin: string) {
     ? (labelFor(LICENSE_TYPES, highest.licenseType) ?? highest.licenseType)
     : "ไม่มีใบอนุญาต";
 
-  const verifyUrl = `${origin}/verify/${coach.id}`;
+  // รหัสสุ่ม (ไม่ใช่เลขลำดับ) — คนที่สแกนบัตรใบหนึ่งเปลี่ยนเลขไปดูคนอื่นต่อไม่ได้
+  const verifyUrl = `${origin}/verify/${coach.verifyToken}`;
   const qrDataUrl = await QRCode.toDataURL(verifyUrl, {
     margin: 1,
     width: 240,

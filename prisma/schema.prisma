@@ -31,6 +31,8 @@ model Coach {
   districtCode    String?   @map("district_code") // รหัสอำเภอจาก geothai
   subdistrictCode String?   @map("subdistrict_code") // รหัสตำบลจาก geothai
   photoUrl        String?   @map("photo_url")
+  // รหัสสุ่มใน QR บนบัตร (/verify/<รหัส>) — เดาไม่ได้ ไล่ดูประวัติผู้ฝึกสอนทุกคนด้วยการเปลี่ยนเลขไม่ได้
+  verifyToken     String    @unique @default(dbgenerated("substr(replace((gen_random_uuid())::text, '-'::text, ''::text), 1, 16)")) @map("verify_token")
   createdAt       DateTime  @default(now()) @map("created_at")
   updatedAt       DateTime  @updatedAt @map("updated_at")
 

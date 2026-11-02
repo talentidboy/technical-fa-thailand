@@ -58,7 +58,7 @@ export default async function VerifySearchPage({ searchParams }: { searchParams:
   const found = where
     ? await prisma.coach.findMany({
         where: { AND: [where, { licenseRecords: { some: {} } }] },
-        select: { id: true, nameTh: true, surnameTh: true, nameEn: true, familyNameEn: true, afcId: true, licenseRecords: { select: { licenseType: true, certificateNo: true, expireDate: true } } },
+        select: { id: true, verifyToken: true, nameTh: true, surnameTh: true, nameEn: true, familyNameEn: true, afcId: true, licenseRecords: { select: { licenseType: true, certificateNo: true, expireDate: true } } },
         orderBy: [{ nameTh: "asc" }, { nameEn: "asc" }],
         take: LIMIT + 1,
       })
@@ -145,7 +145,7 @@ export default async function VerifySearchPage({ searchParams }: { searchParams:
                         );
                       })}
                     </ul>
-                    <Link href={`/verify/${c.id}`} className="flex items-center justify-end gap-1 border-t border-slate-100 bg-slate-50 px-5 py-2 text-xs font-semibold text-[#073c5e] hover:bg-slate-100">
+                    <Link href={`/verify/${c.verifyToken}`} className="flex items-center justify-end gap-1 border-t border-slate-100 bg-slate-50 px-5 py-2 text-xs font-semibold text-[#073c5e] hover:bg-slate-100">
                       หน้าตรวจสอบของผู้ฝึกสอนคนนี้
                       <ArrowRight className="h-3.5 w-3.5" />
                     </Link>
