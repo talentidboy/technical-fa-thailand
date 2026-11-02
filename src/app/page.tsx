@@ -60,9 +60,6 @@ const LIVE_PHASES = ["FIRST_HALF", "HALF_TIME", "SECOND_HALF", "PENALTIES"];
 const TEAM = { select: { name: true, logoUrl: true, groupName: true } };
 const TEAMS = { homeTeam: TEAM, awayTeam: TEAM };
 
-// ภาพฮีโร่: อาคารสมาคมเป็นฉากหลัก แล้วภาพแต่ละหมวดค่อยๆ จางเข้าทีละภาพ (วนรอบละ 8 ภาพ × 6 วินาที)
-const HERO_SLIDES = DEPARTMENTS.filter((d) => d.image);
-
 export default async function HomePage() {
   const user = await getCurrentUser();
   if (user?.role === "COACH") redirect("/me");
@@ -174,16 +171,12 @@ export default async function HomePage() {
     <div className="min-h-screen bg-[#f5f4f0] text-slate-900">
       <HomeHeader user={headerUser} events={headerEvents} />
 
-      {/* ===== ฮีโร่: ภาพเต็มจอ (อาคารสมาคม → ภาพแต่ละหมวดจางเข้าทีละภาพ) + หัวข้อใหญ่ ===== */}
+      {/* ===== ฮีโร่: ภาพอาคารสมาคมภาพเดียว (โหลดภาพเดียว เปิดหน้าได้เร็ว) + หัวข้อใหญ่ + การ์ดอัปเดตล่าสุด ===== */}
       <section className="relative isolate flex min-h-[92svh] items-center overflow-hidden bg-[#04223a] pb-40 pt-28 text-white lg:min-h-[100svh]">
-        <Image src={COVER_URL} alt="สำนักงานสมาคมกีฬาฟุตบอลแห่งประเทศไทย" fill priority sizes="100vw" className={`-z-30 object-cover ${styles.kenburns}`} />
-        {HERO_SLIDES.map((d, k) => (
-          <div key={d.key} aria-hidden className={`${styles.slide} absolute inset-0 -z-20`} style={{ animationDelay: `${(k + 1) * 6}s` }}>
-            <Image src={d.image!} alt="" fill sizes="100vw" placeholder={typeof d.image === "string" ? "empty" : "blur"} style={d.imagePosition ? { objectPosition: d.imagePosition } : undefined} className="object-cover" />
-          </div>
-        ))}
-        <div className="absolute inset-0 -z-10 bg-linear-to-r from-[#04223a]/95 via-[#04223a]/60 to-[#04223a]/20" />
-        <div className="absolute inset-0 -z-10 bg-linear-to-t from-[#04223a] via-transparent to-[#04223a]/55" />
+        <Image src={COVER_URL} alt="สำนักงานสมาคมกีฬาฟุตบอลแห่งประเทศไทย" fill priority sizes="100vw" className={`-z-30 object-cover object-[60%_40%] ${styles.kenburns}`} />
+        {/* ซ้ายเข้มให้อ่านข้อความได้ · ขวาโปร่งให้เห็นอาคาร · บนเข้มเล็กน้อยให้เมนูอ่านง่าย · ล่างกลืนเข้าการ์ดตัวเลข */}
+        <div className="absolute inset-0 -z-10 bg-linear-to-r from-[#04223a] via-[#04223a]/75 to-[#04223a]/10" />
+        <div className="absolute inset-0 -z-10 bg-linear-to-b from-[#04223a]/70 via-transparent via-30% to-[#04223a]" />
 
         {/* ซ้าย: ชื่อ + คำอธิบาย + ปุ่ม · ขวา (มือถืออยู่ใต้ปุ่ม): การ์ดอัปเดตล่าสุด */}
         <div className="mx-auto grid w-full max-w-7xl items-center gap-10 px-4 sm:px-6 lg:grid-cols-[minmax(0,1fr)_22rem] xl:grid-cols-[minmax(0,1fr)_24rem] xl:gap-16">
@@ -192,18 +185,19 @@ export default async function HomePage() {
               <span className="h-px w-8 bg-amber-300" />
               FA Thailand · Technical Department
             </p>
-            <h1 className={`${h} mt-5 text-[3.25rem] font-semibold leading-[0.95] sm:mt-6 sm:text-7xl xl:text-8xl`}>
-              <span className={`${styles.rise} block`} style={{ animationDelay: "120ms" }}>
+            <h1 className={`${h} mt-5 text-[3.25rem] font-semibold leading-[0.95] tracking-tight sm:mt-6 sm:text-7xl xl:text-8xl`}>
+              <span className={`${styles.rise} block`} style={{ animationDelay: "60ms" }}>
                 FA Thailand
               </span>
-              <span className={`${styles.rise} block text-amber-300`} style={{ animationDelay: "240ms" }}>
+              <span className={`${styles.rise} block text-amber-300`} style={{ animationDelay: "120ms" }}>
                 Technical
               </span>
             </h1>
-            <p className={`${styles.rise} mt-5 max-w-xl border-l-2 border-amber-300/70 pl-4 text-[15px] leading-relaxed text-white/85 sm:mt-7 sm:text-lg`} style={{ animationDelay: "360ms" }}>
-              ฝ่ายเทคนิค สมาคมกีฬาฟุตบอลแห่งประเทศไทย ในพระบรมราชูปถัมภ์ — พัฒนาผู้ฝึกสอน อคาเดมี และนักฟุตบอลเยาวชนไทย
+            <p className={`${styles.rise} mt-6 max-w-xl text-[15px] leading-relaxed text-white/80 sm:mt-8 sm:text-lg`} style={{ animationDelay: "180ms" }}>
+              ฝ่ายเทคนิค สมาคมกีฬาฟุตบอลแห่งประเทศไทย ในพระบรมราชูปถัมภ์
+              <span className="mt-1 block font-semibold text-white">พัฒนาผู้ฝึกสอน อคาเดมี และนักฟุตบอลเยาวชนไทย</span>
             </p>
-            <div className={`${styles.rise} mt-7 flex gap-2.5 sm:mt-9 sm:gap-3`} style={{ animationDelay: "480ms" }}>
+            <div className={`${styles.rise} mt-7 flex gap-2.5 sm:mt-9 sm:gap-3`} style={{ animationDelay: "240ms" }}>
               <a href="#departments" className="inline-flex min-h-11 items-center gap-2 whitespace-nowrap rounded-lg bg-amber-400 px-4 text-[13px] font-semibold text-[#073c5e] transition-colors hover:bg-amber-300 sm:min-h-12 sm:px-7 sm:text-sm">
                 สำรวจหมวดงาน
                 <ArrowDown className="h-4 w-4" />
@@ -215,23 +209,13 @@ export default async function HomePage() {
             </div>
           </div>
 
-          <div className={styles.rise} style={{ animationDelay: "600ms" }}>
+          <div className={styles.rise} style={{ animationDelay: "300ms" }}>
             <HeroUpdates
               board={g15Board}
               session={heroSessions[0] ?? null}
               news={announcements[0] ? { id: announcements[0].id, title: announcements[0].title, imageUrl: announcements[0].imageUrl, date: announcements[0].createdAt } : null}
             />
           </div>
-        </div>
-
-        {/* ชื่อหมวดของภาพที่กำลังแสดง (จางเข้า-ออกพร้อมภาพ) */}
-        <div aria-hidden className="absolute bottom-28 left-6 hidden text-xs text-white/60 lg:block lg:left-10">
-          {HERO_SLIDES.map((d, k) => (
-            <span key={d.key} className={`${styles.caption} absolute bottom-0 left-0 flex items-center gap-2 whitespace-nowrap`} style={{ animationDelay: `${(k + 1) * 6}s` }}>
-              <span className="h-px w-6 bg-amber-300" />
-              {d.title}
-            </span>
-          ))}
         </div>
       </section>
 

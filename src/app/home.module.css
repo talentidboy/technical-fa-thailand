@@ -1,72 +1,25 @@
-/* ภาพอาคารสมาคมในฮีโร่ค่อยๆ ซูม (ช้ามาก ไม่รบกวนการอ่าน) */
+/* ภาพอาคารสมาคมในฮีโร่ค่อยๆ ซูมออกเล็กน้อย (ช้ามาก ไม่รบกวนการอ่าน) */
 .kenburns {
-  animation: kenburns 28s ease-out both;
-  transform-origin: 70% 40%;
+  animation: kenburns 24s ease-out both;
+  transform-origin: 60% 40%;
 }
 @keyframes kenburns {
   from {
-    transform: scale(1.12);
+    transform: scale(1.06);
   }
   to {
     transform: scale(1);
   }
 }
 
-/* ภาพหมวดงานในฮีโร่: จางเข้าทีละภาพแล้วซูมช้าๆ — รอบละ 48 วินาที (8 ช่วง × 6 วินาที; ช่วงแรกเป็นภาพอาคารสมาคม) */
-.slide {
-  opacity: 0;
-  animation: slide 48s linear infinite backwards;
-}
-@keyframes slide {
-  0% {
-    opacity: 0;
-    transform: scale(1.08);
-  }
-  3% {
-    opacity: 1;
-  }
-  13% {
-    opacity: 1;
-  }
-  16% {
-    opacity: 0;
-    transform: scale(1);
-  }
-  100% {
-    opacity: 0;
-  }
-}
-
-/* ชื่อหมวดของภาพ: จางเข้าหลังภาพเริ่ม และหายก่อนภาพถัดไปมา — ไม่ซ้อนกัน */
-.caption {
-  opacity: 0;
-  animation: caption 48s linear infinite backwards;
-}
-@keyframes caption {
-  0%,
-  2% {
-    opacity: 0;
-    transform: translateY(6px);
-  }
-  4%,
-  10.5% {
-    opacity: 1;
-    transform: none;
-  }
-  12%,
-  100% {
-    opacity: 0;
-  }
-}
-
-/* ข้อความในฮีโร่เลื่อนขึ้นทีละบรรทัดตอนเปิดหน้า */
+/* ข้อความในฮีโร่เลื่อนขึ้นตอนเปิดหน้า — สั้นและเริ่มแทบทันที ไม่ให้รู้สึกว่าหน้าโหลดช้า */
 .rise {
-  animation: rise 900ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  animation: rise 500ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 @keyframes rise {
   from {
     opacity: 0;
-    transform: translateY(28px);
+    transform: translateY(14px);
   }
 }
 
@@ -74,9 +27,5 @@
   .kenburns,
   .rise {
     animation: none;
-  }
-  .slide,
-  .caption {
-    display: none;
   }
 }
