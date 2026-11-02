@@ -228,7 +228,7 @@ module.exports = {
     ad.on("dialog", (d) => d.accept());
     check("แอดมินเปิดเอกสารได้", (await fetchAs(`/academies/docs/${doc.id}`, adminToken)).status === 200);
     await ad.goto(`${BASE}/academies/manage/accounts`, { waitUntil: "networkidle", timeout: 240_000 });
-    check("แท็บจัดการแสดงจำนวนงานรอ", (await ad.getByRole("navigation", { name: "เมนูจัดการ" }).innerText()).includes("ใบสมัคร\n1") || (await ad.getByRole("link", { name: /ใบสมัคร\s*1/ }).count()) > 0);
+    check("แท็บจัดการแสดงจำนวนงานรอ", /1\s*$/.test(await ad.getByRole("navigation", { name: "เมนูจัดการ" }).getByRole("link", { name: /ใบสมัคร/ }).innerText()));
     const pendingItem = ad.locator("li", { hasText: "gold-owner@test.invalid" });
     check("คำขอสิทธิ์แสดงข้อความถึงสมาคมฯ", (await pendingItem.innerText()).includes("เป็นผู้อำนวยการอคาเดมี"));
     await pendingItem.getByRole("button", { name: "อนุมัติสิทธิ์" }).click();
@@ -345,7 +345,7 @@ module.exports = {
     check("แท็บบุคลากรและทีม", people.includes("สมชาย") && people.includes("U12"));
     await ad.locator("summary", { hasText: "U12" }).click();
     check("แอดมินเห็นรายชื่อนักเตะ", (await ad.getByText("เด็กชายเอ ทดสอบ").count()) === 1);
-    await ad.goto(`${BASE}/academies/manage/${nsId}?tab=info`, { waitUntil: "networkidle" });
+    await ad.goto(`${BASE}/academies/manage/${nsId}?tab=info&delete=1`, { waitUntil: "networkidle" });
     const delRes = await submit(ad.locator("form", { has: ad.getByRole("button", { name: "ลบอคาเดมี" }) }), ad.getByRole("button", { name: "ลบอคาเดมี" }));
     check("ลบอคาเดมีที่มีข้อมูลพอร์ทัล: ต้องพิมพ์ชื่อยืนยันก่อน", delRes.includes("พิมพ์ชื่ออคาเดมี") && !!(await one(`select 1 from academies where id=$1`, [nsId])));
     await ad.goto(`${BASE}/academies/manage/applications/${appId}`, { waitUntil: "networkidle" });
@@ -375,7 +375,7 @@ module.exports = {
     // ===== 13) ลบอคาเดมีที่มีข้อมูลพอร์ทัล (พิมพ์ชื่อยืนยัน) → ลบบัญชี ใบสมัคร เอกสาร ทีม นักเตะ ไปด้วย =====
     const docCount = async () => (await one(`select count(*)::int n from academy_documents where academy_id=$1`, [nsId])).n;
     check("ก่อนลบ: มีเอกสารของอคาเดมี", (await docCount()) > 0);
-    await ad.goto(`${BASE}/academies/manage/${nsId}?tab=info`, { waitUntil: "networkidle" });
+    await ad.goto(`${BASE}/academies/manage/${nsId}?tab=info&delete=1`, { waitUntil: "networkidle" });
     await ad.locator('[name="confirmName"]').fill("New Star Academy");
     await ad.getByRole("button", { name: "ลบอคาเดมี" }).click();
     await ad.waitForURL(/\/academies\/manage\/academies$/, { timeout: 30_000 }).catch(() => {});

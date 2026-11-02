@@ -11,12 +11,12 @@ type Counts = { applications: number; accounts: number; expiring: number };
 
 // สีไอคอนประจำเมนู (ตรงกับการ์ดงานในหน้าภาพรวม)
 const ITEMS = [
-  { href: "/academies/manage", label: "ภาพรวม", icon: LayoutDashboard, exact: true, color: "#7cc4f0" },
-  { href: "/academies/manage/academies", label: "อคาเดมี", icon: Building2, color: "#5eead4" },
-  { href: "/academies/manage/licences", label: "ใบอนุญาต", icon: BadgeCheck, count: "expiring" as const, color: "#fcd34d" },
-  { href: "/academies/manage/applications", label: "ใบสมัคร", icon: FileCheck2, count: "applications" as const, color: "#93c5fd" },
-  { href: "/academies/manage/accounts", label: "บัญชีอคาเดมี", icon: UserCheck, count: "accounts" as const, color: "#c4b5fd" },
-  { href: "/academies/manage/activity", label: "บันทึกการแก้ไข", icon: History, color: "#cbd5e1" },
+  { href: "/academies/manage", label: "ภาพรวม", hint: "วันนี้ต้องทำอะไร", icon: LayoutDashboard, exact: true, color: "#7cc4f0" },
+  { href: "/academies/manage/academies", label: "อคาเดมี", hint: "ค้นหา ดู แก้ไขข้อมูล เพิ่มใหม่", icon: Building2, color: "#5eead4" },
+  { href: "/academies/manage/licences", label: "ใบอนุญาต", hint: "ดูวันหมดอายุ ต่ออายุ", icon: BadgeCheck, count: "expiring" as const, color: "#fcd34d" },
+  { href: "/academies/manage/applications", label: "ใบสมัคร", hint: "ตรวจเอกสารที่อคาเดมีส่งมา", icon: FileCheck2, count: "applications" as const, color: "#93c5fd" },
+  { href: "/academies/manage/accounts", label: "บัญชีอคาเดมี", hint: "อนุมัติ สร้างบัญชี ตั้งรหัสผ่าน", icon: UserCheck, count: "accounts" as const, color: "#c4b5fd" },
+  { href: "/academies/manage/activity", label: "บันทึกการแก้ไข", hint: "ใครทำอะไร เมื่อไร", icon: History, color: "#cbd5e1" },
 ];
 
 // เมนูหลักของหน้าจัดการ: แถบด้านซ้าย (จอใหญ่) / แถบบนเลื่อนแนวนอน (มือถือ)
@@ -39,7 +39,7 @@ export function ManageNav({ counts, email, isAdmin }: { counts: Counts; email: s
         <AdminSwitcher current="academy" isAdmin={isAdmin} wide />
       </div>
       <nav aria-label="เมนูจัดการ" className="flex gap-1 overflow-x-auto px-2 pb-2 lg:flex-1 lg:flex-col lg:px-3 lg:pb-0">
-        {ITEMS.map(({ href, label, icon: Icon, exact, count, color }) => {
+        {ITEMS.map(({ href, label, hint, icon: Icon, exact, count, color }) => {
           const active = isActive(href, exact);
           const n = count ? counts[count] : 0;
           return (
@@ -52,7 +52,10 @@ export function ManageNav({ counts, email, isAdmin }: { counts: Counts; email: s
               }`}
             >
               <Icon className="h-[1.1rem] w-[1.1rem] flex-none" style={active ? undefined : { color }} />
-              <span className="flex-1">{label}</span>
+              <span className="flex-1 leading-tight">
+                {label}
+                <span className={`mt-0.5 hidden text-[11px] font-normal lg:block ${active ? "text-white/85" : "text-white/50"}`}>{hint}</span>
+              </span>
               {n > 0 && <span className="rounded-full bg-[#ffd426] px-2 text-[11px] font-bold text-[#0b1220]">{n}</span>}
             </Link>
           );

@@ -148,7 +148,7 @@ module.exports = {
     await ad.goto(`${BASE}/academies/manage`, { waitUntil: "networkidle", timeout: 240_000 });
     const nav = await ad.getByRole("navigation", { name: "เมนูจัดการ" }).innerText();
     check("เมนูจัดการครบทุกหน้า", ["ภาพรวม", "อคาเดมี", "ใบอนุญาต", "ใบสมัคร", "บัญชีอคาเดมี", "บันทึกการแก้ไข"].every((x) => nav.includes(x)), nav.replace(/\n/g, " | "));
-    check("ภาพรวม: งานที่ต้องทำ + ข้อมูลที่ควรตรวจสอบ", (await ad.locator("main").innerText()).includes("ข้อมูลในทะเบียนที่ควรตรวจสอบ"));
+    check("ภาพรวม: งานที่ต้องทำ + ข้อมูลที่ควรตรวจสอบ", (await ad.locator("main").innerText()).includes("ข้อมูลที่ควรตรวจสอบ"));
     await ad.goto(`${BASE}/academies/manage?state=expired`, { waitUntil: "networkidle" });
     check("ลิงก์เดิม /academies/manage?state= → ส่งไปหน้าทะเบียน", new URL(ad.url()).pathname === "/academies/manage/academies" && ad.url().includes("state=expired"));
 
@@ -280,7 +280,7 @@ module.exports = {
     check("ปิดการแสดง", await until(async () => (await sql("select active from academies where id=$1", [gammaId]))[0].active === false));
     await pub.goto(`${BASE}/academies`, { waitUntil: "networkidle" });
     check("อคาเดมีที่ปิดการแสดงไม่อยู่ในทำเนียบ", !(await pub.locator("#directory").innerText()).includes("Gamma Academy"));
-    await openTab(deltaId, "info");
+    await openTab(deltaId, "info&delete=1");
     await ad.getByRole("button", { name: "ลบอคาเดมี" }).click();
     await ad.waitForURL(/\/academies\/manage\/academies$/, { timeout: 30_000 });
     check("ลบอคาเดมี + เก็บสำเนาในบันทึก", (await academyCount()) === 6 && (await sql("select count(*)::int n from audit_logs where action='ACADEMY_DELETE'"))[0].n === 1);

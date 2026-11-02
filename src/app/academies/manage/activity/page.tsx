@@ -32,7 +32,7 @@ export default async function ActivityPage({ searchParams }: { searchParams: Pro
             ))}
           </select>
           <button type="submit" className={btn.primary}>
-            กรอง
+            แสดงรายการ
           </button>
         </form>
         <Card flush tone="ink">

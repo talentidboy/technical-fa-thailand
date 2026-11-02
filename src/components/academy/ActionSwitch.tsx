@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 
-// ปุ่มคำสั่งเรียงแถว — กดแล้วเปิดแผงฟอร์มของคำสั่งนั้นด้านล่าง (เปิดได้ทีละแผง)
-export function ActionSwitch({ items }: { items: { key: string; label: string; danger?: boolean; content: React.ReactNode }[] }) {
-  const [open, setOpen] = useState<string | null>(null);
+// ปุ่มคำสั่งเรียงแถว — กดแล้วเปิดแผงฟอร์มของคำสั่งนั้นด้านล่าง (เปิดได้ทีละแผง) · initial = แผงที่เปิดไว้ตั้งแต่แรก (มาจากปุ่มลัด เช่น “ต่ออายุ”)
+export function ActionSwitch({ items, initial }: { items: { key: string; label: string; danger?: boolean; content: React.ReactNode }[]; initial?: string }) {
+  const [open, setOpen] = useState<string | null>(initial ?? null);
   const current = items.find((i) => i.key === open);
   return (
     <div>

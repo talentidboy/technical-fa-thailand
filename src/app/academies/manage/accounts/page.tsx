@@ -56,14 +56,17 @@ export default async function AcademyAccountsPage({ searchParams }: { searchPara
 
   return (
     <>
-      <PageHeader title="บัญชีอคาเดมี" description="อคาเดมีใหม่ที่สมัครเองเริ่มใช้งานได้ทันที · การขอสิทธิ์ดูแลอคาเดมีที่มีในทะเบียนแล้วต้องตรวจสอบและอนุมัติที่นี่ก่อน" />
+      <PageHeader title="บัญชีอคาเดมี" description="บัญชีที่อคาเดมีใช้เข้าสู่ระบบเพื่อดูแลข้อมูลของตัวเอง · อนุมัติคำขอ สร้างบัญชีให้ หรือตั้งรหัสผ่านใหม่เมื่อลืมรหัส" />
       <PageBody>
         <Card title={`คำขอสิทธิ์ดูแลอคาเดมี — รอตรวจสอบ (${pending.length})`} icon={Inbox} tone={pending.length ? "amber" : "sky"} flush>
           {pending.length === 0 ? (
-            <p className="flex items-center justify-center gap-2 px-5 py-8 text-sm font-semibold text-emerald-700">
-              <Check className="h-4 w-4" />
-              ไม่มีคำขอที่รออนุมัติ
-            </p>
+            <div className="px-5 py-4 text-sm">
+              <p className="flex items-center gap-2 font-semibold text-emerald-700">
+                <Check className="h-4 w-4" />
+                ไม่มีคำขอที่รออนุมัติ
+              </p>
+              <p className="mt-1 text-xs text-slate-500">คำขอจะมาที่นี่เมื่อมีคนสมัครขอดูแลอคาเดมีที่มีในทะเบียนแล้ว ส่วนอคาเดมีใหม่ที่สมัครเองใช้งานได้ทันที ไม่ต้องอนุมัติ</p>
+            </div>
           ) : (
             <ul className="divide-y divide-slate-100">
               {pending.map((m) => {

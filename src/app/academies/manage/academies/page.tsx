@@ -10,6 +10,9 @@ const PAGE = 50;
 
 const STATES = Object.keys(STATE_META) as AcademyState[];
 
+// กำลังดูรายการข้อมูลที่ควรตรวจสอบ → ปุ่ม “เปิด” พาไปแท็บที่แก้เรื่องนั้นได้เลย
+const ISSUE_TAB: Record<IssueKey, string> = { "no-active": "licences", "no-level": "licences", "no-province": "info", "no-contact": "info", "no-date": "licences", "upgrade-note": "licences" };
+
 // ทะเบียนอคาเดมีทั้งหมด (ค้นหา / กรอง / ส่งออก) — กดชื่อเพื่อเปิดหน้ารายละเอียด
 export default async function AcademyRegistryPage({
   searchParams,
@@ -55,7 +58,7 @@ export default async function AcademyRegistryPage({
     <>
       <PageHeader
         title="อคาเดมี"
-        description={`ทะเบียนทั้งหมด ${rows.length.toLocaleString()} แห่ง · ข้อมูลติดต่อเห็นเฉพาะในระบบจัดการ`}
+        description={`ทะเบียนทั้งหมด ${rows.length.toLocaleString()} แห่ง · ค้นหาแล้วกด “เปิด” เพื่อดูหรือแก้ไขข้อมูล`}
         actions={
           <>
             <a href={`/academies/manage/export${query({})}`} className={btn.secondary}>
@@ -70,26 +73,6 @@ export default async function AcademyRegistryPage({
         }
       />
       <PageBody>
-        {issueCounts.length > 0 && (
-          <div className="rounded-2xl border border-orange-200 border-l-4 border-l-orange-500 bg-orange-50 p-4">
-            <p className="flex items-center gap-1.5 text-sm font-semibold text-amber-900">
-              <TriangleAlert className="h-4 w-4" />
-              ข้อมูลที่ควรตรวจสอบ
-            </p>
-            <div className="mt-2 flex flex-wrap gap-2">
-              {issueCounts.map((i) => (
-                <Link
-                  key={i.key}
-                  href={href({ issue: issue === i.key ? null : i.key })}
-                  className={`rounded-md px-2.5 py-1 text-xs font-semibold ring-1 ${issue === i.key ? "bg-amber-600 text-white ring-amber-600" : "bg-white text-amber-900 ring-amber-200 hover:bg-amber-100"}`}
-                >
-                  {i.label} · {i.n}
-                </Link>
-              ))}
-            </div>
-          </div>
-        )}
-
         <form action="/academies/manage/academies" className="grid gap-2 rounded-2xl bg-white p-3 ring-1 ring-slate-200 sm:grid-cols-2 lg:grid-cols-[minmax(0,1.6fr)_1fr_1fr_1fr_auto]">
           <label className="relative">
             <span className="sr-only">ค้นหา</span>
@@ -124,9 +107,30 @@ export default async function AcademyRegistryPage({
           </select>
           {issue && <input type="hidden" name="issue" value={issue} />}
           <button type="submit" className={btn.primary}>
-            กรอง
+            ค้นหา
           </button>
         </form>
+
+        {issueCounts.length > 0 && (
+          <div className="rounded-2xl bg-white p-4 ring-1 ring-slate-200">
+            <p className="flex flex-wrap items-center gap-x-1.5 text-sm font-semibold text-slate-800">
+              <TriangleAlert className="h-4 w-4 flex-none text-amber-500" />
+              ข้อมูลที่ควรตรวจสอบ
+              <span className="font-normal text-slate-500">· ไม่เร่งด่วน กดหัวข้อเพื่อดูรายชื่อ แล้วกด “เปิด” เพื่อเติมข้อมูล</span>
+            </p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {issueCounts.map((i) => (
+                <Link
+                  key={i.key}
+                  href={href({ issue: issue === i.key ? null : i.key })}
+                  className={`rounded-md px-2.5 py-1 text-xs font-semibold ring-1 ${issue === i.key ? "bg-amber-600 text-white ring-amber-600" : "bg-white text-amber-900 ring-amber-200 hover:bg-amber-100"}`}
+                >
+                  {i.label} · {i.n}
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
 
         <Card
           flush
@@ -155,9 +159,12 @@ export default async function AcademyRegistryPage({
                     <th className="px-3 py-2.5 font-medium">จังหวัด</th>
                     <th className="px-3 py-2.5 font-medium">ระดับ</th>
                     <th className="px-3 py-2.5 font-medium">สถานะ</th>
-                    <th className="px-3 py-2.5 font-medium">อนุมัติ</th>
-                    <th className="px-3 py-2.5 font-medium">หมดอายุ</th>
+                    <th className="px-3 py-2.5 font-medium">วันที่อนุมัติ</th>
+                    <th className="px-3 py-2.5 font-medium">วันหมดอายุ</th>
                     <th className="px-3 py-2.5 font-medium">ผู้ประสานงาน</th>
+                    <th className="px-5 py-2.5 font-medium">
+                      <span className="sr-only">เปิด</span>
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -182,6 +189,11 @@ export default async function AcademyRegistryPage({
                       <td className="px-3 py-2.5 text-xs text-slate-600">
                         {a.contactName ?? "-"}
                         {a.phone && <p className="text-slate-400">{a.phone}</p>}
+                      </td>
+                      <td className="px-5 py-2.5 text-right">
+                        <Link href={`/academies/manage/${a.id}${issue ? `?tab=${ISSUE_TAB[issue]}` : ""}`} aria-label={`เปิด ${a.nameEn}`} className={`${btn.secondary} whitespace-nowrap px-3 py-1.5 text-xs`}>
+                          เปิด
+                        </Link>
                       </td>
                     </tr>
                   ))}

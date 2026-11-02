@@ -22,8 +22,18 @@ import { BadgeCheck, Building2, CheckCircle2, ExternalLink, Eye, EyeOff, FileChe
 const TABS = ["overview", "info", "licences", "people", "applications", "accounts", "history"] as const;
 type Tab = (typeof TABS)[number];
 
+// บอกว่าแท็บนี้ใช้ทำอะไร
+const TAB_HINT: Partial<Record<Tab, string>> = {
+  info: "แก้ชื่อ จังหวัด และข้อมูลติดต่อ แล้วกด “บันทึกข้อมูล” ท้ายฟอร์ม",
+  licences: "ต่ออายุ เปลี่ยนระดับ หรือพักใช้ใบอนุญาต และดูใบเก่าย้อนหลัง",
+  people: "รายชื่อที่อคาเดมีกรอกเองในระบบ ดูได้อย่างเดียว",
+  applications: "ใบสมัครที่อคาเดมีนี้ส่งผ่านระบบ กดรายการเพื่อเปิดตรวจ",
+  accounts: "บัญชีที่อคาเดมีนี้ใช้เข้าสู่ระบบ",
+  history: "ใครแก้ไขอะไรของอคาเดมีนี้ เมื่อไร",
+};
+
 // หน้ารายละเอียดอคาเดมี (หลังบ้าน) — แยกเป็นแท็บ: ภาพรวม / ข้อมูล / ใบอนุญาต / บุคลากรและทีม / ใบสมัคร / บัญชีผู้ดูแล / ประวัติ
-export default async function AcademyManagePage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ tab?: string }> }) {
+export default async function AcademyManagePage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ tab?: string; do?: string; delete?: string }> }) {
   const id = parseId((await params).id);
   if (!id) notFound();
   const sp = await searchParams;
@@ -63,6 +73,20 @@ export default async function AcademyManagePage({ params, searchParams }: { para
   const base = `/academies/manage/${academy.id}`;
   const tabHref = (t: Tab) => (t === "overview" ? base : `${base}?tab=${t}`);
   const days = active?.expiresAt ? daysUntil(active.expiresAt, now) : null;
+  const firstSubmitted = academy.applications.find((a) => a.status === "SUBMITTED");
+
+  // สิ่งที่ควรทำต่อกับอคาเดมีนี้ เรียงตามความเร่งด่วน (ใบที่ถูกแทนที่แล้วมีแถบ orphanBanner ของตัวเอง)
+  const nextSteps: { text: string; href: string; action: string; urgent?: boolean }[] = [
+    ...(firstSubmitted ? [{ text: "มีใบสมัครรอตรวจ", href: `/academies/manage/applications/${firstSubmitted.id}`, action: "เปิดตรวจ", urgent: true }] : []),
+    ...(pendingMembers ? [{ text: `มีคนขอเป็นผู้ดูแล ${pendingMembers} คน`, href: "/academies/manage/accounts", action: "ตรวจคำขอ", urgent: true }] : []),
+    ...(active && days !== null && days < 0 ? [{ text: `ใบอนุญาตหมดอายุแล้ว ${-days} วัน`, href: `${tabHref("licences")}&do=renew`, action: "ต่ออายุ", urgent: true }] : []),
+    ...(active && days !== null && days >= 0 && days <= 60 ? [{ text: `ใบอนุญาตจะหมดอายุในอีก ${days} วัน`, href: `${tabHref("licences")}&do=renew`, action: "ต่ออายุ", urgent: true }] : []),
+    ...(current?.status === "REVOKED" ? [{ text: "ใบอนุญาตถูกพักใช้อยู่", href: tabHref("licences"), action: "จัดการ" }] : []),
+    ...(!current && !orphaned ? [{ text: "ยังไม่มีใบอนุญาต", href: tabHref("licences"), action: "ออกใบอนุญาต" }] : []),
+    ...(state === "pending" ? [{ text: "ใบอนุญาตยังไม่ระบุระดับ", href: tabHref("licences"), action: "แก้ไข" }] : []),
+    ...(!academy.province ? [{ text: "ยังไม่มีจังหวัด", href: tabHref("info"), action: "เติมข้อมูล" }] : []),
+    ...(!academy.phone && !academy.email ? [{ text: "ยังไม่มีเบอร์โทรหรืออีเมล", href: tabHref("info"), action: "เติมข้อมูล" }] : []),
+  ];
 
   const orphanBanner = orphaned && (
     <div role="alert" className="flex flex-wrap items-center gap-3 rounded-lg border border-amber-200 bg-amber-50 p-4">
@@ -105,10 +129,6 @@ export default async function AcademyManagePage({ params, searchParams }: { para
             ) : (
               <span className="text-xs text-slate-400">ไม่แสดงบนหน้าสาธารณะ</span>
             )}
-            <Link href={`${tabHref("info")}#delete`} className={btn.danger}>
-              <Trash2 className="h-4 w-4" />
-              ลบ
-            </Link>
           </>
         }
       >
@@ -128,6 +148,33 @@ export default async function AcademyManagePage({ params, searchParams }: { para
 
       <PageBody>
         {(tab === "overview" || tab === "licences") && orphanBanner}
+        {TAB_HINT[tab] && <p className="text-sm text-slate-600">{TAB_HINT[tab]}</p>}
+
+        {tab === "overview" && (nextSteps.length === 0 ? (
+          !orphaned && (
+            <p className="flex items-center gap-2 rounded-2xl bg-emerald-50 px-5 py-3.5 text-sm font-semibold text-emerald-800 ring-1 ring-emerald-200">
+              <CheckCircle2 className="h-4 w-4 flex-none" />
+              อคาเดมีนี้เรียบร้อย ไม่มีอะไรต้องทำ
+            </p>
+          )
+        ) : (
+          <section aria-label="สิ่งที่ควรทำต่อ" className="rounded-2xl bg-white p-4 ring-1 ring-slate-200">
+            <h2 className="font-bold text-[#0b1220]">สิ่งที่ควรทำต่อ</h2>
+            <ul className="mt-2 divide-y divide-slate-100">
+              {nextSteps.map((s) => (
+                <li key={s.text} className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5 py-2.5 text-sm">
+                  <span className="flex min-w-0 items-center gap-2 text-slate-700">
+                    <TriangleAlert className={`h-4 w-4 flex-none ${s.urgent ? "text-red-500" : "text-amber-500"}`} />
+                    {s.text}
+                  </span>
+                  <Link href={s.href} className={`${s.urgent ? btn.primary : btn.secondary} whitespace-nowrap px-3 py-1.5 text-xs`}>
+                    {s.action}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ))}
 
         {tab === "overview" && (
           <div className="grid gap-6 lg:grid-cols-3">
@@ -190,7 +237,7 @@ export default async function AcademyManagePage({ params, searchParams }: { para
                 ))}
               </dl>
             </Card>
-            <Card title="พอร์ทัลอคาเดมี" icon={LayoutGrid} className="lg:col-span-2">
+            <Card title="ข้อมูลที่อคาเดมีกรอกเองในระบบ" icon={LayoutGrid} className="lg:col-span-2">
               <dl className="grid gap-3 sm:grid-cols-4">
                 {[
                   { k: "บัญชีผู้ดูแล", v: academy.members.length, sub: pendingMembers ? `รออนุมัติ ${pendingMembers}` : null, t: "accounts" as const },
@@ -209,6 +256,10 @@ export default async function AcademyManagePage({ params, searchParams }: { para
             <Card title="แก้ไขล่าสุด" icon={History} tone="ink" flush className="lg:col-span-3" actions={<Link href={tabHref("history")} className={`${btn.link} text-xs`}>ทั้งหมด</Link>}>
               {logs.length === 0 ? <Empty>ยังไม่มีการแก้ไข</Empty> : <LogList logs={logs} />}
             </Card>
+            <Link href={`${tabHref("info")}&delete=1#delete`} className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-red-600 lg:col-span-3">
+              <Trash2 className="h-3.5 w-3.5" />
+              ต้องการลบอคาเดมีนี้
+            </Link>
           </div>
         )}
 
@@ -224,8 +275,13 @@ export default async function AcademyManagePage({ params, searchParams }: { para
                 </button>
               </ResultForm>
             </Card>
-            <div id="delete" className="scroll-mt-6">
-              <Card title="ลบอคาเดมี" icon={Trash2} tone="red" className="border-red-200">
+            {/* ลบถาวร: พับไว้ ไม่ให้กดโดยไม่ตั้งใจ */}
+            <details id="delete" open={sp.delete === "1"} className="scroll-mt-6 overflow-hidden rounded-2xl border border-red-200 bg-white">
+              <summary className="flex cursor-pointer items-center gap-2 px-5 py-3.5 text-sm font-semibold text-red-600 hover:bg-red-50">
+                <Trash2 className="h-4 w-4" />
+                ต้องการลบอคาเดมีนี้
+              </summary>
+              <div className="border-t border-red-100 p-5">
                 {portalData ? (
                   <>
                     <p className="text-sm text-slate-600">อคาเดมีนี้มีข้อมูลในพอร์ทัลแล้ว — ลบแล้วสิ่งเหล่านี้หายถาวร กู้คืนไม่ได้:</p>
@@ -260,20 +316,26 @@ export default async function AcademyManagePage({ params, searchParams }: { para
                     ลบอคาเดมี
                   </ConfirmSubmit>
                 </ResultForm>
-              </Card>
-            </div>
+              </div>
+            </details>
           </>
         )}
 
         {tab === "licences" && (
           <>
-            <Card title="คำสั่งใบอนุญาต" icon={Gavel} tone="amber">
+            <Card title="จัดการใบอนุญาต" icon={Gavel} tone="amber">
               {active ? (
                 <>
-                  <p className="mb-4 text-sm text-slate-600">
-                    ใบที่มีผล: <LevelBadge level={active.level} tier={active.tier} /> {active.licenceNo && <span className="font-semibold">· {active.licenceNo}</span>} · หมดอายุ {active.expiresAt ? thaiDate(active.expiresAt) : "ไม่ระบุ"}
+                  <p className="text-sm text-slate-600">
+                    ใบปัจจุบัน: <LevelBadge level={active.level} tier={active.tier} /> {active.licenceNo && <span className="font-semibold">· {active.licenceNo}</span>} · หมดอายุ {active.expiresAt ? thaiDate(active.expiresAt) : "ไม่ระบุ"}
                   </p>
+                  <ul className="mb-4 mt-2 space-y-0.5 text-xs text-slate-500">
+                    <li><span className="font-semibold text-slate-700">ต่ออายุ</span> = ระดับเดิม ออกใบใหม่พร้อมวันหมดอายุใหม่</li>
+                    <li><span className="font-semibold text-slate-700">เปลี่ยนระดับ</span> = เลื่อนหรือลดระดับ เช่น Bronze เป็น Silver</li>
+                    <li><span className="font-semibold text-slate-700">พักใช้ / เพิกถอน</span> = หยุดใบนี้ อคาเดมีจะไม่แสดงบนหน้าสาธารณะ</li>
+                  </ul>
                   <ActionSwitch
+                    initial={sp.do === "renew" ? "renew" : undefined}
                     items={[
                       { key: "renew", label: "ต่ออายุ", content: <IssueLicenceForm academyId={academy.id} kind="RENEW" current={active} /> },
                       { key: "change", label: "เปลี่ยนระดับ", content: <IssueLicenceForm academyId={academy.id} kind="CHANGE" current={active} /> },
@@ -329,7 +391,7 @@ export default async function AcademyManagePage({ params, searchParams }: { para
                         </ResultForm>
                       </div>
                       <details className="border-t border-slate-100">
-                        <summary className="cursor-pointer px-5 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50">แก้ไขรายละเอียด (กรณีบันทึกผิด)</summary>
+                        <summary className="cursor-pointer px-5 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50">แก้ไขรายละเอียด (เมื่อบันทึกผิด หรือยังไม่ได้ระบุระดับ)</summary>
                         <ResultForm action={updateLicence} className="border-t border-slate-100 p-5">
                           <input type="hidden" name="id" value={l.id} />
                           <LicenceFields licence={l} />
