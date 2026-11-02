@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { parseId } from "@/lib/route-id";
 import { notFound } from "next/navigation";
-import { prisma } from "@/lib/prisma";
+// อ่านผ่านตัวเก็บผลซ้ำ (30 วินาที) — รับคนดูพร้อมกันได้มาก · แอดมินบันทึกผลแล้วข้อมูลใหม่ขึ้นทันที (updateTag "g15")
+import { g15Db as prisma } from "@/lib/cached-db";
 import { getStandings, getNationalStandings, formatMatchDateTime, type StandingRow } from "@/lib/g15";
 import { parseRegionGroup, regionEn } from "@/lib/g15-region";
 import { stageInfo, roundStyle, matchWinnerId, hasPenalties, isLive, hasLiveScore, type G15Stage } from "@/lib/g15-stage";

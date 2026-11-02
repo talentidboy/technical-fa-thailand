@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { prisma } from "@/lib/prisma";
+// อ่านผ่านตัวเก็บผลซ้ำ (30 วินาที) — รับคนดูพร้อมกันได้มาก · แอดมินบันทึกผลแล้วข้อมูลใหม่ขึ้นทันที (updateTag "g15")
+import { g15Db as prisma } from "@/lib/cached-db";
 import { getCurrentUser } from "@/lib/auth";
 import { getStandings } from "@/lib/g15";
 import { parseStage, stageInfo } from "@/lib/g15-stage";

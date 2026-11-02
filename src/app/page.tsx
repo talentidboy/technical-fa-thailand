@@ -1,7 +1,8 @@
 import Link from "next/link";
 import Image from "next/image";
 import { redirect } from "next/navigation";
-import { prisma } from "@/lib/prisma";
+// อ่านผ่านตัวเก็บผลซ้ำ (60 วินาที) — หน้าแรกเป็นหน้าที่คนเข้าเยอะที่สุด
+import { minuteNow, publicDb as prisma } from "@/lib/cached-db";
 import { getCurrentUser } from "@/lib/auth";
 import { ACADEMY_LEVELS, showPublicly, type AcademyLevel } from "@/lib/academy";
 import { coreProgramSteps } from "@/lib/coach-program";
@@ -64,14 +65,15 @@ export default async function HomePage() {
   const user = await getCurrentUser();
   if (user?.role === "COACH") redirect("/me");
   const isStaff = user?.role === "ADMIN" || user?.role === "STAFF";
-  const now = new Date();
+  // ปัดเป็นนาที: เงื่อนไขที่มีเวลาจะเหมือนกันทั้งนาที → ตัวเก็บผลซ้ำ (publicDb) ใช้ผลเดิมได้
+  const now = minuteNow();
 
   const [announcements, events, coachTotal, licensedCoaches, academies, g15Teams, g15Played, byProvince, articleAreas, levelCounts, sessions, g15Live, g15Last, g15Next, articles] = await Promise.all([
     prisma.announcement.findMany({ orderBy: { createdAt: "desc" }, take: 6 }),
     isStaff ? prisma.event.findMany({ where: { endDate: { gte: now } }, orderBy: { startDate: "asc" }, take: 6 }) : Promise.resolve([]),
     prisma.coach.count(),
     prisma.coach.count({ where: { licenseRecords: { some: { OR: [{ expireDate: null }, { expireDate: { gte: now } }] } } } }),
-    loadAcademies(now),
+    loadAcademies(now, prisma),
     prisma.g15Team.count(),
     prisma.g15Match.count({ where: { status: "FINISHED" } }),
     prisma.coach.groupBy({ by: ["provinceCode"], where: { provinceCode: { not: null } }, _count: { _all: true } }),

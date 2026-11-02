@@ -3,8 +3,9 @@ import { bangkokDay, currentLicence, licenceState, type AcademyLevel } from "./a
 import { verifiedCoachLicence, type StaffForCheck, type TeamForCheck } from "./academy-checks";
 
 // อคาเดมีทั้งหมด + ใบปัจจุบัน + สถานะ (ข้อมูลหลักร้อยแถว คำนวณ/กรองในโค้ดได้สบาย)
-export async function loadAcademies(now = new Date()) {
-  const rows = await prisma.academy.findMany({ include: { licences: true }, orderBy: { id: "asc" } });
+// db: หน้าสาธารณะส่ง publicDb (ตัวเก็บผลซ้ำ) มาได้ · หลังบ้านใช้ prisma ตรงเสมอ (เห็นข้อมูลล่าสุด)
+export async function loadAcademies(now = new Date(), db: typeof prisma = prisma) {
+  const rows = await db.academy.findMany({ include: { licences: true }, orderBy: { id: "asc" } });
   return rows.map((a) => {
     const current = currentLicence(a.licences);
     return { ...a, current, level: current?.level ?? null, state: licenceState(current, now) };

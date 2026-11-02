@@ -2,7 +2,8 @@ import Link from "next/link";
 import { parseId } from "@/lib/route-id";
 import { Bebas_Neue } from "next/font/google";
 import { notFound } from "next/navigation";
-import { prisma } from "@/lib/prisma";
+// อ่านผ่านตัวเก็บผลซ้ำ (30 วินาที) — รับคนดูพร้อมกันได้มาก · แอดมินบันทึกผลแล้วข้อมูลใหม่ขึ้นทันที (updateTag "g15")
+import { g15Db as prisma } from "@/lib/cached-db";
 import { getCurrentUser } from "@/lib/auth";
 import { formatMatchDateShort } from "@/lib/g15";
 import { parseRegionGroup, regionEn } from "@/lib/g15-region";

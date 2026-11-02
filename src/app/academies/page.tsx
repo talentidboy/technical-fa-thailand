@@ -4,6 +4,7 @@ import { pageMeta } from "@/lib/seo";
 import { getAcademyUser, getCurrentUser } from "@/lib/auth";
 import { ACADEMY_LEVELS, LEVEL_META, compareAcademies, isLevel, levelRank, showPublicly, type AcademyLevel } from "@/lib/academy";
 import { loadAcademies, matchesQuery } from "@/lib/academy-data";
+import { publicDb } from "@/lib/cached-db";
 import { LEVEL_SUMMARY, criteriaCount } from "@/lib/academy-criteria";
 import { StateChip } from "@/components/academy/AcademyUi";
 import { CriteriaExplorer } from "@/components/academy/CriteriaExplorer";
@@ -67,7 +68,7 @@ export default async function AcademiesPage({
   searchParams: Promise<{ q?: string; level?: string; province?: string; page?: string; criteria?: string }>;
 }) {
   const sp = await searchParams;
-  const [user, academyUser, rows] = await Promise.all([getCurrentUser(), getAcademyUser(), loadAcademies()]);
+  const [user, academyUser, rows] = await Promise.all([getCurrentUser(), getAcademyUser(), loadAcademies(undefined, publicDb)]);
   const viewer = user?.role === "ADMIN" || user?.role === "STAFF" ? "admin" : academyUser ? "academy" : user ? "staff-other" : "guest";
 
   const all = rows.filter((a) => showPublicly(a.active, a.state));

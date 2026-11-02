@@ -16,7 +16,7 @@ import {
   isKnockoutRound,
   type G15Stage,
 } from "@/lib/g15-stage";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 
 async function requireAdminOrStaff() {
   const user = await requireUser();
@@ -27,6 +27,8 @@ async function requireAdminOrStaff() {
 }
 
 function revalidateG15(teamId?: number, matchId?: number) {
+  // หน้าสาธารณะอ่านผ่านตัวเก็บผลซ้ำ (g15Db) — ล้างทิ้งทันทีให้คนดูเห็นผลใหม่
+  updateTag("g15");
   revalidatePath("/g15-womens-series");
   revalidatePath("/g15-womens-series/matches");
   revalidatePath("/g15-womens-series/standings");
@@ -935,6 +937,7 @@ export async function saveAwards(formData: FormData): Promise<ActionResult> {
       ...(xi.length > 0 ? [prisma.g15AllStar.createMany({ data: xi })] : []),
     ]);
 
+    updateTag("g15");
     revalidatePath("/g15-womens-series/awards");
     revalidatePath("/g15-womens-series/manage/awards");
     revalidatePath("/g15-womens-series");
@@ -1527,6 +1530,7 @@ export async function saveGalleryLink(formData: FormData): Promise<ActionResult>
     const prev = id ? await prisma.g15GalleryLink.findUnique({ where: { id }, select: { matchId: true } }) : null;
     if (id) await prisma.g15GalleryLink.update({ where: { id }, data });
     else await prisma.g15GalleryLink.create({ data });
+    updateTag("g15");
     revalidatePath("/g15-womens-series/gallery");
     for (const m of [matchId, prev?.matchId]) if (m) revalidatePath(`/g15-womens-series/matches/${m}`);
   });
@@ -1539,6 +1543,7 @@ export async function deleteGalleryLink(formData: FormData): Promise<ActionResul
     const link = await prisma.g15GalleryLink.findUnique({ where: { id }, select: { matchId: true } });
     if (!link) throw new Error("ไม่พบอัลบั้มนี้");
     await prisma.g15GalleryLink.delete({ where: { id } });
+    updateTag("g15");
     revalidatePath("/g15-womens-series/gallery");
     if (link.matchId) revalidatePath(`/g15-womens-series/matches/${link.matchId}`);
   });

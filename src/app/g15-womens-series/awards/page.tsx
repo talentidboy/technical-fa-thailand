@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Montserrat } from "next/font/google";
-import { prisma } from "@/lib/prisma";
+// อ่านผ่านตัวเก็บผลซ้ำ (30 วินาที) — รับคนดูพร้อมกันได้มาก · แอดมินบันทึกผลแล้วข้อมูลใหม่ขึ้นทันที (updateTag "g15")
+import { g15Db as prisma } from "@/lib/cached-db";
 import { getCurrentUser } from "@/lib/auth";
 import { G15Chrome } from "@/components/g15/G15Chrome";
 import { Reveal } from "@/components/g15/Reveal";
