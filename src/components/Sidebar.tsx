@@ -168,22 +168,18 @@ export function Sidebar({
             {adminItems.map(navLink)}
           </div>
         )}
-        <div className="space-y-0.5">
-          <p className="px-3 pb-1.5 text-[11px] font-semibold text-white/40">บัญชีของฉัน</p>
-          {navLink({ href: "/settings", label: "ตั้งค่า / เปลี่ยนรหัสผ่าน", icon: Settings })}
-        </div>
       </nav>
 
       <div className="border-t border-white/10 px-5 py-4">
-        <div className="flex items-center gap-3">
+        {/* บัญชีของฉัน → หน้าตั้งค่าบัญชี (อยู่นอกระบบจัดการหมวด) */}
+        <Link href="/settings" title="ตั้งค่าบัญชี / เปลี่ยนรหัสผ่าน" className="-mx-2 flex items-center gap-3 rounded-md px-2 py-1 hover:bg-white/10">
           <span className="flex h-9 w-9 flex-none items-center justify-center rounded-md bg-white/10 text-sm font-semibold uppercase text-amber-300">{email.charAt(0)}</span>
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-medium text-white" title={email}>
-              {email}
-            </p>
-            <p className="text-[11px] text-white/50">{roleLabel}</p>
-          </div>
-        </div>
+          <span className="min-w-0 flex-1">
+            <span className="block truncate text-sm font-medium text-white">{email}</span>
+            <span className="block text-[11px] text-white/50">{roleLabel} · ตั้งค่าบัญชี</span>
+          </span>
+          <Settings className="h-4 w-4 flex-none text-white/40" />
+        </Link>
         <div className="mt-3 flex items-center justify-between gap-2 text-xs font-medium">
           <Link href="/" className="inline-flex items-center gap-1.5 rounded-md py-1.5 text-white/55 hover:text-white">
             <ArrowLeft className="h-3.5 w-3.5" />

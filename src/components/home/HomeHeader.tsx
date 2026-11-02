@@ -7,7 +7,7 @@ import { BrandLogo } from "@/components/BrandLogo";
 import { display } from "@/components/fonts";
 import { logout } from "@/app/login/actions";
 import { DEPARTMENTS, departmentHref } from "./departments";
-import { ArrowRight, CalendarDays, ChevronDown, ListChecks, Lock, LogOut, Megaphone, Menu, UserCog, X } from "lucide-react";
+import { ArrowRight, CalendarDays, ChevronDown, ListChecks, Lock, LogOut, Megaphone, Menu, Settings, UserCog, X } from "lucide-react";
 
 export type HeaderUser = { email: string; roleLabel: string; isAdmin: boolean; isStaff: boolean };
 export type HeaderEvent = { id: number; title: string; color: string; when: string };
@@ -146,6 +146,9 @@ export function HomeHeader({ user, events }: { user: HeaderUser | null; events: 
             {user.isAdmin && <MenuLink href="/users" icon={<UserCog className="h-4 w-4" />} label="ผู้ใช้งานระบบ" />}
             {user.isStaff && <MenuLink href="/calendar" icon={<CalendarDays className="h-4 w-4" />} label="ปฏิทินกิจกรรม" />}
           </div>
+          <div className="border-t border-slate-100 py-1.5 text-sm">
+            <MenuLink href="/settings" icon={<Settings className="h-4 w-4" />} label="ตั้งค่าบัญชี / เปลี่ยนรหัสผ่าน" />
+          </div>
           {user.isStaff && events.length > 0 && (
             <div className="border-t border-slate-100 px-4 py-3">
               <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Upcoming</p>
@@ -181,6 +184,23 @@ export function HomeHeader({ user, events }: { user: HeaderUser | null; events: 
               </Link>
             ))}
           </nav>
+          {user && (
+            <>
+              <p className="mt-5 px-3 text-xs font-semibold text-slate-400">บัญชีของฉัน · {user.email}</p>
+              <div className="mt-2 space-y-1 text-sm font-medium text-slate-800">
+                {user.isStaff && (
+                  <Link href="/admin" onClick={() => setOpen(null)} className="flex items-center gap-3 rounded-lg px-3 py-2.5 hover:bg-slate-50">
+                    <ListChecks className="h-4 w-4 text-slate-500" />
+                    ศูนย์ควบคุม (งานที่ต้องทำ)
+                  </Link>
+                )}
+                <Link href="/settings" onClick={() => setOpen(null)} className="flex items-center gap-3 rounded-lg px-3 py-2.5 hover:bg-slate-50">
+                  <Settings className="h-4 w-4 text-slate-500" />
+                  ตั้งค่าบัญชี / เปลี่ยนรหัสผ่าน
+                </Link>
+              </div>
+            </>
+          )}
           <p className="mt-5 px-3 text-xs font-semibold text-slate-400">หมวดงาน</p>
           <div className="mt-2 space-y-1">
             {DEPARTMENTS.map((d) => (
