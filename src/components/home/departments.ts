@@ -68,6 +68,7 @@ export const DEPARTMENTS: Department[] = [
     href: "/academies",
     public: true,
     icon: ShieldCheck,
+    badge: academyLogo,
     logo: academyLogo,
     image: academyBg,
     imagePosition: "50% 20%",
