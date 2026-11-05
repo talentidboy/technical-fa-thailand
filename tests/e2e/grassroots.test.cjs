@@ -1,0 +1,35 @@
+// ฟุตบอลรากหญ้า: หน้าสาธารณะแสดงปีล่าสุด (2026) · เลือกดูปี 2025 ได้ · แผนที่ทุกจังหวัดที่มีข้อมูล · หน้าแรกใช้ปีล่าสุด
+const path = require("path");
+
+module.exports = {
+  name: "ฟุตบอลรากหญ้า: สถิติรายปี",
+  async run(ctx) {
+    const { check, BASE } = ctx;
+    const pub = await ctx.page(null);
+
+    await pub.goto(`${BASE}/grassroots-football`, { waitUntil: "networkidle", timeout: 240_000 });
+    const stats = await pub.locator("#stats").innerText();
+    check("ค่าเริ่มต้น = ปีล่าสุด 2026 (นักฟุตบอล 1,118 · ผู้ฝึกสอน 325)", stats.includes("2026") && stats.includes("1,118") && stats.includes("325"));
+    check("ปุ่มเลือกปี 2026 / 2025", (await pub.getByRole("navigation", { name: "เลือกปี" }).getByRole("link").allInnerTexts()).join(",") === "ปี 2026,ปี 2025");
+    const map = await pub.locator("#map").innerText();
+    check("ปี 2026: แผนที่ทุกจังหวัดที่มีข้อมูล + 5 อันดับ (นครพนม)", map.includes("32 จังหวัด") && map.includes("นครพนม") && map.includes("ไม่มีข้อมูล"));
+    for (const id of ["stats", "map"]) {
+      await pub.locator(`#${id}`).scrollIntoViewIfNeeded();
+      await pub.waitForTimeout(1200);
+      await pub.locator(`#${id}`).screenshot({ path: path.join(ctx.artifactsDir, `grassroots-2026-${id}.png`) });
+    }
+
+    await pub.getByRole("link", { name: "ปี 2025" }).click();
+    await pub.waitForURL(/year=2025/);
+    await pub.getByText("2,888").first().waitFor({ timeout: 30_000 });
+    check("กดปี 2025 → แสดงตัวเลขปี 2025", (await pub.locator("#stats").innerText()).includes("2,888"));
+    check("ปี 2025: แผนที่แบบ 5 อันดับ", (await pub.locator("#map").innerText()).includes("ไม่อยู่ใน 5 อันดับ"));
+
+    const mobile = await ctx.page(null, { width: 390, height: 844 });
+    await mobile.goto(`${BASE}/grassroots-football`, { waitUntil: "networkidle" });
+    check("มือถือ: ไม่ล้นแนวนอน", (await mobile.evaluate(() => document.documentElement.scrollWidth)) <= 390);
+
+    await pub.goto(`${BASE}/`, { waitUntil: "networkidle" });
+    check("หน้าแรก: การ์ดฟุตบอลรากหญ้าใช้ปีล่าสุด", (await pub.locator("body").innerText()).includes("1,118 นักฟุตบอล ปี 2026"));
+  },
+};

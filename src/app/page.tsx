@@ -9,7 +9,7 @@ import { coreProgramSteps } from "@/lib/coach-program";
 import { ROUND_FINAL, matchWinnerId } from "@/lib/g15-stage";
 import { loadAcademies } from "@/lib/academy-data";
 import { COVER_URL } from "@/lib/brand";
-import { GRASSROOTS_YEAR, grassrootsPlayers } from "@/lib/grassroots-data";
+import { getGrassroots } from "@/lib/grassroots";
 import { BrandLogo } from "@/components/BrandLogo";
 import { NewsSection } from "@/components/NewsSection";
 import { ProvinceMap, provinceName } from "@/components/ProvinceMap";
@@ -91,6 +91,8 @@ export default async function HomePage() {
     prisma.g15Match.findFirst({ where: { status: "SCHEDULED", matchDate: { gte: now } }, include: TEAMS, orderBy: { matchDate: "asc" } }),
     prisma.trainingArticle.findMany({ select: { id: true, title: true, area: true, createdAt: true }, orderBy: { createdAt: "desc" }, take: 3 }),
   ]);
+  // สถิติฟุตบอลรากหญ้าปีล่าสุด
+  const grassroots = getGrassroots().report;
   const publicAcademies = academies.filter((a) => showPublicly(a.active, a.state));
   const academyCount = publicAcademies.length;
   const academyByLevel = Object.fromEntries(ACADEMY_LEVELS.map((lv) => [lv, publicAcademies.filter((a) => a.level === lv).length])) as Record<AcademyLevel, number>;
@@ -133,7 +135,7 @@ export default async function HomePage() {
     g15: `${g15Teams} ทีม · ${g15Played} นัด`,
     academy: `${academyCount} อคาเดมีที่ได้รับการรับรอง`,
     play: "เด็กหญิงวัย 5–8 ปี",
-    grassroots: `${grassrootsPlayers.total.toLocaleString("en-US")} นักฟุตบอล ปี ${GRASSROOTS_YEAR}`,
+    grassroots: `${grassroots.players.total.toLocaleString("en-US")} นักฟุตบอล ปี ${grassroots.year}`,
     talent: "สำหรับเจ้าหน้าที่",
     data: articleTotal ? `${articleTotal} บทความ` : "The Game · Practice · Environment",
   };
@@ -260,7 +262,7 @@ export default async function HomePage() {
             { key: "g15", label: "G15 Women's Series", accent: ACCENT.g15, node: <G15Showcase teams={g15Teams} played={g15Played} board={g15Board} /> },
             { key: "academy", label: "Academy Licensing", accent: ACCENT.academy, node: <AcademyShowcase total={academyCount} byLevel={academyByLevel} /> },
             { key: "play", label: "Play and Learn", accent: ACCENT.play, node: <PlayShowcase /> },
-            { key: "grassroots", label: "Grassroots Football", accent: ACCENT.grassroots, node: <GrassrootsShowcase /> },
+            { key: "grassroots", label: "Grassroots Football", accent: ACCENT.grassroots, node: <GrassrootsShowcase report={grassroots} /> },
             { key: "talent", label: "Talent ID", accent: ACCENT.talent, node: <TalentShowcase href={dept.talent.href} locked={dept.talent.locked} /> },
             { key: "data", label: "Data & Articles", accent: ACCENT.data, node: <DataShowcase articles={articles} total={articleTotal} byArea={Object.fromEntries(articleAreas.map((a) => [a.area, a._count._all]))} /> },
           ]}

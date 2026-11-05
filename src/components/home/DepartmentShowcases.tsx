@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { G15_IMAGE_URL, GRASSROOTS_LOGO_URL, PLAY_AND_LEARN_ELEMENTS, PLAY_AND_LEARN_LOGO_URL, PLAY_AND_LEARN_MASCOT, PLAY_AND_LEARN_PASSPORT_URLS, TALENT_ID_LOGO_URL } from "@/lib/brand";
-import { GRASSROOTS_YEAR, grassrootsCoaches, grassrootsPlayers } from "@/lib/grassroots-data";
+import type { GrassrootsReport } from "@/lib/grassroots";
 import { LEVEL_META, type AcademyLevel } from "@/lib/academy";
 import { formatMatchDateShort, formatMatchTimeShort } from "@/lib/g15";
 import { coachCentreBg, g15Bg, grassrootsBg, talentIdBg } from "@/lib/section-images";
@@ -404,13 +404,15 @@ export function PlayShowcase() {
 }
 
 // ================= Grassroots: แถบริบบิ้นวิ่ง · พื้นหญ้าตัดลาย · สติกเกอร์ตัวเลข · ภาพโพลารอยด์ =================
-export function GrassrootsShowcase() {
+// report = สถิติปีล่าสุด (src/lib/grassroots.ts)
+export function GrassrootsShowcase({ report }: { report: GrassrootsReport }) {
   const ribbon = ["Grassroots Football", "ฟุตบอลรากหญ้า", "เล่นสนุก ปลอดภัย", "ทุกคนได้เล่น", "ปูพื้นฐานเยาวชนทั่วประเทศ"];
-  const maxAge = Math.max(...grassrootsPlayers.ageRanges.map((a) => a.count));
+  const ages = report.players.ageRanges;
+  const maxAge = Math.max(1, ...ages.map((a) => a.count));
   const stickers = [
-    { n: grassrootsPlayers.total, l: "นักฟุตบอล", bg: "#f97316", fg: "#fff", r: -6 },
-    { n: grassrootsCoaches.total, l: "ผู้ฝึกสอน", bg: "#fde047", fg: "#064e3b", r: 5 },
-    { n: grassrootsPlayers.provinces, l: "จังหวัด", bg: "#fff", fg: "#064e3b", r: -3 },
+    { n: report.players.total, l: "นักฟุตบอล", bg: "#f97316", fg: "#fff", r: -6 },
+    { n: report.coaches.total, l: "ผู้ฝึกสอน", bg: "#fde047", fg: "#064e3b", r: 5 },
+    { n: report.provinces, l: "จังหวัด", bg: "#fff", fg: "#064e3b", r: -3 },
   ];
   return (
     <div className={`${grassrootsFont.className} ${festival.grass} relative flex h-full flex-col overflow-hidden text-white`}>
@@ -435,7 +437,7 @@ export function GrassrootsShowcase() {
             <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={GRASSROOTS_LOGO_URL} alt="" className="h-10 w-10 rounded-full bg-white object-contain p-1 shadow-lg sm:h-16 sm:w-16 sm:p-1.5" />
-              <span className="text-xs text-white/75 sm:text-sm">โครงการปี {GRASSROOTS_YEAR}</span>
+              <span className="text-xs text-white/75 sm:text-sm">โครงการปี {report.year}</span>
             </div>
             <h2 className="mt-3 text-3xl font-semibold leading-[1.02] sm:mt-5 sm:text-7xl">
               Grassroots
@@ -473,7 +475,7 @@ export function GrassrootsShowcase() {
             <div className="-mt-4 ml-auto w-[88%] -rotate-1 rounded-xl bg-[#064e3b] p-5 shadow-xl ring-2 ring-white/20">
               <p className="text-sm text-white/80">นักฟุตบอลตามช่วงอายุ</p>
               <ul className="mt-3 space-y-2">
-                {grassrootsPlayers.ageRanges.map((a) => (
+                {ages.map((a) => (
                   <li key={a.label} className="grid grid-cols-[4.5rem_minmax(0,1fr)_3rem] items-center gap-2 text-sm">
                     <span className="text-white/80">{a.label}</span>
                     <span className="h-2.5 overflow-hidden rounded-full bg-white/10">

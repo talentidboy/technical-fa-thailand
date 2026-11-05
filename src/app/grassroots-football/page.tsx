@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { GRASSROOTS_YEAR, grassrootsCoaches as coaches, grassrootsPlayers as players } from "@/lib/grassroots-data";
+import { getGrassroots } from "@/lib/grassroots";
 import { GRASSROOTS_LOGO_URL } from "@/lib/brand";
 import { grassrootsBg } from "@/lib/section-images";
 import { grassrootsFont } from "@/components/typefaces/grassroots";
@@ -29,10 +29,12 @@ const PILLARS = [
 const MALE = "#7cc4ff";
 const FEMALE = "#ffb3c7";
 
-// แผนที่: ระบายสีเฉพาะ 5 จังหวัดที่มีนักฟุตบอลมากที่สุด (ข้อมูลรายจังหวัดมีแค่ 5 อันดับแรก)
-const MAP_BINS = [1, 200, 400, 700];
+// แผนที่: ช่วงสีคำนวณจากจังหวัดที่มีนักฟุตบอลมากที่สุดของปีนั้น (ปัดเป็นเลขกลมๆ)
 const MAP_COLORS = ["#ffe08a", "#ffb547", "#ff8a2a", "#e0550c"];
 const MEDAL = ["#ffcc29", "#cfd6dd", "#e3a66d"];
+const LICENCE_COLORS = [C.yellow, C.orange, MALE, FEMALE, "#a7f3d0"];
+const nice = (n: number) => (n < 10 ? Math.max(1, Math.round(n)) : n < 100 ? Math.round(n / 10) * 10 : Math.round(n / 50) * 50);
+const mapBins = (max: number) => [...new Set([1, nice(max * 0.15), nice(max * 0.4), nice(max * 0.7)])].sort((a, b) => a - b);
 
 // ลูกฟุตบอลเล็กคั่นข้อความในริบบิ้น
 function Ball({ className = "" }: { className?: string }) {
@@ -120,29 +122,37 @@ function Leaderboard({ title, items, total }: { title: string; items: { name: st
 }
 
 // หน้าสาธารณะ — ไม่ต้องเข้าสู่ระบบ (ข้อมูลสรุปโครงการ ไม่มีข้อมูลส่วนบุคคล)
-export default function GrassrootsFootballPage() {
-  // ใบอนุญาตของผู้ฝึกสอนในโครงการ — ส่วนที่เหลือจากรายการหลัก = ระดับ A/B Diploma และอื่นๆ
+// ตัวเลขรายปีอยู่ใน src/lib/grassroots.ts · ?year=2025 = ดูปีอื่น · ไม่ระบุ = ปีล่าสุด
+export default async function GrassrootsFootballPage({ searchParams }: { searchParams: Promise<{ year?: string }> }) {
+  const { report, years } = getGrassroots(Number((await searchParams).year) || undefined);
+  const { players, coaches } = report;
+  const year = report.year;
+
+  // ใบอนุญาตของผู้ฝึกสอนในโครงการ — ส่วนที่เหลือจากรายการหลัก = ระดับอื่นๆ ที่ไม่ได้แยกไว้
   const licensed = coaches.licenses.reduce((s, l) => s + l.count, 0);
   const otherLicences = Math.max(0, coaches.total - coaches.noLicense - licensed);
   const licenceMix = [
-    ...coaches.licenses.map((l, i) => ({ label: l.label, count: l.count, color: [C.yellow, C.orange, MALE][i] ?? FEMALE })),
-    ...(otherLicences > 0 ? [{ label: "A/B Diploma และอื่นๆ", count: otherLicences, color: FEMALE }] : []),
+    ...coaches.licenses.map((l, i) => ({ label: l.label, count: l.count, color: LICENCE_COLORS[i % LICENCE_COLORS.length] })),
+    ...(otherLicences > 0 ? [{ label: "ระดับอื่นๆ", count: otherLicences, color: "#a7f3d0" }] : []),
     { label: "ยังไม่มีใบอนุญาต", count: coaches.noLicense, color: "rgb(255 255 255 / 0.22)" },
   ];
 
   const ageMax = Math.max(...players.ageRanges.map((a) => a.count), 1);
-  const peakAge = players.ageRanges.reduce((a, b) => (b.count > a.count ? b : a));
+  const peakAge = players.ageRanges.length ? players.ageRanges.reduce((a, b) => (b.count > a.count ? b : a)) : null;
 
+  // แผนที่: ระบายทุกจังหวัดที่มีข้อมูล · ตัวเลขบนแผนที่เฉพาะ 5 อันดับแรก (ไม่ให้รก)
   const mapValues: Record<number, number> = {};
   const markers: { code: number; label: string }[] = [];
-  for (const p of players.topProvinces) {
+  for (const [i, p] of players.byProvince.entries()) {
     const code = provinceCodeByName(p.name);
     if (code == null) continue;
     mapValues[code] = p.count;
-    markers.push({ code, label: p.count.toLocaleString() });
+    if (i < 5) markers.push({ code, label: p.count.toLocaleString() });
   }
+  const MAP_BINS = mapBins(players.byProvince[0]?.count ?? 1);
+  const allProvinces = players.byProvince.length > 5;
 
-  const ribbon = ["สนุกเป็นหลัก", "การมีส่วนร่วม", "พัฒนาการรอบด้าน", "รากฐานที่มั่นคง", "Grassroots Football", `ฤดูกาล ${GRASSROOTS_YEAR}`];
+  const ribbon = ["สนุกเป็นหลัก", "การมีส่วนร่วม", "พัฒนาการรอบด้าน", "รากฐานที่มั่นคง", "Grassroots Football", `ฤดูกาล ${year}`];
 
   return (
     <div className="min-h-screen overflow-x-clip text-slate-900" style={{ background: C.cream }}>
@@ -165,7 +175,7 @@ export default function GrassrootsFootballPage() {
               หลักการ
             </a>
             <a href="#stats" className="hover:text-[#ff6b1a]">
-              สถิติ {GRASSROOTS_YEAR}
+              สถิติ {year}
             </a>
             <a href="#map" className="hover:text-[#ff6b1a]">
               พื้นที่กิจกรรม
@@ -184,7 +194,7 @@ export default function GrassrootsFootballPage() {
           <div>
             <p className={`${g} flex items-center gap-2 text-base font-medium`} style={{ color: C.orange }}>
               <Ball className="h-5 w-5 text-[#ff6b1a]" />
-              Grassroots Football · ฤดูกาล {GRASSROOTS_YEAR}
+              Grassroots Football · ฤดูกาล {year}
             </p>
             <h1 className={`${g} mt-4 text-[4.5rem] font-semibold leading-[0.95] sm:text-[8.5rem]`}>
               <span className="block" style={{ color: C.green }}>
@@ -199,11 +209,11 @@ export default function GrassrootsFootballPage() {
             </p>
             <div className="mt-9 flex flex-wrap gap-3">
               <a href="#stats" className={`${g} inline-flex h-12 items-center gap-2 rounded-xl px-6 text-base font-medium text-white`} style={{ background: C.green }}>
-                ดูสถิติปี {GRASSROOTS_YEAR}
+                ดูสถิติปี {year}
                 <ArrowDown className="h-4 w-4" />
               </a>
               <a href="#map" className={`${g} inline-flex h-12 items-center rounded-xl border-2 px-6 text-base font-medium`} style={{ borderColor: C.green, color: C.green }}>
-                พื้นที่กิจกรรม {players.provinces} จังหวัด
+                พื้นที่กิจกรรม {report.provinces} จังหวัด
               </a>
             </div>
           </div>
@@ -276,12 +286,30 @@ export default function GrassrootsFootballPage() {
         <PitchLines />
         <div className="relative mx-auto max-w-7xl">
           <p className={`${g} text-base`} style={{ color: C.yellow }}>
-            Season report {GRASSROOTS_YEAR}
+            Season report {year}
           </p>
           <h2 className={`${g} mt-1 text-4xl font-semibold sm:text-5xl`}>
-            สถิติโครงการ<span className="whitespace-nowrap">ฟุตบอลรากหญ้า</span> ปี {GRASSROOTS_YEAR}
+            สถิติโครงการ<span className="whitespace-nowrap">ฟุตบอลรากหญ้า</span> ปี {year}
           </h2>
           <p className="mt-2 text-white/75">สรุปข้อมูลผู้ฝึกสอนและนักฟุตบอลที่เข้าร่วมโครงการทั่วประเทศ</p>
+
+          {/* เลือกปี (แสดงเมื่อมีมากกว่า 1 ปี) */}
+          {years.length > 1 && (
+            <nav aria-label="เลือกปี" className="mt-6 flex flex-wrap gap-2">
+              {years.map((y) => (
+                <Link
+                  key={y}
+                  href={`/grassroots-football?year=${y}#stats`}
+                  scroll={false}
+                  aria-current={y === year ? "page" : undefined}
+                  className={`${g} inline-flex min-h-10 items-center rounded-full px-5 text-base font-medium transition-colors ${y === year ? "text-[#0b2a1a]" : "bg-white/10 text-white ring-1 ring-white/25 hover:bg-white/20"}`}
+                  style={y === year ? { background: C.yellow } : undefined}
+                >
+                  ปี {y}
+                </Link>
+              ))}
+            </nav>
+          )}
 
           {/* ป้ายสกอร์ */}
           <Reveal className="mt-10 overflow-hidden rounded-[1.5rem] bg-[#06331d] ring-1 ring-white/10">
@@ -301,21 +329,23 @@ export default function GrassrootsFootballPage() {
               </div>
             </div>
             <p className={`${g} border-t border-white/10 bg-black/15 py-3 text-center text-sm text-white/80`}>
-              ทั่ว {players.provinces} จังหวัด · ฤดูกาล {GRASSROOTS_YEAR}
+              ทั่ว {report.provinces} จังหวัด · ฤดูกาล {year}
             </p>
           </Reveal>
 
           <div className="mt-5 grid grid-cols-1 gap-5 lg:grid-cols-3">
             {/* นักฟุตบอล */}
             <div className="rounded-[1.25rem] bg-[#0a5c2e] p-6 ring-1 ring-white/10">
-              <p className={`${g} text-xl font-medium`}>นักฟุตบอล {GRASSROOTS_YEAR}</p>
+              <p className={`${g} text-xl font-medium`}>นักฟุตบอล {year}</p>
               <div className="mt-4">
                 <GenderBar male={players.male} malePercent={players.malePercent} female={players.female} femalePercent={players.femalePercent} />
               </div>
               <p className={`${g} mt-7 text-base`}>ช่วงอายุผู้เข้าร่วม</p>
-              <p className="text-xs text-white/60">
-                มากที่สุด {peakAge.label} ({((peakAge.count / players.total) * 100).toFixed(0)}%)
-              </p>
+              {peakAge && (
+                <p className="text-xs text-white/60">
+                  มากที่สุด {peakAge.label} ({((peakAge.count / Math.max(players.total, 1)) * 100).toFixed(0)}%)
+                </p>
+              )}
               <div className="mt-3 flex h-32 items-end gap-2.5">
                 {players.ageRanges.map((a) => (
                   <div key={a.label} className="flex h-full flex-1 flex-col items-center justify-end" title={`${a.label}: ${a.count.toLocaleString()} คน`}>
@@ -338,13 +368,13 @@ export default function GrassrootsFootballPage() {
 
             {/* ผู้ฝึกสอน */}
             <div className="rounded-[1.25rem] bg-[#0a5c2e] p-6 ring-1 ring-white/10">
-              <p className={`${g} text-xl font-medium`}>ผู้ฝึกสอน (โค้ช) {GRASSROOTS_YEAR}</p>
+              <p className={`${g} text-xl font-medium`}>ผู้ฝึกสอน (โค้ช) {year}</p>
               <div className="mt-4">
                 <GenderBar male={coaches.male} malePercent={coaches.malePercent} female={coaches.female} femalePercent={coaches.femalePercent} />
               </div>
               <p className={`${g} mt-7 text-base`}>ระดับใบอนุญาตผู้ฝึกสอน</p>
               <p className="text-xs text-white/60">
-                มีใบอนุญาตแล้ว {(coaches.total - coaches.noLicense).toLocaleString()} คน ({(((coaches.total - coaches.noLicense) / coaches.total) * 100).toFixed(0)}%)
+                มีใบอนุญาตแล้ว {(coaches.total - coaches.noLicense).toLocaleString()} คน ({(((coaches.total - coaches.noLicense) / Math.max(coaches.total, 1)) * 100).toFixed(0)}%)
               </p>
               <div className="mt-3 flex h-3 gap-0.5 overflow-hidden rounded-full">
                 {licenceMix.map((l) => (
@@ -365,7 +395,7 @@ export default function GrassrootsFootballPage() {
             {/* จังหวัด */}
             <div className="flex flex-col rounded-[1.25rem] p-6" style={{ background: C.yellow, color: C.ink }}>
               <p className={`${g} text-xl font-medium`}>พื้นที่กิจกรรม</p>
-              <p className={`${g} mt-auto pt-8 text-[6rem] font-semibold leading-none`}>{players.provinces}</p>
+              <p className={`${g} mt-auto pt-8 text-[6rem] font-semibold leading-none`}>{report.provinces}</p>
               <p className={`${g} text-lg`}>จังหวัดทั่วประเทศ</p>
               <a href="#map" className={`${g} mt-6 inline-flex w-fit items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium text-white`} style={{ background: C.green }}>
                 ดูบนแผนที่
@@ -381,14 +411,18 @@ export default function GrassrootsFootballPage() {
         <div className="mx-auto grid max-w-7xl grid-cols-1 gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,24rem)] lg:gap-16">
           <div>
             <h2 className={`${g} text-4xl font-semibold sm:text-5xl`} style={{ color: C.green }}>
-              พื้นที่กิจกรรม {players.provinces} จังหวัด
+              พื้นที่กิจกรรม {report.provinces} จังหวัด
             </h2>
-            <p className="mt-2 max-w-xl text-slate-600">จังหวัดที่มีผู้เข้าร่วมมากที่สุด — ตัวเลขบนแผนที่คือจำนวนนักฟุตบอลใน 5 จังหวัดแรก</p>
+            <p className="mt-2 max-w-xl text-slate-600">
+              {allProvinces
+                ? `แผนที่ระบายสีทุกจังหวัดที่มีนักฟุตบอลเข้าร่วม (${players.byProvince.length} จังหวัด) — ตัวเลขบนแผนที่คือ 5 จังหวัดที่มากที่สุด`
+                : "จังหวัดที่มีผู้เข้าร่วมมากที่สุด — ตัวเลขบนแผนที่คือจำนวนนักฟุตบอลใน 5 จังหวัดแรก"}
+            </p>
             <div className="mt-10 grid grid-cols-1 gap-10 sm:grid-cols-2">
-              <Leaderboard title="นักฟุตบอล · 5 อันดับจังหวัด" items={players.topProvinces} total={players.total} />
-              <Leaderboard title="ผู้ฝึกสอน · 5 อันดับจังหวัด" items={coaches.topProvinces} total={coaches.total} />
+              {players.byProvince.length > 0 && <Leaderboard title="นักฟุตบอล · 5 อันดับจังหวัด" items={players.byProvince.slice(0, 5)} total={players.total} />}
+              {coaches.byProvince.length > 0 && <Leaderboard title="ผู้ฝึกสอน · 5 อันดับจังหวัด" items={coaches.byProvince.slice(0, 5)} total={coaches.total} />}
             </div>
-            <p className="mt-10 text-xs text-slate-500">ข้อมูลจากรายงานสรุปโครงการฟุตบอลรากหญ้า ปี {GRASSROOTS_YEAR}</p>
+            <p className="mt-10 text-xs text-slate-500">ข้อมูลจาก{report.source ?? `สรุปโครงการฟุตบอลรากหญ้า ปี ${year}`}</p>
           </div>
           <figure className="mx-auto w-full max-w-sm rounded-[1.75rem] bg-white p-6 shadow-sm ring-1 ring-black/5">
             <ProvinceMap
@@ -399,7 +433,7 @@ export default function GrassrootsFootballPage() {
               unit="คน"
               markers={markers}
               markerColor={C.green}
-              title={`แผนที่ 5 จังหวัดที่มีนักฟุตบอลรากหญ้าเข้าร่วมมากที่สุด ปี ${GRASSROOTS_YEAR}`}
+              title={allProvinces ? `แผนที่จำนวนนักฟุตบอลรากหญ้าตามจังหวัด ปี ${year}` : `แผนที่ 5 จังหวัดที่มีนักฟุตบอลรากหญ้าเข้าร่วมมากที่สุด ปี ${year}`}
             />
             <figcaption className="mt-3 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[11px] text-slate-500">
               {MAP_BINS.map((b, i) => (
@@ -410,7 +444,7 @@ export default function GrassrootsFootballPage() {
               ))}
               <span className="inline-flex items-center gap-1.5">
                 <span className="h-2.5 w-4 rounded-sm bg-[#efe7d6]" />
-                ไม่อยู่ใน 5 อันดับ
+                {allProvinces ? "ไม่มีข้อมูล" : "ไม่อยู่ใน 5 อันดับ"}
               </span>
             </figcaption>
           </figure>
@@ -429,3 +463,4 @@ export default function GrassrootsFootballPage() {
     </div>
   );
 }
+
