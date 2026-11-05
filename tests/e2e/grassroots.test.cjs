@@ -30,6 +30,28 @@ module.exports = {
     check("ปี 2025: แผนที่แบบ 5 อันดับ", (await pub.locator("#map").innerText()).includes("ไม่อยู่ใน 5 อันดับ"));
     check("ปี 2025: ไม่มีข้อมูลละเอียด → ซ่อนอายุรายปี/ไทม์ไลน์", !(await pub.locator("#players").innerText()).includes("อายุรายปี") && (await pub.locator("#events").count()) === 0);
 
+    // ===== ภาษาอังกฤษ (?lang=en) =====
+    await pub.goto(`${BASE}/grassroots-football`, { waitUntil: "networkidle" });
+    await pub.getByRole("navigation", { name: "Language / ภาษา" }).getByRole("link", { name: "EN" }).click();
+    await pub.waitForURL(/lang=en/);
+    await pub.getByText("Grassroots Football in 2026").waitFor({ timeout: 30_000 });
+    const enStats = await pub.locator("#stats").innerText();
+    check("EN: สถิติภาษาอังกฤษ", enStats.includes("Grassroots Football in 2026") && enStats.includes("Male 556 · Female 562"));
+    check("EN: ชื่อจังหวัด/ช่วงอายุเป็นอังกฤษ", (await pub.locator("#map").innerText()).includes("Nakhon Phanom") && (await pub.locator("#players").innerText()).includes("11–12 yrs"));
+    check("EN: ไทม์ไลน์เดือนภาษาอังกฤษ", (await pub.locator("#events").innerText()).includes("January"));
+    for (const id of ["stats", "coaches", "map"]) {
+      await pub.locator(`#${id}`).scrollIntoViewIfNeeded();
+      await pub.waitForTimeout(800);
+      await pub.locator(`#${id}`).screenshot({ path: path.join(ctx.artifactsDir, `grassroots-en-${id}.png`) });
+    }
+    await pub.getByRole("navigation", { name: "Choose year" }).getByRole("link", { name: "2025" }).click();
+    await pub.waitForURL(/year=2025/);
+    await pub.getByText("2,888").first().waitFor({ timeout: 30_000 });
+    check("EN: เลือกปี 2025 แล้วยังเป็นภาษาอังกฤษ", new URL(pub.url()).searchParams.get("lang") === "en" && (await pub.locator("#map").innerText()).includes("Not in top 5"));
+    await pub.getByRole("navigation", { name: "Language / ภาษา" }).getByRole("link", { name: "TH" }).click();
+    await pub.waitForURL((u) => !u.searchParams.has("lang"));
+    check("สลับกลับเป็นไทย (คงปี 2025)", new URL(pub.url()).searchParams.get("year") === "2025" && (await pub.locator("#stats").innerText()).includes("สถิติโครงการ"));
+
     const mobile = await ctx.page(null, { width: 390, height: 844 });
     await mobile.goto(`${BASE}/grassroots-football`, { waitUntil: "networkidle" });
     await mobile.screenshot({ path: path.join(ctx.artifactsDir, "grassroots-mobile.png"), fullPage: true });

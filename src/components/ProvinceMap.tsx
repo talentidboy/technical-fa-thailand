@@ -14,6 +14,7 @@ export function ProvinceMap({
   markerColor = "#0b1f44",
   className = "",
   title,
+  lang = "th",
 }: {
   values: Record<number, number>;
   bins: number[];
@@ -24,6 +25,8 @@ export function ProvinceMap({
   markerColor?: string;
   className?: string;
   title: string;
+  // ภาษาของชื่อจังหวัดในป้ายเมื่อชี้ (หน้าที่มีภาษาอังกฤษ)
+  lang?: "th" | "en";
 }) {
   const fill = (n: number) => {
     let c = zero;
@@ -39,7 +42,7 @@ export function ProvinceMap({
         const n = values[p.code] ?? 0;
         return (
           <path key={p.code} d={p.d} fill={fill(n)} stroke="#ffffff" strokeWidth={0.7}>
-            <title>{`${p.th}: ${n.toLocaleString()} ${unit}`}</title>
+            <title>{`${lang === "en" ? p.en : p.th}: ${n.toLocaleString()} ${unit}`}</title>
           </path>
         );
       })}
@@ -72,4 +75,6 @@ export function ProvinceMap({
 
 // ชื่อจังหวัด (ไทย) ↔ รหัสจังหวัดบนแผนที่ (รหัสเดียวกับ geothai)
 export const provinceCodeByName = (th: string) => map.provinces.find((p) => p.th === th)?.code ?? null;
+// ชื่อจังหวัดภาษาอังกฤษจากชื่อไทย (ไม่พบ = คืนชื่อเดิม)
+export const provinceEnByName = (th: string) => map.provinces.find((p) => p.th === th)?.en ?? th;
 export const provinceName = (code: number) => map.provinces.find((p) => p.code === code)?.th ?? `จังหวัด ${code}`;

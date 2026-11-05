@@ -12,6 +12,7 @@ export type GrassrootsEvent = { date: string; province: string; coaches: number 
 type Season = {
   year: number;
   source: string;
+  sourceEn: string;
   playersMale: number;
   playersFemale: number;
   coachesMale: number;
@@ -45,6 +46,7 @@ const SEASONS: Season[] = [
   {
     year: 2026,
     source: "แบบฟอร์มลงทะเบียนเข้าร่วมกิจกรรม ปี 2026 (โค้ชและเด็ก)",
+    sourceEn: "2026 activity registration forms (coaches and players)",
     playersMale: 556,
     playersFemale: 562,
     coachesMale: 263,
@@ -72,6 +74,7 @@ const SEASONS: Season[] = [
   {
     year: 2025,
     source: "รายงานสรุปโครงการฟุตบอลรากหญ้า ปี 2025",
+    sourceEn: "Grassroots Football programme summary report 2025",
     playersMale: 2414,
     playersFemale: 474,
     coachesMale: 446,
@@ -96,6 +99,7 @@ function toReport(s: Season) {
   return {
     year: s.year,
     source: s.source,
+    sourceEn: s.sourceEn,
     provinces: s.provinces,
     detail: s.detail ?? null,
     // ผู้เข้าร่วมที่ไม่มีจังหวัด (อ่านไม่ได้) — ปีที่มีข้อมูลรายจังหวัดครบเท่านั้น (ปีที่มีแค่ 5 อันดับแรกไม่นับ)
